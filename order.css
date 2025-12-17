@@ -1,0 +1,523 @@
+* {
+  margin: 0;
+  padding: 0; 
+  box-sizing: border-box;   
+}
+
+li {
+  text-decoration: none;
+  list-style: none;
+  margin: 10px 0;
+}
+
+
+
+
+
+
+
+/********************ESTILOS PARA IMPRIMIR********************/
+
+
+@media print {
+  body {
+      width: 80mm; /* Ancho del papel */
+      font-family: Arial, sans-serif;
+      font-size: 10px; 
+      margin: 0;
+      padding: 0;
+  }
+  #btn_edit , #btn_confirm , #btn_print ,header {
+      display: none; /* Oculta elementos no deseados en la impresión */
+  }
+  #valor-servicio {
+      margin-bottom: 50px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+/*********************LOGIN*********************/
+
+.orders_header {
+  background-color: black;
+}
+
+.orders_main {
+  background-color: black;
+}
+
+.login_main {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+}
+
+.login_container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;  
+  background-color: black;
+}
+
+.login_logo, .login_form {
+  width: 100%;
+  max-width: 200px;
+}
+
+.login_logo {
+  margin: 0px 0px 10px 0px;
+}
+
+.login_form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login_form label {
+  display: flex;
+  width: 100%;
+  height: 20px;
+}
+
+.login_form input {
+  margin: 0 0 10px 0;
+  padding: 5px;
+}
+
+.login_btn {
+  margin: 20px auto 0 auto;
+  width: 100px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.login_btn:hover {
+  opacity: 0.8;
+}
+
+.login_image {
+  width: 100%;
+  height: 100vh;
+  background-image: url(./Imagenes/slogan_imagen5.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+#login_error {
+  font-size: 14px;
+  display: none;
+  color: red;
+  text-align: center;
+  justify-content: center;  
+  margin: 10px auto;
+}
+
+@media (max-width: 400px) {
+  .login_image {
+      display: none;
+  } 
+}
+
+
+
+
+
+
+
+
+
+
+/*********************ORDENES********************/
+
+.logo_orders {
+  display: flex;
+  width: auto;
+  height: 150px;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.orders_main {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title_order {
+  color: white;
+  text-align: center;
+  font-size: 80px;
+  margin: 0px;
+}
+
+.parragraph {
+  font-size: 20px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.form_products {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.list_products {
+  display: block;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.product , .list_location , .day_delivery {
+  display: flex;
+  justify-content: space-around;
+  width: 340px;
+  display: flex;
+  margin: 10px 0;
+}
+
+.day_delivery {
+  margin: 0 auto 30px auto;
+}
+
+.list_location label, .list_location select , .day_delivery label , .day_delivery input{
+  width: 50%;
+  display: flex;  
+  justify-content: center;
+}
+
+.day_dalivery label, .day_dalivery select {
+  width: 50%;
+  display: flex;  
+  justify-content: center;
+}
+
+.product select {
+  width: 70px;
+  display: flex;  
+  justify-content: center;
+}
+
+.product label {
+  width: 60%;
+}
+
+.product select , .day_delivery input, .list_location select  {
+  text-align: center;
+  font-weight: bold;
+}
+
+.list_location select:hover, .day_dalivery select:hover , .list_products select:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.observation {
+  display: flex;
+  flex-direction: column;
+}
+
+.observation label {
+  margin: 5px auto;
+}
+
+.observation_box {
+  display: flex;
+  width: 80%;
+  height: 200px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.btn_orders {
+  width: 200px;
+  height: 40px;
+  margin: 50px auto;
+  font-size: 20px;
+}
+
+.btn:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .title_order {
+      font-size: 50px;
+   }     
+
+   .parragraph {
+      max-width: 90vw;
+      padding: 10px;
+      font-size: 14px;
+   }
+   
+  .form_products  {
+      width: 100vw;
+  } 
+}
+
+
+
+
+
+
+
+
+/*********************DETALLES DE PEDIDO*******************/
+
+.car_header{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px 20px;
+  border-bottom: 2px solid gray ;    
+}
+
+.car_header h1 {
+  display: flex;
+  align-items:end;
+  font-size: 30px;
+  margin-top: 20px;
+}
+
+.car_header img {
+  display: flex;
+  align-items:end;
+  width: 200px;
+}
+
+.car_container {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+  padding: 20px 0;
+  margin: 0 auto;
+  font-size: 16px;
+}
+
+.car_data_branch , .car_data_date {
+  display: flex;
+  justify-content: space-between;
+  max-width: 400px;
+  margin: 0 auto;    
+}
+
+.car_data_branch p , .car_data_date p {
+  display: flex;
+  justify-content: center;
+  margin: 5px auto;
+}
+
+.car_data_branch p:nth-child(1) , .car_data_date p:nth-child(1) {
+  font-weight: bold;
+}
+
+.car_container button {
+  display: flex;
+  align-items: center;
+  justify-content: center;  
+  max-width: 400px;
+  margin: 10px auto;
+  background-color: green;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.car_container button:nth-child(3) {
+  background-color: grey;
+}
+
+.table_head th {
+  width: max-content;
+  padding: 10px;
+  border-bottom: 1px solid black;
+}
+
+.table_body td {
+ padding: 5px;
+ width: max-content;
+ border-bottom: 1px solid black;
+}
+
+.table_body tr td:nth-child(2){
+  font-weight: bold;
+}
+
+.car_data_observation {
+  text-align: center; 
+  padding: 20px; 
+  border: 1px solid black; 
+  margin: 20px 0;
+  width: 80%;
+  max-width: 400px; 
+  margin-left: auto; 
+  margin-right: auto; 
+  border-radius: 8px; 
+}
+
+.car_data_observation p:nth-child(1) {
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.car_product_list {
+  color: black;
+  width: 90%;
+  margin: 20px auto;
+  max-width: 400px;
+  text-align: center;
+  border-collapse: collapse;
+  table-layout: fixed;
+ 
+}
+
+.car_product_list li:nth-child(1) , .car_product_list li:nth-child(2)  {
+  font-weight: bold;
+}
+
+.car_total {
+  display: flex;
+  font-weight: bold;
+  width: 80%;
+  justify-content: center;
+  gap: 50px;
+  margin: 5px auto;
+}
+
+.btn-container {
+  display: flex;
+  max-width: 400px;
+  margin: 10px auto 30px auto;
+  gap: 30px;
+}
+
+.btn-container button {
+  padding: 5px;
+}
+
+.btn-container button:nth-child(1) {
+  background-color: gray;
+  border: none;
+}
+
+.btn-container button:nth-child(2) {
+  background-color: green;
+  border: none;
+}
+
+.car_container button:hover {
+  filter: brightness(0.7);
+}
+
+@media (max-width: 900px) {
+  .car_container {
+      font-size: 12px;
+  }
+
+  .car_product {
+      height: 20px;
+      padding: 0px;
+  }
+}
+
+@media (max-width: 800px) {
+  .car_header {
+      flex-direction: column;
+      text-align: center;
+      align-items: center;
+  }
+
+  .car_header h1 {
+      margin: 20px 0 0 0;
+      font-size: 30px;
+  }
+
+  .car_header img {
+      width: 150px;
+  }
+  
+  .car_container {
+      padding: 0px;
+  }
+
+  .btn-container {
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  .car_container button {
+      height: 30px;
+  }     
+}
+
+
+
+
+
+
+
+
+
+
+
+/*********************CONFIRMACIÓN ENVIO PEDIDO*********************************/
+
+.envio_ok_main {
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+}
+
+.confirmation_container {
+  background-color: black;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 30px;
+  font-size: 30px;
+  text-align: center;
+}
+
+.confirmation_container img:nth-child(1) {
+  width: 200px;
+}
+
+.confirmation_container img:nth-child(2) {
+  width: 50px;
+}
+
+.confirmation_container {
+  color: white ;
+
+}
+
+
+

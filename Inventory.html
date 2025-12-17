@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión Inventario</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="./Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+  <header class="inventory__header">
+    <div class="sidebar_img">
+        <img src="./Imagenes/logo.png" alt="logo drive">
+    </div>
+
+    <h1 class="inventory__header-title">Panel de Administración</h1>
+    <nav class="inventory__header-menu">
+        <ul class="header__list">
+            <li class="inventory__header-item"><a class="inventory__header-link" href="#">Perfil</a></li>
+            <li class="inventory__header-item"><a class="inventory__header-link" href="#">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+</header>
+
+<!-- Carga del sidebar con botones con JS -->
+
+<div id="sidebar-container"></div>
+
+
+
+<!---------------Formulario para ingreso de Stock------------->
+
+
+ <main class="inventory__main" id="inventory__main">
+    <button class="inventory-toggle" id="inventory-toggle"><</button>
+    <section class="inventory__section inventory__overview">
+        <h2 class="inventory__overview-title">Resumen de productos</h2>
+        <div class="inventory__overview-cards ">
+            <div class="card">
+                <h3 class="card__title">Valor total productos</h3>
+                <p class="card__info" id="total-value-counter">0</p>
+            </div>
+            <div class="card">
+                <h3 class="card__title">Productos en Stock</h3>
+                <p class="card__info" id="total-products-counter">0</p>
+            </div>
+            <div class="card">
+                <h3 class="card__title">Productos agotados</h3>
+                <p class="card__info" id="out-of-stock-counter">0</p>
+            </div>
+        </div>
+    </section>
+    
+    <section class="inventory__section inventory-management">        
+         <div class="inventory-management__title">
+            <button class="button btn-create-product">Crear producto</button>
+            <button class="button btn-add-stock">Agregar Stock</button>            
+        </div>
+
+
+
+
+        <table class="inventory-management__table">
+            <thead class="inventory-management__thead">
+              <tr>
+                <th>Id Producto</th>
+                <th>Nombre del Producto</th>
+                <th>Unidad Medida</th>
+                <th>Stock</th>                
+                <th>Precio Unidad</th>
+                 <th>Precio total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="inventory-management__tbody" id="productsContainer">
+                <!-- <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">Azúcar Blanca</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">20</td>
+                    <td class="inventory-management__cell">✅</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr>
+                <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">champiñones</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">15</td>
+                    <td class="inventory-management__cell">❌</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr> -->
+            </tbody>
+        </table>
+
+    </section>
+
+         
+
+        <!---------------Formulario para ingreso de Stock------------->
+
+        <div id="inventory-management__stock" class="inventory-management inventory-management__stock">
+
+        <div class="actions">
+
+        </div>       
+
+        <div class="header">
+            <h2 class="title">INGRESO DE STOCK</h2>
+        </div>
+        <form class="form-body">
+
+            <div class="form-group">
+                <label class="label" for="product-select">Producto:</label>
+                <select id="product-select" class="form-control" required>
+                    <option value="" disabled selected>Selecciona un producto</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="label" for="quantity">Cantidad:</label>
+                <input type="number" id="quantity" class="form-control" required min="1">
+            </div>
+
+            <div class="form-group">
+                <label class="label" for="provider-name">Nombre del proveedor</label>
+                <select id="proveedor-select" class="form-control" required>
+                    <option value="" disabled selected>Selecciona el proveedor</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="label" for="observations">Observaciones</label>
+                <textarea id="observations" class="form-control" rows="10"></textarea>
+            </div>
+
+            <div class="inventory-management__stock-btn">
+                <button type="submit" class="submit-btn" id="btn-enviar">Enviar</button>
+                <button type="button" class="submit-btn" id="btn-cancel">Cancelar</button>
+            </div>
+        </form>
+    </div>
+  
+
+        
+        
+
+
+
+        
+        
+       
+    </section>
+</main>
+
+<footer class="inventory__footer" id="inventory__footer">
+    <p class="inventory__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+</footer>
+<script type="module" src="Inventory.js"></script>
+</body>
+</html>

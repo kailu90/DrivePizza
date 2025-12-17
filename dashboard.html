@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Pedidos - DRIVE PIZZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="./Imagenes/logo.png" type="image/x-icon">
+</head>
+
+<body>
+    <header class="dashboard__header">
+        <div class="sidebar_img">
+            <img src="./Imagenes/logo.png" alt="logo drive">
+        </div>
+
+        <h1 class="dashboard__header-title">Panel de Administración</h1>
+        <nav class="dashboard__header-menu">
+            <ul class="dashboard__header-list">
+                <li class="dashboard__header-item"><a class="dashboard__header-link" href="#">Perfil</a></li>
+                <li class="dashboard__header-item"><a class="dashboard__header-link" href="#">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Carga del sidebar con botones con JS -->
+
+    <div id="sidebar-container"></div>
+
+
+    <main class="dashboard__main" id="dashboard__main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+                <section class="dashboard__section dashboard__overview">
+                    <h2 class="dashboard__overview-title">Resumen de Pedidos</h2>
+                    <div class="dashboard__overview-cards">
+                        <div class="card">
+                            <h3 class="card__title">Pedidos Pendientes</h3>
+                            <p class="card__info" id="undelivered-orders">0</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="card__title">Pedidos Entregados</h3>
+                            <p class="card__info" id="sent-orders">0</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="card__title">Pedidos Pagados</h3>
+                            <p class="card__info" id="paid-orders">0</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="card__title">Total de Pedidos</h3>
+                            <p class="card__info" id="total-orders">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dashboard__section inventory-management">
+                    <h2 class="inventory-management__title">Gestión de Pedidos</h2>
+                    <label for="">ordenar por:</label>
+                    <select name="sort" id="sort">
+                        <option value="0-desc">Id Pedido (Descendente)</option>
+                        <option value="0-asc">Id Pedido (Ascendente)</option>
+                    </select> 
+
+                    <section class="exportDate-container">
+                        <button id="btnExport">Exportar Pedidos</button>
+                        <div class="exportDate" id="exportDate">
+                            <label for="startDate">Selección desde que día:</label>
+                            <input type="date" id="startDate" class="export-input">
+                            
+                            <label for="endDate">Selecciona hasta que día:</label>
+                            <input type="date" id="endDate" class="export-input">
+                            
+                            <button id="exportOrdersBtn" class="export-button">
+                            Exportar
+                            </button>
+                        </div>
+                    </section>
+
+                    <table class="inventory-management__table">
+                        <thead class="inventory-management__thead">
+                            <tr class="inventory-management__row">
+                                <th class="inventory-management__heading">ID PEDIDO</th>
+                                <th class="inventory-management__heading">FECHA ENTREGA</th>
+                                <th class="inventory-management__heading">SEDE</th>
+                                <th class="inventory-management__heading">ESTADO</th>
+                                <th class="inventory-management__heading">ACCIONES</th>
+                                <th class="inventory-management__heading">VALOR NETO</th>
+                                <th class="inventory-management__heading">VALOR CON SERVICIO</th>
+                            </tr>
+                        </thead>
+                        <tbody class="inventory-management__tbody" id="ordersContainer">
+                            <!-- <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">Azúcar Blanca</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">20</td>
+                    <td class="inventory-management__cell">✅</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr>
+                <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">champiñones</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">15</td>
+                    <td class="inventory-management__cell">❌</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr> -->
+                        </tbody>
+                    </table>
+                </section>
+    </main>
+
+    <footer class="dashboard__footer" id="dashboard__footer">
+        <p class="dashboard__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+
+</html>

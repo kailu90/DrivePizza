@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="./Imagenes/Isotipo.png" type="image/x-icon">
+    <title>Carrito de Compras</title>
+</head>
+<body class="car_body">
+    <header class="car_header">        
+        <img src="./Imagenes/logo.png" alt="logo drive pizza">
+        <h1>PEDIDO SEDE</h1>
+    </header>
+    <form class="car_container">
+        <div class="car_data_container">        
+            <div class="car_data_branch">
+                <p>SEDE</p>
+                <p id="sede-name"></p>
+            </div>  
+            <div class="car_data_date">
+                <p>FECHA</p>
+                <p id="delibery-date"></p>
+            </div>  
+        </div>
+        <table class="car_product_list">
+                <thead class="table_head">
+                    <tr>
+                        <th>PRODUCTO</th>
+                        <th>CANTIDAD</th>
+                        <th>VALOR</th>
+                    </tr>
+                </thead>
+                <tbody class="table_body" id="table-body">
+                    
+                </tbody>
+        </table>
+        <div class="car_data_observation">
+            <p>OBSERVACIÓN:</p>
+            <p id="comment"></p>          
+        </div>  
+        <div class="car_total" id="total">
+            Total Productos: <span id="total-amount">0</span>
+        </div>
+        <div class="car_total" id="valor-neto">
+            Valor Neto: <span id="valor-neto-amount">$0</span>
+        </div>
+        <div class="car_total" id="valor-servicio">
+            Valor con servicio: <span id="valor-servicio-amount">$0</span>
+        </div>
+        <div class="btn-container">
+            <button type="button" id="btn_edit">Regresar a editar Pedido</button>
+            <button type="button" id="btn_confirm">Confirmar Pedido</button>
+        </div>
+
+    </form>
+    <script type="module" src="cart.js"></script>       
+</body>
+</html>
