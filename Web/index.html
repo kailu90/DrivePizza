@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="./Imagenes/Isotipo.png" type="image/x-icon">
+    <title>Login</title>   
+</head>
+<body>   
+    <main class="login_main">
+        <section class="login_container">
+            <img class="login_logo" src="./Imagenes/logo.png" alt="logo drive pizza">
+            <form id="login_form" class="login_form">
+                <label for="" >Usuario</label>
+                <input type="text" name="login_user" id="login_user" placeholder="Usuario">
+                <label for="">Contraseña:</label>
+                <input type="password" name="login_password" id="login_password" placeholder="Contraseña">
+                <div class="login_links">
+                    <p id="btn_create_account">Crear nueva cuenta</p>
+                    <p id="btn_forgot_pass">Olvide mi contraseña</p>
+                </div>   
+                <button class="login_btn" type="submit">Ingresar</button>
+                <p id="login_error" class="login_error">Usuario o contraseña incorrectos</p>                
+            </form>
+        </section>
+        <section class="login_image">
+
+        </section>
+        <div id="registration_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Creación Nueva Cuenta</h2>
+                <form id="register_form" class="register_form">
+                    
+                    <label for="reg_email" >Correo Electrónico:</label>
+                    <input type="email" id="reg_email" name="email" placeholder="drivepizza@gmail.com" required>
+                    
+                    <label for="reg_pass">Contraseña:</label>
+                    <input type="password" id="reg_pass" name="password" placeholder="************"required>
+                    
+                    <label for="reg_confirm_pass">Confirmar Contraseña:</label>
+                    <input type="password" id="reg_confirm_pass" name="confirm_password" placeholder="************" required>                    
+                    <div class="reg_buttons">
+                        <button type="submit">Solicitar Acceso</button>
+                        <button type="button" class="close_registration_modal_btn">Cancelar</button>
+                    </div>
+                    
+                    
+                    <p class="small_text">Ingresa los datos solicitados, dale click a solicitar acceso y tu cuenta será revisada y aprobada por un administrador del sistema.</p>
+                </form>
+            </div>
+        </div>
+         <div id="forgot_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Olvidaste tu contraseña</h2>
+                <form id="register_form" class="register_form">
+                    
+                    <label for="reg_email" >Correo Electrónico:</label>
+                    <input type="email" id="reg_email" name="email" placeholder="drivepizza@gmail.com" required>   
+                                     
+                    <div class="reg_buttons">
+                        <button type="submit">solicitar cambio</button>
+                        <button type="button" class="close_forgot_modal_btn">Cancelar</button>
+                    </div>            
+                    
+                    <p class="small_text">Ingresa el correo registrado y recibirás un mail con un link para reestablecer la contraseña.</p>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    
+    <script type="module" src="login.js"></script>   
+    
+</body>
+</html>

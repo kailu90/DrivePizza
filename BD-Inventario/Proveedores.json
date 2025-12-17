@@ -1,0 +1,78 @@
+[
+  {
+    "idSupplier": 1,
+    "name": "La Receta"
+  },
+  {
+    "idSupplier": 2,
+    "name": "Makro"
+  },
+  {
+    "idSupplier": 3,
+    "name": "PriceSmart"
+  },
+  {
+    "idSupplier": 4,
+    "name": "Quintero"
+  },
+  {
+    "idSupplier": 5,
+    "name": "Juan D Hoyos"
+  },
+  {
+    "idSupplier": 6,
+    "name": "Planta Producción"
+  },
+  {
+    "idSupplier": 7,
+    "name": "Colanta"
+  },
+  {
+    "idSupplier": 8,
+    "name": "Graficas y empaques universal"
+  },
+  {
+    "idSupplier": 9,
+    "name": "Harinera del valle"
+  },
+  {
+    "idSupplier": 10,
+    "name": "Víveres villabel"
+  },
+  {
+    "idSupplier": 11,
+    "name": "Suescun"
+  },
+  {
+    "idSupplier": 12,
+    "name": "Carbolsas"
+  },
+  {
+    "idSupplier": 13,
+    "name": "Condimentos Leo"
+  },
+  {
+    "idSupplier": 14,
+    "name": "Otros"
+  },
+  {
+    "idSupplier": 15,
+    "name": "Freska Leche"
+  },
+  {
+    "idSupplier": 16,
+    "name": "Colombo Alemana"
+  },
+  {
+    "idSupplier": 17,
+    "name": "Ramo"
+  },
+  {
+    "idSupplier": 18,
+    "name": "Amazon"
+  },
+  {
+    "idSupplier": 19,
+    "name": "hot brothers"
+  }
+]
