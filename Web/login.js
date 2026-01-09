@@ -85,12 +85,14 @@ registerForm.addEventListener("submit", async (e) => {
         //Creación de usuario en la BD con auth de firebase.
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const uid = userCredential.user.uid;
+        const sedeValue = document.getElementById("reg_sede").value;
 
         //Crear documento en Firestore dentro de la colección Usuarios.
         await setDoc(doc(db, 'Usuarios', uid), {
             uid: uid,
             username: username,
             email: email,
+            sede: sedeValue,
             rol: 'pending',
             active: false,
             status: 'pending',
