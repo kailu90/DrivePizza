@@ -31,6 +31,9 @@
             <div class="modal_content">
                 <h2>Creación Nueva Cuenta</h2>
                 <form id="register_form" class="register_form">
+
+                    <label for="reg_user">Usuario (Alias corto):</label>
+                    <input type="text" id="reg_user" name="username" placeholder="ej: juan.p" required>
                     
                     <label for="reg_email" >Correo Electrónico:</label>
                     <input type="email" id="reg_email" name="email" placeholder="drivepizza@gmail.com" required>
@@ -41,25 +44,31 @@
                     <label for="reg_confirm_pass">Confirmar Contraseña:</label>
                     <input type="password" id="reg_confirm_pass" name="confirm_password" placeholder="************" required>                    
                     <div class="reg_buttons">
-                        <button type="submit">Solicitar Acceso</button>
+                        <button type="submit" id="request_confirmation_modal_btn">Solicitar Acceso</button>
                         <button type="button" class="close_registration_modal_btn">Cancelar</button>
-                    </div>
-                    
-                    
+                    </div> 
                     <p class="small_text">Ingresa los datos solicitados, dale click a solicitar acceso y tu cuenta será revisada y aprobada por un administrador del sistema.</p>
                 </form>
             </div>
         </div>
-         <div id="forgot_modal" class="modal_background">
+         <div id="confirmation_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Datos enviados correctamente</h2>
+                <form id="confirmation_registration_form" class="register_form">   
+                    <p class="small_text">Sus datos han sido enviados al administrador, cuando sea aprobado recibirás un correo Electrónico al mail registrado con el link para continuar el registro.</p>
+                </form>
+            </div>
+        </div>
+        <div id="forgot_modal" class="modal_background">
             <div class="modal_content">
                 <h2>Olvidaste tu contraseña</h2>
-                <form id="register_form" class="register_form">
+                <form id="forgot_form" class="register_form">
                     
-                    <label for="reg_email" >Correo Electrónico:</label>
-                    <input type="email" id="reg_email" name="email" placeholder="drivepizza@gmail.com" required>   
+                    <label for="forgot_email" >Correo Electrónico:</label>
+                    <input type="email" id="forgot_email" name="email" placeholder="drivepizza@gmail.com" required>   
                                      
                     <div class="reg_buttons">
-                        <button type="submit">solicitar cambio</button>
+                        <button type="submit" id="request_forgot_modal_btn">Solicitar cambio</button>
                         <button type="button" class="close_forgot_modal_btn">Cancelar</button>
                     </div>            
                     
@@ -67,6 +76,15 @@
                 </form>
             </div>
         </div>
+         <div id="confirmation_forgot_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Correo enviado correctamente</h2>
+                <form id="confirmation_forgot_form" class="register_form">   
+                    <p class="small_text">Su correo ha sido enviado correctamente, si tu mail está registrado recibirás un correo electrónico con el link para continuar el proceso.</p>
+                </form>
+            </div>
+        </div>
+       
     </main>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

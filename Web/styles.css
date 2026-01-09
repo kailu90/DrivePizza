@@ -322,6 +322,10 @@ tbody td,
   transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
+.modal_confirmation {
+  cursor: pointer;
+}
+
 .active {
   opacity: 1;
   visibility: visible;
@@ -505,7 +509,7 @@ tbody td,
   z-index: 2;
   background-color: var(--color-primario);
   color: var(--color-secundario);
-  padding: 0 2rem;
+  padding: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

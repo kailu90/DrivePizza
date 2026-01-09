@@ -1,8 +1,8 @@
 //IMPORTA FUNCIONES DE LA BASE DE DATOS
 
-import { db } from './firebaseConfig.js';
+import { db, auth } from './firebaseConfig.js';
 import { doc, updateDoc, getDoc, getDocs, runTransaction, collection, onSnapshot, query, where, orderBy, addDoc, serverTimestamp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const ordersContainer = document.getElementById('ordersContainer');
 const undeliveredCount = document.getElementById('undelivered-orders');
@@ -395,49 +395,35 @@ async function descontarInventario(pedidoId) {
 
 
 
+/*************************************FUNCIÓN PARA CERRAR SESIÓN****************************************/
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*****************GENERAR LIQUIDACIÓN*******************/
-
-const btnExport = document.getElementById('btnExport');
-const exportDate = document.getElementById('exportDate');
-
-btnExport.addEventListener('click', (event) => {
-    // Evita el comportamiento predeterminado del enlace, si lo hubiera
-    event.preventDefault(); 
-    
-    console.log("Ingresé a la función de clic.");
-    
-    // Alterna la visibilidad del contenedor
-    if (exportDate.style.display === 'flex') {
-        exportDate.style.display = 'none';
-    } else {
-        exportDate.style.display = 'flex';
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        console.log("Acceso denegado o sesión cerrada.");
+        window.location.href = "index.html";
     }
 });
+
+
+const linkLogout = document.getElementById("link_logout");
+
+if (linkLogout) {
+    linkLogout.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        const confirmar = confirm("¿Estás seguro de que quieres cerrar sesión?");
+        
+        if (confirmar) {
+            try {
+                console.log("Cerrando sesión en Firebase...");
+                await signOut(auth);
+                
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                alert("Hubo un error al salir. Intenta de nuevo.");
+            }
+        }
+    });
+}
