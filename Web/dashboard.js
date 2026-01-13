@@ -63,11 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         })
         .catch(error => console.error('Error al cargar el sidebar:', error));
-
-
-
-   
-
 });
 
 
@@ -399,12 +394,27 @@ async function descontarInventario(pedidoId) {
 
 
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (!user) {
         console.log("Acceso denegado o sesión cerrada.");
         window.location.href = "index.html";
+    } else {
+        //Captura de la sede
+        try {
+            const userDoc = await getDoc(doc(db, "Usuarios", user.uid));
+            if (userDoc.exists()) {
+                const sedeDesdeFirebase = userDoc.data().sede;
+                CargarHeader(sedeDesdeFirebase); // Llamamos a tu función con el dato real
+            }
+        } catch (error) {
+            console.error("Error al obtener la sede:", error);
+        }
     }
 });
+
+
+
+
 
 
 const linkLogout = document.getElementById("link_logout");

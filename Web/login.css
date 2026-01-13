@@ -1,0 +1,303 @@
+
+/********************ESTILOS PARA LOGIN*******************/
+
+.btn,
+.login_btn {
+  border-radius: 20px;
+  cursor: pointer;
+  background-color: var(--color-secundario);
+  color: var(--color-primario);
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+.btn:hover,
+.login_btn:hover {
+  background-color: var(--color-quinto);
+  color: var(--color-secundario);
+}
+
+.title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-style {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-light);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-style thead {
+  background-color: var(--color-primario);
+  color: var(--color-secundario);
+}
+
+table,
+.price-list__table,
+.settlement__table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-light);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+thead,
+.price-list__thead,
+.settlement__thead {
+  background-color: var(--color-primario);
+  color: var(--color-secundario);
+}
+
+thead th,
+.price-list__thead th,
+.settlement__thead th {
+  padding: 1rem;
+  text-align: center;
+}
+
+tbody tr,
+.price-list__tbody tr,
+.settlement__tbody tr {
+  border-bottom: 1px solid #ccc;
+}
+
+tbody td,
+.price-list__tbody td,
+.settlement__tbody td {
+  padding: 1rem;
+  text-align: center;
+}
+
+
+
+/*******************LOGIN*******************/
+
+
+
+
+/*********************LOGIN*********************/
+.login_main {
+  display: flex;
+  justify-content: space-between;
+  width: 100vw;
+  height: 100vh;
+}
+
+.login_container {
+  display: flex;
+  flex-direction: column;
+  width: 25vw;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-primario);
+}
+
+.login_logo,
+.login_form {
+  width: 100%;
+  max-width: 200px;
+}
+
+.login_logo {
+  margin: 0px 0px 10px 0px;
+}
+
+.login_form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login_form label {
+  display: flex;  
+  width: 100%;
+  height: 20px;
+  color: var(--color-secundario);
+  font-size: 16px;
+}
+
+.login_form input {
+  margin: 0 0 10px 0;
+  padding: 5px;
+}
+
+.login_links {
+  display: flex;  
+  justify-content: center;
+  text-align: center;
+  font-size: 10px;
+  color: var(--color-secundario);
+}
+
+.login_links p {
+  display: flex;   
+  max-width: 40%;
+  cursor: pointer;
+}
+
+.login_links p:hover {
+  color: var(--color-quinto);
+  font-weight: bold;
+
+}
+
+.login_btn {
+  margin: 20px auto 0 auto;
+  width: 100px;
+  height: 30px;
+  background-color: var(--color-secundario);
+  border-radius: 20px;
+}
+
+.login_image {
+  width: 75vw;
+  height: 100vh;
+  background-image: url(./Imagenes/background1.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  transform-origin: bottom;
+  position: absolute;
+  left: 25vw;
+}
+
+.login_error {
+  font-size: 14px;
+  display: none;
+  color: var(--color-quinto);
+  text-align: center;
+  justify-content: center;
+  margin: 10px auto;
+}
+
+.modal_background {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100%;  
+  height: 100%;   
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 0; 
+  visibility: hidden; 
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.modal_confirmation {
+  cursor: pointer;
+}
+
+.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal_content {
+  max-width: 400px;  
+  padding: 50px;
+  border-radius: 10px;
+  background-color: var(--color-secundario);
+}
+
+.modal_content h2 {
+  font-size: 2.5rem;
+  color: var(--color-primario);
+  font-weight: bold;
+  text-align: center;
+  margin: 0 auto 30px auto;
+  
+}
+
+.register_form {
+  display: block;
+  justify-content: center;
+  color: var(--color-primario);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.register_form label {
+  margin: 20px auto 0 auto;
+}
+
+.register_form input {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 30px;
+  margin: 5px auto;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+.register_form input:focus {
+  border: none;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primario);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reg_buttons {
+  display: flex;
+  margin: 20px auto;
+}
+
+.register_form button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 30px;
+  border-radius: 10px;  
+  margin: 10px auto;
+  padding: 10px;
+  background-color: var(--color-primario);
+  color: var(--color-secundario);
+  font-size: 1.5rem;
+  cursor: pointer;
+  border: none;
+}
+
+
+.register_form button:hover {
+  background-color: var(--color-quinto);
+  border: none;
+}
+
+.register_form p {
+  color: var(--color-quinto);
+  text-align: center;
+}
+
+.select_field {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 30px;
+  margin: 5px auto;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+@media (max-width: 1000px) {
+  .login_container {
+    width: 100vw;
+  }
+
+  .login_image {
+    display: none;
+  }
+}
+

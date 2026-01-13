@@ -2,7 +2,7 @@
 
 //Importa las funciones necesarias del SDK de Firebase
 import { auth, db } from './firebaseConfig.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut , getAuth} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 //Definición de las variables necesarias.
@@ -18,6 +18,7 @@ const confirmationModal = document.getElementById("confirmation_modal")
 const requestConfirmationModalBtn = document.getElementById("request_confirmation_modal_btn")
 const requestForgotModalBtn = document.getElementById("request_forgot_modal_btn")
 const confirmationForgotModal = document.getElementById("confirmation_forgot_modal")
+
 
 
 
@@ -201,14 +202,13 @@ login_form.addEventListener("submit", async (e) => {
      
 
             //Lógica de Redirección (solo si pasó la validación de 'active')
-            if (userData.rol === 'admin') {
-                window.location.href = "dashboard.html"; 
-            } else {
-                window.location.href = "products.html";
-            }
+            if (userData.rol === 'admin') window.location.href = 'dashboard.html';
+            else if (userData.rol === 'planta') window.location.href = 'dashboard.html';
+            else if (userData.rol === 'callcenter') window.location.href = 'callcenter.html';
+            else if (userData.rol === 'pizzeria') window.location.href = 'pizzerias.html';
 
         } else {
-            // Caso borde: El usuario existe en Auth pero no en la colección Usuarios
+            // El usuario existe en Auth pero no en la colección Usuarios
             await auth.signOut();
             displayLoginError("No se encontró información de perfil para este usuario.");
         }
@@ -236,6 +236,27 @@ login_form.addEventListener("submit", async (e) => {
 
 
 
+
+
+
+
+
+
+
+/*******************************CIERRE DE SESIÓN*************************/
+    export const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            console.log("Sesión cerrada correctamente");
+            window.location.href = "index.html"; // Redirigir al login
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+            alert("No se pudo cerrar la sesión, intenta de nuevo.");
+        }
+    };    
+
+   window.handleLogout = handleLogout;
+   
 
 
 
