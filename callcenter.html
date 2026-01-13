@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALL CENTER - DRIVE PIZZA</title>
+    <link rel="stylesheet" href="styles.css"> 
+    <link rel="shortcut icon" href="./Imagenes/logo.png" type="image/x-icon">
+</head>
+<body class="panel">
+
+
+<!--*****************Injección de contenido por JS****************-->
+<div id="header-container"></div>
+     <!--<header class="header">
+        <div class="sidebar_img">
+            <img src="./Imagenes/logo.png" alt="logo drive">
+        </div>
+
+        <h1 class="header-title">${titulo}</h1>
+        
+        <nav class="header-menu">
+            <ul class="header-list">
+                <li class="header-item">
+                    <button id="link_logout" class="header-link" style="cursor:pointer; font-weight:bold;">
+                        Cerrar Sesión
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header> -->
+
+    <main class="panel__content">
+        <h1 class="panel__welcome-title">¿Qué deseas gestionar hoy?</h1>
+        
+        <section class="cards_container">
+            <div class="card card--active" id="btn_pedidos_sedes">
+                <div class="card__icon">🍕</div> 
+                <p class="card__text">Pedidos Sedes</p>
+            </div>
+
+            <div class="card card--active" id="btn_historial_pedidos">
+                <div class="card__icon">📜</div>
+                <p class="card__text">Historial Pedidos</p>
+            </div>
+
+            <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="panel__footer">
+        <p class="footer__text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script type="module" src="dashboard.js"></script>
+    <script type="module" src="login.js"></script>
+    <script type="module" src="components.js"></script> 
+
+    <script>document.addEventListener('DOMContentLoaded', () => {
+        CargarHeader("Panel Call Center");
+    });
+    </script>
+
+
+
+
+</body>
+</html>
