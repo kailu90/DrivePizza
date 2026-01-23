@@ -3,9 +3,33 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { db } from './firebaseConfig.js';
 import { collection, getDocs, onSnapshot , query, orderBy , where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
+//autenticación de usuario en products
+const auth = getAuth();
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // Ejecutamos las funciones y ESPERAMOS a que terminen
+        // Antes de mostrar nada al usuario
+        try {
+            await Promise.all([
+                initializeForm(user), 
+                fetchProductsFromFirestore()
+            ]);
+            
+            // SOLO cuando ambas funciones terminaron, mostramos la página
+            document.body.classList.add('loaded');
+            
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+            document.body.classList.add('loaded'); // Mostrar igual para que no quede negro
+        }
+    } else {
+        window.location.href = 'index.html';
+    }
+});
+
 const productForm = document.getElementById('form');
-
-
 
 //Creación de lista de Sedes disponibles desde la BD
 
@@ -28,90 +52,43 @@ async function fetchSedesFromFirestore() {
 
 const userSelect = document.getElementById('location');
 
-// Función que inicializa el formulario
+
+
+
+// Función que inicializa el formulario de productos disponibles
 async function initializeForm(currentUser) {
     const userSelect = document.getElementById('location');
-
-    userSelect.innerHTML = '<option value="" selected disabled>Seleccionar</option>';
-
-    if (currentUser) {
-        try {
-            // Obtenemos el prefijo del correo electrónico (usuario)
-            const userEmailPrefix = currentUser.email.split('@')[0];
-
-            // Realizamos la consulta para encontrar la sede que coincida
-            const sedesCollection = collection(db, 'Sedes');
-            const q = query(sedesCollection, where("name", "==", userEmailPrefix));
-            
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                const sedeData = querySnapshot.docs[0].data();
-                
-                // Crea la opción de la sede del usuario
-                const option = document.createElement('option');
-                option.value = sedeData.name;
-                option.textContent = sedeData.name;
-                option.selected = true;
-                userSelect.appendChild(option);
-                userSelect.disabled = true;
-
-                // Agrega las demás sedes como opciones deshabilitadas
-                const allSedesQuery = query(collection(db, 'Sedes'), orderBy("name"));
-                const allSedesSnapshot = await getDocs(allSedesQuery);
-                allSedesSnapshot.forEach(doc => {
-                    if (doc.data().name !== sedeData.name) {
-                        const otherOption = document.createElement('option');
-                        otherOption.value = doc.data().name;
-                        otherOption.textContent = doc.data().name;
-                        otherOption.disabled = true;
-                        userSelect.appendChild(otherOption);
-                    }
-                });
-
-            } else {
-                // Si no se encuentra una sede para el usuario
-                const allSedesQuery = query(collection(db, 'Sedes'), orderBy("name"));
-                const allSedesSnapshot = await getDocs(allSedesQuery);
-                allSedesSnapshot.forEach(doc => {
-                    const option = document.createElement('option');
-                    option.value = doc.data().name;
-                    option.textContent = doc.data().name;
-                    userSelect.appendChild(option);
-                });
-            }
-
-        } catch (e) {
-            console.error("Error al obtener las sedes: ", e);
-            const option = document.createElement('option');
-            option.textContent = 'Error al cargar sedes.';
-            option.disabled = true;
-            userSelect.appendChild(option);
-        }
-    } else {
-        // Lógica para cuando no hay un usuario logueado
-        console.log("No hay un usuario logueado.");
-        const option = document.createElement('option');
-        option.textContent = 'Debe iniciar sesión para ver las sedes.';
-        option.disabled = true;
-        userSelect.appendChild(option);
+    
+    // 1. Traer sedes
+    const sedes = await fetchSedesFromFirestore();
+    
+    // 2. Traer perfil de usuario (ESTO es lo que tarda)
+    const usuariosRef = collection(db, 'Usuarios');
+    const qUser = query(usuariosRef, where("uid", "==", currentUser.uid));
+    const userSnapshot = await getDocs(qUser);
+    
+    let sedeAsignada = null;
+    if (!userSnapshot.empty) {
+        sedeAsignada = userSnapshot.docs[0].data().sede;
     }
+
+    // 3. Limpiar y llenar el select de una vez
+    userSelect.innerHTML = '<option value="" disabled>Seleccionar</option>';
+    
+    sedes.forEach(sede => {
+        const option = document.createElement('option');
+        option.value = sede.name;
+        option.textContent = sede.name;
+        
+        // Aquí hacemos el match antes de que el usuario lo vea
+        if (sedeAsignada && sede.name === sedeAsignada) {
+            option.selected = true;
+        }
+        userSelect.appendChild(option);
+    });
+
+    if (sedeAsignada) userSelect.disabled = true;
 }
-// Esperamos a que la autenticación de Firebase esté lista
-const auth = getAuth();
-onAuthStateChanged(auth, (user) => {
-    // onAuthStateChanged se asegura de que el objeto 'user' no sea null
-    // y de que la autenticación haya terminado de cargar.
-    initializeForm(user);
-});
-
-
-
-
-
-
-
-
 
 
 
@@ -150,35 +127,33 @@ async function fetchProductsFromFirestore() {
     // Guarda los datos en localStorage
     localStorage.setItem('productsInfo', JSON.stringify(productsData));
 
+
+    // Muestro el contenedor principal
+    document.body.classList.add('loaded');
+
+
+
   } catch (error) {
     console.error('Error al obtener los productos de Firestore:', error);
     productsContainer.innerHTML = '<li>Error al cargar los productos.</li>';
   }
 }
 
-// Llama a la nueva función para que se ejecute
-fetchProductsFromFirestore();
-
-
-
-
-
-//Se pinta la lista de productos disponibles en el frontend
+//Se crean la lista de productos disponibles en el frontend
 function CreateProducstForm(productsData) {
-  console.log(productsData);
-  const productsContainer = document.getElementById('products-list');
+    const productsContainer = document.getElementById('products-list');
+    
+    // Limpiar solo los elementos de producto, preservando los selects de Sede/Fecha si están ahí
+    const products = productsContainer.getElementsByClassName('product');
+    while(products[0]) {
+        products[0].parentNode.removeChild(products[0]);
+    }
 
-  const existingProducts = productsContainer.querySelectorAll('.product');
-  if (existingProducts) {
-    existingProducts.forEach(product => product.remove());
-  }
-
-  productsData.forEach(product => {
-    const productElement = createProductElement(product);
-    productsContainer.appendChild(productElement);
-  });
+    productsData.forEach(product => {
+        const productElement = createProductElement(product);
+        productsContainer.appendChild(productElement);
+    });
 }
-
 
 //Creación de estructura de los productos 
 function createProductElement(product) {

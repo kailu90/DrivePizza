@@ -8,16 +8,14 @@ import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs
 //Definición de las variables necesarias.
 const login_form = document.getElementById("login_form");
 const errorMessage = document.getElementById("login_error");
-const btnCreateAccount = document.getElementById("btn_create_account")
-const btnForgotPass = document.getElementById("btn_forgot_pass")
-const registrationModal = document.getElementById("registration_modal")
+const btnCreateAccount = document.getElementById("btn_create_account");
+const btnForgotPass = document.getElementById("btn_forgot_pass");
+const registrationModal = document.getElementById("registration_modal");
 const closeRegistrationModalBtn = document.querySelector(".close_registration_modal_btn");
-const forgotModal = document.getElementById("forgot_modal")
+const forgotModal = document.getElementById("forgot_modal");
 const closeForgotModalBtn = document.querySelector(".close_forgot_modal_btn");
-const confirmationModal = document.getElementById("confirmation_modal")
-const requestConfirmationModalBtn = document.getElementById("request_confirmation_modal_btn")
-const requestForgotModalBtn = document.getElementById("request_forgot_modal_btn")
-const confirmationForgotModal = document.getElementById("confirmation_forgot_modal")
+const confirmationModal = document.getElementById("confirmation_modal");
+const confirmationForgotModal = document.getElementById("confirmation_forgot_modal");
 
 
 
@@ -243,24 +241,6 @@ login_form.addEventListener("submit", async (e) => {
 
 
 
-/*******************************CIERRE DE SESIÓN*************************/
-    export const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            console.log("Sesión cerrada correctamente");
-            window.location.href = "index.html"; // Redirigir al login
-        } catch (error) {
-            console.error("Error al cerrar sesión:", error);
-            alert("No se pudo cerrar la sesión, intenta de nuevo.");
-        }
-    };    
-
-   window.handleLogout = handleLogout;
-   
-
-
-
-
 
 
 
@@ -352,10 +332,32 @@ function messageForgot() {
     };
 }
 
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});
 
 
 
 
+
+
+
+
+
+/*******************************CIERRE DE SESIÓN*************************/
+    export const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            console.log("Sesión cerrada correctamente");
+            window.location.href = "index.html"; // Redirigir al login
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+            alert("No se pudo cerrar la sesión, intenta de nuevo.");
+        }
+    };    
+
+   window.handleLogout = handleLogout;
+   
 
 
 

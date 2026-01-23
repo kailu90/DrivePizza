@@ -26,7 +26,14 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
 }
+
+body.loaded {
+    opacity: 1;
+}
+
 
 ul {
   list-style: none;
@@ -65,18 +72,25 @@ a {
   height: 50px;  
 }
 
+.header-container {
+  min-height: 80px;
+  background-color: var(--color-primario);
+}
+
+
 .header,
 .dashboard__header,
 .inventory__header {
   z-index: 2;
   background-color: var(--color-primario);
   color: var(--color-secundario);
-  padding: 0 3rem;
+  padding: 0 4rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: fixed;
   width: 100vw;
+  min-height: 80px;
   top: 0;
   left: 0;
 }
@@ -437,140 +451,101 @@ a {
 
 
 /*********************DETALLES DE PEDIDO*******************/
-.car_header {
+.modal {
+    display: none; 
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center; align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%; max-width: 500px;
+    position: relative;
+}
+
+
+.modal-content h2 {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 80%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px 20px;
-  border-bottom: 2px solid var(--color-terciario) 
-}
-
-.car_header h1 {
-  display: flex;
-  align-items: end;
-  font-size: 30px;
-  margin-top: 20px;
-}
-
-.car_header img {
-  display: flex;
-  align-items: end;
-  width: 100px;
+  justify-content: space-around;
+  height: 50px;
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--color-secundario);
+  background-color: var(--color-primario);
   border-radius: 10px;
 }
 
-.car_container {
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  justify-content: left;
-  padding: 20px 0;
-  margin: 0 auto;
-  font-size: 1.4rem;
+.modal-content img {
+  width: 50px;
 }
 
-.car_data_pedido,
-.car_data_branch,
-.car_data_date {
-  display: flex;
-  justify-content: space-between;
-  max-width: 400px;
-  margin: 0 auto;
+
+.modal-content .info-pedido {
+  font-size: 1.6rem;
 }
 
-.car_data_pedido,
-.car_data_branch p,
-.car_data_date p {
-  display: flex;
-  justify-content: center;
-  margin: 5px auto;
+.close-detalle {
+    position: absolute; 
+    right: 10px; 
+    top: 0;
+    font-size: 3rem; 
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--color-primario);
 }
 
-.car_data_branch p:nth-child(1),
-.car_data_date p:nth-child(1) {
-  font-weight: bold;
+.table-detalle {
+    width: 100%; 
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 1.5rem;
 }
 
-.car_data_observation {
+.table-detalle th, .table-detalle td {
+    border-bottom: 1px solid #ddd; 
+    padding: 8px; 
+    text-align: left;
+}
+
+.table-detalle th:nth-child(2) ,.table-detalle td:nth-child(2),
+.table-detalle th:nth-child(3) ,.table-detalle td:nth-child(3) {
   text-align: center;
-  padding: 20px;
-  border: 1px solid black;
-  margin: 20px 0;
-  width: 80%;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 8px;
 }
 
-.car_data_observation p:nth-child(1) {
-  font-weight: bold;
-  margin-bottom: 20px;
+.info-pedido {
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    color: var(--color-terciario);
 }
 
-.car_data_branch p:nth-child(2) {
-  font-size: 16px;
+.totales-detalle {
+    margin-top: 20px;
+    text-align: right;
+    font-size: 1.6rem;
+    border-top: 2px solid var(--color-primario);
+    padding-top: 10px;
 }
 
-.car_product_list {
-  color: black;
-  width: 90%;
-  margin: 20px auto;
-  max-width: 400px;
-  text-align: center;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 12px;
-  background-color: var(--color-secundario);
+.btn-modal {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 15px;
 }
 
-.car_product_list li:nth-child(1),
-.car_product_list li:nth-child(2) {
-  font-weight: bold;
-}
-
-@media (max-width: 900px) {
-  .car_container {
-    font-size: 12px;
-  }
-
-  .car_product {
-    height: 20px;
-    padding: 0px;
-  }
-}
-
-@media (max-width: 800px) {
-  .car_header {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
-  }
-
-  .car_header h1 {
-    margin: 20px 0 0 0;
-    font-size: 30px;
-  }
-
-  .car_header img {
-    width: 150px;
-  }
-
-  .car_container {
-    padding: 0px;
-  }
-
-  .btn-container {
-    gap: 10px;
-  }
-
-  .car_container button {
-    height: 30px;
-  }
+.btn-modal:hover {
+    background-color: var(--color-quinto);
 }
 
 
@@ -623,6 +598,7 @@ a {
 
 .sidebar .sidebar__nav .sidebar__list .sidebar__item .sidebar__link {
   color: var(--color-secundario);
+  text-align: center;
   text-decoration: none;
   display: block;
   padding: 0.5rem;
@@ -820,74 +796,108 @@ a {
 }
 
 
+/******************* INVENTORY TABLE STYLES *********************/
 
-
-/*******************INVENTORY*********************/
-.inventory-management select {
-  border-radius: 10px;
-  margin-bottom: 10px;
-  padding: 2px;
-  background: transparent;
-  color: black;
+/* Contenedor de la tabla para permitir scroll horizontal en móviles */
+.inventory-management {
+    overflow-x: auto;
+    padding: 1rem;
+    background-color: var(--color-secundario); /* Ajusta según tu paleta */
+    border-radius: 8px;
 }
 
-.inventory-management__title-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.inventory-management__table {
+    width: 100%;
+    border-collapse: collapse; /* Elimina espacios entre celdas */
+    font-size: 1.2rem;
+    margin-top: 20px;
+    font-family: inherit;
+    background-color: var(--color-secundario);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.inventory-management h2,
-.price-list__title,
-.settlement__title {
-  margin: 1rem 0;
-  font-size: 1.5rem;
+.inventory-management__thead {
+    background-color: var(--color-secundario); /* Gris muy claro para el encabezado */
+    border-bottom: 1.5px solid var(--color-primario);
 }
 
-.inventory-management #sort {
-  padding: 5px;
-  background-color: var(--color-secundario);
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
+.inventory-management__heading {
+    padding: 12px 15px;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Estilos para las celdas de datos */
+.inventory-management__cell {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--color-secundario);
+    font-size: 1.4rem;
+    text-align: center;
+    color: var(--color-terciario);
+    vertical-align: middle;
 }
 
 .inventory-management__link {
-  width: 100px;
-  color: var(--color-primario);
+    cursor: pointer;
+    color: var(--color-quinto);
+    margin: 5px;
 }
 
 .inventory-management__link:hover {
-  color: var(--color-quinto);
+  text-decoration: underline;
+}
+/* Efecto hover para facilitar la lectura de filas largas */
+.inventory-management__row:hover {
+    background-color: rgba(0, 0, 0, 0.02);  
 }
 
-.btn-add-stock , .btn-create-product {
-  text-decoration: none;
+/* Alineación específica para valores de moneda */
+.inventory-management__cell:nth-child(1) {
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Estilo para los estados (pendiente/entregado) */
+.inventory-management__cell select {
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+}
+
+.exportDate.active {
+    display: flex;
+}
+
+.exportDate-container {
+    margin: 1.5rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn-primary {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;    
+}
+
+.btn_orderBy option {
   background-color: var(--color-secundario);
-  margin: 10px 0;
-  padding: 5px;
-  border-radius: 30px;
-  border: 1px solid var(--color-primario);
-  cursor: pointer;
 }
 
-.btn-add-stock a , .btn-create-product a {
-  color: var(--color-primario);
+.btn-primary:hover {
+    color: var(--color-primario);
+    border: 1px solid var(--color-primario);
+
 }
-
-.btn-add-stock:hover, .btn-create-product:hover {
-  background-color: var(--color-quinto);
-  color: var(--color-secundario);
-  border: 1px solid var(--color-secundario);
-}
-
-.btn-add-stock  a:hover , .btn-create-product a:hover {
-  color: var(--color-secundario); 
-}
-
-
-
-
 /************INGRESO DE STOCK*****************/
 
 .stock-info {
@@ -909,96 +919,82 @@ a {
   padding: 5px;  
 }
 
-.inventory-management__stock {
-    border-radius: 10px 0 0 10px;
-    z-index: 10;
+
+
+
+
+
+/******************INGRESO DE STOCK MODAL***************/
+
+.header-stock {
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 2rem;
+}
+
+
+/* La capa oscura que cubre toda la pantalla */
+.modal-overlay {
+    display: none; /* Oculto inicialmente */
     position: fixed;
+    z-index: 1000;
+    left: 0;
     top: 0;
-    right: 0;
-    flex-direction: column;
-    justify-self: end;
     width: 100%;
-    max-width: 400px;
-    min-height: 100vh;
-    background-color: var(--color-secundario);
-    padding: 20px;
-    border: 1px solid var(--color-primario);
-    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-    transform: translateX(100%); 
-    transition: transform 0.3s ease-in-out;
-    visibility: hidden; 
-    pointer-events: none;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo semi-transparente */
+    backdrop-filter: blur(3px); /* Efecto de desenfoque opcional */
 }
 
-.is-visible {
-    transform: translateX(0);
-    visibility: visible;
-    pointer-events: auto;
+/* La "caja" del formulario */
+.modal-content {
+    background-color: #f3f0e7; /* El crema de DrivePizza */
+    margin: 10% auto;
+    padding: 25px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease-out;
 }
 
-
-
-
-.inventory-management__stock .header {
-  display: flex;
-  justify-content: space-between;
-}
-
-.inventory-management__stock .form-body {
-  padding: 0 0 20px 0;
-}
-
-.inventory-management__stock .form-group {
+.form-body .form-group:not(:last-child):not(:nth-last-child(2)) {
   display: flex;
   flex-direction: column;
-  padding: 5px 0;
+  margin: 10px auto;
+  width: 50%;
 }
 
-.inventory-management__stock .title {
-  font-size: 2.4rem;
-  color: var(--color-primario);
-}
-
-.form-group .label {
-  font-size: 1.4rem;
-  color: var(--color-primario);
-  font-weight: bold;
-}
-
-.form-group select {
-  cursor: pointer;
-}
-
-.inventory-management__stock .form-control {
-  border-radius: 5px;
-  border: 1px solid var(--color-primario);
-  padding: 5px 10px;
-}
-
-.inventory-management__stock .submit-btn {
-  width: 100px;
-  height: 30px;
-  border-radius: 20px;
-  border: 1px solid var(--color-primario);
-  background-color: var(--color-primario);
-  margin: 5px;
-  cursor: pointer;
-  color: var(--color-secundario);
+.form-body .observation {
+  display: flex;
+  justify-content: right;
+  margin: 10px auto;
 }
 
 .inventory-management__stock-btn {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
+  margin: 10px auto;
 }
 
-.inventory-management__stock .submit-btn:hover {
-  background-color: var(--color-quinto);
-  color: var(--color-secundario);
-  border: var(--color-secundario);
-
+/* Animación de entrada */
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
+
+/* Botón de cerrar (X) */
+.close-modal {
+    position: absolute;
+    top: 0px;
+    right: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #2d4628;
+    cursor: pointer;
+}
+
 
 
 
@@ -1164,7 +1160,6 @@ a {
   margin: 30px 10px;
   padding: 10px;
   background-color: var(--color-secundario);
-  border: 1px solid var(--color-primario);
   border-radius: 5px;
   gap: 5px;
 }
@@ -1174,21 +1169,6 @@ a {
   font-weight: bold;
 }
 
-.exportDate-container button {
-  width: 120px;
-  height: 30px;
-  margin: 10px auto;
-  border-radius: 10px;
-  background-color: var(--color-secundario);
-  cursor: pointer;
-  border: 1px solid var(--color-primario);
-}
-
-.exportDate-container button:hover {
-  background-color: var(--color-quinto);
-  color: var(--color-secundario);
-  border: var(--color-quinto);
-}
 
 
 
@@ -1218,6 +1198,7 @@ a {
     /* Es importante que el select tenga el fondo transparente para que se vea el fondo del TD */
     background-color: transparent; 
     border: none;
+    font-size: 1.2rem;
     padding: 4px 8px;
     cursor: pointer;
 }
