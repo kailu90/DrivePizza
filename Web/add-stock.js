@@ -29,3 +29,8 @@ async function postData(data) {
    console.error(error);
   } 
 }
+
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});
+

@@ -1,7 +1,7 @@
 //IMPORTA FUNCIONES DE LA BASE DE DATOS
 
 import { db } from './firebaseConfig.js';
-import { doc, updateDoc, increment, collection, onSnapshot, getDocs, query, orderBy , serverTimestamp, addDoc }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { runTransaction, doc, updateDoc, increment, collection, onSnapshot, getDocs, query, orderBy , serverTimestamp, addDoc , where }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
 const addStock = document.querySelector('.btn-add-stock');
@@ -10,65 +10,12 @@ const inventoryManagementStock = document.getElementById('inventory-management__
 const productSelect = document.getElementById('product-select');
 
 
-/****************************CARGA DEL MENÚ DESPLEGABLE***************/
-
-
-document.addEventListener("DOMContentLoaded", function () {
-    fetch('sidebar.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('sidebar-container').innerHTML = data;
-
-            // Selecciona todos los botones de toggle posibles.
-            // Si el botón no existe, será 'null', que es lo que esperamos.
-            const dashboardToggle = document.getElementById('toggle-btn');
-            const inventoryToggle = document.getElementById('inventory-toggle');
-            
-
-            // Elige el botón correcto según la página actual.
-            const currentToggleBtn = dashboardToggle || inventoryToggle;
-            const sidebar = document.getElementById('sidebar');
-
-            // Selecciona los elementos de la página actual.
-            const mainElement = document.querySelector('.dashboard__main') || document.querySelector('.inventory__main');;
-            const footerElement = document.querySelector('.dashboard__footer') || document.querySelector('.inventory__footer') ;
-            const sections = document.querySelectorAll('.dashboard__section, .inventory__section');
-
-            // Asegúrate de que el botón exista antes de agregar el listener.
-            if (currentToggleBtn) {
-                currentToggleBtn.addEventListener('click', () => {
-                    // Alterna las clases en el botón y el sidebar.
-                    currentToggleBtn.classList.toggle('left-hidden');
-                    sidebar.classList.toggle('is-hidden');
-                    currentToggleBtn.classList.toggle('rotate');
-                    
-
-                    // Alterna las clases de margen solo si los elementos existen.
-                    if (mainElement) mainElement.classList.toggle('margin-hidden');
-                    if (footerElement) footerElement.classList.toggle('margin-hidden');
-
-                    sections.forEach(section => {
-                        section.classList.toggle('margin-hidden-20');
-                    });
-                    // Cambia la flecha del botón basándose en el estado del sidebar
-                    currentToggleBtn.textContent = sidebar.classList.contains('is-hidden') ? '>' : '<';
-                });
-            }
-
-        })
-        .catch(error => console.error('Error al cargar el sidebar:', error));
-});
-
-
 
 
 
 
 
 /****************TRAE TODOS LOS PRODUCTOS DE LA BASE DE DATOS************/
-
-
-
 document.addEventListener("DOMContentLoaded", function() {  
 
     const productsContainer = document.getElementById('productsContainer');
@@ -146,107 +93,111 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-/*******************INGRESO DE STOCK AL INVENTARIO**************************/
 
 
 
 
-if (addStock && cancelButton && inventoryManagementStock && productSelect) {
-  
-/**TRIGGER PARA MOSTRAR FORMULARIO DE INGRESO DE STOC********/
+/*********************************FUNCIÓN PARA INGRESO DE STOCK***************************/
 
 
-    addStock.addEventListener('click', async (event) => {
-        console.log("Abriendo panel de stock...");
-        event.preventDefault();
-        
+const modal = document.getElementById("modal-stock");
+const btnOpen = document.getElementById("btn-add-stock");
+const btnCancel = document.getElementById("btn-cancel");
+const btnCloseX = document.getElementById("btn-close-x");
 
-        // 1. Mostrar el panel (Tu lógica original)
-        inventoryManagementStock.classList.remove('is-hidden');
-        inventoryManagementStock.classList.add('is-visible');
+// Abrir modal
+btnOpen.addEventListener("click", () => {
+    console.log("se ingresa a abrir modal ingreso Stock")
+    modal.style.display = "block";
+    obtenerProductosParaStock();
+    obtenerProveedoresParaStock();
+});
 
-        // 2. Poner el <select> en estado de carga
-        productSelect.innerHTML = '<option value="">Cargando productos...</option>';
-        productSelect.disabled = true;
+// Función para cerrar modal
+const closeModal = () => {
+    console.log("se ingresa a cerrar modal ingreso Stock")
+    modal.style.display = "none";
+    document.getElementById("form-stock").reset(); // Limpia el formulario al cerrar
+};
 
-        // 3. Cargar productos desde Firebase
-        try {
-            const querySnapshot = await getDocs(collection(db, "Productos"));
-            
-            // 4. Convertir datos
-            const productsArray = querySnapshot.docs.map(doc => ({ 
-              id: doc.id, 
-              ...doc.data() 
-            }));
+btnCancel.addEventListener("click", closeModal);
+btnCloseX.addEventListener("click", closeModal);
 
-            // 5. Llamar a tu función para renderizar el <select>
-            renderSelectOptions(productsArray); 
-
-            // 6. Habilitar el select
-            productSelect.disabled = false;
-
-        } catch (error) {
-            console.error("Error al cargar productos: ", error);
-            productSelect.innerHTML = '<option value="">Error al cargar</option>';
-        }
-
-
-    /******CARGA DE PROVEEDORES**** */
-
-        loadSuppliers();
-
-    });
-
-    cancelButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        console.log("entre a cancelar")
-        inventoryManagementStock.classList.remove('is-visible'); 
-        inventoryManagementStock.classList.add('is-hidden');
-    });
-      
-  } else {
-        console.error("No se encontró el botón de 'Agregar Stock', 'Cancelar' o el formulario de stock en el HTML.");
-    
-}
-
-
-
-
-/*****************************CARGA PRODUCTOS PARA ADICIONAR EN EL STOCK*******************/
-
-   function renderSelectOptions(products) {
-    // La referencia a productSelect ya la tenemos globalmente
-    
-    console.log("Renderizando opciones del select...");
-    
-    // A. Limpiar el SELECT (más eficiente)
-    productSelect.innerHTML = '';
-
-    // B. Manejo de estado de carga/vacío
-    if (products.length === 0) {
-        const option = new Option("No hay productos disponibles 😔", "");
-        option.disabled = true;
-        productSelect.appendChild(option);
-        return;
+// Cerrar si hacen clic fuera de la caja blanca
+window.addEventListener("click", (event) => {
+    if (event.target == modal) {
+        closeModal();
     }
+});
 
-    // C. Añadir el placeholder (opción por defecto)
-    const placeholder = new Option("Selecciona un producto", "");
-    placeholder.disabled = true;
-    placeholder.selected = true; // Aseguramos que sea la seleccionada
-    productSelect.appendChild(placeholder);
 
-    // D. Rellenar el SELECT
-    products.forEach(product => {
-        // ¡OJO AQUÍ!
-        // Revisa si tu campo en Firebase se llama 'name' o 'nombre'
-        // Usa 'product.nombre' si es en español.
-        const option = new Option(product.name, product.id); // <- Usando 'product.nombre'
-        productSelect.appendChild(option);
-    });
+const productStock = document.getElementById("product-select");
+const supplierStock = document.getElementById("supplier-select");
+const quantityStock = document.getElementById("stock-quantity");
+const observationStock  = document.getElementById("stock-observation");
 
-    console.log(`✅ ${products.length} productos cargados en el menú desplegable.`);
+/*************Obtener listado de los productos disponibles*************/
+
+async function obtenerProductosParaStock() {
+    try {
+        console.log("Ingresé a obtener lista de productos activos")
+        // 1. Referencia y Consulta
+        const productosRef = collection(db, "Productos");
+        const q = query(productosRef, where("active", "==", true), orderBy("name", "asc"));
+        
+        // 2. Ejecución
+        const querySnapshot = await getDocs(q);
+        
+        // 3. Limpiar el select antes de llenar (evita duplicados)
+        productStock.innerHTML = '<option value="" disabled selected>Selecciona un producto</option>';
+
+        // 4. Mapeo de datos
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const option = document.createElement("option");
+            option.value = doc.id; // Guardamos el ID de Firebase como valor
+            option.textContent = data.name; // Mostramos el nombre al usuario
+            productStock.appendChild(option);
+        });
+
+        console.log("Productos cargados en el modal.");
+    } catch (error) {
+        console.error("Error al cargar productos:", error);
+    }
 }
+
+
+/*************Obtener listado de los proveedores disponibles*************/
+
+
+async function obtenerProveedoresParaStock() {
+    try {
+        console.log("Ingresé a obtener lista de proveedores")
+        // 1. Referencia y Consulta
+        const proveedoresRef = collection(db, "Proveedores");
+        const q = query(proveedoresRef , orderBy("name", "asc"));
+        
+        // 2. Ejecución
+        const querySnapshot = await getDocs(q);
+        
+        // 3. Limpiar el select antes de llenar (evita duplicados)
+        supplierStock.innerHTML = '<option value="" disabled selected>Selecciona un proveedor</option>';
+        // 4. Mapeo de datos
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const option = document.createElement("option");
+            option.value = doc.id; // Guardamos el ID de Firebase como valor
+            option.textContent = data.name; // Mostramos el nombre al usuario
+            supplierStock.appendChild(option);
+        });
+
+        console.log("Proveedores cargados en el modal.");
+    } catch (error) {
+        console.error("Error al cargar proveedores:", error);
+    }
+}
+
+
 
 });
 
@@ -254,101 +205,106 @@ if (addStock && cancelButton && inventoryManagementStock && productSelect) {
 
 
 
+
+
 /****************ESCUCHADOR ENVIAR DATOS DEL FORMULARIO PARA ACTIVAR FUNCION DE ACTUALIZACIÓN STOCK******/
 
-const stockForm = document.querySelector('#inventory-management__stock .form-body');
-const inputQuantity = document.getElementById('quantity');
-const proveedorSelect = document.getElementById('proveedor-select');
-const inputObservations = document.getElementById('observations'); 
+const stockForm = document.getElementById('form-stock');
+const inputQuantity = document.getElementById('stock-quantity');
+const proveedorSelect = document.getElementById('supplier-select');
+const inputObservations = document.getElementById('stock-observation'); 
 const btnEnviar = document.getElementById('btn-enviar');
-
-
-
-
+const modalStock = document.getElementById('modal-stock');
 
 if (stockForm) {
     stockForm.addEventListener('submit', handleStockSubmit);
 }
 
-
-
 /****************ACTUALIZACIÓN Y CREACIÓN REGISTRO EN BASE DE DATOS DE INVENTARIO*****/
-
-
 async function handleStockSubmit(event) {
-    event.preventDefault(); 
+    event.preventDefault();
 
-    // 1. Capturar todos los valores del formulario
+    // 1. Capturar IDs y Nombres desde el formulario
     const productId = productSelect.value;
+    const supplierId = proveedorSelect.value;
     const quantityToAdd = parseInt(inputQuantity.value, 10);
-    const supplierId = proveedorSelect.value; // Captura el ID del proveedor
-    const observations = inputObservations.value.trim(); // Captura y limpia las observaciones
+    const observations = inputObservations.value.trim();
 
-    // 2. Validación
-    if (!productId) {
-        alert("Por favor, selecciona un producto.");
+    const productName = productSelect.options[productSelect.selectedIndex].text;
+    const supplierName = proveedorSelect.options[proveedorSelect.selectedIndex].text;
+
+    if (!productId || !supplierId || isNaN(quantityToAdd) || quantityToAdd <= 0) {
+        alert("Completa los campos correctamente.");
         return;
     }
-    if (!supplierId) {
-        alert("Por favor, selecciona un proveedor.");
-        return;
-    }
-    if (isNaN(quantityToAdd) || quantityToAdd <= 0) {
-        alert("Por favor, ingresa una cantidad válida mayor a cero.");
-        return;
-    }
-    
-    // 3. Feedback visual
-    if(btnEnviar) {
+
+    if (btnEnviar) {
         btnEnviar.disabled = true;
         btnEnviar.textContent = 'Procesando...';
     }
 
+    let nuevoIdNumero = 0;
+
     try {
-        // =======================================================
-        // OPERACIÓN 1: ACTUALIZAR EL STOCK EN 'Productos'
-        // =======================================================
-        const productRef = doc(db, 'Productos', productId);
-        await updateDoc(productRef, {
-            stock: increment(quantityToAdd)
+        // --- TRANSACCIÓN PARA ASEGURAR EL ID CORRELATIVO ---
+        await runTransaction(db, async (transaction) => {
+            
+            // A. Referencia al documento exacto: Colección 'Contadores', Documento 'IdInventory'
+            const contadorRef = doc(db, "Contadores", "idInventory");
+            const contadorSnap = await transaction.get(contadorRef);
+
+            if (!contadorSnap.exists()) {
+                throw "El documento de contador 'idInventory' no existe en Firebase.";
+            }
+
+            // B. Obtener el valor del campo exacto: 'ultimoIdInventory'
+            const dataContador = contadorSnap.data();
+            const idActual = dataContador.ultimoIdInventory || 0;
+
+            nuevoIdNumero = idActual + 1;
+
+            // C. Referencias para las actualizaciones
+            const productRef = doc(db, 'Productos', productId);
+            const nuevoMovimientoRef = doc(collection(db, 'Movimientos')); // Crea un nuevo ID de documento aleatorio
+
+            // D. Ejecutar las actualizaciones atómicas
+            
+            // 1. Actualizar el contador con el nuevo número
+            transaction.update(contadorRef, { ultimoIdInventory: nuevoIdNumero });
+
+            // 2. Actualizar el stock del producto
+            transaction.update(productRef, { 
+                stock: increment(quantityToAdd),
+                ultimaActualizacion: serverTimestamp()
+            });
+
+            // 3. Crear el registro en 'Movimientos' con el ID correlativo
+            transaction.set(nuevoMovimientoRef, {
+                movimientoId: nuevoIdNumero, // El número secuencial (ej: 1, 2, 3...)
+                fecha: serverTimestamp(),
+                tipo: 'ENTRADA',
+                productoId: productId,
+                productoNombre: productName,
+                proveedorId: supplierId,
+                proveedorNombre: supplierName,
+                cantidad: quantityToAdd,
+                motivo: 'Ingreso Manual Stock',
+                notas: observations || 'Sin observaciones.',
+                usuario: "Admin"
+            });
         });
 
-        // =======================================================
-        // OPERACIÓN 2: CREAR EL REGISTRO EN LA COLECCIÓN 'Inventario'
-        // =======================================================
-        const inventoryRef = collection(db, 'Inventario'); 
+        alert(`✅ Ingreso exitoso.N° ${nuevoIdNumero}\n\n${productName}\n${quantityToAdd} unidades`);
         
-        await addDoc(inventoryRef, {
-            // Campos principales
-            date: serverTimestamp(),      
-            idProduct: productId,         
-            quantity: quantityToAdd,      
-            transaction: 'INGRESO',           
+        stockForm.reset();
+        if (modalStock) modalStock.style.display = "none";
 
-            // Campos específicos de este ingreso
-            idSupplier: supplierId,       // ⬅️ ¡Usando el ID del proveedor seleccionado!
-            notes: observations || 'Sin observaciones.', // ⬅️ ¡Usando las observaciones!
 
-            // Campos no aplicables ahora
-            idInventory: null,            
-            idOrder: null,                
-        });
-
-        console.log(`✅ Stock actualizado y registrado en Inventario para el producto: ${productId}`);
-
-        alert(`¡Ingreso de stock de ${quantityToAdd} unidades registrado con éxito!`);
-        
-        // 4. Cerrar y resetear
-        inventoryManagementStock.classList.remove('is-visible'); 
-        inventoryManagementStock.classList.add('is-hidden');
-        stockForm.reset(); 
-        
     } catch (error) {
-        console.error("❌ Error en la transacción de stock:", error);
-        alert("Hubo un error al guardar el stock o el registro. Consulta la consola.");
+        console.error("❌ Error en la transacción:", error);
+        alert("Error: " + error);
     } finally {
-        // 5. Restaurar botón
-        if(btnEnviar) {
+        if (btnEnviar) {
             btnEnviar.disabled = false;
             btnEnviar.textContent = 'Enviar';
         }
@@ -357,62 +313,119 @@ async function handleStockSubmit(event) {
 
 
 
-/*************************CARGA DE PROVEEDORES EN FORMULARIO********/
 
 
-/*********TRAER LOS PROVEEDORES DE LA BASE DE DATOS*******************/
 
-async function loadSuppliers() {
-    if (!proveedorSelect) return;
 
-    // 1. Mostrar estado de carga
-    proveedorSelect.innerHTML = '<option value="">Cargando proveedores...</option>';
-    proveedorSelect.disabled = true;
-    
+/*********************************FUNCIÓN PARA CREACIÓN DE PRODUCTO**************************/
+
+const modalCreate = document.getElementById("modal-create-product");
+const btnOpenCreate = document.getElementById("btn-create-product");
+const btnCancelCreate = document.getElementById("btn-cancel-create");
+const btnCloseXCreate = document.getElementById("btn-close-x-create");
+
+// Abrir modal creación producto
+btnOpenCreate.addEventListener("click", () => {
+    console.log("se ingresa a abrir modal creación producto")
+    modalCreate.style.display = "block";
+    obtenerProveedoresParaCreate();
+    obtenerCategoriasCreate();
+});
+
+// Cerrar modal creación producto
+const closeModalCreate = () => {
+    console.log("se ingresa a cerrar modal ingreso Stock")
+    modalCreate.style.display = "none";
+    document.getElementById("form-stock").reset(); // Limpia el formulario al cerrar
+};
+
+btnCancelCreate.addEventListener("click", closeModalCreate);
+btnCloseXCreate.addEventListener("click", closeModalCreate);
+
+
+
+
+/*******Obtener los proveedores de firebase************/
+
+const suppliersList = document.getElementById("suppliers-list");
+
+async function obtenerProveedoresParaCreate() {
     try {
-        // 2. Obtener datos de la colección 'Proveedores'
-        const suppliersSnapshot = await getDocs(collection(db, "Proveedores"));
+        console.log("Ingresé a obtener lista de proveedores")
+        // 1. Referencia y Consulta
+        const proveedoresRef = collection(db, "Proveedores");
+        const q = query(proveedoresRef, orderBy("name", "asc"));
         
-        // 3. Convertir datos a un array { id, name }
-        const suppliersArray = suppliersSnapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            name: doc.data().name // 💡 Asume que el campo del nombre es 'name'
-        }));
-
-        // 4. Renderizar el <select>
-        renderSupplierOptions(suppliersArray); 
-        proveedorSelect.disabled = false;
+        // 2. Ejecución
+        const querySnapshot = await getDocs(q);
         
-        console.log(`✅ ${suppliersArray.length} proveedores cargados.`);
+        // Referencia al datalist
+       
+        suppliersList.innerHTML = ''; // Limpiar opciones anteriores
 
+        // 4. Mapeo de datos
+        querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        
+        // Validamos que el nombre exista para evitar el 'undefined'
+        if (data.name) {
+            const option = document.createElement("option");
+            
+            // 1. Asignamos el nombre al value (esto es lo que el usuario ve y busca)
+            option.value = data.name; 
+            
+            // 2. IMPORTANTE: Deja el textContent vacío o igual al nombre 
+            // para que no aparezca el subtítulo 'undefined'
+            option.textContent = ""; 
+
+            suppliersList.appendChild(option);
+        }
+    });
+
+        console.log("Proveedores cargados en el modal.");
     } catch (error) {
-        console.error("❌ Error al cargar proveedores:", error);
-        proveedorSelect.innerHTML = '<option value="">Error al cargar proveedores</option>';
+        console.error("Error al cargar proveedores:", error);
     }
 }
 
 
-/*********PINTAR LOS PROVEEDORES EN LISTADO DE FORMULARIO******************/
+/*****Obtener las categorias de firebase****************/
 
-function renderSupplierOptions(suppliers) {
-    proveedorSelect.innerHTML = ''; // Limpiar select
-    
-    // 1. Placeholder/Opción por defecto
-    const placeholder = new Option("Selecciona el proveedor", "");
-    placeholder.disabled = true;
-    placeholder.selected = true; 
-    proveedorSelect.appendChild(placeholder);
+const categoryList = document.getElementById("category-list");
 
-    // 2. Rellenar el SELECT
-    if (suppliers.length > 0) {
-        suppliers.forEach(supplier => {
-            // El 'value' debe ser el ID de Firebase para el campo idSupplier
-            const option = new Option(supplier.name, supplier.id); 
-            proveedorSelect.appendChild(option);
-        });
-    } else {
-        const option = new Option("No hay proveedores disponibles", "");
-        option.disabled = true;
-        proveedorSelect.appendChild(option);
+async function obtenerCategoriasCreate() {
+    try {
+        console.log("Ingresé a obtener lista de categorias")
+        // 1. Referencia y Consulta
+        const categoriasRef = collection(db, "Categorias");
+        const q = query(categoriasRef, orderBy("name", "asc"));
+        
+        // 2. Ejecución
+        const querySnapshot = await getDocs(q);
+        
+        // 3. Limpiar el select antes de llenar (evita duplicados)
+        categoryList.innerHTML = '';
+        // 4. Mapeo de datos
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+
+        if (data.name) {
+            const option = document.createElement("option");
+            
+            // 1. Asignamos el nombre al value (esto es lo que el usuario ve y busca)
+            option.value = data.name; 
+            
+            // 2. IMPORTANTE: Deja el textContent vacío o igual al nombre 
+            // para que no aparezca el subtítulo 'undefined'
+            option.textContent = ""; 
+
+            categoryList.appendChild(option);
+        }
+    });
+
+        console.log("Categorias cargadas en el modal.");
+    } catch (error) {
+        console.error("Error al cargar categorias:", error);
     }
 }
+

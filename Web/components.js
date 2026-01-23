@@ -14,7 +14,7 @@ export function CargarHeader(nombreSede) {
             <img src="./Imagenes/logo.png" alt="logo drive">
         </div>
 
-        <h1 class="header-title"> panel ${nombreSede}</h1>
+        <h1 class="header-title">DrivePizza ${nombreSede}</h1>
         
         <nav class="header-menu">
             <ul class="header-list">
@@ -52,3 +52,29 @@ export function CargarHeader(nombreSede) {
 }
 
 window.CargarHeader = CargarHeader;
+
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});
+
+
+
+
+/*************************************FUNCIÓN PARA CERRAR SESIÓN****************************************/
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        console.log("Acceso denegado o sesión cerrada.");
+        window.location.href = "index.html";
+    } else {
+        //Captura de la sede
+        try {
+            const userDoc = await getDoc(doc(db, "Usuarios", user.uid));
+            if (userDoc.exists()) {
+                const sedeDesdeFirebase = userDoc.data().sede;
+                CargarHeader(sedeDesdeFirebase); // Llamamos a tu función con el dato real
+            }
+        } catch (error) {
+            console.error("Error al obtener la sede:", error);
+        }
+    }
+});

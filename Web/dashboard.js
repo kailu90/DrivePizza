@@ -1,10 +1,9 @@
 //IMPORTA FUNCIONES DE LA BASE DE DATOS
 
-import { db, auth } from './firebaseConfig.js';
-import { doc, updateDoc, getDoc, getDocs, runTransaction, collection, onSnapshot, query, where, orderBy, addDoc, serverTimestamp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, auth} from './firebaseConfig.js';
+import { doc, updateDoc, deleteDoc , getDoc, onSnapshot, getDocs, runTransaction, collection, query, where, orderBy, addDoc, serverTimestamp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const ordersContainer = document.getElementById('ordersContainer');
 const undeliveredCount = document.getElementById('undelivered-orders');
 const sentCount = document.getElementById('sent-orders');
 const paidCount = document.getElementById('paid-orders'); 
@@ -17,7 +16,7 @@ const totalCount = document.getElementById('total-orders');
 
 
 
-/****************************CARGA DEL MENÚ DESPLEGABLE***************/
+/****************************CARGA DEL MENÚ DESPLEGABLE INVENTORY/DASHBOARD***************/
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -72,89 +71,113 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /****************TRAE TODOS LOS PEDIDOS DE LA BASE DE DATOS************/
 
+// Variable global para controlar la escucha activa
+let unsubscribeOrders = null;
 
 function listenForOrders(sortOrder = 'desc') {
+
+const ordersContainer = document.getElementById('ordersContainer');
+
+if (!ordersContainer) return; 
+
+  if (unsubscribeOrders) {
+    unsubscribeOrders();
+  }
+
+
+  // 1. IMPORTANTE: Si ya había una escucha (snapshot) activa, la cerramos
+  if (unsubscribeOrders) {
+    unsubscribeOrders();
+  }
+
   const pedidosRef = collection(db, "Pedidos");
   const q = query(pedidosRef, orderBy("idPedido", sortOrder));
 
-  // onSnapshot se activa cada vez que hay un cambio en la colección.
-  // Es una función de "observador" en tiempo real.
-  onSnapshot(q, (querySnapshot) => {
-    // Limpia y reinicia los contadores cada vez que hay un cambio.
+  // 2. Guardamos la nueva suscripción en la variable global
+  unsubscribeOrders = onSnapshot(q, (querySnapshot) => {
+    
+    // Limpia el contenedor para pintar los datos nuevos en el orden correcto
     ordersContainer.innerHTML = '';
+    
     let totalPedidos = 0;
     let pedidosPendientes = 0;
     let pedidosEnviados = 0;
     let pedidosPagados = 0;
 
+    const formatter = new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    });
+
     querySnapshot.forEach((doc) => {
       const pedido = doc.data();
 
-      // Lógica para contar los pedidos por estado
-      if (pedido.status === 'pendiente') {
-        pedidosPendientes++;
-      } else if (pedido.status === 'entregado') {
-        pedidosEnviados++;
-      } else if (pedido.status === 'pagado') {
-        pedidosPagados++;
-      }
+      // Conteo de estados
+      if (pedido.status === 'pendiente') pedidosPendientes++;
+      else if (pedido.status === 'entregado') pedidosEnviados++;
+      else if (pedido.status === 'pagado') pedidosPagados++;
 
       const row = document.createElement('tr');
-      row.className = 'inventory-management__row';
-      
-      const fechaEntrega = pedido.deliveryDate;
-      const formatter = new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0
-      });
+      row.className = 'inventory-management__row';      
       
       row.innerHTML = `
         <td class="inventory-management__cell">${pedido.idPedido}</td>
-        <td class="inventory-management__cell">${fechaEntrega}</td>
+        <td class="inventory-management__cell">${pedido.deliveryDate}</td>
         <td class="inventory-management__cell">${pedido.user}</td>
         <td class="inventory-management__cell">
           <select 
             class="status-select" 
             data-doc-id="${doc.id}"
             ${pedido.status === 'pagado' ? 'disabled' : ''}
-        >
-            
+          >
             ${pedido.status === 'pendiente' ? `
                 <option value="pendiente" selected hidden>pendiente</option> 
                 <option value="entregado">entregado</option>
-            
             ` : pedido.status === 'entregado' ? `
                 <option value="entregado" selected hidden>entregado</option>
                 <option value="pagado">pagado</option>
-
-            ` : pedido.status === 'pagado' ? `
-                <option value="pagado" selected>pagado</option>
-                
             ` : `
-                <option value="${pedido.status}" selected>${pedido.status}</option>
+                <option value="pagado" selected>pagado</option>
             `}
-            
-        </select>
+          </select>
         </td>
-        <td class="inventory-management__cell">
-            <a class="inventory-management__link" href="cartDashboard.html?pedido=${pedido.idPedido}">Ver Detalles</a> 
+       
+        <td class="inventory-management__cell">${formatter.format(pedido.netCost || 0)}</td>
+        <td class="inventory-management__cell">${formatter.format(pedido.total || 0)}</td>
+
+         <td class="inventory-management__cell">
+          <a class="inventory-management__link" id="link-edit">✏️</a> 
+          <a class="inventory-management__link" id="link-view">👁️</a> 
+          <a class="inventory-management__link" id="link-delete">🗑️</a> 
         </td>
-        <td class="inventory-management__cell">${formatter.format(pedido.netCost)}</td>
-        <td class="inventory-management__cell">${formatter.format(pedido.total)}</td>
       `;
 
       ordersContainer.appendChild(row);
       totalPedidos++;
     });
 
-    // Actualiza los contadores en el DOM
-    undeliveredCount.textContent = pedidosPendientes;
-    sentCount.textContent = pedidosEnviados;
-    paidCount.textContent = pedidosPagados;
-    totalCount.textContent = totalPedidos;
+    // Actualización de contadores (con validación de existencia)
+    if (undeliveredCount) undeliveredCount.textContent = pedidosPendientes;
+    if (sentCount) sentCount.textContent = pedidosEnviados;
+    if (paidCount) paidCount.textContent = pedidosPagados;
+    if (totalCount) totalCount.textContent = totalPedidos;
   });
 }
 
@@ -162,17 +185,253 @@ function listenForOrders(sortOrder = 'desc') {
 
 
 
-/*****************CAMBIO DE ESTADO DE LOS PEDIDOS DEL DASHBOARD*******************/
 
 
 
+
+
+
+
+/****************FILTRO PARA ORDENAR LISTA DE PEIDDO ASCENDENTES/DESCENDENTES***********/
+
+const sortSelect = document.getElementById('sort');
+
+if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => {
+        const value = e.target.value;
+        // Extraemos 'asc' o 'desc' del valor del select (ej: "0-desc" -> "desc")
+        const order = value.split('-')[1]; 
+        
+        console.log(`Cambiando orden a: ${order}`);
+        
+        // Llamamos nuevamente a la función. 
+        // Importante: onSnapshot se encargará de limpiar la vista anterior.
+        listenForOrders(order);
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*******************FUNCIÓN PARA EXPORTAR PEDIDOS POR FECHA******************/
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnExport = document.getElementById('btnExport');
+    const exportContainer = document.querySelector('.exportDate');
+
+    if (btnExport && exportContainer) {
+        btnExport.addEventListener('click', (e) => {
+            // Evita que el clic se propague (útil si quieres cerrar el menú al hacer clic fuera)
+            e.stopPropagation(); 
+            
+            // Alterna entre mostrar (flex) y ocultar (none)
+            if (exportContainer.style.display === 'flex') {
+                exportContainer.style.display = 'none';
+            } else {
+                exportContainer.style.display = 'flex';
+            }
+        });
+
+        // Opcional: Cerrar el contenedor si se hace clic en cualquier otra parte de la pantalla
+        document.addEventListener('click', () => {
+            exportContainer.style.display = 'none';
+        });
+        
+        // Evita que el contenedor se cierre al hacer clic dentro de él mismo
+        exportContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+/*************************FUNCIÓN PARA VER DETALLES DEL PEDIDO******************/
+const modalDetalle = document.getElementById('modal-detalle');
+const closeModalDetalle = document.getElementById('close-modal-detalle');
+
+
+if (ordersContainer) {
+ordersContainer.addEventListener('click', async (e) => {
+
+
+    const viewBtn = e.target.closest('#link-view');
+    const editBtn = e.target.closest('#link-edit');
+    const deleteBtn = e.target.closest('#link-delete');
+
+// Si no se hizo clic en ninguno de nuestros botones de acción, salimos de la función
+    if (!viewBtn && !editBtn && !deleteBtn) return;
+
+    e.preventDefault();
+
+    const row = e.target.closest('tr');
+    const docId = row.querySelector('.status-select').getAttribute('data-doc-id');
+
+    if (viewBtn) {
+            console.log("Visualizando pedido:", docId);
+            abrirModalPedido(docId, false); // false = modo solo lectura
+        } 
+        
+    else if (editBtn) {
+            console.log("Editando pedido:", docId);
+            abrirModalPedido(docId, true);  // true = activar modo edición inmediatamente
+        } 
+        
+    else if (deleteBtn) {
+        const idPedidoVisual = row.cells[0].innerText;         
+        console.log("Eliminando pedido N°:", idPedidoVisual);
+        confirmarEliminacion(docId, idPedidoVisual, row);
+    }
+})};
+
+
+
+
+/********************CONFIRMACIÓN DE ELIMINACIÓN DE PEDIDO EN FIREBASE***************/
+async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
+    // 1. Alerta profesional usando el idPedido que el usuario reconoce
+    const confirmacion = confirm(`¿Estás seguro de que deseas eliminar el pedido N° ${idPedidoVisual}? \n\nEsta acción borrará el registro de la base de datos permanentemente.`);
     
-// 1. Selecciona el contenedor padre que sí existe al inicio del script (el <tbody>)
-    const contenedorPedidos = document.getElementById('ordersContainer'); 
+    if (confirmacion) {
+        try {
+            // 2. Referencia al documento específico en la colección 'Pedidos'
+            // docId es el ID único de Firebase (ej: "7hYxP9...")
+            const docRef = doc(db, "Pedidos", docId);
+            
+            // 3. Ejecutar eliminación en Firebase
+            await deleteDoc(docRef);
+            
+            // 4. Feedback visual y limpieza de UI
+            alert(`Pedido ${idPedidoVisual} eliminado con éxito.`);
+            
+            // Animación simple de salida antes de remover del DOM
+            rowElement.style.transition = "all 0.5s ease";
+            rowElement.style.opacity = "0";
+            rowElement.style.transform = "translateX(20px)";
+            
+            setTimeout(() => {
+                rowElement.remove();
+            }, 500);
 
-    if (contenedorPedidos) {
+        } catch (error) {
+            console.error("Error al eliminar de Firebase:", error);
+            alert("Hubo un error al intentar eliminar el pedido. Por favor, intenta de nuevo.");
+        }
+    }
+}
+
+
+
+
+
+// 2. Función para obtener datos y llenar el modal
+async function abrirModalPedido(docId) {
+    try {
+        const pedidoRef = doc(db, "Pedidos", docId);
+        const snap = await getDoc(pedidoRef);
+
+        if (snap.exists()) {
+            const pedido = snap.data();
+            const formatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+
+            // Llenar encabezados
+            document.getElementById('modal-id-pedido').textContent = pedido.idPedido;
+            document.getElementById('modal-sede').textContent = pedido.user; // O pedido.sede según tu BD
+            document.getElementById('modal-fecha').textContent = pedido.deliveryDate;
+            document.getElementById('modal-obs').textContent = pedido.observation || "Sin observaciones";
+
+            // Llenar tabla de productos
+            const tbody = document.getElementById('modal-table-body');
+            tbody.innerHTML = ''; // Limpiar anterior
+
+            pedido.products.forEach(prod => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${prod.name}</td>
+                    <td>${prod.quantity}</td>
+                    <td>${formatter.format(prod.price || 0)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Llenar totales
+            document.getElementById('modal-neto').textContent = formatter.format(pedido.netCost || 0);
+            document.getElementById('modal-total').textContent = formatter.format(pedido.total || 0);
+
+            // Mostrar modal
+            modalDetalle.style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Error al cargar detalles:", error);
+        alert("No se pudieron cargar los detalles del pedido.");
+    }
+}
+
+// 3. Cerrar el modal
+closeModalDetalle.addEventListener('click', () => {
+    modalDetalle.style.display = 'none';
+});
+
+// Cerrar si hacen clic fuera del contenido blanco
+window.addEventListener('click', (e) => {
+    if (e.target === modalDetalle) {
+        modalDetalle.style.display = 'none';
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*****************CAMBIO DE ESTADO DE LOS PEDIDOS DEL DASHBOARD*******************/    
+// 1. Selecciona el contenedor padre que sí existe al inicio del script (el <tbody>)
+
+    if (ordersContainer) {
         // 2. Adjunta el escuchador de eventos 'change' al contenedor padre (ordersContainer)
-        contenedorPedidos.addEventListener('change', (event) => {
+        ordersContainer.addEventListener('change', (event) => {
             
             // 3. Verifica si el elemento que disparó el evento es un <select> con la clase .status-select
             if (event.target.matches('.status-select')) {
@@ -195,17 +454,6 @@ function listenForOrders(sortOrder = 'desc') {
         // Esto solo aparecería si el <tbody> con ID ordersContainer fue eliminado del HTML
         console.error("Error: No se encontró el contenedor padre con ID 'ordersContainer'.");
     }
-
-
-
-
-
-
-/*****************ACTUALIZAR ESTADO DE LOS PEDIDOS DE DASHBOARD*******************/
-
-
-/**********Reglas para impedir que se ejecute la actualización en Firebase 
-si el cambio propuesto va en contra de las reglas de flujo de tu aplicación.*******/
 
 function esTransicionValida(actual, nuevo) {
     if (actual === nuevo) {
@@ -233,9 +481,18 @@ function esTransicionValida(actual, nuevo) {
 
 
 
+
+
+
+
+
+
+
+
+/********FUNCIÓN PARA ACTUALIZAR Y DESCONTAR LOS PRODUCTOS DEL STOCK*******/  
     async function actualizarEstadoYDescontar(docId, nuevoEstado) {
 
-     console.log("ingresé a funcion de actualizar Estado")       
+    console.error(`Error al actualizar el estado del pedido ${docId}:`, e);
     // 1. Define la referencia al documento específico en la colección 'Pedidos'
     const pedidoRef = doc(db, "Pedidos", docId); // Asegúrate de que 'db' sea tu instancia de Firestore
 
@@ -282,10 +539,21 @@ function esTransicionValida(actual, nuevo) {
     
 
 
-/********FUNCIÓN PARA DESCONTAR DEL INVENTARIO Y GENERAR UN REGISTRO DE TRANSACCIÓN*******/
 
 
-                       
+
+
+
+
+
+
+
+
+
+
+
+
+/********FUNCIÓN PARA DESCONTAR DEL INVENTARIO Y GENERAR UN REGISTRO DE TRANSACCIÓN*******/                       
 async function descontarInventario(pedidoId) {
 
     console.log("ingresé a descontarInventario")
@@ -390,10 +658,14 @@ async function descontarInventario(pedidoId) {
 
 
 
+
+
+
+
+
+
+
 /*************************************FUNCIÓN PARA CERRAR SESIÓN****************************************/
-
-
-
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         console.log("Acceso denegado o sesión cerrada.");
@@ -411,11 +683,6 @@ onAuthStateChanged(auth, async (user) => {
         }
     }
 });
-
-
-
-
-
 
 const linkLogout = document.getElementById("link_logout");
 
@@ -437,3 +704,7 @@ if (linkLogout) {
         }
     });
 }
+
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});

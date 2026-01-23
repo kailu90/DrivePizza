@@ -45,13 +45,13 @@
                 <section class="dashboard__section inventory-management">
                     <h2 class="inventory-management__title">Gestión de Pedidos</h2>
                     <label for="">ordenar por:</label>
-                    <select name="sort" id="sort">
+                    <select name="sort" id="sort" class="btn_orderBy btn-primary">
                         <option value="0-desc">Id Pedido (Descendente)</option>
                         <option value="0-asc">Id Pedido (Ascendente)</option>
                     </select> 
 
                     <section class="exportDate-container">
-                        <button id="btnExport">Exportar Pedidos</button>
+                        <button id="btnExport" class="btn-primary">Exportar Pedidos</button>
                         <div class="exportDate" id="exportDate">
                             <label for="startDate">Selección desde que día:</label>
                             <input type="date" id="startDate" class="export-input">
@@ -71,10 +71,10 @@
                                 <th class="inventory-management__heading">ID PEDIDO</th>
                                 <th class="inventory-management__heading">FECHA ENTREGA</th>
                                 <th class="inventory-management__heading">SEDE</th>
-                                <th class="inventory-management__heading">ESTADO</th>
-                                <th class="inventory-management__heading">ACCIONES</th>
+                                <th class="inventory-management__heading">ESTADO</th>                                
                                 <th class="inventory-management__heading">VALOR NETO</th>
                                 <th class="inventory-management__heading">VALOR CON SERVICIO</th>
+                                <th class="inventory-management__heading">ACCIONES</th>
                             </tr>
                         </thead>
                         <tbody class="inventory-management__tbody" id="ordersContainer">
@@ -107,14 +107,59 @@
         <p class="dashboard__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
     </footer>
 
+
+    <!--*****************Modal Vista previa de pedido****************-->
+<div id="modal-detalle" class="modal">
+    <div class="modal-content">
+         <span class="close-detalle" id="close-modal-detalle">x</span>
+        <div class="modal-header-flex">
+            <h2><img src="./Imagenes/logo.png" alt="imagen lodo drivepizza">Detalles del Pedido</h2>
+        </div>
+        
+        <div class="info-pedido">
+            <p><strong>Pedido N°:</strong> <span id="modal-id-pedido"></span></p>
+            <p><strong>Sede:</strong> <span id="modal-sede"></span></p>
+            <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+            <p><strong>Observación:</strong> <span id="modal-obs"></span></p>
+        </div>
+         
+        <table class="table-detalle">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-center">Cant.</th>
+                    <th>Valor</th>
+                    <th class="col-accion" style="display: none;">Acción</th> </tr>
+            </thead>
+            <tbody id="modal-table-body">
+                </tbody>
+            <tfoot id="row-adicionar" style="display: none;">
+                <tr>
+                    <td colspan="4">
+                        <button id="btn-add-product" class="btn-secundario">+ Adicionar Producto</button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="totales-detalle">
+            <p>Valor Neto: <span id="modal-neto"></span></p>
+            <p><strong>Total: <span id="modal-total"></span></strong></p>
+        </div>
+        
+        <div class="modal-actions">
+            <button id="btn-print-modal" class="btn-modal">Imprimir</button>
+            <button id="btn-edit-modal" class="btn-modal">Editar</button>
+            <button id="btn-save-modal" style="display: none; background-color: #2d4a27;">Guardar Cambios ✅</button>
+        </div>
+    </div>
+</div>
+
+
     <script type="module" src="dashboard.js"></script>
     <script type="module" src="login.js"></script>
     <script type="module" src="components.js"></script> 
 
-    <script>document.addEventListener('DOMContentLoaded', () => {
-        CargarHeader("Planta Producción");
-    });
-    </script>
 </body>
 
 </html>

@@ -261,3 +261,8 @@ document.getElementById('btn_confirm').addEventListener('click', async function 
     btnConfirm.disabled = false;
   }
 });
+
+
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});
