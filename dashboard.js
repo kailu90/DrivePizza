@@ -193,7 +193,6 @@ if (!ordersContainer) return;
 
 
 /****************FILTRO PARA ORDENAR LISTA DE PEIDDO ASCENDENTES/DESCENDENTES***********/
-
 const sortSelect = document.getElementById('sort');
 
 if (sortSelect) {

@@ -247,7 +247,7 @@ login_form.addEventListener("submit", async (e) => {
 
 /*************************** LÓGICA OLVIDO/CAMBIO DE CONTRASEÑA ******************************/
 
-const forgotForm = document.getElementById("forgot_modal"); 
+const forgotForm = document.getElementById("forgot_form"); 
 const forgotEmailInput = document.getElementById("forgot_email");
 
 forgotForm.addEventListener("submit", async (e) => {
