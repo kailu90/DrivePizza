@@ -248,7 +248,19 @@ a {
   }
 }
 
+@media (max-width: 600px) {
+.header {
+  display: none;
+}
 
+.header-title, .dashboard__header-title, .inventory__header-title {
+  font-size: 1rem;
+}
+
+.sidebar_img img {
+  width: 30px;
+}
+}
 
 
 
@@ -630,7 +642,7 @@ a {
 
 
 
-@media (max-width: 400px) {
+@media (max-width: 600px) {
 
 .toggle-btn {
   display: none;
@@ -641,18 +653,16 @@ a {
 }
 
 .sidebar_img {
-    margin-top: 100px;
+
 }
 
 .sidebar_img img {
-    min-width: 300px;
-    height: 300px;
-    margin: 50px auto;
+  width: 30px;
+
 }
 
 .sidebar .sidebar__nav .sidebar__list .sidebar__item .sidebar__link {
-  font-size: 4rem;
-  justify-self: center;
+  font-size: 1rem;
 }
 
 }
@@ -669,7 +679,7 @@ a {
   font-size: 1.4rem;
 }
 
-.dashboard__overview .inventory__overview , .dashboard__section , .inventory__section {
+.dashboard__overview .inventory__overview , .dashboard__section , .inventory__section, .inventory-management__table {
   margin-left: 80px;
 }
 
@@ -782,7 +792,7 @@ a {
 }
 
 
-@media (max-width: 400px) {
+@media (max-width: 600px) {
 
 .dashboard__main , .inventory__main{
   margin-left: 0px;
@@ -810,7 +820,7 @@ a {
     width: 100%;
     border-collapse: collapse; /* Elimina espacios entre celdas */
     font-size: 1.2rem;
-    margin-top: 20px;
+    margin: 20px;
     font-family: inherit;
     background-color: var(--color-secundario);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -824,7 +834,7 @@ a {
 .inventory-management__heading {
     padding: 12px 15px;
     text-align: center;
-    font-size: 1.6rem;
+    font-size: 1.2rem;
     font-weight: bold;
     color: #333;
     text-transform: uppercase;
@@ -867,17 +877,6 @@ a {
     border-radius: 5px;
     border: 1px solid #ccc;
     font-size: 0.8rem;
-}
-
-.exportDate.active {
-    display: flex;
-}
-
-.exportDate-container {
-    margin: 1.5rem 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
 }
 
 .btn-primary {
@@ -1021,6 +1020,12 @@ a {
   left: -20px;
 }
 
+@media (max-width: 600px) {
+.dashboard__footer, .inventory__footer {
+  display: none;
+}
+  
+}
 
 /***********************CARRITO DASHBOARD*******************/
 

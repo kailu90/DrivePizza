@@ -2,7 +2,7 @@
 
 import { db } from './firebaseConfig.js';
 import { runTransaction, doc, updateDoc, increment, collection, onSnapshot, getDocs, query, orderBy , serverTimestamp, addDoc , where }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { ejecutarTransaccionStock } from './components.js';
 
 const addStock = document.querySelector('.btn-add-stock');
 const cancelButton = document.getElementById('btn-cancel');
@@ -429,3 +429,16 @@ async function obtenerCategoriasCreate() {
     }
 }
 
+
+
+
+
+/*****************************REGISTRO DE TRANSACCIÓN (ENTRADA) EN LA COLECCIÓN MOVIMIENTOS DE FIREBASE**************************/
+const operacionExitosa = await ejecutarTransaccionStock({
+    productId: idSeleccionado,
+    productNombre: nombreSeleccionado,
+    cantidad: cant,
+    tipo: 'ENTRADA',
+    proveedor: { id: idProv, nombre: nomProv },
+    referenciaId: 'INGRESO_MANUAL'
+});
