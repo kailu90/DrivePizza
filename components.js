@@ -1,7 +1,7 @@
     import { auth , db } from './firebaseConfig.js'; 
     import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+    import { doc, getDoc, collection, runTransaction, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
     window.CargarHeader = CargarHeader;
 
     window.addEventListener('load', () => {
@@ -77,3 +77,63 @@
             });
         }
     }
+
+
+
+/***************************** FUNCIÓN CENTRALIZADA DE INVENTARIO PARA CREACIÓN DE MOVIMIENTO Y SUMA/DESCUENTO DE STOCK************************/
+export async function ejecutarTransaccionStock({
+    productId,
+    name,
+    cantidad,
+    tipo,
+    referenciaId,
+    notas = ""
+}) {
+    try {
+        await runTransaction(db, async (transaction) => {
+            const productRef = doc(db, "Productos", productId);
+            const contadorRef = doc(db, "Contadores", "idInventory");
+            const movimientoRef = doc(collection(db, "Movimientos"));
+
+            const productSnap = await transaction.get(productRef);
+            const contadorSnap = await transaction.get(contadorRef);
+
+            if (!productSnap.exists()) throw "Producto no encontrado";
+            if (!contadorSnap.exists()) throw "El contador idInventory no existe";
+
+            // USAMOS UN NOMBRE CLARO: proximoNumero
+            const ultimoNumero = contadorSnap.data().ultimoIdInventory || 0;
+            const proximoNumero = ultimoNumero + 1; 
+
+            const impacto = (tipo === 'ENTRADA') ? cantidad : -cantidad;
+
+            // ACTUALIZACIONES
+            transaction.update(productRef, { 
+                stock: increment(impacto),
+                ultimaActualizacion: serverTimestamp()
+            });
+
+            transaction.update(contadorRef, { 
+                ultimoIdInventory: proximoNumero 
+            });
+
+            transaction.set(movimientoRef, {
+                movimientoId: proximoNumero, // <--- CAMBIADO PARA EVITAR EL ERROR
+                fecha: serverTimestamp(),
+                tipo: tipo,
+                productoId: productId,
+                productoNombre: name,
+                cantidad: cantidad,
+                referenciaId: referenciaId,
+                motivo: tipo === 'SALIDA' ? "Entrega de Pedido" : "Ingreso Manual",
+                notas: notas,
+                usuario: "Admin"
+            });
+        });
+        
+        return true; 
+    } catch (e) {
+        console.error("Error en components.js:", e);
+        throw e; // Esto permite que dashboard.js sepa que falló
+    }
+}

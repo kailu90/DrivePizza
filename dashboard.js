@@ -3,6 +3,7 @@
 import { db, auth} from './firebaseConfig.js';
 import { doc, updateDoc, deleteDoc , getDoc, onSnapshot, getDocs, runTransaction, collection, query, where, orderBy, addDoc, serverTimestamp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ejecutarTransaccionStock } from './components.js'
 
 const undeliveredCount = document.getElementById('undelivered-orders');
 const sentCount = document.getElementById('sent-orders');
@@ -219,41 +220,6 @@ if (sortSelect) {
 
 
 
-
-
-
-
-
-/*******************FUNCIÓN PARA EXPORTAR PEDIDOS POR FECHA******************/
-
-document.addEventListener("DOMContentLoaded", () => {
-    const btnExport = document.getElementById('btnExport');
-    const exportContainer = document.querySelector('.exportDate');
-
-    if (btnExport && exportContainer) {
-        btnExport.addEventListener('click', (e) => {
-            // Evita que el clic se propague (útil si quieres cerrar el menú al hacer clic fuera)
-            e.stopPropagation(); 
-            
-            // Alterna entre mostrar (flex) y ocultar (none)
-            if (exportContainer.style.display === 'flex') {
-                exportContainer.style.display = 'none';
-            } else {
-                exportContainer.style.display = 'flex';
-            }
-        });
-
-        // Opcional: Cerrar el contenedor si se hace clic en cualquier otra parte de la pantalla
-        document.addEventListener('click', () => {
-            exportContainer.style.display = 'none';
-        });
-        
-        // Evita que el contenedor se cierre al hacer clic dentro de él mismo
-        exportContainer.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
-});
 
 
 
@@ -488,54 +454,50 @@ function esTransicionValida(actual, nuevo) {
 
 
 
-/********FUNCIÓN PARA ACTUALIZAR Y DESCONTAR LOS PRODUCTOS DEL STOCK*******/  
-    async function actualizarEstadoYDescontar(docId, nuevoEstado) {
-
-    console.error(`Error al actualizar el estado del pedido ${docId}:`, e);
-    // 1. Define la referencia al documento específico en la colección 'Pedidos'
-    const pedidoRef = doc(db, "Pedidos", docId); // Asegúrate de que 'db' sea tu instancia de Firestore
-
-
-    // 2. OBTENER el estado actual del pedido para validar la transición
-    const pedidoSnapshot = await getDoc(pedidoRef);
-    if (!pedidoSnapshot.exists()) {
-        console.error(`Error: Pedido con ID ${docId} no encontrado.`);
-        // Si el pedido no existe, salimos
-        return; 
-    }
-    const estadoActual = pedidoSnapshot.data().status;
-
-    // 🚨 3. VALIDACIÓN DE REGLAS: Si la transición es inválida, se detiene aquí.
-    if (!esTransicionValida(estadoActual, nuevoEstado)) {
-        console.warn(`❌ Transición inválida: No se puede cambiar de '${estadoActual}' a '${nuevoEstado}'.`);
-        
-        // Es crucial que el SELECT VISUAL se revierta si la transición falla.
-        // Aquí debes llamar a una función que revierta el <select> en el HTML 
-        // a su valor original (estadoActual) para evitar confusión al usuario.
-        // Ejemplo: revertirSeleccionVisual(docId, estadoActual);
-
-        return; // Detiene la ejecución.
-    }
-
+/******** FUNCIÓN PARA ACTUALIZAR Y DESCONTAR LOS PRODUCTOS DEL STOCK *******/  
+async function actualizarEstadoYDescontar(docId, nuevoEstado) {
+    // 1. Define la referencia al documento
+    const pedidoRef = doc(db, "Pedidos", docId);
 
     try {
-        // 4. Actualiza el campo 'status' del documento
+        // 2. OBTENER el estado actual del pedido para validar
+        const pedidoSnapshot = await getDoc(pedidoRef);
+        
+        if (!pedidoSnapshot.exists()) {
+            console.error(`Error: Pedido con ID ${docId} no encontrado.`);
+            return; 
+        }
+        
+        const estadoActual = pedidoSnapshot.data().status;
+
+        // 3. VALIDACIÓN DE REGLAS
+        if (!esTransicionValida(estadoActual, nuevoEstado)) {
+            console.warn(`❌ Transición inválida: No se puede cambiar de '${estadoActual}' a '${nuevoEstado}'.`);
+            // Aquí puedes llamar a tu función para revertir el select visualmente
+            return; 
+        }
+
+        // 4. Actualiza el campo 'status'
         await updateDoc(pedidoRef, {
             status: nuevoEstado
         });
 
-        console.log(`✅ Estado del pedido ${docId} actualizado a '${nuevoEstado}' con éxito.`);  
-      } catch (e) {
-        console.error(`Transacción de stock fallida para producto '${nombreProducto}':`, e);
-      }
+        console.log(`✅ Estado del pedido ${docId} actualizado a '${nuevoEstado}' con éxito.`);
 
-      if (nuevoEstado === "entregado") {
-        console.log ("pedido cambio a estado entregado, ejecutaré la función descontarInventario");
-        await descontarInventario(docId);
-      }
+        // 5. SI EL NUEVO ESTADO ES ENTREGADO, PROCEDEMOS AL DESCUENTO
+        if (nuevoEstado === "entregado") {
+            console.log("El pedido cambió a estado entregado, ejecutando descontarInventario...");
+            
+            // Es vital que este proceso esté dentro del try/catch
+            await descontarInventario(docId);
+        }
 
-     } 
-    
+    } catch (error) { // <--- Definimos 'error' aquí
+        // Ahora sí podemos usar la variable en el console.error
+        console.error(`Error en el proceso del pedido ${docId}:`, error);
+        alert("Hubo un error al procesar el cambio: " + error);
+    }
+}
 
 
 
@@ -554,104 +516,63 @@ function esTransicionValida(actual, nuevo) {
 
 /********FUNCIÓN PARA DESCONTAR DEL INVENTARIO Y GENERAR UN REGISTRO DE TRANSACCIÓN*******/                       
 async function descontarInventario(pedidoId) {
-
-    console.log("ingresé a descontarInventario")
-    const pedidoRef = doc(db, "Pedidos", pedidoId);
+    console.log("🚀 Iniciando descuento de inventario para Pedido:", pedidoId);
     
-    // 1. Obtener los datos completos del pedido
-    const pedidoSnapshot = await getDoc(pedidoRef);
-    
-    if (!pedidoSnapshot.exists()) {
-        console.error(`Error: El Pedido con ID ${pedidoId} no existe.`);
-        return;
-    }
-
-    const pedidoData = pedidoSnapshot.data();
-    // Los productos estan en un array llamado "products"
-    const productosDelPedido = pedidoData.products; 
-
-    if (!productosDelPedido || productosDelPedido.length === 0) {
-        console.warn(`El Pedido ${pedidoId} no contiene productos para descontar.`);
-        return;
-    }
-
-    // 2. Iterar sobre cada producto del pedido y buscar/actualizar el stock
-    for (const products of productosDelPedido) { // ⬅️ INICIO del bucle FOR
-        const nombreProducto = products.name;
-        const cantidadADescontar = products.quantity; 
-        console.log(productosDelPedido)
-
-        if (!nombreProducto || isNaN(cantidadADescontar)){
-            console.warn(`Advertencia: Un producto en el pedido ${pedidoId} está incompleto.`);
-            continue; // Saltar al siguiente producto
-        }
-
-        // 3. Buscar el producto en la colección 'Productos' por el campo 'Name'
-        const productosRef = collection(db, "Productos");
-        const q = query(productosRef, where("name", "==", nombreProducto));
+    try {
+        const pedidoRef = doc(db, "Pedidos", pedidoId);
+        const pedidoSnapshot = await getDoc(pedidoRef);
         
-        // Ejecutar la búsqueda
-        const productoDocs = await getDocs(q);
-
-        if (productoDocs.empty) {
-            console.error(`❌ Producto NO ENCONTRADO: El producto con name='${nombreProducto}' no existe en la colección Productos.`);
-            continue; 
+        if (!pedidoSnapshot.exists()) {
+            throw `El Pedido con ID ${pedidoId} no existe.`;
         }
 
-        // Tomamos el primer (y debería ser único) resultado de la búsqueda
-        const productoDoc = productoDocs.docs[0];
-        const productoRef = doc(db, "Productos", productoDoc.id);
-        let finalStock = 0; // Usaremos esta para almacenar el stock después de la transacción
+        const pedidoData = pedidoSnapshot.data();
+        const productosDelPedido = pedidoData.products; 
 
-        // 4. Ejecutar Transacción para descontar el stock de forma atómica y segura
-        try { // ⬅️ INICIO del TRY de la transacción
-            await runTransaction(db, async (transaction) => {
-                const stockDoc = await transaction.get(productoRef);
-                if (!stockDoc.exists()) {
-                    throw "El documento del producto ya no existe durante la transacción!";
-                }
-
-                const stockActual = stockDoc.data().stock || 0;
-                finalStock = stockActual - cantidadADescontar; 
-                
-                // Actualizar el documento del producto dentro de la transacción
-                transaction.update(productoRef, { stock: finalStock });
-            });
-            
-            console.log(`👍 Descontado ${cantidadADescontar} de '${nombreProducto}'. Nuevo stock: ${finalStock}.`);
-
-            // =======================================================
-            // ➡️ PASO 5: REGISTRAR LA SALIDA EN 'Inventario'
-            // =======================================================
-            const inventoryRef = collection(db, 'Inventario'); 
-            
-            await addDoc(inventoryRef, {
-                // Campos del pedido y producto
-                date: serverTimestamp(),      
-                idProduct: productoDoc.id,       
-                quantity: cantidadADescontar,      
-                transaction: 'SALIDA',         
-
-                // Campos específicos de esta transacción:
-                idOrder: pedidoId,               
-                notes: `Salida por entrega de Pedido #${pedidoId}`, 
-
-                // Campos no aplicables/null
-                idInventory: null,          
-                idSupplier: null,           
-            });
-
-            console.log(`  - Registro de salida creado en Inventario para el Pedido ${pedidoId}.`);
-
-        } catch (e) { // ⬅️ CATCH del TRY de la transacción
-            console.error(`Transacción de stock y/o registro fallido para producto '${nombreProducto}':`, e);
+        if (!productosDelPedido || productosDelPedido.length === 0) {
+            console.warn("⚠️ El pedido no tiene productos.");
+            return;
         }
-    } 
 
-} 
+        // Iteramos sobre el array de productos del pedido
+        for (const item of productosDelPedido) {
+            const nombreProducto = item.name;
+            const cantidadADescontar = item.quantity;
 
+            // 1. Necesitamos el ID del producto (Firebase ID)
+            // Como en tu pedido solo guardas el nombre, hacemos la búsqueda rápida
+            const q = query(collection(db, "Productos"), where("name", "==", nombreProducto));
+            const productoDocs = await getDocs(q);
 
+            if (productoDocs.empty) {
+                console.error(`❌ Producto '${nombreProducto}' no encontrado en la colección Productos.`);
+                continue; 
+            }
 
+            const productoDoc = productoDocs.docs[0];
+            const productId = productoDoc.id;
+
+            // 2. LLAMADA A NUESTRA FUNCIÓN CENTRALIZADA
+            // Esta función ya hace la transacción, actualiza stock y crea el movimiento.
+            await ejecutarTransaccionStock({
+                productId: productId,
+                name: nombreProducto,
+                cantidad: cantidadADescontar,
+                tipo: 'SALIDA',
+                referenciaId: pedidoId, // El ID del pedido es nuestra referencia
+                notas: `Salida automática: Entrega de Pedido #${pedidoId}`
+            });
+
+            console.log(`✅ Item procesado: ${nombreProducto} (-${cantidadADescontar})`);
+        }
+
+        console.log("✨ Todos los productos del pedido han sido descontados correctamente.");
+
+    } catch (error) {
+        console.error("❌ Error al descontar inventario:", error);
+        alert("Hubo un problema con el inventario: " + error);
+    }
+}
 
 
 
@@ -707,3 +628,7 @@ if (linkLogout) {
 window.addEventListener('load', () => {
     document.body.classList.add('loaded');
 });
+
+
+
+
