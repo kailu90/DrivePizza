@@ -11,8 +11,5 @@
       "**/.*",
       "**/node_modules/**"
     ]
-  },
-  "dataconnect": {
-    "source": "dataconnect"
   }
 }
