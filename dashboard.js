@@ -129,6 +129,7 @@ if (!ordersContainer) return;
 
     querySnapshot.forEach((doc) => {
       const pedido = doc.data();
+      const docId = doc.id;
 
       // Conteo de estados
       if (pedido.status === 'pendiente') pedidosPendientes++;
@@ -147,6 +148,8 @@ if (!ordersContainer) return;
             class="status-select" 
             data-doc-id="${doc.id}"
             ${pedido.status === 'pagado' ? 'disabled' : ''}
+            onclick="event.stopPropagation()" 
+            onchange="actualizarEstado(this, '${docId}')"
           >
             ${pedido.status === 'pendiente' ? `
                 <option value="pendiente" selected hidden>pendiente</option> 
@@ -164,9 +167,9 @@ if (!ordersContainer) return;
         <td class="inventory-management__cell">${formatter.format(pedido.total || 0)}</td>
 
          <td class="inventory-management__cell">
-          <a class="inventory-management__link" id="link-edit">✏️</a> 
-          <a class="inventory-management__link" id="link-view">👁️</a> 
-          <a class="inventory-management__link" id="link-delete">🗑️</a> 
+            <a class="inventory-management__link btn-edit" title="Editar">✏️</a> 
+            <a class="inventory-management__link btn-print" title="Imprimir Comanda">🖨️</a>
+            <a class="inventory-management__link btn-delete" title="Eliminar">🗑️</a>
         </td>
       `;
 
@@ -175,10 +178,10 @@ if (!ordersContainer) return;
     });
 
     // Actualización de contadores (con validación de existencia)
-    if (undeliveredCount) undeliveredCount.textContent = pedidosPendientes;
-    if (sentCount) sentCount.textContent = pedidosEnviados;
-    if (paidCount) paidCount.textContent = pedidosPagados;
-    if (totalCount) totalCount.textContent = totalPedidos;
+    if (typeof undeliveredCount !== 'undefined') undeliveredCount.textContent = pedidosPendientes;
+    if (typeof sentCount !== 'undefined') sentCount.textContent = pedidosEnviados;
+    if (typeof paidCount !== 'undefined') paidCount.textContent = pedidosPagados;
+    if (typeof totalCount !== 'undefined') totalCount.textContent = totalPedidos;
   });
 }
 
@@ -239,38 +242,68 @@ const closeModalDetalle = document.getElementById('close-modal-detalle');
 
 if (ordersContainer) {
 ordersContainer.addEventListener('click', async (e) => {
+    const row = e.target.closest('.inventory-management__row');
+    if (!row) return;
 
-
-    const viewBtn = e.target.closest('#link-view');
-    const editBtn = e.target.closest('#link-edit');
-    const deleteBtn = e.target.closest('#link-delete');
-
-// Si no se hizo clic en ninguno de nuestros botones de acción, salimos de la función
-    if (!viewBtn && !editBtn && !deleteBtn) return;
-
-    e.preventDefault();
-
-    const row = e.target.closest('tr');
+    const editBtn = e.target.closest('.btn-edit');
+    const deleteBtn = e.target.closest('.btn-delete');
+    const printBtn = e.target.closest('.btn-print');
+    const statusSelect = e.target.closest('.status-select');
+    
     const docId = row.querySelector('.status-select').getAttribute('data-doc-id');
-
-    if (viewBtn) {
-            console.log("Visualizando pedido:", docId);
-            abrirModalPedido(docId, false); // false = modo solo lectura
-        } 
-        
-    else if (editBtn) {
-            console.log("Editando pedido:", docId);
-            abrirModalPedido(docId, true);  // true = activar modo edición inmediatamente
+    const idPedidoVisual = row.cells[0].innerText;   
+           
+    if (editBtn) {
+       e.stopImmediatePropagation();
+        console.log("Editando pedido:", docId);
+        abrirModalPedido(docId, true); 
+        return; 
         } 
         
     else if (deleteBtn) {
-        const idPedidoVisual = row.cells[0].innerText;         
+        e.stopImmediatePropagation();          
         console.log("Eliminando pedido N°:", idPedidoVisual);
         confirmarEliminacion(docId, idPedidoVisual, row);
+        return;
     }
+    else if (printBtn) {
+        e.stopPropagation();
+        imprimirDirecto(docId);
+        return; 
+    }
+
+    if (statusSelect) return;
+        console.log("Visualizando detalle pedido:", docId);
+        abrirModalPedido(docId, false);
+
+const btnGuardar = document.getElementById('btn-save-modal');
+
+if (esEdicion) {
+    // 1. Mostrar tu botón de guardar
+    btnGuardar.style.display = 'block';
+    
+    // 2. Hacer las notas editables
+    const obsContainer = document.getElementById('modal-obs');
+    obsContainer.innerHTML = `<textarea id="edit-obs" style="width:100%; min-height:60px;">${pedido.orderNotes || ""}</textarea>`;
+
+    // 3. Vincular la función de guardado al botón
+    btnGuardar.onclick = () => guardarCambiosPedido(docId);
+} else {
+    // Si es solo vista, ocultamos el botón
+    btnGuardar.style.display = 'none';
+}
+
+
+
+
+
+
+
+
+
+
+
 })};
-
-
 
 
 /********************CONFIRMACIÓN DE ELIMINACIÓN DE PEDIDO EN FIREBASE***************/
@@ -310,8 +343,15 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
 
 
 
-// 2. Función para obtener datos y llenar el modal
+
+
+
+
+
+
+/**********************ABRIR MODAL CON DETALLES DEL PEDIDOD***************/
 async function abrirModalPedido(docId) {
+    console.log("Abriendo pedido con ID:", docId);
     try {
         const pedidoRef = doc(db, "Pedidos", docId);
         const snap = await getDoc(pedidoRef);
@@ -324,44 +364,68 @@ async function abrirModalPedido(docId) {
             document.getElementById('modal-id-pedido').textContent = pedido.idPedido;
             document.getElementById('modal-sede').textContent = pedido.user; // O pedido.sede según tu BD
             document.getElementById('modal-fecha').textContent = pedido.deliveryDate;
-            document.getElementById('modal-obs').textContent = pedido.observation || "Sin observaciones";
+            document.getElementById('modal-obs').textContent = pedido.orderNotes || "Sin observaciones";
 
             // Llenar tabla de productos
             const tbody = document.getElementById('modal-table-body');
             tbody.innerHTML = ''; // Limpiar anterior
 
+           // Usaremos un acumulador de texto para que el navegador pinte todo de un solo golpe
+            let tablaHtml = '';
             pedido.products.forEach(prod => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${prod.name}</td>
-                    <td>${prod.quantity}</td>
-                    <td>${formatter.format(prod.price || 0)}</td>
+                // Sacamos el valor directamente de 'totalPrice' que vimos en tu Firebase
+                const valorTotal = prod.totalPrice || 0; 
+
+                tablaHtml += `
+                    <tr>
+                        <td>${prod.name}</td>
+                        <td style="text-align: center;">${prod.quantity}</td>
+                        <td>${formatter.format(valorTotal)}</td>
+                    </tr>
                 `;
-                tbody.appendChild(tr);
             });
+
+            tbody.innerHTML = tablaHtml;
+
 
             // Llenar totales
             document.getElementById('modal-neto').textContent = formatter.format(pedido.netCost || 0);
             document.getElementById('modal-total').textContent = formatter.format(pedido.total || 0);
 
-            // Mostrar modal
-            modalDetalle.style.display = 'block';
+            // Mostrar modal y quita scroll de body
+            modalDetalle.style.display = 'flex';
+            document.body.classList.add('no-scroll');
         }
     } catch (error) {
         console.error("Error al cargar detalles:", error);
         alert("No se pudieron cargar los detalles del pedido.");
     }
-}
+    }
 
-// 3. Cerrar el modal
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Cerrar el modal en X
 closeModalDetalle.addEventListener('click', () => {
     modalDetalle.style.display = 'none';
+    document.body.classList.remove('no-scroll');
 });
 
 // Cerrar si hacen clic fuera del contenido blanco
 window.addEventListener('click', (e) => {
     if (e.target === modalDetalle) {
         modalDetalle.style.display = 'none';
+        document.body.classList.remove('no-scroll');
     }
 });
 
@@ -468,7 +532,9 @@ async function actualizarEstadoYDescontar(docId, nuevoEstado) {
             return; 
         }
         
-        const estadoActual = pedidoSnapshot.data().status;
+        const pedidoData = pedidoSnapshot.data();
+        const estadoActual = pedidoData.status;
+        const numeroPedidoVisible = pedidoData.idPedido || pedidoId;
 
         // 3. VALIDACIÓN DE REGLAS
         if (!esTransicionValida(estadoActual, nuevoEstado)) {
@@ -487,6 +553,7 @@ async function actualizarEstadoYDescontar(docId, nuevoEstado) {
         // 5. SI EL NUEVO ESTADO ES ENTREGADO, PROCEDEMOS AL DESCUENTO
         if (nuevoEstado === "entregado") {
             console.log("El pedido cambió a estado entregado, ejecutando descontarInventario...");
+            alert(`✅ Cambio de estado de pedido# '${numeroPedidoVisible}' a '${nuevoEstado}' realizado con éxito.`)
             
             // Es vital que este proceso esté dentro del try/catch
             await descontarInventario(docId);
@@ -529,6 +596,8 @@ async function descontarInventario(pedidoId) {
         const pedidoData = pedidoSnapshot.data();
         const productosDelPedido = pedidoData.products; 
 
+        const numeroPedidoVisible = pedidoData.idPedido || pedidoId;
+
         if (!productosDelPedido || productosDelPedido.length === 0) {
             console.warn("⚠️ El pedido no tiene productos.");
             return;
@@ -560,7 +629,7 @@ async function descontarInventario(pedidoId) {
                 cantidad: cantidadADescontar,
                 tipo: 'SALIDA',
                 referenciaId: pedidoId, // El ID del pedido es nuestra referencia
-                notas: `Salida automática: Entrega de Pedido #${pedidoId}`
+                notas: `Salida automática: Entrega de Pedido #${numeroPedidoVisible}`
             });
 
             console.log(`✅ Item procesado: ${nombreProducto} (-${cantidadADescontar})`);
@@ -628,7 +697,5 @@ if (linkLogout) {
 window.addEventListener('load', () => {
     document.body.classList.add('loaded');
 });
-
-
 
 
