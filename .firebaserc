@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "drivepizzabga2025"
-  }
+  },
+  "targets": {
+    "drivepizzabga2025": {
+      "hosting": {
+        "principal": [
+          "drivepizzabga2025"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
