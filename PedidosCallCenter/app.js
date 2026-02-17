@@ -41,7 +41,8 @@ function renderCategories() {
         "Ensaladas", 
         "Bebidas",
         "Especialidades", 
-        "Postres"
+        "Postres",
+        "Bordes"
     ];
     
     nav.innerHTML = categoriasVisibles.map(c => `
@@ -67,7 +68,7 @@ function renderProducts(categoria) {
 
     //Agrupamos los productos según la categoría seleccionada, para mostrar las diferentes variaciones.
     if (categoria === "Pizzas" || categoria === "Calzones") {
-        const llavesPizzas = ["Pizzas Super Estofadas", "Pizzas Estofadas", "Pizzas Especiales", "Pizzas Gourmet", "Pizzas Clásicas", "Pizzas Típicas"];
+        const llavesPizzas = ["Pizzas Super Estofadas", "Pizzas Estofadas", "Pizzas Especiales", "Pizzas Gourmet", "Pizzas Clásicas", "Pizzas Típicas", "Pizzetas Premium"];
         llavesPizzas.forEach(key => {
             if (menuData[key]) productos = [...productos, ...menuData[key]];
         });
@@ -284,7 +285,7 @@ function confirmarImpresion(datos, pedidoId) {
     // 3. Crear el HTML (He actualizado el nombre a MOLLE PIZZA si es el caso)
     const infoHtml = `
         <div class="info-cliente-ticket" style="font-family: 'Courier New', monospace; color: black;">
-            <h2 style="text-align:center; margin:0; font-size: 16pt;">MOLLE PIZZA</h2>
+            <h2 style="text-align:center; margin:0; font-size: 16pt;">DRIVE PIZZA</h2>
             <p style="text-align:center; margin:5px 0; font-size: 12pt;">${datos.sede.toUpperCase()}</p>
             
             <div style="border: 3px solid black; text-align: center; padding: 10px; margin: 10px 0;">
