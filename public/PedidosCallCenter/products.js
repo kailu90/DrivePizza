@@ -14,28 +14,35 @@ const preciosPastas = {
     marinera:      { "Unidad": 34000 },
 };
 const preciosLasañas = {
-    lasaña: { "sencilla": 26000 , "mixta": 26000 , "remix": 26000},
+    lasaña:        { "sencilla": 26000 , "mixta": 26000 , "remix": 26000},
     lasañaVegetariana:  { "Unidad": 26000 },
-    lasañaDrive:  { "Unidad": 30000 },
+    lasañaDrive:   { "Unidad": 30000 },
 };
 const preciosPizzas = {
     superEstofada: { "Porción": 16500, "Pequeña": 49000, "Mediana": 60000, "Grande": 85000, "Jumbo": 115000 },
     estofada:      { "Porción": 15500, "Pequeña": 44000, "Mediana": 55000, "Grande": 74000, "Jumbo": 92000 },
-    especial:      { "Porción": 16500, "Pequeña": 49000, "Mediana": 60000, "Grande": 85000, "Jumbo": 115000 },
+    especial:      { "Porción": 16500, "Pequeña": 49000, "Mediana": 60000, "Grande": 85000, "Jumbo": 115000 },    
     clasica:       { "Porción": 13000, "Pequeña": 32000, "Mediana": 42000, "Grande": 58000, "Jumbo": 75000 },
-    tipica:        { "Porción": 15500, "Pequeña": 44000, "Mediana": 55000, "Grande": 74000, "Jumbo": 92000 }
+    tipica:        { "Porción": 15500, "Pequeña": 44000, "Mediana": 55000, "Grande": 74000, "Jumbo": 92000 },
+    majestuosaPequeña: { "Pequeña": 49000 },
+    premium:       { "Pizzeta": 20000 }, 
+    majestuosaPizzeta:    { "Pizzeta": 24000 }    
 };
-const preciosEstandarAdiciones = { 
-    "Porción": 3100, 
-    "Personal": 5500, 
-    "Pequeña": 8000, 
-    "Mediana": 8500, 
-    "Grande": 9500, 
-    "Jumbo": 11000 
+const preciosAdiciones = { 
+    basicas:    { "Porción": 3000, "Pequeña": 8000, "Mediana": 10000, "Grande": 12000, "Jumbo": 14000 },
+    intermedia: { "Porción": 4000, "Pequeña": 11000, "Mediana": 13000, "Grande": 16000, "Jumbo": 18000 },
+    superior:   { "Porción": 5000, "Pequeña": 13000, "Mediana": 15000, "Grande": 18000, "Jumbo": 20000 },
+    gourmet:    { "Porción": 6000, "Pequeña": 16000, "Mediana": 20000, "Grande": 28000, "Jumbo": 34000 }
+};
+const preciosBordes= { 
+    "Pequeña": 14000, 
+    "Mediana": 18000, 
+    "Grande": 21000, 
+    "Jumbo": 24000 
 };
 
 const preciosVariedades = {
-    calzone: { "Personal": 36000, "Grande": 53000 },
+    calzone: { "pequeño": 29000, "Grande": 45000 },
     stromboli: { "Unidad": 30000 },
     maizGratinado: { "Sencillo": 21000, "Con Pollo (50 gr)": 26000 },
     champiñonesGratinados: { "Unidad": 26000 }
@@ -125,7 +132,6 @@ const menuData = {
         { nombre: "Lasaña Vegetariana", opciones: preciosLasañas.lasañaVegetariana , descripcion: "Cebolla, tomate, pimentón asado, aceitunas, champiñones y salsa napolitana."  },
         { nombre: "Lasaña Drive", opciones: preciosLasañas.lasañaDrive , descripcion: "Pollo, maíz, tocineta,  y salsa de la casa."  }
     ],
-
 //*****Variedades de los sabores de las pizzas********/
     "Pizzas Super Estofadas": [
         { nombre: "Super Estofada de Carnes", opciones: preciosPizzas.superEstofada , descripcion: "Jamón, salchicha, salami, pollo, champiñon, queso crema, extra queso y salsa napolitana." },
@@ -138,62 +144,84 @@ const menuData = {
         { nombre: "Estofada Triple Queso", opciones: preciosPizzas.estofada ,  descripcion: "Triple porción de queso mozarella." }
     ],
     "Pizzas Especiales": [
-        { nombre: "Mexicana", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa, jamón, tomate, cilantro, jalapeño y tostacos." },
-        { nombre: "Indio", opciones: preciosPizzas.especial , descripcion: "Pollo, pico e'gallo, cebolla y jalapeño."},
-        { nombre: "Suprema Pepperoni", opciones: preciosPizzas.especial , descripcion: "Jamón, salchicha, salami, cebolla y pimentón asado."},
+        { nombre: "Drive", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, pollo, champiñones, maíz tierno y maduro."},
         { nombre: "Criolla", opciones: preciosPizzas.especial , descripcion: "Carne deshilachada, tocineta y maiz tierno."},
+        { nombre: "Mexicana", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa, jamón, tomate, cilantro, jalapeño y tostacos." },
         { nombre: "Hawaiana Chic", opciones: preciosPizzas.especial , descripcion: "Piña, tocineta y BBQ."},
-        { nombre: "Teriyaki", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa o pollo desmechado, vegetales al wok (cebolla, zuquini y pimentón asado) eb salsa teriyaki."},
+        { nombre: "Suprema Pepperoni", opciones: preciosPizzas.especial , descripcion: "Jamón, salchicha, salami, cebolla y pimentón asado."},
+        { nombre: "Especial de carnes", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, cabano, salami, pollo y champiñones."},
         { nombre: "Carnivora", opciones: preciosPizzas.especial , descripcion: "Jamón, salchicha, salami, chorizo de ternera y tocineta." },
-        { nombre: "Bolognesa", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa y tocineta."},
-        { nombre: "Mediterranea", opciones: preciosPizzas.especial , descripcion: "Pepperoni, tomate y aceitunas." },
-        { nombre: "Ventana", opciones: preciosPizzas.especial , descripcion: "Tomate, pepperoni, aceitunas, champiñones y cebolla."},
+        { nombre: "Teriyaki", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa o pollo desmechado, vegetales al wok (cebolla, zuquini y pimentón asado) eb salsa teriyaki."},
         { nombre: "Paisa", opciones: preciosPizzas.especial , descripcion: "Tocineta, chorizo de ternera, jamón y maiz tierno."},
-        { nombre: "Pizza Molle", opciones: preciosPizzas.especial , descripcion: "Pollo, champiñon, maíz tierno y maduro al horno."}        
-    ],
-    "Pizzas Gourmet": [
-        { nombre: "Personal Camaron", opciones: preciosPizzas.gourmet , descripcion: "Queso mozzarella, cebolla, perejil y camarón." }     
+        { nombre: "Bolognesa", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa y tocineta."},
+        { nombre: "Camaron a la criolla", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, cebolla, perejil y camarón."},
+        { nombre: "Carbonara", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, tocineta, pollo, champiñones, rúgula, parmesano y salsa carbonara. (NO DISPONIBLE EN PORCIÓN)"},
+        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca."}   
     ],
     "Pizzas Clásicas": [
         { nombre: "Pollo y Queso", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y pollo." },
-        { nombre: "Champiñones y Queso", opciones: preciosPizzas.clasica ,  descripcion: "Queso mozzarella y champiñones."},
-        { nombre: "Jamon y Queso", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y jamón." },
-        { nombre: "Doble Queso", opciones: preciosPizzas.clasica , descripcion: "Doble porción de queso mozzarella."},
         { nombre: "Hawaiana", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, jamón y piña."},
-        { nombre: "Carnes", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, jamón, cábano y salami." },
-        { nombre: "Napolitana", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, tomate y orégano."}
+        { nombre: "Tres Carnes", opciones: preciosPizzas.clasica , descripcion: "Queso Mozzarella, jamón, cabano y salami."},
+        { nombre: "Jamon y Queso", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y jamón." },
+        { nombre: "Margarita", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y orégano." },
+        { nombre: "Napolitana", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, tomate y orégano."},
+        { nombre: "Doble Queso", opciones: preciosPizzas.clasica , descripcion: "Doble porción de queso mozzarella."},
+        { nombre: "Champiñones y Queso", opciones: preciosPizzas.clasica ,  descripcion: "Queso mozzarella y champiñones."},
+        { nombre: "Bocadillo", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y bocadillo."} 
     ],
     "Pizzas Típicas": [
-        { nombre: "California", opciones: preciosPizzas.tipica , descripcion: "Champiñones y tomates cherry."},
-        { nombre: "Pollo Miel - Mostaza", opciones: preciosPizzas.tipica , descripcion: "Pollo y salsa miel mostaza." },
-        { nombre: "Caprichosa", opciones: preciosPizzas.tipica , descripcion: "Maduro al horno, pepperoni." },
-        { nombre: "Samba", opciones: preciosPizzas.tipica , descripcion: "Maduro al horno, pepperoni."},
-        { nombre: "Ciruelas y Tocineta", opciones: preciosPizzas.tipica , descripcion: "Ciruelas pasas y tocineta."},
-        { nombre: "Toc", opciones: preciosPizzas.tipica , descripcion: "Maiz tierno, queso cheddar y tocineta."},
-        { nombre: "Vegetariana", opciones: preciosPizzas.tipica , descripcion: "Cebolla, tomate, pimentón asado, aceitunas, champiñones y orégano."},
-        { nombre: "Frutti Molle", opciones: preciosPizzas.tipica , descripcion: "Cerezas, durazno y piña."},
-        { nombre: "Bocadillo Tocineta", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, tocineta y bocadillo."},
-        { nombre: "Suprema", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, jamón, cabano, salami, pimentón, cebolla y orégano."},
-        { nombre: "Pollo Bbq", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo aderezado con salsa BBQ."},
         { nombre: "Pollo Champiñones", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo y champiñones."},
-        { nombre: "Pepperoni Americano", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella y pepperoni americano."}        
+        { nombre: "Pepperoni", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella y pepperoni."},   
+        { nombre: "Maduro tocineta", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, maduro y tocineta."},
+        { nombre: "Toc", opciones: preciosPizzas.tipica , descripcion: "Maiz tierno, queso cheddar y tocineta."},
+        { nombre: "Suprema", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, jamón, cabano, salami, pimentón, cebolla y orégano."},
+        { nombre: "Suprema de Pollo", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, jamón, cabano, salami, pimentón, cabolla y orégano."},
+        { nombre: "Pollo Bbq", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo aderezado con salsa BBQ."},
+        { nombre: "Pollo Miel - Mostaza", opciones: preciosPizzas.tipica , descripcion: "Pollo y salsa miel mostaza." },
+        { nombre: "Vegetariana", opciones: preciosPizzas.tipica , descripcion: "Cebolla, tomate, pimentón asado, aceitunas, champiñones y orégano."},
+        { nombre: "Ciruelas y Tocineta", opciones: preciosPizzas.tipica , descripcion: "Ciruelas pasas y tocineta."},
+        { nombre: "Bocadillo Tocineta", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, tocineta y bocadillo."}   
+    ],
+    "Pizzetas Premium": [
+        { nombre: "carbonara", opciones: preciosPizzas.premium , descripcion: "Queso mozzarella, tocineta, pollo, champiñones, rúgula, parmesano y salsa carbonara."},
+        { nombre: "Milan", opciones: preciosPizzas.premium  , descripcion: "Queso mozzarella, tocineta, BBQ sailor y queso filadelfia."},   
+        { nombre: "Iberica", opciones: preciosPizzas.premium  , descripcion: "Queso mozzarella, pepperoni, chorizo español, jamón serrano, salami y queso parmesano."},
+        { nombre: "California", opciones: preciosPizzas.premium   , descripcion: "Queso mozzarella, tomate cherry, champiñones, cebolla caramelizada, tocineta y queso parmesano."},
+        { nombre: "Cuatro Quesos", opciones:preciosPizzas.premium  , descripcion: "Queso mozzarella, queso azul, qeuso filadelfia, queso parmesano, tomates secos y ralladura de limón."},
+        { nombre: "Del Huerto", opciones: preciosPizzas.premium   , descripcion: "Queso mozzarella, cahmpiñones, jamón, tomate cherry, aderezo césar y rúgula."},
+        { nombre: "Florencia", opciones: preciosPizzas.premium  , descripcion: "Pesto, qeuso mozzarella, balsámico, jamón serrano, rúgula y queso filadelfia."},
+        { nombre: "Livorno", opciones: preciosPizzas.premium  , descripcion: "Pesto, queso mozzarella, camarones, tomate cherry y queso parmesano." },
+        { nombre: "Venecia", opciones: preciosPizzas.premium   , descripcion: "Pesto, queso mozzarella, tomates confitados y queso filadelfia."},
+        { nombre: "Salami", opciones: preciosPizzas.premium  , descripcion: "Pesto, queso mozzarella, salami madurado y queso filadelfia."},
+        { nombre: "Genova", opciones: preciosPizzas.premium   , descripcion: "Pesto, queso mozzarella, queso de búfala, tomate cherry, albahaca y queso parmesano."}, 
+        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPizzeta  , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca."} 
     ],
     //*****Variedades de los sabores de las Adiciones********/
      "Adiciones": [
-        { nombre: "Adicion Jalapeño", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Salami", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Salchicha", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Cebolla", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Aceitunas", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Queso", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Pollo", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Champiñones", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Jamón", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Maíz Tierno", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Tocineta", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Tomate", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Pepperoni", opciones: preciosEstandarAdiciones },
-        { nombre: "Adicion Maduro", opciones: preciosEstandarAdiciones }
+        { nombre: "Adicion Tomate", opciones: preciosAdiciones.basicas },
+        { nombre: "Adicion Cebolla", opciones: preciosAdiciones.basicas },
+        { nombre: "Adicion Pimentón", opciones: preciosAdiciones.basicas },
+        { nombre: "Adicion Maduro", opciones: preciosAdiciones.basicas },
+        { nombre: "Adicion Jalapeños", opciones: preciosAdiciones.basicas },
+        { nombre: "Adicion Jamón", opciones: preciosAdiciones.intermedia },
+        { nombre: "Adicion Ranchera", opciones: preciosAdiciones.intermedia },
+        { nombre: "Adicion Maiz", opciones: preciosAdiciones.intermedia },
+        { nombre: "Adicion Piña", opciones: preciosAdiciones.intermedia },
+        { nombre: "Adicion Champiñon", opciones: preciosAdiciones.intermedia},
+        { nombre: "Adicion Salami", opciones: preciosAdiciones.intermedia},
+        { nombre: "Adicion Tocineta", opciones: preciosAdiciones.superior },
+        { nombre: "Adicion Queso", opciones: preciosAdiciones.superior},
+        { nombre: "Adicion Pollo", opciones: preciosAdiciones.superior},
+        { nombre: "Adicion Pepperoni", opciones: preciosAdiciones.superior},
+        { nombre: "Adicion Carne", opciones: preciosAdiciones.superior},
+        { nombre: "Adicion Chorizo", opciones: preciosAdiciones.superior},
+        { nombre: "Adicion Camarón", opciones: preciosAdiciones.gourmet}
+    ],
+    //*****Variedades de los Bordes********/
+    "Bordes": [
+        { nombre: "Borde queso", opciones: preciosBordes , descripcion: "No disponible para porción o pizzeta, ni para Estofada ni super estofada" },
+        { nombre: "Borde arequipe Queso", opciones: preciosBordes , descripcion: "No disponible para porción o pizzeta, ni para Estofada ni super estofada" },
+        { nombre: "Borde bocadillo Queso", opciones: preciosBordes , descripcion: "No disponible para porción o pizzeta, ni para Estofada ni super estofada" }
     ],
      //*****Variedades de los sabores de las VARIEDADES*******/
     "Variedades": [
@@ -213,7 +241,7 @@ const menuData = {
     ],
     //**Variedades de Sanduches***/
     "Sandwiches": [
-        { nombre: "Sandwiche Pollo Jamon", opciones: preciosSandwiches.sandwichePolloJamon, descripcion: "Pan italiano, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."},
+        { nombre: "Sandwiche Pollo/Jamon", opciones: preciosSandwiches.sandwichePolloJamon, descripcion: "Pan italiano, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."},
         { nombre: "Sandwiche Atun", opciones: preciosSandwiches.sandwicheAtun , descripcion: "Pan italiano, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."}
     ],
     //**Variedades de Ensaladas***/
