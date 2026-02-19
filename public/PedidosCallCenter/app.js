@@ -295,9 +295,29 @@ function abrirCheckout() {
         document.getElementById('clienteNombre').focus();
     }, 100);
 }
+
+
+
+
+//Cerramos el modal al hacer click por fuera de él.
 function cerrarCheckout() {
-    document.getElementById('modal-checkout').style.display = 'none';
+    const modal = document.getElementById('modal-checkout');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
+// Escuchamos el evento de clic en la ventana (window) o directamente en el modal
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('modal-checkout');
+    
+    // Verificamos si el clic fue directamente en el fondo (el contenedor principal)
+    // y no en sus elementos hijos (como el formulario o botones)
+    if (event.target === modal) {
+        cerrarCheckout();
+    }
+});
+
+
 
 //función para realizar el proceso del pago y capturar toda la información necesaria.
 // Agregamos 'async' para poder esperar la respuesta de Firebase

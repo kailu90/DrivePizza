@@ -9,9 +9,9 @@
 </head>
 <body>
 
-    <header class="main-header no-print">
-        <div class="header-name">Hola <div class="header-username" id="username"> Daniel</div></div>
+    <header class="main-header no-print">        
         <div class="logo"><img src="/public/Imagenes/PiePaginaMail.png" alt=""></div>
+        <div class="header-name">Hola <div class="header-username" id="username"> Daniel</div></div>
         <div class="header-controls">
             <label>Sede:</label>
             <select id="sedeSelector" class="btn-sede">
@@ -51,11 +51,11 @@
 
    <div id="modal-checkout" class="modal-overlay" style="display:none;">
     <div class="modal-content checkout-container" style="max-width:500px;">
-        <h3>Finalizar Pedido</h3>
+        <h3>Datos cliente</h3>
         <div class="form-grid">
             <input type="tel" id="clienteTelefono" placeholder="Teléfono / WhatsApp" maxlength="10">
             <input type="text" id="clienteNombre" placeholder="Nombre Cliente">           
-            <input type="text" id="clienteDireccion" placeholder="Dirección Completa" class="full-width">
+            <input type="text" id="clienteDireccion" placeholder="Dirección Completa/Barrio/Torre/Apto" class="full-width">
             <select id="metodoPago" class="full-width">
                 <option value="" disabled selected>Método de Pago</option>
                 <option value="Efectivo">Efectivo</option>
@@ -64,9 +64,8 @@
             </select>
             <textarea id="observaciones" placeholder="Observaciones..." class="full-width"></textarea>
         </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="cerrarCheckout()" class="btn-cancelar">Volver</button>
-            <button onclick="procesarPedidoFinal()" class="btn-print">IMPRIMIR TICKET</button>
+        <div style="display:flex; gap:10px; margin-top:15px;">            
+            <button onclick="procesarPedidoFinal()" class="btn-print">ENVIAR PEDIDO</button>
         </div>
     </div>
 </div>

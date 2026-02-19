@@ -60,6 +60,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 400px;
     height: calc(100vh - 64px);
+    background-color: var(--color-secundario);
 }
 
 /* Panel de Menú */
@@ -82,16 +83,20 @@ body {
     border: 1px solid #e0e0e0;
     overflow-y: auto; /* Scroll vertical si hay demasiadas categorías */
     max-height: 100%;
+    background-color: transparent;
 }
 
 .cat-btn {
     padding: 5px 10px;
     border: none;
     border-radius: 20px;
-    background: #cbd5e1;
+    background-color: transparent;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: bold;    
+    border: 0.5px solid var(--color-terciario);
 }
+
+.cat-btn:hover { transform: translateY(-3px); border-color: var(--color-primario); }
 
 .cat-btn.active { background: var(--color-primario); color: white; }
 
@@ -103,16 +108,19 @@ body {
 }
 
 .card {
-    background: var(--white);
+    background: var(--color-secundario);
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     cursor: pointer;
     transition: transform 0.2s;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-terciario);
 }
 
-.card:hover { transform: translateY(-3px); border-color: var(--color-primario); }
+.card:hover { 
+    transform: translateY(-3px); 
+    border-color: var(--color-primario);
+ }
 
 .card h4 { margin-bottom: 5px; font-size: 0.9rem; }
 .card .price { color: var(--color-primario); font-weight: bold; }
@@ -136,10 +144,10 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--color-primario);
 }
 
-.order-footer { border-top: 2px solid #f1f5f9; padding-top: 20px; }
+.order-footer { border-top: 2px solid var(--color-primario); padding-top: 20px; }
 
 .total-row {
     display: flex;
@@ -208,6 +216,7 @@ body {
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 1rem;
+    background-color: transparent;
 }
 
 .checkout-container textarea {
@@ -218,14 +227,17 @@ body {
 .btn-print {
     background: var(--bg-light);
     color: black;
-    border: none;
+    border: 1px solid var(--color-primario);
     padding: 12px 25px;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
 }
 
-
+.btn-print:hover {
+     transform: translateY(-3px); 
+     border-color: var(--color-primario);
+ }
 
 
 
@@ -246,7 +258,7 @@ body {
 
 /* Tarjeta del modal */
 .modal-content {
-    background: white;
+    background: var(--color-secundario);
     padding: 30px;
     border-radius: 15px;
     width: 90%;
@@ -274,8 +286,8 @@ body {
 
 /* Botones de tamaño individuales */
 .btn-tamano {
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
+    background: transparent;
+    border: 2px solid var(--color-terciario);
     padding: 15px;
     border-radius: 10px;
     cursor: pointer;
@@ -286,25 +298,31 @@ body {
 }
 
 .btn-tamano:hover {
-    border-color: #007bff;
-    background: #e7f1ff;
+    border-color: var(--color-quinto);
+    background: var(--);
     transform: translateY(-3px);
 }
 
 .btn-tamano strong {
-    color: #007bff;
+    color: var(--color-primario);
     font-size: 1.1rem;
 }
 
 /* Botón cerrar/cancelar */
 .btn-cancelar {
-    background: #6c757d;
-    color: white;
+    background: var(--color-primario);
+    color: var(--color-secundario);
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
     margin-top: 10px;
+}
+
+.btn-cancelar:hover {
+    background: transparent;
+    color: var(--color-secundario);
+    transform: translateY(-3px);
 }
 
 
@@ -325,6 +343,7 @@ body {
     border-radius: 8px;
     outline: none;
     transition: border-color 0.3s;
+    background-color: transparent;
 }
 
 #productSearch:focus {
