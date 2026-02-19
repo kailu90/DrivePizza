@@ -30,19 +30,20 @@ function crearBuscador() {
 function renderCategories() {
     const nav = document.getElementById('categoryNav');
     const categoriasVisibles = [
-        "Entradas",
-        "Pastas", 
-        "Lasañas", 
         "Pizzas", 
-        "Adiciones",         
-        "Calzones", 
+        "Calzones Clásicos", 
+        "Calzones Especiales",
+        "Lasañas", 
+        "Pastas", 
         "Hamburguesas", 
+        "Bebidas",
+        "Stromboli Clásico",
+        "Stromboli Especial",
         "Sandwiches", 
         "Ensaladas", 
-        "Bebidas",
-        "Especialidades", 
-        "Postres",
-        "Bordes"
+        "Bordes", 
+        "Adiciones",   
+        "Entradas",         
     ];
     
     nav.innerHTML = categoriasVisibles.map(c => `
@@ -67,13 +68,69 @@ function renderProducts(categoria) {
     let productos = [];
 
     //Agrupamos los productos según la categoría seleccionada, para mostrar las diferentes variaciones.
-    if (categoria === "Pizzas" || categoria === "Calzones") {
-        const llavesPizzas = ["Pizzas Super Estofadas", "Pizzas Estofadas", "Pizzas Especiales", "Pizzas Gourmet", "Pizzas Clásicas", "Pizzas Típicas", "Pizzetas Premium"];
+    if (categoria === "Pizzas") {
+        const llavesPizzas = ["Pizzas Super Estofadas", "Pizzas Estofadas", "Pizzas Especiales", "Pizzas Clásicas", "Pizzas Típicas", "Pizzetas Premium"];
         llavesPizzas.forEach(key => {
             if (menuData[key]) productos = [...productos, ...menuData[key]];
         });
-    } else if (categoria === "Bebidas") {
-        const llavesBebidas = ["Limonadas", "Jarra de Té", "Cervezas", "Jugos Naturales", "Refrescos"];
+    } else if (categoria === "Calzones Clásicos") {
+        const llavesPizzas = [ "Pizzas Clásicas" ];
+        llavesPizzas.forEach(key => {
+           if (menuData[key]) {
+                // Mapeamos los sabores de pizza para asignarles los precios de calzone
+                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                    ...saborOriginal,
+                    nombre: `Calzone ${saborOriginal.nombre}`, // Agregamos el prefijo
+                    opciones: preciosCalzones.calzoneClasico // <--- Vinculamos tus precios de calzone
+                }));
+                productos = [...productos, ...saboresTransformados];
+            }
+        });   
+    } else if (categoria === "Calzones Especiales") {
+        const llavesPizzas = [ "Pizzas Super Estofadas" , "Pizzas Estofadas" , "Pizzas Típicas" , "Pizzas Especiales" , ];
+         llavesPizzas.forEach(key => {
+            if (menuData[key]) {
+                // Mapeamos los sabores de pizza para asignarles los precios de calzone
+                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                    ...saborOriginal,
+                    nombre: `Calzone ${saborOriginal.nombre}`, // Agregamos el prefijo
+                    opciones: preciosCalzones.calzoneEspecial // <--- Vinculamos tus precios de calzone
+                }));
+                productos = [...productos, ...saboresTransformados];
+            }
+        });       
+    } else if (categoria === "Stromboli Clásico") {
+        const llavesPizzas = [ "Pizzas Clásicas" ];
+        llavesPizzas.forEach(key => {
+           if (menuData[key]) {
+                // Mapeamos los sabores de pizza para asignarles los precios de calzone
+                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                    ...saborOriginal,
+                    nombre: `Stromboli ${saborOriginal.nombre}`, // Agregamos el prefijo
+                    opciones: preciosStromboli.stromboliClasico // <--- Vinculamos tus precios de calzone
+                }));
+                productos = [...productos, ...saboresTransformados];
+            }
+        });   
+    } else if (categoria === "Stromboli Especial") {
+        const llavesPizzas = [ "Pizzas Super Estofadas" , "Pizzas Estofadas" , "Pizzas Típicas" , "Pizzas Especiales" , ];
+         llavesPizzas.forEach(key => {
+            if (menuData[key]) {
+                // Mapeamos los sabores de pizza para asignarles los precios de calzone
+                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                    ...saborOriginal,
+                    nombre: `Stromboli ${saborOriginal.nombre}`, // Agregamos el prefijo
+                    opciones: preciosStromboli.stromboliEspecial // <--- Vinculamos tus precios de calzone
+                }));
+                productos = [...productos, ...saboresTransformados];
+            }
+        });       
+    }  
+    
+    
+    
+    else if (categoria === "Bebidas") {
+        const llavesBebidas = ["Limonadas", "Sodas", "Cervezas", "Jugos Naturales", "Refrescos" , "Otros"];
         llavesBebidas.forEach(key => {
             if (menuData[key]) productos = [...productos, ...menuData[key]];
         });
@@ -85,9 +142,16 @@ function renderProducts(categoria) {
     // 2. Renderizamos las tarjetas
     grid.innerHTML = productos.map(p => {
         // SEGURIDAD: Validamos que p.opciones exista antes de usar Object.values
-        const opciones = modoCalzoneActivo ? (preciosVariedades.calzone || {}) : (p.opciones || {});
-        
-        const listaPrecios = Object.values(opciones);
+      let opcionesFinales;
+        if (categoria === "Calzone Clásico") {
+            // Ignoramos preciosPizzas.clasica y usamos los de calzone
+            opcionesFinales = preciosVariedades.calzoneClasico;
+        } else if (categoria === "Calzone Especial") {
+            opcionesFinales = preciosVariedades.calzoneEspecial;
+        } else {
+            opcionesFinales = p.opciones || {};
+        }
+        const listaPrecios = Object.values(opcionesFinales);
 
         // Si el producto no tiene precios (por un error en products.js), lo saltamos
         if (listaPrecios.length === 0) {
@@ -125,13 +189,18 @@ function ejecutarFiltro() {
     });
 }
 
-// Intermediario para inyectar los precios correctos antes de abrir el modal
-function prepararSeleccion(producto, esCalzone) {
+function prepararSeleccion(producto, categoria) {
     let productoFinal = { ...producto };
-    if (esCalzone) {
+    
+    // Si la categoría seleccionada es de calzones, sobreescribimos nombre y precios
+    if (categoria === "Calzone Clasico") {
         productoFinal.nombre = `Calzone ${producto.nombre}`;
-        productoFinal.opciones = preciosVariedades.calzone;
+        productoFinal.opciones = preciosVariedades.calzoneClasico;
+    } else if (categoria === "Calzone Especial") {
+        productoFinal.nombre = `Calzone ${producto.nombre}`;
+        productoFinal.opciones = preciosVariedades.calzoneEspecial;
     }
+    
     abrirSeleccion(productoFinal);
 }
 
