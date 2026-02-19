@@ -22,12 +22,26 @@ body {
 .main-header {
     background: var(--color-primario);
     color: var(--color-secundario);
-    padding: 1rem 2rem;
+    padding: 0.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     border-radius: 5px;
+}
+.main-header img {
+    height: 50px;
+}
+
+
+.header-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+}
+
+.header-username {
+    padding: 5px;
 }
 
 .btn-sede {
@@ -71,7 +85,7 @@ body {
 }
 
 .cat-btn {
-    padding: 10px 20px;
+    padding: 5px 10px;
     border: none;
     border-radius: 20px;
     background: #cbd5e1;
