@@ -246,11 +246,33 @@ function confirmarAgregar(nombre, tamano, precio) {
 
 function cerrarModal() {
     console.log("entré a cerrarModal")
-    document.getElementById('modal-seleccion').style.display = 'none';
+    const modal = document.getElementById('modal-seleccion');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+// Escuchamos el evento de clic en la ventana (window) o directamente en el modal
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('modal-seleccion');
+    
+    // Verificamos si el clic fue directamente en el fondo (el contenedor principal)
+    // y no en sus elementos hijos (como el formulario o botones)
+    if (event.target === modal) {
+        cerrarModal();
+    }
+});
+
+// Regresamos al panel de administración del CallCenter
+const btnHome = document.getElementById('btn-home'); 
+
+function regresarHome() {
+    console.log("Regresando al panel principal...");
+    window.location.href = '../callcenter.html'; 
 }
 
-
-
+if (btnHome) {
+    btnHome.addEventListener('click', regresarHome);
+}
 
 
 

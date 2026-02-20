@@ -13,6 +13,10 @@
   --color-sexto: #1e2be4;
 }
 
+html {
+    background-color: var(--color-secundario);
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-light);
@@ -22,17 +26,88 @@ body {
 .main-header {
     background: var(--color-primario);
     color: var(--color-secundario);
-    padding: 0.5rem 2rem;
+    padding: 0 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     border-radius: 5px;
 }
+
 .main-header img {
-    height: 50px;
+    height: 100px;
 }
 
+.header-left {
+    display: flex;
+}
+
+.btn-home {
+    display: inline-flex; 
+    position: relative;
+    align-items: center;
+    height: 50px;
+    margin: auto;
+    padding: 4px 8px ;
+    background-color: var(--color-primario); /* Fondo sutil */
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--color-secundario);
+    font-size: 4rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-home:hover {
+    background-color: var(--color-quinto);
+    color: var(--color-primario);
+    border: 1px solid var(--color-primario);
+}
+
+.btn-home:after , 
+.sede-wrapper::after {
+    content: attr(data-tooltip); /* Captura el texto del HTML */
+    position: absolute;
+    top: 130%; /* Lo posiciona debajo del botón */
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background-color:var(--color-quinto);
+    color: var(--color-secundario);
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    pointer-events: none; /* Evita que el mouse interactúe con el tooltip */
+}
+
+.btn-home::before, 
+.sede-wrapper::before  {
+    content: '';
+    position: absolute;
+    top: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: #333;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+/* Mostrar al hacer hover */
+.btn-home:hover::after,
+.sede-wrappere:hover::after,
+.btn-home:hover::before,
+.sede-wrapper:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
 
 .header-name {
     display: flex;
@@ -42,18 +117,30 @@ body {
 
 .header-username {
     padding: 5px;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.sede-wrapper {
+    display: flex;
+    border: 0.5px solid var(--color-secundario);
+    border-radius: 8px;
+    cursor: pointer;  
+    padding: 5px;  
+}
+
+.sede-wrapper img {
+    height: 30px;
+    color: var(--color-primario);
 }
 
 .btn-sede {
-    width: 100%;
-    padding: 5px;
-    background: var(--bg-light);
+    width: 100%;   
+    background: var(--color-primario);
     color: var(--color-secundario);
     border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    border: 1px solid var(--color-secundario);
+    cursor: pointer;    
+    font-weight: bold;   
 }
 
 .app-container {
@@ -136,6 +223,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
+    height: calc(100vh - 100px);
 }
 
 .order-items { flex-grow: 1; overflow-y: auto; }
@@ -226,7 +314,7 @@ body {
 
 .btn-print {
     background: var(--bg-light);
-    color: black;
+    color: var(--color-terciario);
     border: 1px solid var(--color-primario);
     padding: 12px 25px;
     border-radius: 6px;
@@ -234,9 +322,20 @@ body {
     cursor: pointer;
 }
 
+.btn-finalizar-pedido {
+    color: var(--color-secundario);
+    background-color: var(--color-primario);
+}
+
+.btn-finalizar-pedido:hover {
+    color: var(--color-primario);
+    font-weight: bold;
+    background-color: var(--color-quinto);
+}
+
 .btn-print:hover {
      transform: translateY(-3px); 
-     border-color: var(--color-primario);
+     border-color: var(--color-quinto);
  }
 
 

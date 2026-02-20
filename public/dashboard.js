@@ -293,16 +293,6 @@ if (esEdicion) {
     btnGuardar.style.display = 'none';
 }
 
-
-
-
-
-
-
-
-
-
-
 })};
 
 
