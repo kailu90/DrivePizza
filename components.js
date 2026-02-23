@@ -1,7 +1,11 @@
-    import { auth , db } from './firebaseConfig.js'; 
+    import { plantaDB } from './firebaseConfig.js'; 
     import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { doc, getDoc, collection, runTransaction, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     
+    const auth = plantaDB.auth;
+    const db = plantaDB.db;
+
+
     window.CargarHeader = CargarHeader;
 
     window.addEventListener('load', () => {

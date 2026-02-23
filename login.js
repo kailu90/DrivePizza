@@ -1,11 +1,13 @@
 //Esta es la lógica para el logueo de los usuarios pantalla principal del sistema de DrivePizza.
 
 //Importa las funciones necesarias del SDK de Firebase
-import { auth, db } from './firebaseConfig.js';
+import { plantaDB } from './firebaseConfig.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut , getAuth} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 //Definición de las variables necesarias.
+const auth = plantaDB.auth;//puente para la variable 'auth' que usa tu lógica de login
+const db = plantaDB.db;
 const login_form = document.getElementById("login_form");
 const errorMessage = document.getElementById("login_error");
 const btnCreateAccount = document.getElementById("btn_create_account");
@@ -22,7 +24,7 @@ const confirmationForgotModal = document.getElementById("confirmation_forgot_mod
 
 
 
-
+console.log("Intentando login en el proyecto:", plantaDB.db.app.options.projectId);
 
 
 /***************************LÓGICA DE CREACIÓN DE USUARIO******************************/
