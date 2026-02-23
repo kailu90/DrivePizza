@@ -1,10 +1,13 @@
 //IMPORTA FUNCIONES DE LA BASE DE DATOS
 
-import { db, auth} from './firebaseConfig.js';
+import { callCenterDB } from './firebaseConfig.js';
 import { doc, updateDoc, deleteDoc , getDoc, onSnapshot, getDocs, runTransaction, collection, query, where, orderBy, addDoc, serverTimestamp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { ejecutarTransaccionStock } from './components.js'
 
+
+const db = callCenterDB.db;
+const auth = callCenterDB.auth;
 const undeliveredCount = document.getElementById('undelivered-orders');
 const sentCount = document.getElementById('sent-orders');
 const paidCount = document.getElementById('paid-orders'); 

@@ -1,8 +1,8 @@
 //importaciones necesarias de firestone
-import { db } from './firebaseConfig.js';
+import { plantaDB } from './firebaseConfig.js';
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
+const db = plantaDB.db;
 const ordersList = document.getElementById('ordersContainer');
 const totalOrdersCounter = document.getElementById('total-orders');
 const paidOrdersCounter = document.getElementById('paid-orders');
