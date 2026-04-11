@@ -1,0 +1,1322 @@
+/* ── BASE ─────────────────────────────────────────────────────────
+   :root, *, html { font-size: 62.5% } → vienen de styles.css
+   Aquí solo estilos específicos de pedidosCallCenter
+   ────────────────────────────────────────────────────────────── */
+
+html {
+    background-color: var(--color-secundario);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+}
+
+/* ── HEADER ───────────────────────────────────────────────────── */
+.main-header {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+.main-header img {
+    height: 100px;
+}
+
+.header-left {
+    display: flex;
+}
+
+.btn-home {
+    display: inline-flex;
+    position: relative;
+    align-items: center;
+    height: 50px;
+    margin: auto;
+    padding: 4px 8px;
+    background-color: var(--color-primario);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--color-secundario);
+    font-weight: bold;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-home:hover {
+    background-color: var(--color-quinto);
+    color: var(--color-primario);
+    border: 1px solid var(--color-primario);
+}
+
+/* Tooltip manejado por .with-tooltip en styles.css */
+
+.header-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-username {
+    padding: 5px;
+    font-size: 3.2rem; /* 32px */
+    font-weight: bold;
+}
+
+/* ── BOTÓN HISTORIAL ──────────────────────────────────────────── */
+.btn-historial {
+    display: inline-flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 40px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--color-secundario);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-historial:hover {
+    background-color: var(--color-quinto);
+    border-color: var(--color-primario);
+}
+
+/* ── BOTÓN CERRAR SESIÓN ──────────────────────────────────────── */
+.header-controls {
+    display: flex;
+    align-items: center;
+}
+
+.header-controls .header-link {
+    /* color, background, border, cursor, font-family → vienen de styles.css */
+    font-size: 1.4rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.header-controls .header-link:hover {
+    background-color: rgba(255,255,255,0.15);
+}
+
+/* ── LAYOUT PRINCIPAL ─────────────────────────────────────────── */
+.sede-wrapper {
+    display: flex;
+    border: 0.5px solid var(--color-secundario);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.sede-wrapper img {
+    height: 30px;
+    color: var(--color-primario);
+}
+
+.btn-sede {
+    width: 100%;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.app-container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    height: calc(100vh - 64px);
+    background-color: var(--color-secundario);
+}
+
+/* ── PANEL DE MENÚ ────────────────────────────────────────────── */
+.menu-panel {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    height: calc(100vh - 100px);
+    align-items: start;
+    padding-top: 10px;
+}
+
+.categories {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    overflow-y: auto;
+    max-height: 100%;
+    background-color: transparent;
+}
+
+.cat-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 20px;
+    background-color: transparent;
+    cursor: pointer;
+    font-weight: bold;
+    border: 0.5px solid var(--color-terciario);
+}
+
+.cat-btn:hover { transform: translateY(-3px); border-color: var(--color-primario); }
+
+.cat-btn.active { background: var(--color-primario); color: white; }
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 0 10px;
+}
+
+.card {
+    display: block;
+    background: var(--color-secundario);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 1px solid var(--color-terciario);
+    text-align: left;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-primario);
+}
+
+.card h4 { margin-bottom: 5px; font-size: 1.4rem; } /* 14px */
+.card p { color: var(--color-terciario); font-weight: normal; }
+.card .price { color: var(--color-primario); font-weight: bold; }
+
+/* ── CARRITO ──────────────────────────────────────────────────── */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--color-primario);
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.order-title {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: var(--color-primario);
+}
+
+.btn-vaciar {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid #e53935;
+    color: #e53935;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-vaciar:hover {
+    background: #e53935;
+    color: #fff;
+}
+
+.order-panel {
+    background: var(--white);
+    border-left: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    height: calc(100vh - 100px);
+    font-size: 1.4rem; /* 14px */
+}
+
+.order-items { flex-grow: 1; overflow-y: auto; }
+
+.empty-msg { font-size: 1.4rem; color: var(--color-terciario); }
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-primario);
+    font-size: 1.4rem;
+    gap: 8px;
+    overflow: hidden;
+    max-height: 80px;
+    transition: max-height 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes item-slide-out {
+    0%   { opacity: 1; transform: translateX(0);    max-height: 80px; padding: 8px 0; }
+    100% { opacity: 0; transform: translateX(40px); max-height: 0;    padding: 0;    border-bottom-color: transparent; }
+}
+
+.item-removing {
+    animation: item-slide-out 0.3s ease forwards;
+    pointer-events: none;
+}
+
+.item-nombre {
+    flex: 1;
+    font-size: 1.3rem;
+    line-height: 1.3;
+}
+
+.item-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.qty-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f0f0f0;
+    border-radius: 20px;
+    padding: 2px 5px;
+}
+
+.btn-qty {
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-primario);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.15s;
+    padding: 0;
+}
+
+.btn-qty:hover {
+    background: var(--color-quinto);
+}
+
+.qty-valor {
+    min-width: 18px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+.item-precio {
+    min-width: 72px;
+    text-align: right;
+    font-size: 1.4rem;
+}
+
+.order-footer { border-top: 2px solid var(--color-primario); padding-top: 20px; }
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 2.4rem; /* 24px */
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+.btn-print {
+    width: 100%;
+    padding: 15px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem; /* ~13px */
+    margin-left: 10px;
+    transition: transform 0.2s ease;
+    filter: grayscale(1);
+}
+
+.btn-delete:hover {
+    transform: scale(1.2);
+    filter: grayscale(0);
+}
+
+/* ── CHECKOUT ─────────────────────────────────────────────────── */
+.checkout-modal {
+    max-width: 500px !important;
+}
+
+.checkout-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.checkout-container input,
+.checkout-container select,
+.checkout-container textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1.6rem; /* 16px */
+    background-color: transparent;
+}
+
+.checkout-container textarea {
+    height: 80px;
+    resize: none;
+}
+
+.btn-print {
+    background: var(--bg-light);
+    color: var(--color-terciario);
+    border: 1px solid var(--color-primario);
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-finalizar-pedido {
+    color: var(--color-secundario);
+    background-color: var(--color-primario);
+}
+
+.btn-finalizar-pedido:hover {
+    color: var(--color-primario);
+    font-weight: bold;
+    background-color: var(--color-quinto);
+}
+
+.btn-print:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-quinto);
+}
+
+/* ── MODAL TAMAÑOS ────────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: var(--color-secundario);
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+#modal-titulo {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 2.4rem; /* 24px */
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.opciones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-tamano {
+    background: transparent;
+    border: 2px solid var(--color-terciario);
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.btn-tamano:hover {
+    border-color: var(--color-quinto);
+    transform: translateY(-3px);
+}
+
+.btn-tamano strong {
+    color: var(--color-primario);
+    font-size: 1.8rem; /* ~18px */
+}
+
+.btn-cancelar {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.btn-cancelar:hover {
+    background: transparent;
+    color: var(--color-secundario);
+    transform: translateY(-3px);
+}
+
+/* ── CANAL TOGGLE ─────────────────────────────────────────────── */
+.canal-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.canal-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.6rem; /* 16px */
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-terciario);
+}
+
+.canal-btn:hover {
+    border-color: var(--color-primario);
+}
+
+.canal-btn.active {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+/* ── PAGO TOGGLE ─────────────────────────────────────────────── */
+.pago-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.pago-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.6rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-terciario);
+}
+
+.pago-btn:hover { border-color: var(--color-primario); }
+
+.pago-btn.active {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+/* ── ENTREGA TOGGLE ───────────────────────────────────────────── */
+.entrega-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.entrega-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.6rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-terciario);
+}
+
+.entrega-btn:hover {
+    border-color: var(--color-primario);
+}
+
+.entrega-btn.active {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+/* ── SEDE TOGGLE ──────────────────────────────────────────────── */
+.form-label {
+    font-size: 1.4rem; /* ~14px */
+    font-weight: bold;
+    color: var(--color-primario);
+    margin-bottom: 4px;
+}
+
+.sede-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.sede-btn {
+    padding: 10px 6px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.4rem; /* ~14px */
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-terciario);
+}
+
+.sede-btn:hover {
+    border-color: var(--color-primario);
+}
+
+.sede-btn.active {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+.sede-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: #ddd;
+    color: #bbb;
+}
+
+.sede-restriccion-aviso {
+    font-size: 1.2rem;
+    color: var(--color-primario);
+    font-weight: 600;
+    margin: -6px 0 10px;
+    padding: 6px 10px;
+    background: rgba(230,115,24,0.08);
+    border-left: 3px solid var(--color-primario);
+    border-radius: 4px;
+}
+
+/* ── BÚSQUEDA ─────────────────────────────────────────────────── */
+.search-container {
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+#productSearch {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.9rem; /* ~19px */
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s;
+    background-color: transparent;
+}
+
+#productSearch:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.2);
+}
+
+/* ── PIZZA: FILA TAMAÑO + BOTÓN MITAD ────────────────────────── */
+.opciones-pizza {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+}
+
+.tamano-fila {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.tamano-fila .btn-tamano {
+    flex: 1;
+    text-align: center;
+}
+
+.tamano-fila .btn-sabor2 {
+    flex: 1;
+}
+
+/* Botón contenedor — posicionamiento y tooltip */
+.btn-mitad {
+    position: relative;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    align-self: center;
+}
+
+/* Disco visual que gira */
+.btn-mitad-disc {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: url('../Imagenes/IsotipoDrive.png') center/cover no-repeat;
+    border: 2px solid #bbb;
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: pizza-spin 6s linear infinite;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-mitad:hover .btn-mitad-disc {
+    animation-play-state: paused;
+    transform: scale(1.18);
+    border-color: var(--color-terciario);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip con el tamaño — aparece arriba al hacer hover */
+.btn-mitad::after {
+    content: "Combinar " attr(data-tam);
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: var(--color-quinto);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+}
+
+.btn-mitad:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Resalta el botón de tamaño cuando se hace hover sobre el disco ½+½ */
+.tamano-fila:has(.btn-mitad:hover) .btn-solo {
+    border-color: var(--color-quinto);
+    background-color: rgba(230, 115, 24, 0.08);
+    color: var(--color-terciario);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(230, 115, 24, 0.25);
+    transition: all 0.2s ease;
+}
+
+@keyframes pizza-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.btn-mitad-placeholder {
+    width: 64px;
+    flex-shrink: 0;
+}
+
+/* ── MODAL AMPLIADO PARA SEGUNDO SABOR ────────────────────────── */
+.modal-sabor2 {
+    max-width: 720px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* ── SEGUNDO SABOR: LAYOUT CONTENEDOR ────────────────────────── */
+.opciones-sabores {
+    grid-template-columns: 1fr !important;
+    gap: 0;
+}
+
+.busqueda-sabor2-wrapper {
+    margin-bottom: 12px;
+}
+
+/* ── PROMO 65K: fila búsqueda + botón combinar ────────────────── */
+.p65k-search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.p65k-search-row input {
+    flex: 1;
+}
+
+/* Sobrescribe tooltip del btn-mitad para el toggle de promo65K */
+.btn-mitad--p65k::after {
+    content: "Combinar ½+½";
+}
+
+/* Estado activo: disco detenido + borde primario */
+.btn-mitad--p65k.activo .btn-mitad-disc {
+    animation-play-state: paused;
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.25);
+    transform: scale(1.12);
+}
+
+/* ── Banner primera mitad seleccionada ────────────────────────── */
+.p65k-sabor1-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(39, 174, 96, 0.08);
+    border: 1.5px solid var(--color-primario);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+    grid-column: 1 / -1;
+}
+
+.p65k-sabor1-quitar {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    color: #666;
+    white-space: nowrap;
+}
+
+.p65k-sabor1-quitar:hover {
+    border-color: #e53e3e;
+    color: #e53e3e;
+}
+
+.busqueda-sabor2-wrapper input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.6rem;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    background-color: transparent;
+}
+
+.busqueda-sabor2-wrapper input:focus {
+    border-color: var(--color-primario);
+}
+
+/* ── GRID DE SEGUNDOS SABORES ─────────────────────────────────── */
+.sabores2-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.btn-sabor2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.btn-sabor2:hover {
+    border-color: var(--color-primario);
+    transform: translateY(-2px);
+}
+
+.sabor2-nombre {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-dark);
+    line-height: 1.3;
+}
+
+.sabor2-precio {
+    font-size: 1.3rem;
+    color: var(--color-primario);
+    font-weight: bold;
+}
+
+/* ── BOTÓN ⊕ AGREGAR ADICIÓN ──────────────────────────────────── */
+.btn-add-adicion {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-cuaternario);
+    background: transparent;
+    color: var(--color-cuaternario);
+    font-size: 1.6rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.btn-add-adicion:hover {
+    background: var(--color-cuaternario);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* ── FILA DE ADICIÓN VINCULADA ────────────────────────────────── */
+.adicion-row {
+    padding-left: 14px;
+    border-bottom-style: dashed;
+    background: rgba(117, 137, 42, 0.04);
+}
+
+.adicion-nombre {
+    font-size: 1.2rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* ── MODAL ADICIONES ──────────────────────────────────────────── */
+.opciones-adiciones {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 8px;
+}
+
+.adicion-section-title {
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--color-primario);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 0 4px;
+    border-bottom: 1px solid #eee;
+    margin-top: 4px;
+}
+
+.btn-adicion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 8px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.btn-adicion:hover {
+    border-color: var(--color-cuaternario);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(117,137,42,0.2);
+}
+
+.btn-adicion .adicion-nombre {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-dark);
+    font-style: normal;
+}
+
+.btn-adicion .adicion-precio {
+    font-size: 1.2rem;
+    color: var(--color-cuaternario);
+    font-weight: bold;
+}
+
+.btn-adicion {
+    position: relative;
+}
+
+.btn-adicion.adicion-agregada {
+    border-color: var(--color-cuaternario);
+    background: #fff8f0;
+}
+
+.btn-adicion .adicion-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--color-cuaternario);
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 20px;
+    text-align: center;
+}
+
+.btn-listo-adiciones {
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--color-cuaternario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-listo-adiciones:hover {
+    filter: brightness(0.9);
+}
+
+/* ── IMPRESIÓN ────────────────────────────────────────────────── */
+@media print {
+    .menu-sidebar, .main-content, header, .modal-overlay, .no-print,
+    .btn-delete, .btn-print, #btnFinalizar {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .order-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 0 5px !important;
+        border: none !important;
+    }
+
+    .order-title-print {
+        text-align: center;
+        font-size: 14pt;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+
+    .order-number-print {
+        display: block;
+        text-align: center;
+        font-size: 28pt !important;
+        font-weight: 900 !important;
+        margin: 10px 0;
+        border: 2px solid black;
+        padding: 5px;
+    }
+
+    .order-items, .info-cliente-ticket {
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 11pt !important;
+        color: black !important;
+    }
+
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed #000 !important;
+        margin-bottom: 4px;
+        padding-bottom: 2px;
+    }
+
+    .total-row {
+        font-size: 14pt !important;
+        margin-top: 10px;
+        border-top: 2px solid #000;
+    }
+}
+
+/* ── PANEL SALA ───────────────────────────────────────────────── */
+.sala-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    height: 100vh;
+    background: #1e3318;
+    border-left: 2px solid rgba(230, 115, 24, 0.4);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sala-panel--abierto {
+    transform: translateX(0);
+}
+
+.sala-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: #284c22;
+    border-bottom: 1px solid rgba(230, 115, 24, 0.3);
+    flex-shrink: 0;
+}
+.sala-panel__titulo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f4ecdf;
+    letter-spacing: 0.3px;
+}
+.sala-panel__cerrar {
+    background: none;
+    border: none;
+    color: rgba(244, 236, 223, 0.6);
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.2s, background 0.2s;
+}
+.sala-panel__cerrar:hover {
+    color: #f4ecdf;
+    background: rgba(255,255,255,0.1);
+}
+
+.sala-panel__body {
+    flex: 1;
+    overflow: hidden;
+}
+.sala-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.sala-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    z-index: 999;
+    transition: background 0.35s;
+}
+.sala-backdrop--visible {
+    display: block;
+    background: rgba(0,0,0,0.25);
+}
+
+/* ── OBSERVACIÓN POR PRODUCTO ─────────────────────────────────── */
+.item-grupo {
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.item-grupo--obs-open {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+    border-radius: 6px;
+}
+
+.item-nombre-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.obs-preview {
+    font-size: 1.1rem;
+    color: #f59e0b;
+    font-style: italic;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-obs {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    opacity: 0.3;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+.btn-obs:hover { opacity: 0.75; }
+.btn-obs--activo { opacity: 1; filter: sepia(1) saturate(4) hue-rotate(10deg); }
+
+.obs-input-wrap {
+    padding: 4px 10px 8px;
+    background: #fffbeb;
+    border-top: 1px dashed #fcd34d;
+}
+
+.obs-input {
+    width: 100%;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 1.3rem;
+    color: #374151;
+    background: #fff;
+    outline: none;
+    box-sizing: border-box;
+}
+.obs-input:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px #fef3c7;
+}
+
+/* ── CARD PROMO ───────────────────────────────────────────────── */
+.card-promo {
+    border: 2px solid var(--color-primario);
+    background: linear-gradient(135deg, #fff 55%, rgba(230,115,24,0.07));
+    position: relative;
+}
+.card-promo:hover {
+    background: linear-gradient(135deg, #fff 35%, rgba(230,115,24,0.14));
+    border-color: var(--color-terciario);
+}
+.card-promo--inactiva {
+    opacity: 0.45;
+    filter: grayscale(1);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.promo-badge {
+    display: inline-block;
+    background: var(--color-primario);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.card-promo h4 {
+    font-size: 3rem !important;
+    color: var(--color-primario) !important;
+    font-weight: 900;
+    margin: 2px 0 4px !important;
+}
+.promo-elegibles {
+    font-size: 1.1rem !important;
+    color: #aaa !important;
+    margin-top: 4px;
+}
+.promo-titulo-sm {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--color-primario);
+    margin: 4px 0;
+    line-height: 1.3;
+    text-align: center;
+}
+
+/* ── GRID CATEGORÍAS PROMO (paso 0) ──────────────────────────── */
+.promo-cat-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+}
+.promo-cat-btn {
+    padding: 12px 8px !important;
+    font-size: 1.3rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── TAGS PROMO EN CARRITO ────────────────────────────────────── */
+.promo-tag {
+    display: inline-block;
+    background: var(--color-primario);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.obsequio-tag {
+    display: inline-block;
+    background: #10b981;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.item-precio--gratis {
+    color: #10b981 !important;
+    font-weight: 900;
+}
