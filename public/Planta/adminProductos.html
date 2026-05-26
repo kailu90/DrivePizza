@@ -39,6 +39,9 @@
                     <option value="active">Activos</option>
                     <option value="inactive">Inactivos</option>
                 </select>
+                <select id="ap-filter-proveedor" class="ap-select">
+                    <option value="">Todos los proveedores</option>
+                </select>
             </div>
             <button class="ap-btn ap-btn--primary" id="ap-btn-nuevo">+ Nuevo producto</button>
         </div>
@@ -54,6 +57,7 @@
                         <th class="ap-col-center">Rotación</th>
                         <th>Nombre</th>
                         <th>Categoría</th>
+                        <th>Proveedor</th>
                         <th class="ap-col-num">Precio</th>
                         <th class="ap-col-num">Stock</th>
                         <th>Unidad</th>
@@ -64,7 +68,7 @@
                 </thead>
                 <tbody id="ap-tbody">
                     <tr id="ap-loading-row">
-                        <td colspan="9" class="ap-loading">Cargando productos...</td>
+                        <td colspan="10" class="ap-loading">Cargando productos...</td>
                     </tr>
                 </tbody>
             </table>
@@ -122,6 +126,15 @@
                         <span class="ap-label__hint">(las pizzerías pueden pedirlo aunque el stock sea 0)</span>
                     </label>
                     <input type="checkbox" id="f-sin-limite" name="sinLimiteStock" class="ap-checkbox">
+                </div>
+
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label">Proveedor principal</label>
+                    <input type="text" id="f-proveedor-buscar" class="ap-input" placeholder="Busca el proveedor..." autocomplete="off">
+                    <div id="f-proveedor-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                    <div id="f-proveedor-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                        <p style="margin:0;font-weight:600;" id="f-proveedor-nombre"></p>
+                    </div>
                 </div>
 
                 <div class="ap-field">

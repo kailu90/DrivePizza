@@ -16,7 +16,12 @@ const CACHE_KEY = 'prov_proveedores';
 const CACHE_TTL = 10 * 60 * 1000;
 
 function cacheGuardar(data) {
-    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch {}
+    try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data }));
+        // Invalidar cachés de proveedores usados en otras pantallas
+        sessionStorage.removeItem('ap_proveedores');
+        sessionStorage.removeItem('inv_proveedores');
+    } catch {}
 }
 function cacheLeer() {
     try {

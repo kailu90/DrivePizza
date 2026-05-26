@@ -1,6 +1,6 @@
 import { HETZNER_URL, WS_URL } from '../Api/config.js'
 import { plantaDB } from '../Api/firebaseConfig.js';
-import { runTransaction, doc, increment, collection, getDocs, getDoc, query, orderBy, serverTimestamp, where} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { runTransaction, doc, updateDoc, increment, collection, getDocs, getDoc, query, orderBy, serverTimestamp, where} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js'
 import { registrarMovimiento, ejecutarAjusteStock, notificarCacheProducto } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
@@ -115,6 +115,7 @@ function renderProductos(productos) {
         row.innerHTML = `
             <td class="inventory-management__cell">${product.id_product ?? ''}</td>
             <td class="inventory-management__cell" title="${product.name}">${product.name}</td>
+            <td class="inventory-management__cell">${product.proveedorNombre || '—'}</td>
             <td class="inventory-management__cell">${product.measurementUnit}</td>
             <td class="inventory-management__cell">${product.stock}</td>
             <td class="inventory-management__cell">${formatter.format(product.price)}</td>
@@ -134,7 +135,7 @@ function renderProductos(productos) {
 // ── Cargar productos ───────────────────────────────────────────────────────
 async function cargarProductos(forzar = false) {
     try {
-        const productos = await getProductos(forzar)
+        const [productos] = await Promise.all([getProductos(forzar), obtenerProveedoresParaStock()])
         const sinNombre = productos.filter(p => !p.name)
         console.log('Productos sin nombre:', sinNombre)
         todosLosProductos = productos.slice().sort((a, b) => 
@@ -143,7 +144,7 @@ async function cargarProductos(forzar = false) {
         renderProductos(todosLosProductos)
     } catch (error) {
         console.error('Error al cargar productos:', error)
-        productsContainer.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:red;">Error al cargar productos.</td></tr>`
+        productsContainer.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:red;">Error al cargar productos.</td></tr>`
     }
 }
 cargarProductos();
@@ -166,9 +167,11 @@ const fCheck = {
 };
 
 function aplicarFiltros() {
-    const term = searchInput.value.trim().toLowerCase();
+    const term      = searchInput.value.trim().toLowerCase();
+    const provFilter = document.getElementById('inv-filter-proveedor').value;
     let filtrados = todosLosProductos;
-    if (term)                      filtrados = filtrados.filter(p => p.name.toLowerCase().includes(term));
+    if (term)       filtrados = filtrados.filter(p => p.name.toLowerCase().includes(term));
+    if (provFilter) filtrados = filtrados.filter(p => p.proveedorId === provFilter);
     if (fCheck.soloSinLimite())    filtrados = filtrados.filter(p => p.sinLimiteStock === true);
     if (fCheck.soloAgotados())     filtrados = filtrados.filter(p => (p.stock ?? 0) === 0);
     if (fCheck.soloConStock())     filtrados = filtrados.filter(p => (p.stock ?? 0) > 0);
@@ -194,6 +197,7 @@ function actualizarBadge() {
 }
 
 searchInput?.addEventListener('input', aplicarFiltros);
+document.getElementById('inv-filter-proveedor').addEventListener('change', aplicarFiltros);
 
 // Toggle panel
 document.getElementById('btn-filtros').addEventListener('click', (e) => {
@@ -285,6 +289,16 @@ async function obtenerProveedoresParaStock() {
             modalCacheSave('inv_proveedores', proveedores);
         }
         _proveedoresList = proveedores;
+        // Poblar select de filtro si aún no tiene opciones
+        const sel = document.getElementById('inv-filter-proveedor');
+        if (sel.options.length === 1) {
+            proveedores.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        }
     } catch (error) {
         console.error('Error al cargar proveedores:', error);
     }
@@ -375,18 +389,24 @@ stockForm.addEventListener('submit', (event) => {
                 });
             });
 
-            await registrarMovimiento({
-                tipo:            'ENTRADA',
-                productoId:      productId,
-                productoNombre:  productName,
-                proveedorId:     supplierId,
-                proveedorNombre: supplierName,
-                cantidad:        quantityToAdd,
-                unidadMedida,
-                motivo:          'Ingreso Manual Stock',
-                notas:           observations || '',
-                usuario:         usuarioActual
-            });
+            await Promise.all([
+                registrarMovimiento({
+                    tipo:            'ENTRADA',
+                    productoId:      productId,
+                    productoNombre:  productName,
+                    proveedorId:     supplierId,
+                    proveedorNombre: supplierName,
+                    cantidad:        quantityToAdd,
+                    unidadMedida,
+                    motivo:          'Ingreso Manual Stock',
+                    notas:           observations || '',
+                    usuario:         usuarioActual
+                }),
+                updateDoc(doc(db, 'Planta', 'principal', 'Productos', productId), {
+                    proveedorId:     supplierId,
+                    proveedorNombre: supplierName,
+                })
+            ]);
 
             alert(`✅ Ingreso exitoso\n\n${productName}\n${quantityToAdd} ${unidad}${quantityToAdd !== 1 ? 's' : ''}`);
 
@@ -588,6 +608,7 @@ document.getElementById('btn-exportar-excel')?.addEventListener('click', () => {
     const filas = productosRenderizados.map(p => ({
         'ID':             p.id_product ?? '',
         'Producto':       p.name,
+        'Proveedor':      p.proveedorNombre || '',
         'Unidad':         p.measurementUnit || '',
         'Stock':          p.stock ?? 0,
         'Precio Unidad':  p.price ?? 0,
@@ -600,6 +621,7 @@ document.getElementById('btn-exportar-excel')?.addEventListener('click', () => {
     ws['!cols'] = [
         { wch: 6 },   // ID
         { wch: 30 },  // Producto
+        { wch: 22 },  // Proveedor
         { wch: 12 },  // Unidad
         { wch: 10 },  // Stock
         { wch: 16 },  // Precio Unidad

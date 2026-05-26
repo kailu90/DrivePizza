@@ -38,13 +38,15 @@ let allProducts = [];
 let categoriasMap = {};   // idCategory → name
 let categoriasArr = [];   // [{ idCategory, name }]
 let editingDocId = null;
+let _proveedoresList = [];
+let _proveedorSeleccionado = null; // { id, name }
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, sede }) => {
   usuarioActual = username;
   CargarHeader(capitalizarSede(sede));
   CargarSidebar();
-  await Promise.all([loadCategorias(), loadProducts()]);
+  await Promise.all([loadCategorias(), loadProducts(), loadProveedores()]);
   buildCatFilter();
   renderTable();
   document.body.classList.add('loaded');
@@ -83,6 +85,26 @@ async function loadProducts() {
     allProducts = allProducts.map(p => ({ ...p, _docId: p.id }))
 }
 
+// ── Cargar Proveedores ────────────────────────────────────────────────
+async function loadProveedores() {
+    const cached = cacheLeer('ap_proveedores', TTL_CATEGORIAS);
+    if (cached) {
+        _proveedoresList = cached;
+    } else {
+        const snap = await getDocs(query(collection(db, 'Planta', 'principal', 'Proveedores'), orderBy('name', 'asc')));
+        _proveedoresList = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
+        cacheGuardar('ap_proveedores', _proveedoresList);
+    }
+    const sel = document.getElementById('ap-filter-proveedor');
+    sel.innerHTML = '<option value="">Todos los proveedores</option>';
+    _proveedoresList.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+    });
+}
+
 // ── Poblar select de unidades ─────────────────────────────────────────────────
 (function buildUnidades() {
   const sel = document.getElementById('f-unidad');
@@ -109,18 +131,20 @@ function buildCatFilter() {
 const ROT_LABEL = { alta: 'Alta rotación', media: 'Media rotación', baja: 'Baja rotación' };
 
 function getFilteredProducts() {
-  const search   = document.getElementById('ap-search').value.trim().toLowerCase();
-  const cat      = document.getElementById('ap-filter-cat').value;
-  const status   = document.getElementById('ap-filter-status').value;
-  const rotacion = document.getElementById('ap-filter-rotacion').value;
+  const search    = document.getElementById('ap-search').value.trim().toLowerCase();
+  const cat       = document.getElementById('ap-filter-cat').value;
+  const status    = document.getElementById('ap-filter-status').value;
+  const rotacion  = document.getElementById('ap-filter-rotacion').value;
+  const proveedor = document.getElementById('ap-filter-proveedor').value;
 
   return allProducts.filter(p => {
-    if (search && !p.name?.toLowerCase().includes(search)) return false;
-    if (cat    && String(p.idCategory) !== String(cat))    return false;
+    if (search    && !p.name?.toLowerCase().includes(search))  return false;
+    if (cat       && String(p.idCategory) !== String(cat))     return false;
     if (status === 'active'   && !p.active)  return false;
     if (status === 'inactive' &&  p.active)  return false;
     if (rotacion === 'sin'    && p.rotacion) return false;
-    if (rotacion && rotacion !== 'sin' && p.rotacion !== rotacion) return false;
+    if (rotacion  && rotacion !== 'sin' && p.rotacion !== rotacion) return false;
+    if (proveedor && p.proveedorId !== proveedor)              return false;
     return true;
   });
 }
@@ -133,7 +157,7 @@ function renderTable() {
   counter.textContent = `${filtered.length} producto${filtered.length !== 1 ? 's' : ''}`;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="ap-loading">Sin resultados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="ap-loading">Sin resultados.</td></tr>';
     return;
   }
 
@@ -151,6 +175,7 @@ function renderTable() {
       </td>
       <td class="ap-cell ap-cell--name">${p.name || '—'}</td>
       <td class="ap-cell ap-cell--cat">${catNombre}</td>
+      <td class="ap-cell">${p.proveedorNombre || '—'}</td>
       <td class="ap-cell ap-col-num">${precio}</td>
       <td class="ap-cell ap-col-num">${p.stock ?? '—'}${p.sinLimiteStock ? ' <span title="Sin límite de stock">∞</span>' : ''}</td>
       <td class="ap-cell">${p.measurementUnit || '—'}</td>
@@ -169,7 +194,7 @@ function renderTable() {
 }
 
 // ── Eventos de filtro ─────────────────────────────────────────────────────────
-['ap-search', 'ap-filter-cat', 'ap-filter-status', 'ap-filter-rotacion'].forEach(id => {
+['ap-search', 'ap-filter-cat', 'ap-filter-status', 'ap-filter-rotacion', 'ap-filter-proveedor'].forEach(id => {
   document.getElementById(id).addEventListener('input', renderTable);
 });
 
@@ -214,7 +239,10 @@ const modal  = document.getElementById('ap-modal');
 const form   = document.getElementById('ap-form');
 const errMsg = document.getElementById('ap-modal-error');
 
-function openModal(product = null) {
+async function openModal(product = null) {
+  // Recargar proveedores si el caché fue invalidado (ej: se creó uno nuevo en otra pestaña)
+  if (!cacheLeer('ap_proveedores', TTL_CATEGORIAS)) await loadProveedores();
+
   editingDocId = product ? product._docId : null;
   const isEdit = !!product;
   document.getElementById('ap-modal-title').textContent = isEdit ? 'Editar producto' : 'Nuevo producto';
@@ -228,6 +256,17 @@ function openModal(product = null) {
   document.getElementById('f-activo').checked       = product?.active         ?? true;
   document.getElementById('f-sin-limite').checked   = product?.sinLimiteStock  ?? false;
   document.getElementById('f-rotacion').value       = product?.rotacion        ?? '';
+
+  // Proveedor
+  _proveedorSeleccionado = product?.proveedorId ? { id: product.proveedorId, name: product.proveedorNombre } : null;
+  document.getElementById('f-proveedor-buscar').value = product?.proveedorNombre ?? '';
+  document.getElementById('f-proveedor-resultados').innerHTML = '';
+  if (_proveedorSeleccionado) {
+    document.getElementById('f-proveedor-nombre').textContent = product.proveedorNombre;
+    document.getElementById('f-proveedor-seleccionado').style.display = 'block';
+  } else {
+    document.getElementById('f-proveedor-seleccionado').style.display = 'none';
+  }
 
   // Stock: visible solo al crear
   const stockWrap  = document.getElementById('f-stock-wrap');
@@ -248,6 +287,34 @@ function openModal(product = null) {
 document.getElementById('ap-btn-nuevo').addEventListener('click', () => openModal());
 document.getElementById('ap-btn-cancelar').addEventListener('click', () => modal.close());
 modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+modal.addEventListener('close', () => {
+    document.getElementById('f-proveedor-buscar').value = '';
+    document.getElementById('f-proveedor-resultados').innerHTML = '';
+    document.getElementById('f-proveedor-seleccionado').style.display = 'none';
+    _proveedorSeleccionado = null;
+});
+
+document.getElementById('f-proveedor-buscar').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const res = document.getElementById('f-proveedor-resultados');
+    if (!q) { res.innerHTML = ''; return; }
+    res.innerHTML = _proveedoresList
+        .filter(p => p.name.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map(p => `<div class="prod-result-item" data-id="${p.id}" data-name="${p.name}">
+            <span class="prod-result-item__name">${p.name}</span></div>`)
+        .join('');
+});
+
+document.getElementById('f-proveedor-resultados').addEventListener('click', (e) => {
+    const item = e.target.closest('.prod-result-item');
+    if (!item) return;
+    _proveedorSeleccionado = { id: item.dataset.id, name: item.dataset.name };
+    document.getElementById('f-proveedor-buscar').value = item.dataset.name;
+    document.getElementById('f-proveedor-resultados').innerHTML = '';
+    document.getElementById('f-proveedor-nombre').textContent = item.dataset.name;
+    document.getElementById('f-proveedor-seleccionado').style.display = 'block';
+});
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -284,6 +351,7 @@ form.addEventListener('submit', async (e) => {
     quantities: presentaciones,
     sinLimiteStock,
     rotacion,
+    ...(_proveedorSeleccionado ? { proveedorId: _proveedorSeleccionado.id, proveedorNombre: _proveedorSeleccionado.name } : {})
   };
 
   try {
@@ -296,7 +364,7 @@ form.addEventListener('submit', async (e) => {
       invalidarProductos();
 
       // Registrar un único documento con todos los campos que cambiaron
-      const camposAuditables = ['name', 'price', 'measurementUnit', 'idCategory', 'quantities', 'active', 'sinLimiteStock', 'rotacion'];
+      const camposAuditables = ['name', 'price', 'measurementUnit', 'idCategory', 'quantities', 'active', 'sinLimiteStock', 'rotacion', 'proveedorNombre'];
       const cambios = camposAuditables
         .filter(campo => String(antes?.[campo] ?? '') !== String(data[campo] ?? ''))
         .map(campo => ({

@@ -60,15 +60,16 @@
   background-color: #fff;
 }
 
-.ap-table th:nth-child(1) { width: 4%;  } /* Rotación */
-.ap-table th:nth-child(2) { width: 25%; } /* Nombre */
-.ap-table th:nth-child(3) { width: 17%; } /* Categoría */
-.ap-table th:nth-child(4) { width: 9%;  } /* Precio */
-.ap-table th:nth-child(5) { width: 7%;  } /* Stock */
-.ap-table th:nth-child(6) { width: 8%;  } /* Unidad */
-.ap-table th:nth-child(7) { width: 12%; } /* Presentaciones */
-.ap-table th:nth-child(8) { width: 9%;  } /* Activo */
-.ap-table th:nth-child(9) { width: 9%;  } /* Acciones */
+.ap-table th:nth-child(1)  { width: 4%;  } /* Rotación */
+.ap-table th:nth-child(2)  { width: 20%; } /* Nombre */
+.ap-table th:nth-child(3)  { width: 13%; } /* Categoría */
+.ap-table th:nth-child(4)  { width: 14%; } /* Proveedor */
+.ap-table th:nth-child(5)  { width: 8%;  } /* Precio */
+.ap-table th:nth-child(6)  { width: 6%;  } /* Stock */
+.ap-table th:nth-child(7)  { width: 8%;  } /* Unidad */
+.ap-table th:nth-child(8)  { width: 10%; } /* Presentaciones */
+.ap-table th:nth-child(9)  { width: 7%;  } /* Activo */
+.ap-table th:nth-child(10) { width: 10%; } /* Acciones */
 
 /* Badge de rotación */
 .ap-rot {

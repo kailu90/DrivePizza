@@ -68,6 +68,9 @@
         <div class="ap-toolbar">
             <div class="ap-toolbar__filters">
                 <input type="search" id="inv-search" class="ap-input" placeholder="Buscar producto...">
+                <select id="inv-filter-proveedor" class="ap-select">
+                    <option value="">Todos los proveedores</option>
+                </select>
                 <div class="filtros-dropdown" id="filtros-dropdown">
                     <button class="ap-btn ap-btn--filter" id="btn-filtros">
                         ⚙ Filtros <span class="filtros-badge" id="filtros-badge" style="display:none">0</span>
@@ -129,6 +132,7 @@
         <tr>
             <th class="inventory-management__heading">ID</th>
             <th class="inventory-management__heading">NOMBRE DEL PRODUCTO</th>
+            <th class="inventory-management__heading">PROVEEDOR</th>
             <th class="inventory-management__heading">UNIDAD DE MEDIDA</th>
             <th class="inventory-management__heading">STOCK</th>
             <th class="inventory-management__heading">PRECIO UNIDAD</th>
