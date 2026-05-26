@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── FUNCIONES AUXILIARES ─────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function rol() {
+      return get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.rol;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && rol() == 'admin';
+    }
+
+    function isPlanta() {
+      return isAuthenticated() && (rol() == 'planta' || rol() == 'admin' || rol() == 'planta-admin');
+    }
+
+    function isPizzeria() {
+      return isAuthenticated() && rol() == 'pizzeria';
+    }
+
+    function isCallCenter() {
+      return isAuthenticated() && (rol() == 'callcenter' || rol() == 'callcenter-admin');
+    }
+
+    // ── KILLSWITCH ───────────────────────────────────────────────────
+    // Protección de costos: bloquea TODAS las escrituras en Firestore.
+    // Lecturas siguen funcionando (la app carga datos pero no puede guardar).
+    //
+    // Para ACTIVAR el bloqueo:
+    //   1. Cambiar  return true  →  return false
+    //   2. Ejecutar: firebase deploy --only firestore:rules
+    //
+    // Para DESACTIVAR el bloqueo:
+    //   1. Cambiar  return false  →  return true
+    //   2. Ejecutar: firebase deploy --only firestore:rules
+    //
+    // Costo adicional: $0 (es una constante, no consulta documentos)
+    function sistemaActivo() {
+      return true;
+    }
+
+
+    // ── GLOBALES ─────────────────────────────────────────────────────
+
+    // Config interna (JaaS keys, etc.): solo callcenter y planta autenticados
+    match /Config/{configId} {
+      allow read: if isAuthenticated() && (isCallCenter() || isPlanta());
+      allow write: if isAdmin() && sistemaActivo();
+    }
+
+    // Lectura pública: necesaria para el login por username antes de autenticar
+    match /Usuarios/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid && sistemaActivo();
+    }
+
+    // Sedes: cualquier usuario autenticado puede leer
+    match /Sedes/{sedeId} {
+      allow read: if isAuthenticated();
+      allow write: if isPlanta() && sistemaActivo();
+    }
+
+
+    // ── PLANTA ───────────────────────────────────────────────────────
+
+    // Productos: planta gestiona, todos los autenticados leen (pizzerías arman pedidos)
+    match /Planta/principal/Productos/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isPlanta() && sistemaActivo();
+    }
+
+    // Proveedores: exclusivo de planta
+    match /Planta/principal/Proveedores/{provId} {
+      allow read: if isPlanta();
+      allow write: if isPlanta() && sistemaActivo();
+    }
+
+    // Categorías: planta gestiona, todos los autenticados leen
+    match /Planta/principal/Categorias/{catId} {
+      allow read: if isAuthenticated();
+      allow write: if isPlanta() && sistemaActivo();
+    }
+
+    // Movimientos de inventario: planta lee todo
+    // Pizzerías: solo leen devoluciones de su propia sede
+    match /Planta/principal/Movimientos/{movId} {
+      allow read: if isPlanta() ||
+        (isPizzeria() &&
+         resource.data.tipo == 'Devolución' &&
+         resource.data.sede == get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.sede.lower());
+      allow create: if (isPlanta() || isPizzeria()) && sistemaActivo();
+      allow update, delete: if isPlanta() && sistemaActivo();
+    }
+
+    // Contador de inventario: exclusivo de planta
+    match /Planta/principal/Contadores/idInventory {
+      allow read: if isPlanta();
+      allow write: if isPlanta() && sistemaActivo();
+    }
+
+    // Contador de pedidos planta: planta y pizzerías (ambas crean PedidosPlanta)
+    match /Planta/principal/Contadores/idPedidos {
+      allow read: if isPlanta() || isPizzeria();
+      allow write: if (isPlanta() || isPizzeria()) && sistemaActivo();
+    }
+
+    // Pedidos Planta: planta gestiona todo, pizzerías crean, leen y editan sus pedidos pendientes
+    match /Planta/principal/PedidosPlanta/{pedidoId} {
+      allow read: if isPlanta() || isPizzeria();
+      allow create: if (isPlanta() || isPizzeria()) && sistemaActivo();
+      allow update: if (isPlanta() || isPizzeria()) && sistemaActivo();
+      allow delete: if isPlanta() && sistemaActivo();
+    }
+
+
+    // ── CALLCENTER ───────────────────────────────────────────────────
+
+    // Pedidos CallCenter:
+    //   - CallCenter: crea y actualiza (pendiente → impreso)
+    //   - Pizzerías: lee y actualiza (impreso → en preparación → despachado → entregado)
+    //   - Nadie elimina pedidos de CallCenter
+    match /CallCenter/principal/PedidosCallCenter/{pedidoId} {
+      allow read: if isCallCenter() || isPizzeria();
+      allow create: if isCallCenter() && sistemaActivo();
+      allow update: if (isCallCenter() || isPizzeria()) && sistemaActivo();
+      allow delete: if false;
+    }
+
+    // Contador CallCenter: exclusivo de callcenter
+    match /CallCenter/principal/Contadores/{contadorId} {
+      allow read: if isCallCenter();
+      allow write: if isCallCenter() && sistemaActivo();
+    }
+
+    // Clientes: exclusivo de callcenter (proyección futura)
+    match /CallCenter/principal/Clientes/{clienteId} {
+      allow read: if isCallCenter();
+      allow write: if isCallCenter() && sistemaActivo();
+    }
+
+  }
+}

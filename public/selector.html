@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar entorno - DrivePizza</title>
+    <link rel="stylesheet" href="Estilos/styles.css">
+    <link rel="shortcut icon" href="Imagenes/Isotipo.png" type="image/x-icon">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-secundario);
+        }
+
+        .sel-card {
+            background: var(--color-secundario);
+            border-radius: 14px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 4rem 3.5rem;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+        }
+
+        .sel-logo {
+            width: 72px;
+            margin-bottom: 2rem;
+        }
+
+        .sel-bienvenida {
+            font-size: 1.4rem;
+            color: var(--color-primario);
+            margin-bottom: 0.4rem;
+        }
+
+        .sel-titulo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-terciario);
+            margin-bottom: 3rem;
+        }
+
+        .sel-opciones {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .sel-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.4rem 2rem;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.6rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.15s;
+            text-decoration: none;
+        }
+
+        .sel-btn:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        .sel-btn--planta {
+            background-color: var(--color-primario);
+            color: var(--color-secundario);
+        }
+
+        .sel-btn--callcenter {
+            background-color: var(--color-primario);
+            color: var(--color-secundario);
+        }
+
+        .sel-btn__icon {
+            font-size: 2rem;
+        }
+
+        .sel-logout {
+            margin-top: 2.4rem;
+            font-size: 1.2rem;
+            color: var(--color-primario);
+            cursor: pointer;
+            background: none;
+            border: none;
+            text-decoration: underline;
+        }
+
+        .sel-logout:hover {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="sel-card">
+        <img src="Imagenes/Isotipo.png" alt="DrivePizza" class="sel-logo">
+        <p class="sel-bienvenida">Bienvenido, <span id="sel-username">...</span></p>
+        <p class="sel-titulo">¿A dónde quieres entrar?</p>
+
+        <div class="sel-opciones">
+            <a href="Planta/dashboard.html" class="sel-btn sel-btn--planta">
+                <span class="sel-btn__icon">🏭</span>
+                Planta
+            </a>
+            <a href="CallCenter/callcenter-shell.html" class="sel-btn sel-btn--callcenter">
+                <span class="sel-btn__icon">📞</span>
+                Call Center
+            </a>
+        </div>
+
+        <button class="sel-logout" id="sel-btn-logout">Cerrar sesión</button>
+    </div>
+
+    <script type="module">
+        import { plantaDB } from './Api/firebaseConfig.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const auth = plantaDB.auth;
+        const db   = plantaDB.db;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            const userDoc = await getDoc(doc(db, 'Usuarios', user.uid));
+            if (!userDoc.exists() || userDoc.data().rol !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('sel-username').textContent = userDoc.data().username || user.email;
+            document.body.classList.add('loaded');
+        });
+
+        document.getElementById('sel-btn-logout').addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

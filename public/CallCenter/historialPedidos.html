@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Historial de Pedidos - CallCenter</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+<div id="header-container"></div>
+
+<div id="skeleton" class="sk-page"></div>
+
+<!-- Panel lateral de filtros -->
+<div id="filtros-overlay" class="filtros-overlay"></div>
+<aside id="filtros-panel" class="filtros-panel">
+    <div class="filtros-panel__header">
+        <span>Filtros</span>
+        <button id="btn-cerrar-panel" class="btn-cerrar-panel">&times;</button>
+    </div>
+    <div class="filtros-panel__body">
+        <div class="filtro-grupo">
+            <label>Desde</label>
+            <input type="date" id="filtro-desde">
+        </div>
+        <div class="filtro-grupo">
+            <label>Hasta</label>
+            <input type="date" id="filtro-hasta">
+        </div>
+        <div class="filtro-grupo">
+            <label>Sede</label>
+            <select id="filtro-sede">
+                <option value="">Todas</option>
+                <option value="cabecera">Cabecera</option>
+                <option value="acropolis">Acrópolis</option>
+                <option value="cañaveral">Cañaveral</option>
+                <option value="megamall">Megamall</option>
+                <option value="piedecuesta">Piedecuesta</option>
+                <option value="unico">Único</option>
+            </select>
+        </div>
+        <div class="filtro-grupo">
+            <label>Estado</label>
+            <select id="filtro-estado">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="recibido">Recibido</option>
+                <option value="en preparación">En preparación</option>
+                <option value="despachado">Despachado</option>
+            </select>
+        </div>
+        <button class="btn-filtrar" id="btn-filtrar">Filtrar</button>
+        <button class="btn-limpiar" id="btn-limpiar">Limpiar</button>
+    </div>
+</aside>
+
+<main class="historial__main" id="contenido-principal" style="display:none;">
+
+    <!-- Encabezado historial -->
+    <div class="historial__topbar">
+        <div class="topbar-actions">
+            <button class="btn-filtros-toggle" id="btn-abrir-panel">⚙ Filtros</button>
+            <button class="btn-actualizar" id="btn-actualizar" title="Actualizar desde Firebase">↺ Actualizar</button>
+            <button class="btn-exportar" id="btn-exportar" style="display:none;">⬇ CSV</button>
+            <button class="btn-exportar" id="btn-liquidacion" style="display:none;">📊 Liquidación</button>
+        </div>
+    </div>
+
+    <!-- Resumen rápido -->
+    <section class="historial__resumen">
+        <div class="resumen-card">
+            <span class="resumen-label">Total pedidos</span>
+            <span class="resumen-valor" id="resumen-total">0</span>
+        </div>
+        <div class="resumen-card">
+            <span class="resumen-label">📱 WhatsApp</span>
+            <span class="resumen-valor" id="resumen-whatsapp">0</span>
+        </div>
+        <div class="resumen-card">
+            <span class="resumen-label">📞 IVR</span>
+            <span class="resumen-valor" id="resumen-ivr">0</span>
+        </div>
+        <div class="resumen-card resumen-card--reserva">
+            <span class="resumen-label">🗓 Reservas</span>
+            <span class="resumen-valor" id="resumen-reservas">0</span>
+        </div>
+    </section>
+
+    <!-- Tabla -->
+    <section class="inventory-management">
+        <table class="inventory-management__table">
+            <thead class="inventory-management__thead">
+                <tr class="inventory-management__row">
+                    <th class="inventory-management__heading">N°</th>
+                    <th class="inventory-management__heading">Fecha / Hora</th>
+                    <th class="inventory-management__heading">Cliente</th>
+                    <th class="inventory-management__heading">Dirección</th>
+                    <th class="inventory-management__heading">Canal</th>
+                    <th class="inventory-management__heading">Sede</th>
+                    <th class="inventory-management__heading">Asesor</th>
+                    <th class="inventory-management__heading">Estado</th>
+                    <th class="inventory-management__heading">Obs.</th>
+                    <th class="inventory-management__heading">Total</th>
+                </tr>
+                <tr class="filtros-columna">
+                    <th><input type="text" class="col-filter" id="cf-npedido" placeholder="N° pedido"></th>
+                    <th><input type="text" class="col-filter" id="cf-fecha" placeholder="dd/mm/aa"></th>
+                    <th><input type="text" class="col-filter" id="cf-cliente" placeholder="Nombre cliente"></th>
+                    <th><input type="text" class="col-filter" id="cf-direccion" placeholder="Dirección"></th>
+                    <th>
+                        <select class="col-filter" id="cf-canal">
+                            <option value="">Todos</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="ivr">IVR</option>
+                        </select>
+                    </th>
+                    <th>
+                        <select class="col-filter" id="cf-sede">
+                            <option value="">Todas</option>
+                            <option value="cabecera">Cabecera</option>
+                            <option value="acropolis">Acrópolis</option>
+                            <option value="cañaveral">Cañaveral</option>
+                            <option value="megamall">Megamall</option>
+                            <option value="piedecuesta">Piedecuesta</option>
+                            <option value="unico">Único</option>
+                        </select>
+                    </th>
+                    <th>
+                        <select class="col-filter" id="cf-asesor">
+                            <option value="">Todos</option>
+                        </select>
+                    </th>
+                    <th>
+                        <select class="col-filter" id="cf-estado">
+                            <option value="">Todos</option>
+                            <option value="pendiente">Pendiente</option>
+                                        <option value="recibido">Recibido</option>
+                            <option value="en preparación">En preparación</option>
+                            <option value="despachado">Despachado</option>
+                        </select>
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th class="th-sync" style="display:none;"></th>
+                </tr>
+            </thead>
+            <tbody id="historial-tbody">
+                <tr>
+                    <td class="inventory-management__cell" colspan="10" style="text-align:center; padding: 30px;">
+                        Cargando pedidos...
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </section>
+
+    <div id="paginacion" class="paginacion"></div>
+
+</main>
+
+<!-- Modal detalle / gestión de pedido -->
+<div class="modal-overlay" id="modal-detalle">
+    <div class="modal-pedido-content">
+
+        <div class="mpedido-header">
+            <span class="mpedido-npedido" id="modal-npedido"></span>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button class="mpedido-close" id="cerrar-detalle">&times;</button>
+            </div>
+        </div>
+
+        <div class="mpedido-body">
+            <div class="mpedido-cliente" id="modal-cliente"></div>
+            <div class="mpedido-meta" id="modal-meta"></div>
+            <div class="mpedido-entrega" id="modal-entrega"></div>
+            <div id="modal-impreso"></div>
+            <hr class="mpedido-sep">
+            <div class="mpedido-productos-title" id="modal-productos-title">Productos</div>
+            <ul class="mpedido-productos" id="modal-productos"></ul>
+            <div class="mpedido-totals-box" id="modal-totals-box" style="display:none;">
+                <div style="display:flex; justify-content:space-between; font-size:1.3rem; color:#555; margin-bottom:4px;">
+                    <span>Productos:</span>
+                    <span id="modal-total"></span>
+                </div>
+                <div id="modal-domicilio-row" style="display:none; justify-content:space-between; font-size:1.3rem; color:#555; margin-bottom:6px;">
+                    <span>Domicilio:</span>
+                    <span id="modal-domicilio"></span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.5rem; border-top:1px solid #ddd; padding-top:6px;">
+                    <span>TOTAL:</span>
+                    <span id="modal-total-final" style="color:#e67e22;"></span>
+                </div>
+            </div>
+            <div id="modal-obs"></div>
+        </div>
+
+        <div id="modal-stepper"></div>
+        <div class="mpedido-cancel-area" id="modal-cancel-area"></div>
+
+    </div>
+</div>
+
+<!-- Modal confirmación cancelación -->
+<div class="modal-overlay" id="modal-cancelar" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+        <h3>Cancelar Pedido</h3>
+        <p id="cancelar-descripcion" style="margin:8px 0; color:#555;"></p>
+        <textarea id="cancelar-motivo" placeholder="Motivo de cancelación (opcional)..."
+            style="width:100%; margin-top:8px; padding:10px; border-radius:8px; border:1px solid #ddd; min-height:80px; font-size:14px; box-sizing:border-box; resize:vertical;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button id="btn-confirmar-cancelar" class="btn-accion btn-cancelar" style="flex:1; padding:12px;">Confirmar Cancelación</button>
+            <button id="btn-cerrar-cancelar" class="btn-accion" style="flex:1; padding:12px; background:#95a5a6; color:white;">Volver</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script type="module" src="../CallCenter/historialPedidos.js"></script>
+
+</body>
+</html>

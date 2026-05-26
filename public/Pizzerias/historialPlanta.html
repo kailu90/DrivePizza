@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial Pedidos Planta - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+    <div id="header-container"></div>
+
+    <main class="dashboard__main dashboard__main--full" id="dashboard__main">
+
+        <!-- Resumen -->
+        <section class="dashboard__section dashboard__overview">
+            <h2 class="dashboard__overview-title">Resumen de Pedidos</h2>
+            <div class="dashboard__overview-cards">
+                <div class="card">
+                    <h3 class="card__title">Pedidos Pendientes</h3>
+                    <p class="card__info" id="undelivered-orders">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">Pedidos Entregados</h3>
+                    <p class="card__info" id="sent-orders">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">Pedidos Pagados</h3>
+                    <p class="card__info" id="paid-orders">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">Total de Pedidos</h3>
+                    <p class="card__info" id="total-orders">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabla -->
+        <section class="dashboard__section inventory-management">
+            <h2 class="inventory-management__title">Mis Pedidos a Planta</h2>
+
+            <div class="dashboard__filters">
+                <div class="dashboard__filters-dates">
+                    <div class="dashboard__filter-group">
+                        <label for="filter-date-desde">Desde</label>
+                        <input type="date" id="filter-date-desde" class="btn_orderBy btn-primary">
+                    </div>
+                    <div class="dashboard__filter-group">
+                        <label for="filter-date-hasta">Hasta</label>
+                        <input type="date" id="filter-date-hasta" class="btn_orderBy btn-primary">
+                    </div>
+                    <div class="dashboard__filter-group">
+                        <label for="sort">Ordenar</label>
+                        <select id="sort" class="btn_orderBy btn-primary">
+                            <option value="desc">Más reciente</option>
+                            <option value="asc">Más antiguo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="dashboard__filters-quick">
+                    <button class="btn-quick" id="btn-hoy">Hoy</button>
+                    <button class="btn-quick" id="btn-recientes">Recientes</button>
+                    <button class="btn-quick" id="btn-ayer">Ayer</button>
+                    <button class="btn-quick" id="btn-semana">Esta semana</button>
+                    <button class="btn-quick" id="btn-volver">← Volver</button>
+                </div>
+            </div>
+
+            <table class="inventory-management__table">
+                <thead class="inventory-management__thead">
+                    <tr class="inventory-management__row">
+                        <th class="inventory-management__heading">ID PEDIDO</th>
+                        <th class="inventory-management__heading">FECHA ENTREGA</th>
+                        <th class="inventory-management__heading">SEDE</th>
+                        <th class="inventory-management__heading">ESTADO</th>
+                        <th class="inventory-management__heading">VALOR NETO</th>
+                        <th class="inventory-management__heading">VALOR CON SERVICIO</th>
+                    </tr>
+                </thead>
+                <tbody class="inventory-management__tbody" id="ordersContainer"></tbody>
+            </table>
+
+            <div class="pagination-controls" id="pagination-controls" style="display:none;">
+                <button class="btn-quick" id="btn-prev-page" disabled>← Anterior</button>
+                <span id="pagination-info">Página 1</span>
+                <button class="btn-quick" id="btn-next-page">Siguiente →</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="dashboard__footer">
+        <p class="dashboard__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Modal detalle -->
+    <div id="modal-detalle" class="modal">
+        <div class="modal-content">
+            <div class="modal-body-scroll">
+                <div class="info-pedido">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <p style="margin:0;"><strong>Pedido N°:</strong> <span id="modal-id-pedido"></span></p>
+                        <div class="modal-actions" style="margin:0; gap:4px;">
+                            <button id="btn-edit-modal" class="btn-modal" title="Editar pedido" style="display:none; font-size:17px;">✏️</button>
+                            <button id="btn-agregar-modal" class="btn-modal" title="Agregar producto" style="display:none; font-size:17px;">➕</button>
+                            <button id="btn-save-modal" class="btn-modal btn-save-modal" title="Guardar cambios" style="display:none; font-size:17px;">✅</button>
+                            <button id="btn-cancel-edit" class="btn-modal" title="Cancelar edición" style="display:none; font-size:17px;">✖️</button>
+                        </div>
+                    </div>
+                    <p><strong>Sede:</strong> <span id="modal-sede"></span></p>
+                    <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+                    <p><strong>Observación:</strong> <span id="modal-obs"></span></p>
+                </div>
+
+                <table class="table-detalle">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Cant.</th>
+                            <th>Valor</th>
+                            <th class="col-accion" style="display:none;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="totales-detalle">
+                <p>Valor Neto: <span id="modal-neto"></span></p>
+                <p><strong>Total: <span id="modal-total"></span></strong></p>
+            </div>
+
+            <div id="modal-stepper"></div>
+
+            <div style="text-align:right; margin-top:12px;">
+                <button id="btn-cerrar-modal" class="btn-quick">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal agregar producto -->
+    <div id="modal-agregar-producto" class="modal" style="z-index:1100;">
+        <div class="modal-content" style="max-width:420px; width:90%; padding:28px;">
+            <p style="margin:0 0 12px; font-size:13px; color:#666;">Busca el nombre del producto a agregar</p>
+            <input type="text" id="agregar-buscar-input" placeholder="Ej: Harina, Queso, Tomate..."
+                style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:14px; margin-bottom:6px;">
+            <div id="agregar-resultados"
+                style="max-height:180px; overflow-y:auto; border:1px solid #eee; border-radius:6px; background:#fff; margin-bottom:12px;"></div>
+            <div id="agregar-seleccionado" style="display:none; background:#f0faf4; border-radius:6px; padding:12px; margin-bottom:16px;">
+                <p style="margin:0 0 10px; font-weight:600; font-size:14px;" id="agregar-nombre-prod"></p>
+                <label style="font-size:13px; display:block; margin-bottom:4px; color:#555;">¿Qué cantidad deseas ingresar?</label>
+                <input type="number" id="agregar-cantidad" min="1" value="1"
+                    style="width:80px; padding:6px; border:1px solid #ccc; border-radius:4px; text-align:center; font-size:14px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button id="agregar-cancelar" style="padding:8px 18px; border:1px solid #ccc; background:none; border-radius:6px; cursor:pointer; font-size:14px;">Cancelar</button>
+                <button id="agregar-confirmar" style="padding:8px 18px; background:#27ae60; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;" disabled>✓ Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./historialPlanta.js"></script>
+</body>
+</html>

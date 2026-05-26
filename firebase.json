@@ -1,4 +1,4 @@
-{
+  {
   "hosting": {
     "public": "public",
     "ignore": [
@@ -6,11 +6,34 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+    "headers": [
+  {
+    "source": "**/*.js",
+    "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
     ]
+  },
+  {
+    "source": "**/*.html",
+    "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+    ]
+  },
+  {
+    "source": "**",
+    "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://apis.google.com https://meet.jit.si https://*.meet.jit.si https://cdn.sheetjs.com; connect-src 'self' https://api.everest-central.com wss://api.everest-central.com https://pbx.everest-central.com wss://pbx.everest-central.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://apis.google.com https://meet.jit.si https://*.meet.jit.si wss://meet.jit.si wss://*.meet.jit.si; img-src 'self' data: https://*.meet.jit.si; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://*.meet.jit.si; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://www.recaptcha.net https://meet.jit.si https://*.meet.jit.si;" },
+      { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
+      { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(self \"https://meet.jit.si\" \"https://everest-central.web.app\"), camera=(self \"https://meet.jit.si\"), payment=()" }
+    ]
+  }
+]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

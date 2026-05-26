@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "PedidosPlanta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deliveryDate", "order": "ASCENDING" },
+        { "fieldPath": "idPedido",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "PedidosPlanta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deliveryDate", "order": "ASCENDING" },
+        { "fieldPath": "idPedido",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "PedidosPlanta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user",     "order": "ASCENDING" },
+        { "fieldPath": "idPedido", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "PedidosPlanta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user",         "order": "ASCENDING" },
+        { "fieldPath": "deliveryDate", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

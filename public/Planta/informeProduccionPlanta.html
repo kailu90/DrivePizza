@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Producción - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/informes.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="inf-main" id="iprod-main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+        <div class="inf-toolbar">
+            <div class="inf-nav-group">
+                <button class="inf-nav" id="iprod-prev" title="Día anterior">‹</button>
+                <span class="inf-label" id="iprod-fecha-label"></span>
+                <button class="inf-nav" id="iprod-next" title="Día siguiente" disabled>›</button>
+            </div>
+            <div class="inf-actions">
+                <button class="ap-btn ap-btn--ghost" id="iprod-hoy">Hoy</button>
+                <button class="ap-btn ap-btn--ghost" id="iprod-refresh">↻ Actualizar</button>
+                <button class="ap-btn ap-btn--ghost" id="iprod-print">🖨️ Imprimir</button>
+            </div>
+        </div>
+
+        <div id="iprod-content">
+            <p class="inf-empty">Cargando...</p>
+        </div>
+    </main>
+
+    <script type="module" src="./informeProduccionPlanta.js"></script>
+</body>
+</html>

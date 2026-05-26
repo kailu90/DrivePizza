@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="google-site-verification" content="YdIs_vv8cvmozh_3-8nUc7fLtV3zDDrepU9WQeV67yE" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="styles.css"><!--Estilos Globales-->
-    <link rel="stylesheet" href="login.css"><!--Estilos Específicos-->
+    <link rel="stylesheet" href="./Estilos/styles.css"><!--Estilos Globales-->
+    <link rel="stylesheet" href="./Estilos/skeleton.css"><!--Skeleton Loader-->
+    <link rel="stylesheet" href="./Estilos/login.css"><!--Estilos Específicos-->
     <link rel="shortcut icon" href="./Imagenes/Isotipo.png" type="image/x-icon">    
-    <title>Login</title>
+    <title>Drive Pizza — Ingresar</title>
 </head>
 
 <body>
-    <main class="login_main">
+    <div id="skeleton" class="sk-page"></div>
+    <main id="contenido-principal" class="login_main" style="display:none;">
         <section class="login_container">
             <img class="login_logo" src="./Imagenes/logo.png" alt="logo drive pizza">
             <form id="login_form" class="login_form">
@@ -46,7 +48,7 @@
 
                         <optgroup label="Operaciones Centrales">
                             <option value="planta">Planta de Producción</option>
-                            <option value="call_center">Call Center</option>
+                            <option value="callcenter">Callcenter</option>
                         </optgroup>
 
                         <optgroup label="Pizzerías">
@@ -120,10 +122,7 @@
 
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
-    <script type="module" src="login.js"></script>
+    <script type="module" src="./Auth/login.js"></script>
 
 </body>
 

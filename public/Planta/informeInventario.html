@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Inventario - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/informes.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="inf-main" id="dashboard__main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+
+        <div class="inf-toolbar">
+            <h2 style="margin:0; font-size:1.3rem; font-weight:700; color:#222;">Informe de Inventario</h2>
+        </div>
+
+        <div class="inf-toolbar">
+            <div class="inf-nav-group">
+                <label for="ii-desde" style="font-size:13px; color:#555;">Desde</label>
+                <input type="date" id="ii-desde" class="ap-input" style="padding:6px 10px; font-size:13px;">
+                <label for="ii-hasta" style="font-size:13px; color:#555;">Hasta</label>
+                <input type="date" id="ii-hasta" class="ap-input" style="padding:6px 10px; font-size:13px;">
+            </div>
+            <div class="inf-actions">
+                <button class="ap-btn ap-btn--ghost" id="ii-btn-hoy">Hoy</button>
+                <button class="ap-btn ap-btn--ghost" id="ii-btn-semana">Esta semana</button>
+                <button class="ap-btn ap-btn--ghost" id="ii-btn-mes">Este mes</button>
+                <button class="ap-btn ap-btn--primary" id="ii-btn-generar">⬇ Generar Informe</button>
+            </div>
+        </div>
+
+        <p id="ii-status" style="color:#666; font-size:14px; margin-top:8px;"></p>
+
+        <div style="margin-top:24px; background:#f9f9f9; border:1px solid #e0e0e0; border-radius:8px; padding:20px; max-width:560px;">
+            <p style="margin:0 0 10px; font-weight:600; font-size:14px; color:#333;">El informe generado incluye 4 hojas:</p>
+            <ul style="margin:0; padding-left:20px; font-size:13px; color:#555; line-height:2;">
+                <li><strong>Embalajes</strong> — Stock actual de cajas y embalajes</li>
+                <li><strong>Stock Productos</strong> — Stock actual de todos los demás productos (excluye negativos)</li>
+                <li><strong>Masa</strong> — Stock actual de productos de categoría Masa</li>
+                <li><strong>Todos los Productos</strong> — Catálogo completo sin filtros de stock</li>
+                <li><strong>Detalle Pedidos</strong> — Un producto por fila, para el rango de fechas seleccionado</li>
+                <li><strong>Movimientos</strong> — Entradas, Salidas, Ajustes y Devoluciones del período</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="inventory__footer">
+        <p class="inventory__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="./informeInventario.js"></script>
+</body>
+</html>

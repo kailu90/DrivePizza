@@ -12,6 +12,10 @@ firebase-debug.*.log*
 
 # Firebase credenciales
 public/config.js
+scripts/serviceAccountKey.json
+
+# Carpeta de impresión automática (contiene serviceAccountKey)
+impresiónAutomática/
 
 
 # Firebase config

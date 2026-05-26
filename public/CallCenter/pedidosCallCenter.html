@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">   
+    <title>Pedidos Call Center</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="pedidosCallCenter.css">
+    <link rel="stylesheet" href="../Estilos/workspace.css">
+</head>
+<body>
+
+<div id="skeleton" class="sk-page"></div>
+
+<div id="contenido-principal" style="display:none;">
+
+    <header class="main-header no-print">
+
+        <div class="header-left">
+            <img src="../Imagenes/logo.png" alt="">
+        </div>
+
+        <div class="header-name">
+            <button class="btn-home with-tooltip" data-tooltip="Regresar al Panel" id="btn-home"><svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="30" 
+                height="30" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"
+                class="icon-home"
+                >
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </button>
+            <div class="header-username" id="username">Hola</div>        
+        </div>
+
+        <div class="header-controls">
+            <!-- Toggle panels mobile (ocultos en desktop — workspace.css) -->
+            <button class="btn-historial btn-panel-mobile with-tooltip" data-tooltip="WhatsApp" id="btn-open-wa" aria-label="Abrir WhatsApp">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                </svg>
+            </button>
+            <button class="btn-historial btn-panel-mobile with-tooltip" data-tooltip="Softphone" id="btn-open-pbx" aria-label="Abrir PBX">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.98-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                </svg>
+            </button>
+            <button class="btn-historial with-tooltip" data-tooltip="Consultar domicilios" id="btn-consulta-domicilio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+            <button class="btn-historial with-tooltip" data-tooltip="Historial de Pedidos" onclick="window.location.href='./historialPedidos.html'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </button>
+            <button id="btn-logout" class="header-link">
+                <span class="logout-text">Cerrar Sesión</span>
+                <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </div>
+
+    </header>
+
+    <div id="workspace">
+
+        <!-- ── Panel izquierdo: WhatsApp omnicanal ───────────────── -->
+        <div id="panel-wa" class="side-panel collapsed">
+            <div class="panel-header">
+                <span class="panel-header__title">WhatsApp</span>
+                <button class="panel-header__icon" id="strip-wa" aria-label="Toggle WhatsApp">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="panel-body" id="wa-body">
+                <!-- Contenido: paso 5 (waPanel.js) -->
+            </div>
+        </div><!-- /panel-wa -->
+
+        <!-- ── Bloque central: categorías + productos + carrito ───── -->
+        <div id="layout-center">
+            <div class="layout-main">
+            <div id="search-wrapper"></div>
+            <div class="categories-col">
+                <nav class="categories" id="categoryNav"></nav>
+                <div id="agents-strip" class="agents-strip" style="display:none;"></div>
+            </div>
+            <div class="app-container">
+                <section class="menu-panel no-print">
+                    <div class="content-area">
+                        <div id="productGrid" class="product-grid"></div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="order-panel">
+                <div class="order-header">
+                    <span class="order-title">Pedido</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button id="btn-vaciar" class="btn-vaciar" onclick="vaciarCarrito()" style="display:none;">🗑 Vaciar</button>
+                        <button class="btn-cerrar-cart" onclick="cerrarCartPanel()">✕</button>
+                    </div>
+                </div>
+                <div id="orderItems" class="order-items">
+                    <p class="empty-msg">No hay productos seleccionados</p>
+                </div>
+                <div class="order-footer">
+                    <div class="total-row">
+                        <span>TOTAL:</span>
+                        <span id="totalDisplay">$0</span>
+                    </div>
+                    <button class="btn-print" onclick="abrirCheckout()">DATOS DE ENVÍO</button>
+                </div>
+            </aside>
+            </div><!-- /layout-main -->
+        </div><!-- /layout-center -->
+
+        <!-- ── Panel derecho: PBX softphone ─────────────────────── -->
+        <div id="panel-pbx" class="side-panel collapsed">
+            <div class="panel-header">
+                <div id="sip-status">
+                    <button class="panel-header__icon" id="strip-pbx" aria-label="Toggle Softphone">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.98-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                        </svg>
+                    </button>
+                    <span id="sip-dot-hdr"></span>
+                    <div id="sip-popover">
+                        <div class="sip-pop-row">
+                            <span class="sip-pop-label">Estado</span>
+                            <span id="sip-pop-estado">—</span>
+                        </div>
+                        <div class="sip-pop-row">
+                            <span class="sip-pop-label">Extensión</span>
+                            <span id="sip-pop-ext">—</span>
+                        </div>
+                        <button id="btn-sip-reconectar">Reconectar</button>
+                    </div>
+                </div>
+                <div class="panel-header__title pbx-hdr-info">
+                    <span class="pbx-hdr-name" id="pbx-agent-name">Softphone</span>
+                    <div class="pbx-hdr-sub">
+                        <span class="pbx-hdr-ext" id="pbx-agent-ext"></span>
+                        <button class="pbx-hdr-badge" id="pbx-hdr-badge" disabled>Desconectado</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-body" id="pbx-body">
+                <!-- Contenido: paso 4 (pbxPanel.js) -->
+            </div>
+        </div><!-- /panel-pbx -->
+
+    </div><!-- /workspace -->
+
+
+
+<div id="workspace-overlay"></div>
+<div id="cart-overlay" class="cart-overlay"></div>
+
+</div><!-- /contenido-principal -->
+
+<div id="cart-bar" class="cart-bar">
+    <div class="cart-bar__left">
+        <span class="cart-bar__count" id="cart-bar-count">0 productos</span>
+        <span class="cart-bar__total" id="cart-bar-total">$0</span>
+    </div>
+    <button class="cart-bar__btn" id="cart-bar-btn">Ver pedido ›</button>
+</div>
+
+   <div id="modal-checkout" class="modal-overlay" style="display:none;">
+    <div class="modal-content checkout-container" style="max-width:500px;">
+        <h3 id="modal-checkout-titulo">DATOS CLIENTE</h3>
+        <div class="canal-toggle">
+            <button type="button" class="canal-btn" data-canal="whatsapp">📱 WhatsApp</button>
+            <button type="button" class="canal-btn" data-canal="ivr">📞 IVR</button>
+        </div>
+        <!-- 2. Sede -->
+        <p class="form-label">Sede</p>
+        <div class="sede-toggle">
+            <button type="button" class="sede-btn" data-sede="cabecera">Cabecera</button>
+            <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
+            <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
+            <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
+            <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
+            <button type="button" class="sede-btn" data-sede="unico">Único</button>
+        </div>
+
+        <!-- 3. Tipo de entrega — oculto en modo reserva -->
+        <div class="entrega-toggle" id="entrega-toggle-section">
+            <button type="button" class="entrega-btn" data-tipo="domicilio">🛵 Domicilio</button>
+            <button type="button" class="entrega-btn" data-tipo="recoger">🏪 Recoger en tienda</button>
+        </div>
+
+        <!-- 4-7. Datos del cliente -->
+        <div class="form-grid">
+            <input type="tel" id="clienteTelefono" placeholder="Teléfono / WhatsApp">
+            <input type="text" id="clienteNombre" placeholder="Nombre Cliente">
+
+            <!-- Dirección y barrio: solo visible en domicilio — oculto en modo reserva -->
+            <div id="direccion-section" class="full-width" style="display:none;">
+                <input type="text" id="clienteDireccion" placeholder="Dirección Completa/Torre/Apto" class="full-width">
+                <div id="barrio-field" style="display:none; gap:8px; align-items:center; margin-top:8px;">
+                    <input type="text" id="barrioInput" list="barrios-list"
+                           placeholder="Barrio (domicilio)..." autocomplete="off"
+                           style="flex:1;" oninput="window.actualizarPrecioDomicilio()">
+                    <datalist id="barrios-list"></datalist>
+                    <strong id="domicilio-precio" style="color:#e67e22; min-width:80px; text-align:right;"></strong>
+                </div>
+            </div>
+
+            <!-- Cantidad de personas — solo visible en modo reserva -->
+            <div id="personas-section" class="full-width" style="display:none;">
+                <p class="form-label" style="margin-bottom:6px;">Fecha de reserva</p>
+                <input type="date" id="fechaReserva" class="full-width" style="margin-bottom:12px;">
+                <p class="form-label" style="margin-bottom:6px;">Hora de reserva</p>
+                <div id="hora-reserva-grid" class="hora-reserva-grid"></div>
+                <input type="hidden" id="horaReserva">
+                <input type="number" id="cantidadPersonas" placeholder="Cantidad de personas" min="1" class="full-width" style="margin-top:10px;">
+            </div>
+
+            <!-- Pago — oculto en modo reserva -->
+            <div class="pago-toggle full-width" id="pago-section">
+                <button type="button" class="pago-btn" data-pago="Efectivo">💵 Efectivo</button>
+                <button type="button" class="pago-btn" data-pago="Transferencia">📲 Transferencia</button>
+                <button type="button" class="pago-btn" data-pago="Datafono">💳 Datáfono</button>
+            </div>
+            <textarea id="observaciones" placeholder="Observaciones..." class="full-width"></textarea>
+        </div>
+        <!-- Total checkout — solo visual -->
+        <div id="checkout-total-box" style="margin-top:14px; padding:10px 12px; background:#f9f9f9; border-radius:8px; border:1px solid #eee;">
+            <div style="display:flex; justify-content:space-between; font-size:1.6rem; color:#555; margin-bottom:4px;">
+                <span>Productos:</span>
+                <span id="checkout-subtotal">$0</span>
+            </div>
+            <div id="checkout-domicilio-row" style="display:none; justify-content:space-between; font-size:1.6rem; color:#555; margin-bottom:6px;">
+                <span>Domicilio:</span>
+                <span id="checkout-domicilio-val">$0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.6rem; border-top:1px solid #ddd; padding-top:6px;">
+                <span>TOTAL:</span>
+                <span id="checkout-total-final" style="color:#e67e22;">$0</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px; justify-content:center; text-align:center;">
+            <button id="btn-enviar-pedido" onclick="procesarPedidoFinal()" class="btn-print btn-finalizar-pedido">ENVIAR PEDIDO</button>
+            <button id="btn-crear-reserva" onclick="procesarReservaFinal()" class="btn-print btn-finalizar-pedido" style="display:none;">CREAR RESERVA</button>
+        </div>
+    </div>
+</div>
+</div>
+    <div id="modal-seleccion" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h3 id="modal-titulo">Seleccionar Tamaño</h3>
+            <div id="opciones-tamano" class="opciones-grid"></div>
+        </div>
+    </div>
+    <!-- Modal consulta de domicilios -->
+    <div id="modal-domicilios" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:480px; max-height:90vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0;">🏘️ Consultar domicilios</h3>
+                <button onclick="cerrarConsultaDomicilio()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;">&times;</button>
+            </div>
+
+            <div class="sede-toggle" id="domicilio-sede-toggle" style="margin-bottom:12px;">
+                <button type="button" class="sede-btn" data-sede="cabecera">Cabecera</button>
+                <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
+                <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
+                <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
+                <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
+                <button type="button" class="sede-btn" data-sede="unico">Único</button>
+            </div>
+
+            <input type="text" id="domicilio-buscador"
+                placeholder="🔍 Escribe el barrio..."
+                style="padding:10px 14px; border:2px solid #ddd; border-radius:8px; font-size:15px; width:100%; box-sizing:border-box; margin-bottom:10px;"
+                oninput="filtrarConsultaDomicilio()" autocomplete="off">
+
+            <div id="domicilio-resultados"
+                style="overflow-y:auto; flex:1; border:1px solid #eee; border-radius:8px;">
+                <p style="text-align:center; color:#aaa; padding:20px; margin:0;">Selecciona una sede para comenzar</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="products.js"></script>
+    <script src="app.js"></script>
+
+    <script type="module">
+    import { plantaDB } from "../Api/firebaseConfig.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
+    import { domicilios } from "./domicilios.js";
+    import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
+    import { initPanel }    from "../Shared/panelToggle.js";
+    import { initPbxPanel } from "./pbxPanel.js";
+    import { PBX_URL, WS_URL } from "../Api/config.js";
+
+    // ── Paneles laterales ─────────────────────────────────────────
+    const panelWA  = initPanel('panel-wa',  'strip-wa',  'dp_panel_wa');
+    const panelPBX = initPanel('panel-pbx', 'strip-pbx', 'dp_panel_pbx');
+
+    // ── PBX Panel UI ──────────────────────────────────────────────
+    const pbxPanel = initPbxPanel('pbx-body');
+
+    // Botones del header (solo visibles en mobile — workspace.css)
+    document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
+    document.getElementById('btn-open-pbx')?.addEventListener('click', () => panelPBX?.toggle());
+    window.domicilios = domicilios;
+    window.mostrarOverlay  = mostrarOverlay;
+    window.actualizarOverlay = actualizarOverlay;
+    window.ocultarOverlay  = ocultarOverlay;
+
+    mostrarSkeleton('pedidos');
+
+    document.getElementById("btn-logout").addEventListener("click", async () => {
+        if (confirm("¿Cerrar sesión?")) {
+            await signOut(plantaDB.auth);
+            window.location.href = "../index.html";
+        }
+    });
+
+    const db = plantaDB.db;
+    const auth = plantaDB.auth;
+
+    let asesorActual = "";
+
+    // ── TOGGLE PAGO ───────────────────────────────────────────────
+    document.querySelectorAll(".pago-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".pago-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+        });
+    });
+
+    // ── TOGGLE CANAL ──────────────────────────────────────────────
+    document.querySelectorAll(".canal-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".canal-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+        });
+    });
+
+    // ── TOGGLE SEDE ───────────────────────────────────────────────
+    document.querySelectorAll(".sede-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".sede-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            // Poblar datalist de barrios para esta sede
+            const barrios  = window.domicilios?.[btn.dataset.sede] || {};
+            const datalist = document.getElementById('barrios-list');
+            datalist.innerHTML = Object.keys(barrios).map(b => `<option value="${b}">`).join('');
+            document.getElementById('barrioInput').value = '';
+            document.getElementById('domicilio-precio').textContent = '';
+            actualizarBarrioField();
+            window.actualizarTotalCheckout?.();
+        });
+    });
+
+    // ── TOGGLE ENTREGA ────────────────────────────────────────────
+    document.querySelectorAll('.entrega-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.entrega-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const esDomicilio = btn.dataset.tipo === 'domicilio';
+            document.getElementById('direccion-section').style.display = esDomicilio ? 'block' : 'none';
+            if (!esDomicilio) {
+                document.getElementById('clienteDireccion').value = '';
+                document.getElementById('barrioInput').value = '';
+                document.getElementById('domicilio-precio').textContent = '';
+            }
+            actualizarBarrioField();
+            window.actualizarTotalCheckout?.();
+        });
+    });
+
+    function actualizarBarrioField() {
+        const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+        const tipo   = document.querySelector('.entrega-btn.active')?.dataset.tipo || 'domicilio';
+        const barrios = window.domicilios?.[sede] || {};
+        const barrioField = document.getElementById('barrio-field');
+        barrioField.style.display = (tipo === 'domicilio' && Object.keys(barrios).length > 0) ? 'flex' : 'none';
+    }
+
+    window.actualizarPrecioDomicilio = () => {
+        const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+        const barrio = document.getElementById('barrioInput').value;
+        const valor  = window.domicilios?.[sede]?.[barrio];
+        document.getElementById('domicilio-precio').textContent = valor ? `$${valor.toLocaleString()}` : '';
+        window.actualizarTotalCheckout?.();
+    };
+
+    async function obtenerUsuarioCC(user) {
+        if (window.parent !== window && window.parent._usuarioCCPromise) {
+            return await window.parent._usuarioCCPromise;
+        }
+        // Fallback: acceso directo sin shell
+        const userDoc = await getDoc(doc(db, "Usuarios", user.uid));
+        if (!userDoc.exists()) throw new Error("Usuario no encontrado");
+        const d = userDoc.data();
+        return { uid: user.uid, email: user.email, username: d.username || "", sede: d.sede || "", rol: d.rol || "" };
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.top.location.href = "../index.html"; return; }
+        try {
+            const usuario = await obtenerUsuarioCC(user);
+            asesorActual = usuario.username;
+            window.asesorActual = asesorActual;
+            document.getElementById("username").textContent = `Hola ${asesorActual}`;
+        } catch (err) {
+            console.error("Error cargando usuario:", err);
+        }
+        ocultarSkeleton('contenido-principal');
+        document.body.classList.add('loaded');
+    });
+
+    // ── Estado SIP desde el shell padre ──────────────────────────────────────
+    const SIP_LABELS = { registered: 'Registrado', incall: 'En llamada', ringing: 'Llamada entrante', offline: 'Desconectado' };
+
+    window.addEventListener('message', (e) => {
+        if (!e.data || e.data.type !== 'sip-state') return;
+        const { state, extension, username, callerNumber, remoteUser } = e.data;
+        const dotEl   = document.getElementById('sip-dot-hdr');
+        const stripEl = document.getElementById('strip-pbx');
+        if (!dotEl) return;
+        dotEl.style.display = 'block';
+        // Dot: solo ringing/incall se manejan aquí — registered/offline los controla pbxPanel (según queue)
+        if (state === 'ringing' || state === 'incall') dotEl.className = state;
+        // Animación botón strip
+        stripEl?.classList.remove('sip-ringing', 'sip-incall');
+        if (state === 'ringing') stripEl?.classList.add('sip-ringing');
+        if (state === 'incall')  stripEl?.classList.add('sip-incall');
+        // Popover
+        document.getElementById('sip-pop-estado').textContent = SIP_LABELS[state] || state;
+        document.getElementById('sip-pop-ext').textContent    = extension || '—';
+        // PBX Panel UI
+        pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
+    });
+
+    // Toggle popover al hacer clic en el dot
+    document.getElementById('sip-dot-hdr').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('sip-popover').classList.toggle('visible');
+    });
+    // Cerrar popover al hacer clic fuera
+    document.addEventListener('click', () => {
+        document.getElementById('sip-popover')?.classList.remove('visible');
+    });
+    // Botón reconectar → notifica al shell
+    document.getElementById('btn-sip-reconectar').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.parent !== window) window.parent.postMessage({ type: 'sip-reconnect' }, '*');
+        document.getElementById('sip-popover').classList.remove('visible');
+    });
+
+    // Avisar al shell que el frame está listo para recibir el estado actual
+    if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
+
+    // ── Strip de asesores ─────────────────────────────────────────────────────
+    const agentsStrip = document.getElementById('agents-strip');
+
+    function chipInitials(name) {
+        if (!name) return '?';
+        return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    async function loadAgentStrip() {
+        try {
+            const r = await fetch(`${PBX_URL}/pbx/agents/status`);
+            if (!r.ok) return;
+            const agents = await r.json();
+            // Mostrar agentes con nombre conocido + cualquier registrado SIP
+            const visibles = agents.filter(a => a.username || a.sip_registered);
+            if (!visibles.length) { agentsStrip.style.display = 'none'; return; }
+            agentsStrip.style.display = '';
+            agentsStrip.innerHTML = visibles.map(a => {
+                const name = a.username || ('Ext. ' + a.extension);
+                let cls, label;
+                if (a.in_call)              { cls = 'chip-incall'; label = 'En llamada'; }
+                else if (a.queue_connected) { cls = 'chip-queue';  label = 'Disponible'; }
+                else if (a.sip_registered)  { cls = 'chip-paused'; label = 'Pausado'; }
+                else                        { cls = 'chip-offline'; label = 'Desconectado'; }
+                return `<div class="agent-chip ${cls}">
+                    <div class="chip-avatar">${chipInitials(a.username)}</div>
+                    <div class="chip-info">
+                        <span class="chip-name">${name}</span>
+                        <span class="chip-status">${label}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch { /* sin red */ }
+    }
+
+    loadAgentStrip();
+    setInterval(loadAgentStrip, 10000);
+
+    // WS para refrescar el strip en tiempo real
+    (function initStripWs() {
+        const ws = new WebSocket(WS_URL);
+        ws.onopen = () => loadAgentStrip();
+        ws.onmessage = e => {
+            try {
+                const { tipo } = JSON.parse(e.data);
+                if (tipo === 'pbx:llamada' || tipo === 'pbx:sesion') loadAgentStrip();
+            } catch {}
+        };
+        ws.onclose = () => setTimeout(initStripWs, 5000);
+    })();
+
+    window.enviarAFirebase = async (datosPedido) => {
+        const res = await fetch('https://api.everest-central.com/callcenter/pedidos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...datosPedido, asesor: asesorActual })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error ?? 'Error al crear pedido');
+        }
+        const pedido = await res.json();
+        return pedido.nPedido;
+    };
+</script>
+
+
+</body>
+</html>

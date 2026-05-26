@@ -1,15 +1,7 @@
 {
   "projects": {
-    "default": "drivepizzabga2025"
+    "default": "everest-central"
   },
-  "targets": {
-    "drivepizzabga2025": {
-      "hosting": {
-        "principal": [
-          "drivepizzabga2025"
-        ]
-      }
-    }
-  },
+  "targets": {},
   "etags": {}
 }

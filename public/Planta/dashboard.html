@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Pedidos - DRIVE PIZZA</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+
+<body>
+
+    <!--*****************Injección de contenido por JS****************-->
+    <div id="header-container"></div>
+
+    <!-- Carga del sidebar con botones con JS -->
+    <div id="sidebar-container"></div>
+
+
+    <main class="dashboard__main" id="dashboard__main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+
+                <section class="dashboard__section inventory-management">
+                    <h2 class="inventory-management__title">
+                        Gestión de Pedidos
+                        <button id="btn-devoluciones" class="ap-btn ap-btn--primary" style="margin-left:auto;">↩ Devoluciones</button>
+                        <button id="btn-sync-pedidos" class="ap-btn ap-btn--secondary" style="display:none;" title="Sincronizar pedidos faltantes de Firestore al caché">🔄 Sincronizar caché</button>
+                        <button id="btn-exportar-detalle" class="ap-btn ap-btn--secondary" style="display:none;" title="Exportar detalle de productos por pedido">⬇ Detalle Productos</button>
+                        <button id="btn-nuevo-pedido" class="ap-btn ap-btn--primary">+ Nuevo Pedido</button>
+                    </h2>
+
+                    <div class="dashboard__filters">
+                        <div class="dashboard__filters-dates">
+                            <div class="dashboard__filter-group">
+                                <label for="filter-date-desde">Desde</label>
+                                <input type="date" id="filter-date-desde" class="btn_orderBy btn-primary">
+                            </div>
+                            <div class="dashboard__filter-group">
+                                <label for="filter-date-hasta">Hasta</label>
+                                <input type="date" id="filter-date-hasta" class="btn_orderBy btn-primary">
+                            </div>
+                            <div class="dashboard__filter-group">
+                                <label for="sort">Ordenar</label>
+                                <select name="sort" id="sort" class="btn_orderBy btn-primary">
+                                    <option value="0-desc">Más reciente</option>
+                                    <option value="0-asc">Más antiguo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="dashboard__filters-quick">
+                            <button class="btn-quick" id="btn-hoy">Hoy</button>
+                            <button class="btn-quick" id="btn-recientes">Recientes</button>
+                            <button class="btn-quick" id="btn-ayer">Ayer</button>
+                            <button class="btn-quick" id="btn-semana">Esta semana</button>
+                        </div>
+                    </div>
+                    <section class="exportDate-container"></section>
+
+                    <table class="inventory-management__table" id="table-dashboard">
+                        <thead class="inventory-management__thead">
+                            <tr class="inventory-management__row">
+                                <th class="inventory-management__heading">ID</th>
+                                <th class="inventory-management__heading">FECHA ENTREGA</th>
+                                <th class="inventory-management__heading">SEDE</th>
+                                <th class="inventory-management__heading">ESTADO</th>                                
+                                <th class="inventory-management__heading">VALOR NETO</th>
+                                <th class="inventory-management__heading">VALOR CON SERVICIO</th>
+                                <th class="inventory-management__heading">ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody class="inventory-management__tbody" id="ordersContainer">
+                            <!-- <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">Azúcar Blanca</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">20</td>
+                    <td class="inventory-management__cell">✅</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr>
+                <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">champiñones</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">15</td>
+                    <td class="inventory-management__cell">❌</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr> -->
+                        </tbody>
+                    </table>
+                    <div class="pagination-controls" id="pagination-controls" style="display:none;">
+                        <button class="btn-quick" id="btn-prev-page" disabled>← Anterior</button>
+                        <span id="pagination-info">Página 1</span>
+                        <button class="btn-quick" id="btn-next-page">Siguiente →</button>
+                    </div>
+                </section>
+    </main>
+
+    <footer class="dashboard__footer" id="dashboard__footer">
+        <p class="dashboard__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+
+    <!--*****************Modal Vista previa de pedido****************-->
+<div id="modal-detalle" class="modal">
+    <div class="modal-content">
+        <div class="modal-body-scroll">
+        <div class="info-pedido">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <p style="margin:0;"><strong>Pedido N°:</strong> <span id="modal-id-pedido"></span></p>
+                <div class="modal-actions" style="margin:0; gap:2px;">
+                    <button id="btn-print-modal" class="btn-modal" title="Imprimir comanda" style="font-size:17px;">🖨️</button>
+                    <button id="btn-edit-modal" class="btn-modal" title="Editar pedido" style="font-size:17px;">✏️</button>
+                    <button id="btn-agregar-modal" class="btn-modal" title="Agregar producto" style="display:none; font-size:17px;">➕</button>
+                    <button id="btn-delete-modal" class="btn-modal btn-modal--danger" title="Eliminar pedido" style="font-size:17px;">🗑️</button>
+                    <button id="btn-save-modal" class="btn-modal btn-save-modal" title="Guardar cambios" style="display:none; font-size:17px;">✅</button>
+                    <button id="btn-cancel-edit" class="btn-modal" title="Cancelar edición" style="display:none; font-size:17px;">✖️</button>
+                    <button id="btn-sync-modal" class="btn-modal" title="Sincronizar con BD" style="display:none; font-size:17px;">🔄</button>
+                </div>
+            </div>
+            <p><strong>Sede:</strong> <span id="modal-sede"></span></p>
+            <p><strong>Fecha:</strong> <span id="modal-fecha"></span><input type="date" id="modal-fecha-input" style="display:none; margin-left:4px;"></p>
+            <p><strong>Observación:</strong> <span id="modal-obs"></span></p>
+        </div>
+         
+        <table class="table-detalle">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-center">Cant.</th>
+                    <th>Valor</th>
+                    <th class="col-accion" style="display: none;">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="modal-table-body"></tbody>
+        </table>
+        </div>
+
+        <div class="totales-detalle">
+            <p>Valor Neto: <span id="modal-neto"></span></p>
+            <p><strong>Total: <span id="modal-total"></span></strong></p>
+        </div>
+
+        <div id="modal-stepper"></div>
+        
+    </div>
+    
+</div>
+
+
+    <!-- Modal agregar producto -->
+    <div id="modal-agregar-producto" class="modal" style="z-index:1100;">
+        <div class="modal-content" style="max-width:420px; width:90%; padding:28px;">
+            <p style="margin:0 0 12px; font-size:13px; color:#666;">Busca el nombre del producto a agregar</p>
+            <input type="text" id="agregar-buscar-input" placeholder="Ej: Harina, Queso, Tomate..."
+                style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:14px; margin-bottom:6px;">
+            <div id="agregar-resultados"
+                style="max-height:180px; overflow-y:auto; border:1px solid #eee; border-radius:6px; background:#fff; margin-bottom:12px;"></div>
+            <div id="agregar-seleccionado" style="display:none; background:#f0faf4; border-radius:6px; padding:12px; margin-bottom:16px;">
+                <p style="margin:0 0 10px; font-weight:600; font-size:14px;" id="agregar-nombre-prod"></p>
+                <label style="font-size:13px; display:block; margin-bottom:4px; color:#555;">¿Qué cantidad deseas ingresar?</label>
+                <input type="number" id="agregar-cantidad" min="1" value="1"
+                    style="width:80px; padding:6px; border:1px solid #ccc; border-radius:4px; text-align:center; font-size:14px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button id="agregar-cancelar" style="padding:8px 18px; border:1px solid #ccc; background:none; border-radius:6px; cursor:pointer; font-size:14px;">Cancelar</button>
+                <button id="agregar-confirmar" style="padding:8px 18px; background:#27ae60; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;" disabled>✓ Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Devoluciones -->
+    <dialog id="modal-devolucion" class="ap-modal-dialog">
+        <div class="ap-modal__form">
+            <h2 class="ap-modal__title">↩ Registrar Devolución</h2>
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="dev-sede">Sede</label>
+                    <select id="dev-sede" class="ap-select">
+                        <option value="" disabled selected>Selecciona la sede</option>
+                        <option value="cabecera">Cabecera</option>
+                        <option value="cañaveral">Cañaveral</option>
+                        <option value="acropolis">Acrópolis</option>
+                        <option value="piedecuesta">Piedecuesta</option>
+                        <option value="megamall">Megamall</option>
+                        <option value="unico">Único</option>
+                    </select>
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="dev-buscar-input">Producto</label>
+                    <input type="text" id="dev-buscar-input" class="ap-input" placeholder="Busca el producto..." autocomplete="off">
+                    <div id="dev-resultados" style="max-height:160px; overflow-y:auto; border:1px solid #eee; border-radius:6px; background:#fff;"></div>
+                    <div id="dev-seleccionado" style="display:none; background:#f0faf4; border-radius:6px; padding:10px;">
+                        <p style="margin:0; font-weight:600;" id="dev-nombre-prod"></p>
+                    </div>
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="dev-cantidad">Cantidad</label>
+                    <input type="number" id="dev-cantidad" class="ap-input" min="1" value="1" style="max-width:120px;">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="dev-subtipo">Tipo</label>
+                    <select id="dev-subtipo" class="ap-select">
+                        <option value="devolucion">Devolución — descuenta de liquidación</option>
+                        <option value="correccion">Corrección — solo ajusta inventario</option>
+                    </select>
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="dev-observacion">Observación</label>
+                    <textarea id="dev-observacion" class="ap-input" rows="3" placeholder="Motivo de la devolución..." style="resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="dev-cancelar">Cancelar</button>
+                <button type="button" class="ap-btn ap-btn--primary" id="dev-confirmar" disabled>↩ Registrar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="dashboard.js"></script>
+
+</body>
+
+</html>

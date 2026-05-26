@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/adminProductos.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="ap-main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+        <!-- Toolbar -->
+        <div class="ap-toolbar">
+            <div class="ap-toolbar__filters">
+                <input
+                    type="search"
+                    id="prov-search"
+                    class="ap-input"
+                    placeholder="Buscar proveedor..."
+                    autocomplete="off"
+                >
+                <select id="prov-filter-status" class="ap-select">
+                    <option value="">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                </select>
+            </div>
+            <button class="ap-btn ap-btn--primary" id="prov-btn-nuevo">+ Nuevo proveedor</button>
+        </div>
+
+        <!-- Contador -->
+        <p class="ap-count" id="prov-count"></p>
+
+        <!-- Tabla -->
+        <div class="ap-table-wrap">
+            <table class="ap-table ap-table--proveedores">
+                <thead>
+                    <tr>
+                        <th class="ap-col-num">ID</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Asesor</th>
+                        <th class="ap-col-center">Activo</th>
+                        <th class="ap-col-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="prov-tbody">
+                    <tr id="prov-loading-row">
+                        <td colspan="6" class="ap-loading">Cargando proveedores...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal crear / editar proveedor -->
+    <dialog id="prov-modal" class="ap-modal-dialog">
+        <form id="prov-form" class="ap-modal__form" novalidate>
+            <h2 class="ap-modal__title" id="prov-modal-title">Nuevo proveedor</h2>
+
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="f-prov-nombre">Nombre *</label>
+                    <input class="ap-input" id="f-prov-nombre" name="nombre" type="text" required autocomplete="off">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="f-prov-telefono">Teléfono</label>
+                    <input class="ap-input" id="f-prov-telefono" name="telefono" type="tel" autocomplete="off" placeholder="Ej: 3001234567">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="f-prov-asesor">Nombre asesor</label>
+                    <input class="ap-input" id="f-prov-asesor" name="asesor" type="text" autocomplete="off">
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="f-prov-descripcion">Productos que maneja</label>
+                    <textarea class="ap-input" id="f-prov-descripcion" name="descripcion" rows="3" placeholder="Ej: Harina, levadura, queso mozzarella..."></textarea>
+                </div>
+            </div>
+
+            <p class="ap-modal__error" id="prov-modal-error"></p>
+
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="prov-btn-cancelar">Cancelar</button>
+                <button type="submit" class="ap-btn ap-btn--primary" id="prov-btn-guardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script type="module" src="./proveedores.js"></script>
+</body>
+</html>

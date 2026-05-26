@@ -1,0 +1,21 @@
+[08/03/2026, 10:53:34] Monitor iniciado — Sede: cabecera
+[08/03/2026, 10:53:40] Nuevo pedido detectado: #1 (5Dz45ME16rcfClOOXrpU)
+[08/03/2026, 10:53:40] Nuevo pedido detectado: #4 (EEmrbuXsiTJ1bocYKo69)
+[08/03/2026, 10:53:40] Nuevo pedido detectado: #3 (XQ4b2Bt20mh5BZoMivDh)
+[08/03/2026, 10:53:40] Nuevo pedido detectado: #2 (ZUt4y45wSp5SWW3gds4h)
+[08/03/2026, 10:53:42] PDF generado correctamente
+[08/03/2026, 10:53:43] PDF generado correctamente
+[08/03/2026, 10:53:43] PDF generado correctamente
+[08/03/2026, 10:53:43] PDF generado correctamente
+[08/03/2026, 10:53:44] Error al imprimir: Command failed: D:\Kailu\Programación\Proyectos Web\EverestCentral\scripts\node_modules\pdf-to-printer\dist\SumatraPDF-3.4.6-32.exe -print-to POS-80 -silent ticket_ZUt4y45wSp5SWW3gds4h.pdf
+
+[08/03/2026, 10:53:44] Error al imprimir: Command failed: D:\Kailu\Programación\Proyectos Web\EverestCentral\scripts\node_modules\pdf-to-printer\dist\SumatraPDF-3.4.6-32.exe -print-to POS-80 -silent ticket_XQ4b2Bt20mh5BZoMivDh.pdf
+
+[08/03/2026, 10:53:44] Error al imprimir: Command failed: D:\Kailu\Programación\Proyectos Web\EverestCentral\scripts\node_modules\pdf-to-printer\dist\SumatraPDF-3.4.6-32.exe -print-to POS-80 -silent ticket_5Dz45ME16rcfClOOXrpU.pdf
+
+[08/03/2026, 10:53:44] Error al imprimir: Command failed: D:\Kailu\Programación\Proyectos Web\EverestCentral\scripts\node_modules\pdf-to-printer\dist\SumatraPDF-3.4.6-32.exe -print-to POS-80 -silent ticket_EEmrbuXsiTJ1bocYKo69.pdf
+
+[08/03/2026, 10:53:45] Pedido #4 marcado como impreso y en preparación
+[08/03/2026, 10:53:45] Pedido #2 marcado como impreso y en preparación
+[08/03/2026, 10:53:45] Pedido #1 marcado como impreso y en preparación
+[08/03/2026, 10:53:45] Pedido #3 marcado como impreso y en preparación

@@ -1,5 +1,6 @@
 //********FUNCION DE RENDERIZADO DE TODOS LOS PRODUCTOS DISPONIBLE*******/
 let carrito = [];
+let _modoReserva = false;
 
 // Sedes donde aplican las promos especiales (65K, Pepperoni, Lasaña)
 const SEDES_PROMO_ESPECIAL = new Set(['acropolis', 'megamall', 'unico']);
@@ -109,17 +110,16 @@ function init() {
 
 // Inyeccción de barra buscadora por nombre de productos
 function crearBuscador() {
-    const grid = document.getElementById('productGrid');
+    const wrapper = document.getElementById('search-wrapper');
     const buscadorHTML = `
-        <div class="search-container no-print" style="grid-column: 1 / -1; margin-bottom: 20px;">
-            <input type="text" id="productSearch" 
-                   placeholder="🔍 Buscar producto (ej: Hawaiana, Pollo, Carne...)" 
-                   oninput="ejecutarFiltro()" 
+        <div class="search-container no-print">
+            <input type="text" id="productSearch"
+                   placeholder="🔍 Buscar producto (ej: Hawaiana, Pollo, Carne...)"
+                   oninput="ejecutarFiltro()"
                    style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
         </div>
     `;
-    // Insertar justo antes del grid
-    grid.insertAdjacentHTML('beforebegin', buscadorHTML);
+    wrapper.innerHTML = buscadorHTML;
 }
 
 //Función para mostrar el sidebar lado izquierdo.
@@ -142,15 +142,22 @@ function renderCategories() {
         "Entradas/Adición",    
     ];
     
-    nav.innerHTML = categoriasVisibles.map(c => `
-        <button class="cat-btn" onclick="seleccionarCategoria('${c}')">${c}</button>
-    `).join('');
+    nav.innerHTML = categoriasVisibles.map(c =>
+        `<button class="cat-btn" onclick="seleccionarCategoria('${c}')">${c}</button>`
+    ).join('');
+    nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalReserva()">📅 Reservas</button>`;
 }
 
 // Selección categoria para mostrar variedad según categoria.
 function seleccionarCategoria(categoria) {
     modoCalzoneActivo = (categoria === "Calzones");
-    
+
+    // Marcar botón activo
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cat-btn').forEach(b => {
+        if (b.textContent.trim() === categoria) b.classList.add('active');
+    });
+
     // Limpiar el texto de búsqueda al cambiar de categoría
     const input = document.getElementById('productSearch');
     if (input) input.value = "";
@@ -173,20 +180,25 @@ function renderProducts(categoria) {
                 <p class="promo-elegibles">${esMartes ? 'Pizzas · Lasañas · Ensaladas · Calzones' : 'Disponible solo los martes'}</p>
             </div>
             <div class="card card-promo" onclick="abrirPromo65k()">
-                <div class="promo-badge">COMBO</div>
+                <div class="promo-badge">PROMO</div>
                 <h4>65K</h4>
                 <p class="product-desc">Pizza Grande + Gaseosa 1.5 lts</p>
                 <p class="promo-elegibles">Clásica · Típica</p>
             </div>
-            <div class="card card-promo card-promo--inactiva">
+            <div class="card card-promo" onclick="abrirPromoPepperoni()">
                 <div class="promo-badge">PROMO</div>
-                <p class="promo-titulo-sm">Pizza Pepperoni<br>6 porciones</p>
-                <p class="product-desc">Próximamente</p>
+                <h4>28K</h4>
+                <p class="product-desc">Pizza Pepperoni<br>6 porciones · 30 cm</p>
             </div>
-            <div class="card card-promo card-promo--inactiva">
-                <div class="promo-badge">COMBO</div>
-                <p class="promo-titulo-sm">Lasaña /<br>Espaguetti<br>+ Gaseosa</p>
-                <p class="product-desc">Próximamente</p>
+            <div class="card card-promo" onclick="abrirPromoLasEsp()">
+                <div class="promo-badge">PROMO</div>
+                <h4>48K</h4>
+                <p class="product-desc">2 Lasañas o 2 Espaguettis<br>+ 2 Gaseosas 250ml</p>
+            </div>
+            <div class="card card-promo" onclick="abrirPromoKit()">
+                <div class="promo-badge">PROMO</div>
+                <h4>25K</h4>
+                <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
             </div>
         `;
         return;
@@ -537,6 +549,7 @@ function cerrarModal() {
         _mezclaState = null;
         _promo3x2State = null;
         _promo65kState = null;
+        _promoLasEspState = null;
     }
 }
 // Escuchamos el evento de clic en la ventana (window) o directamente en el modal
@@ -571,6 +584,7 @@ function actualizarComanda() {
     
     const btnVaciar = document.getElementById('btn-vaciar');
     if(carrito.length === 0) {
+        limpiarFormularioCheckout();
         container.innerHTML = '<p class="empty-msg">No hay productos</p>';
         totalDisp.innerText = "$0";
         if (btnVaciar) btnVaciar.style.display = 'none';
@@ -607,11 +621,17 @@ function actualizarComanda() {
             ? `<span class="promo-tag">PROMO 3×2</span>`
             : item.esPromo65k
             ? `<span class="promo-tag">COMBO 65K</span>`
+            : item.esPromoLasEsp
+            ? `<span class="promo-tag">PROMO 48K</span>`
+            : item.esPromoPepperoni
+            ? `<span class="promo-tag">PROMO 28K</span>`
+            : item.esPromoKit
+            ? `<span class="promo-tag">KIT PIZZERITOS</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
             ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
             : item.nombre;
-        const precioClass = (item.esObsequio3x2 || item.esGaseosa65k) ? 'item-precio item-precio--gratis' : 'item-precio';
+        const precioClass = (item.esObsequio3x2 || item.esGaseosa65k || item.esGaseosaLasEsp || item.esExtra28k) ? 'item-precio item-precio--gratis' : 'item-precio';
 
         const rowPrincipal = `
             <div class="item-grupo ${item._obsOpen ? 'item-grupo--obs-open' : ''}">
@@ -622,8 +642,8 @@ function actualizarComanda() {
                     </div>
                     <div class="item-controls">
                         ${botonAdicion}
-                        ${(item.esPromo3x2 || item.esPromo65k) ? '' : botonObs}
-                        ${(item.esPromo3x2 || item.esPromo65k) ? '' : `<div class="qty-control">
+                        ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
+                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
                             <button class="btn-qty" onclick="incrementarQty(${item.id})">+</button>
@@ -649,6 +669,37 @@ function actualizarComanda() {
 
     const total = carrito.reduce((sum, item) => sum + item.precio * item.qty, 0);
     totalDisp.innerText = `$${total.toLocaleString()}`;
+    actualizarCartBar();
+}
+
+// ── Cart bar — mobile ──────────────────────────────────────────────────────
+function actualizarCartBar() {
+    const bar = document.getElementById('cart-bar');
+    if (!bar) return;
+    // No actualizar si el panel ya está abierto
+    if (document.querySelector('.order-panel')?.classList.contains('order-panel--open')) return;
+    const principales = carrito.filter(i => !i.pizzaId);
+    const total = carrito.reduce((sum, i) => sum + i.precio * i.qty, 0);
+    if (principales.length === 0) {
+        bar.classList.remove('cart-bar--visible');
+        return;
+    }
+    bar.classList.add('cart-bar--visible');
+    document.getElementById('cart-bar-count').textContent =
+        `${principales.length} ${principales.length === 1 ? 'producto' : 'productos'}`;
+    document.getElementById('cart-bar-total').textContent = `$${total.toLocaleString()}`;
+}
+
+function abrirCartPanel() {
+    document.querySelector('.order-panel').classList.add('order-panel--open');
+    document.getElementById('cart-overlay').classList.add('cart-overlay--visible');
+    document.getElementById('cart-bar').classList.remove('cart-bar--visible');
+}
+
+function cerrarCartPanel() {
+    document.querySelector('.order-panel').classList.remove('order-panel--open');
+    document.getElementById('cart-overlay').classList.remove('cart-overlay--visible');
+    actualizarCartBar();
 }
 
 function eliminarItem(id) {
@@ -680,6 +731,21 @@ function eliminarItem(id) {
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoId65k !== itemTarget.promoId65k);
             _limpiarFiltroSedes();
+            actualizarComanda();
+        }, 300);
+        return;
+    }
+
+    // Si pertenece a una promo 48K (Lasaña/Espaguetti), eliminar los 4 productos juntos
+    if (itemTarget?.promoIdLasEsp) {
+        if (!confirm('Este producto es parte de una Promo 48K. ¿Eliminar los productos de la promo?')) return;
+        const promoIds = carrito.filter(i => i.promoIdLasEsp === itemTarget.promoIdLasEsp).map(i => i.id);
+        promoIds.forEach(fId => {
+            const fila = document.querySelector(`.item-row[data-id="${fId}"]`);
+            if (fila) fila.classList.add('item-removing');
+        });
+        setTimeout(() => {
+            carrito = carrito.filter(i => i.promoIdLasEsp !== itemTarget.promoIdLasEsp);
             actualizarComanda();
         }, 300);
         return;
@@ -734,25 +800,200 @@ function vaciarCarrito() {
         carrito = [];
         localStorage.removeItem('dp_promo65k_obs');
         localStorage.removeItem('dp_promo3x2_obs');
+        localStorage.removeItem('dp_promoLasEsp_obs');
+        localStorage.removeItem('dp_promoPepperoni_obs');
+        localStorage.removeItem('dp_promoKit_obs');
         _limpiarFiltroSedes();
         actualizarComanda();
     }, filas.length * 60 + 300);
 }
+function actualizarTotalCheckout() {
+    const totalProductos = carrito.reduce((sum, item) => sum + item.precio * item.qty, 0);
+    const tipo    = document.querySelector('.entrega-btn.active')?.dataset.tipo || '';
+    const sede    = document.querySelector('.sede-btn.active')?.dataset.sede    || '';
+    const barrio  = document.getElementById('barrioInput')?.value               || '';
+    const valDom  = (tipo === 'domicilio' && window.domicilios?.[sede]?.[barrio]) || 0;
+
+    const elSub   = document.getElementById('checkout-subtotal');
+    const elDom   = document.getElementById('checkout-domicilio-val');
+    const elTotal = document.getElementById('checkout-total-final');
+    const elRow   = document.getElementById('checkout-domicilio-row');
+    if (!elSub) return;
+
+    elSub.textContent   = `$${totalProductos.toLocaleString()}`;
+    elDom.textContent   = `$${valDom.toLocaleString()}`;
+    elTotal.textContent = `$${(totalProductos + valDom).toLocaleString()}`;
+    elRow.style.display = tipo === 'domicilio' ? 'flex' : 'none';
+}
+window.actualizarTotalCheckout = actualizarTotalCheckout;
+
 //Funciónes del checkout del pedido.(datos del cliente)
 function abrirCheckout() {
     if (carrito.length === 0) return alert("El carrito está vacío");
-    
+
+    if (_modoReserva) {
+        _restaurarModoNormal();
+        _modoReserva = false;
+    }
+
     const modal = document.getElementById('modal-checkout');
     modal.style.display = 'flex';
-    
+    actualizarTotalCheckout();
+
     // IMPORTANTE: El foco automático
     setTimeout(() => {
         document.getElementById('clienteNombre').focus();
     }, 100);
 }
 
+const SEDES_RESERVA = new Set(['cabecera', 'cañaveral', 'piedecuesta']);
+
+function _generarSlots(desde, hasta) {
+    const slots = [];
+    let [h, m] = desde;
+    const [hf, mf] = hasta;
+    while (h < hf || (h === hf && m <= mf)) {
+        const h12 = h > 12 ? h - 12 : h;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const label = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+        const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        slots.push({ label, value });
+        m += 15;
+        if (m >= 60) { m -= 60; h++; }
+    }
+    return slots;
+}
+
+function renderHorariosReserva() {
+    const grid = document.getElementById('hora-reserva-grid');
+    const slotsPrimarios  = _generarSlots([18, 0],  [21, 0]);
+    const slotsEarly      = _generarSlots([15, 15], [17, 45]);
+    const slotsLate       = _generarSlots([21, 15], [23, 0]);
+
+    function crearBotones(slots, ocultos = false) {
+        return slots.map(s => `
+            <button type="button"
+                class="hora-btn${ocultos ? ' hora-btn--extra' : ''}"
+                data-hora="${s.value}"
+                onclick="seleccionarHora(this)">
+                ${s.label}
+            </button>`).join('');
+    }
+
+    grid.innerHTML = `
+        ${crearBotones(slotsPrimarios)}
+        <div id="horarios-extra" style="display:none; width:100%; display:none;">
+            ${crearBotones(slotsEarly)}
+            ${crearBotones(slotsLate)}
+        </div>
+        <button type="button" id="btn-ver-mas-horarios" class="hora-btn-vermas"
+            onclick="toggleHorariosExtra()">+ Ver otros horarios ▾</button>
+    `;
+}
+
+window.seleccionarHora = function(btn) {
+    document.querySelectorAll('.hora-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('horaReserva').value = btn.dataset.hora;
+};
+
+window.toggleHorariosExtra = function() {
+    const extra = document.getElementById('horarios-extra');
+    const btn   = document.getElementById('btn-ver-mas-horarios');
+    const visible = extra.style.display !== 'none';
+    extra.style.display = visible ? 'none' : 'flex';
+    btn.textContent = visible ? '+ Ver otros horarios ▾' : '− Ocultar ▴';
+};
+
+function abrirModalReserva() {
+    limpiarFormularioCheckout();
+    renderHorariosReserva();
+
+    // Activar modo reserva: ocultar secciones de pedido, mostrar personas
+    document.getElementById('modal-checkout-titulo').textContent = 'NUEVA RESERVA';
+    document.getElementById('entrega-toggle-section').style.display = 'none';
+    document.getElementById('pago-section').style.display = 'none';
+    document.getElementById('personas-section').style.display = 'block';
+    document.getElementById('btn-enviar-pedido').style.display = 'none';
+    document.getElementById('btn-crear-reserva').style.display = 'block';
+
+    // Restringir sedes a las que aplican reservas
+    document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
+        if (!SEDES_RESERVA.has(btn.dataset.sede)) btn.disabled = true;
+    });
+
+    _modoReserva = true;
+
+    const modal = document.getElementById('modal-checkout');
+    modal.style.display = 'flex';
+
+    setTimeout(() => {
+        document.getElementById('clienteNombre').focus();
+    }, 100);
+}
+
+async function procesarReservaFinal() {
+    const canal     = document.querySelector('.canal-btn.active')?.dataset.canal || '';
+    const sede      = document.querySelector('.sede-btn.active')?.dataset.sede   || '';
+    const nombre    = document.getElementById('clienteNombre').value.trim();
+    const telefono  = document.getElementById('clienteTelefono').value.trim();
+    const fecha     = document.getElementById('fechaReserva').value.trim();
+    const hora      = document.getElementById('horaReserva').value.trim();
+    const personas  = parseInt(document.getElementById('cantidadPersonas').value, 10);
+    const obs       = document.getElementById('observaciones').value.trim();
+
+    if (!canal)               return alert('⚠️ Selecciona el canal (WhatsApp o IVR).');
+    if (!sede)                return alert('⚠️ Selecciona una sede.');
+    if (!nombre)              return alert('⚠️ El nombre del cliente es obligatorio.');
+    const telNorm = normalizarTelefono(telefono);
+    if (!telNorm)             return alert('⚠️ Por favor validar el número de teléfono.');
+    if (!fecha)               return alert('⚠️ La fecha de la reserva es obligatoria.');
+    if (!hora)                return alert('⚠️ La hora de la reserva es obligatoria.');
+    if (!personas || personas < 1) return alert('⚠️ Ingresa la cantidad de personas (mínimo 1).');
+
+    const datos = {
+        tipo: 'reserva',
+        canal,
+        sede,
+        nombre,
+        telefono: telNorm,
+        fechaReserva: fecha,
+        horaReserva: hora,
+        cantidadPersonas: personas,
+        obs,
+        impreso: false
+    };
+
+    window.mostrarOverlay?.('Creando reserva...');
+    try {
+        const pedidoId = await window.enviarAFirebase(datos);
+
+        cerrarCheckout();
+        limpiarFormularioCheckout();
+
+        const asesor = window.asesorActual || 'Asesor';
+        const sedeLabel = sede.charAt(0).toUpperCase() + sede.slice(1).toLowerCase();
+        window.ocultarOverlay?.(true, { asesor, pedidoId, sede: sedeLabel });
+
+    } catch (error) {
+        console.error('Error al crear reserva:', error);
+        window.ocultarOverlay?.(false);
+        alert('Hubo un error al crear la reserva.');
+    }
+}
 
 
+
+
+function _restaurarModoNormal() {
+    document.getElementById('modal-checkout-titulo').textContent = 'DATOS CLIENTE';
+    document.getElementById('entrega-toggle-section').style.display = '';
+    document.getElementById('pago-section').style.display = '';
+    document.getElementById('personas-section').style.display = 'none';
+    document.getElementById('btn-enviar-pedido').style.display = '';
+    document.getElementById('btn-crear-reserva').style.display = 'none';
+    document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => { btn.disabled = false; });
+}
 
 function limpiarFormularioCheckout() {
     document.getElementById('clienteNombre').value = '';
@@ -763,14 +1004,19 @@ function limpiarFormularioCheckout() {
     document.getElementById('clienteDireccion').value = '';
     document.getElementById('barrioInput').value = '';
     document.getElementById('observaciones').value = '';
+    document.getElementById('fechaReserva').value = '';
+    document.getElementById('horaReserva').value = '';
+    document.getElementById('cantidadPersonas').value = '';
+    document.getElementById('hora-reserva-grid').innerHTML = '';
 
     document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.canal-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.entrega-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.pago-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('direccion-section').style.display = 'none';
-    document.getElementById('barrioInput').value = '';
     document.getElementById('domicilio-precio').textContent = '';
+
+    _restaurarModoNormal();
 }
 
 //Cerramos el modal al hacer click por fuera de él.
@@ -805,6 +1051,10 @@ const _modalCheckout = document.getElementById('modal-checkout');
 _modalCheckout.addEventListener('mousedown', (e) => { _checkoutMousedownTarget = e.target; });
 _modalCheckout.addEventListener('click', (e) => {
     if (e.target === _modalCheckout && _checkoutMousedownTarget === _modalCheckout) {
+        if (_modoReserva) {
+            limpiarFormularioCheckout();
+            _modoReserva = false;
+        }
         cerrarCheckout();
     }
     _checkoutMousedownTarget = null;
@@ -844,6 +1094,15 @@ async function procesarPedidoFinal() {
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromo65k)) {
         const label = localStorage.getItem('dp_promo65k_obs') || 'PROMO 65K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoLasEsp)) {
+        const label = localStorage.getItem('dp_promoLasEsp_obs') || 'PROMO 48K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoPepperoni)) {
+        const label = 'PROMO PEPPERONI 28K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoKit)) {
+        const label = localStorage.getItem('dp_promoKit_obs') || 'KIT PIZZERITOS 25K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     }
 
@@ -888,6 +1147,9 @@ async function procesarPedidoFinal() {
         carrito = [];
         localStorage.removeItem('dp_promo65k_obs');
         localStorage.removeItem('dp_promo3x2_obs');
+        localStorage.removeItem('dp_promoLasEsp_obs');
+        localStorage.removeItem('dp_promoPepperoni_obs');
+        localStorage.removeItem('dp_promoKit_obs');
         actualizarComanda();
 
         const asesor = window.asesorActual || 'Asesor';
@@ -1086,7 +1348,7 @@ function _p65kAbrirModal() {
     if (_promo65kState.step === 1) {
         titulo.innerHTML = `
             <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar(1)}</div>
-            <small id="p65k-subtitulo" style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el primer sabor de la pizza</small>`;
+            <small id="p65k-subtitulo" style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el sabor de la pizza</small>`;
 
         gridOpciones.className = 'opciones-grid opciones-sabores';
         gridOpciones.innerHTML = `
@@ -1141,7 +1403,7 @@ function _p65kRenderPizzas(q) {
         } else if (_promo65kState.mezcla) {
             sub.textContent = 'Elige la primera mitad de la pizza';
         } else {
-            sub.textContent = 'Elige el primer sabor de la pizza';
+            sub.textContent = 'Elige el sabor de la pizza';
         }
     }
 
@@ -1582,16 +1844,278 @@ function _promo3x2ConfirmarItem(producto, tamano, precio) {
     } else {
         cerrarModal();
         const now = Date.now();
-        carrito.push({ id: now,     nombre: `[PROMO 3x2] ${state.prod1.nombre}`, precio: state.prod1.precio, qty: 1, esPromo3x2: true, promoId: now });
-        carrito.push({ id: now + 1, nombre: `[PROMO 3x2] ${state.prod2.nombre}`, precio: state.prod2.precio, qty: 1, esPromo3x2: true, promoId: now });
-        carrito.push({ id: now + 2, nombre: `[PROMO 3x2] 🎁 OBSEQUIO ${nombreCompleto}`, precio: 0, qty: 1, esPromo3x2: true, esObsequio3x2: true, promoId: now });
-        localStorage.setItem('dp_promo3x2_obs', `PROMO 3X2 - Obsequio ${producto.nombre}`);
+        carrito.push({ id: now,     nombre: state.prod1.nombre, precio: state.prod1.precio, qty: 1, esPromo3x2: true, promoId: now, esAdicionable: true, tamanoRaw: state.prod1.tamano });
+        carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: state.prod2.precio, qty: 1, esPromo3x2: true, promoId: now, esAdicionable: true, tamanoRaw: state.prod1.tamano });
+        carrito.push({ id: now + 2, nombre: `🎁 OBSEQUIO ${nombreCompleto}`, precio: 0, qty: 1, esPromo3x2: true, esObsequio3x2: true, promoId: now });
+        const obsAnterior = localStorage.getItem('dp_promo3x2_obs') || '';
+        const nuevoObsequio = `Obsequio ${producto.nombre} (${tamano})`;
+        const obsActualizada = obsAnterior 
+            ? `${obsAnterior} | ${nuevoObsequio}`
+            : `PROMO 3X2 - ${nuevoObsequio}`;
+        localStorage.setItem('dp_promo3x2_obs', obsActualizada);
         actualizarComanda();
     }
 }
 
+// ── PROMO LASAÑA/ESPAGUETTI 48K ────────────────────────────────────────────
+
+const PROMO_LAS_ESP_EXCLUIDAS_PASTAS = [
+    "Pasta Carbonara", "Pasta Alfredo", "Pasta Pesto Camaron",
+    "Pasta Matriziana", "Pasta Marinera"
+];
+
+const PROMO_LAS_ESP_EXCLUIDAS_LASAÑAS = ["Lasaña Drive", "Lasaña Vegetariana"];
+
+function _promoLasEspGetProductos(categoria) {
+    if (categoria === 'Lasañas') {
+        return (menuData["Lasañas"] || [])
+            .filter(p => !PROMO_LAS_ESP_EXCLUIDAS_LASAÑAS.includes(p.nombre))
+            .map(p => ({ ...p, categoriaPromo: 'Lasañas' }));
+    }
+    // Espaguetti: pastas estándar (sencillo/mixto/remix), sin las premium
+    return (menuData["Pastas"] || [])
+        .filter(p => !PROMO_LAS_ESP_EXCLUIDAS_PASTAS.includes(p.nombre))
+        .map(p => ({ ...p, categoriaPromo: 'Espaguetti' }));
+}
+
+let _promoLasEspState = null;
+
+window.abrirPromoLasEsp = function () {
+    _promoLasEspState = { step: 0, categoria: null, prod1: null, prod2: null, gaseosa1: null };
+    _promoLasEspAbrirModal();
+};
+
+function _promoLasEspAbrirModal() {
+    const state        = _promoLasEspState;
+    const modal        = document.getElementById('modal-seleccion');
+    const titulo       = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+    modal.querySelector('.modal-content').classList.add('modal-sabor2');
+
+    const stepBar = () => {
+        const pasos = ['1. Producto 1', '2. Producto 2', '3. Gaseosa 1', '4. Gaseosa 2'];
+        return pasos.map((lbl, i) => {
+            const n = i + 1;
+            const activo = n === state.step;
+            const pasado = n < state.step;
+            const color  = activo ? 'var(--color-primario)' : pasado ? '#555' : '#ccc';
+            const weight = activo ? '900' : 'normal';
+            return `<span style="color:${color};font-weight:${weight};">${lbl}</span>`;
+        }).join(`<span style="color:#ddd;margin:0 5px;">›</span>`);
+    };
+
+    // ── PASO 0: elegir categoría ─────────────────────────────────
+    if (state.step === 0) {
+        titulo.innerHTML = `Promo 48K<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">¿Deseas promo de lasaña o de espaguetti?</small>`;
+        gridOpciones.className = 'opciones-grid promo-cat-grid';
+        gridOpciones.innerHTML = ['Lasañas', 'Espaguetti'].map(cat => `
+            <button class="btn-tamano promo-cat-btn" data-cat="${cat}">
+                <strong>${cat}</strong>
+            </button>
+        `).join('');
+        gridOpciones.querySelectorAll('.promo-cat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.categoria = btn.dataset.cat;
+                state.step = 1;
+                _promoLasEspAbrirModal();
+            });
+        });
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // ── PASOS 1-4: grid de productos / gaseosas ──────────────────
+    const esPasoGaseosa = state.step >= 3;
+
+    if (esPasoGaseosa) {
+        const numGas = state.step === 3 ? 1 : 2;
+        titulo.innerHTML = `
+            <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
+            <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el sabor de la gaseosa ${numGas} · <strong>${state.prod1?.nombre} / ${state.prod2?.nombre}</strong></small>`;
+
+        const sabores = Object.keys(preciosBebidas.gaseosa400ml);
+        gridOpciones.className = 'opciones-grid';
+        gridOpciones.innerHTML = sabores.map(s =>
+            `<button class="btn-tamano" onclick="_promoLasEspSelGaseosa('${s}')">${s}</button>`
+        ).join('');
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // Pasos 1 y 2: grid de productos
+    const subtitulo = state.step === 1
+        ? `${state.categoria} · Elige el primer producto`
+        : `${state.categoria} · Elige el segundo producto`;
+
+    titulo.innerHTML = `
+        <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
+        <small style="font-size:1.3rem;color:#666;font-weight:normal;">${subtitulo}</small>`;
+
+    const productos = _promoLasEspGetProductos(state.categoria);
+    gridOpciones.className = 'opciones-grid opciones-sabores';
+    gridOpciones.innerHTML = `
+        <div class="busqueda-sabor2-wrapper">
+            <input type="text" id="buscar-las-esp"
+                   placeholder="🔍 Buscar producto..."
+                   oninput="_promoLasEspFiltrar(this.value)"
+                   autocomplete="off">
+        </div>
+        <div id="las-esp-grid" class="sabores2-grid"></div>`;
+
+    _promoLasEspRenderGrid(productos);
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('buscar-las-esp')?.focus(), 100);
+}
+
+window._promoLasEspFiltrar = function (q) {
+    if (!_promoLasEspState) return;
+    const todos = _promoLasEspGetProductos(_promoLasEspState.categoria);
+    _promoLasEspRenderGrid(q
+        ? todos.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()))
+        : todos);
+};
+
+function _promoLasEspRenderGrid(productos) {
+    const grid = document.getElementById('las-esp-grid');
+    if (!grid || !_promoLasEspState) return;
+
+    if (productos.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No se encontraron productos.</p>';
+        return;
+    }
+
+    grid.innerHTML = productos.map(p => {
+        const precios = Object.values(p.opciones || {});
+        const precioTexto = precios.length > 1
+            ? `$${Math.min(...precios).toLocaleString()}+`
+            : `$${(precios[0] ?? 0).toLocaleString()}`;
+        return `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}" data-cat="${p.categoriaPromo}">
+            <span class="sabor2-nombre">${p.nombre}</span>
+            <span class="sabor2-precio">${precioTexto}</span>
+        </button>`;
+    }).join('');
+
+    grid.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const prod = _promoLasEspGetProductos(_promoLasEspState.categoria)
+                .find(p => p.nombre === btn.dataset.nombre);
+            if (prod) _promoLasEspClickProducto(prod);
+        });
+    });
+}
+
+function _promoLasEspClickProducto(producto) {
+    const opciones = Object.keys(producto.opciones || {});
+
+    // Una sola variante → confirmar directo
+    if (opciones.length === 1) {
+        _promoLasEspConfirmarProducto(producto, opciones[0], producto.opciones[opciones[0]]);
+        return;
+    }
+
+    // Varias variantes → mostrar picker de variante
+    const titulo = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+    titulo.innerHTML = `
+        <div style="font-size:1.15rem;margin-bottom:6px;color:#aaa;">Promo 48K — Producto ${_promoLasEspState.step}</div>
+        ${producto.nombre}<br>
+        <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige la proteína que desees</small>`;
+    gridOpciones.className = 'opciones-grid opciones-pizza';
+    gridOpciones.innerHTML = opciones.map(v =>
+        `<button class="btn-tamano las-esp-var-btn" data-var="${v}" data-pre="${producto.opciones[v]}">
+            ${v}<br><strong>$${producto.opciones[v].toLocaleString()}</strong>
+        </button>`
+    ).join('');
+    gridOpciones.querySelectorAll('.las-esp-var-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            _promoLasEspConfirmarProducto(producto, btn.dataset.var, Number(btn.dataset.pre));
+        });
+    });
+}
+
+function _promoLasEspConfirmarProducto(producto, variante, precio) {
+    const state = _promoLasEspState;
+    const nombreCompleto = variante === 'Unidad' ? producto.nombre : `${producto.nombre} (${variante})`;
+
+    if (state.step === 1) {
+        state.prod1 = { nombre: nombreCompleto, precio };
+        state.step  = 2;
+        _promoLasEspAbrirModal();
+    } else {
+        state.prod2 = { nombre: nombreCompleto, precio };
+        state.step  = 3;
+        _promoLasEspAbrirModal();
+    }
+}
+
+window._promoLasEspSelGaseosa = function (sabor) {
+    const state = _promoLasEspState;
+    if (state.step === 3) {
+        state.gaseosa1 = sabor;
+        state.step = 4;
+        _promoLasEspAbrirModal();
+    } else {
+        // Step 4 — gaseosa 2, agregar todo al carrito
+        cerrarModal();
+        const now = Date.now();
+        carrito.push({ id: now,     nombre: state.prod1.nombre,        precio: 48000, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now });
+        carrito.push({ id: now + 1, nombre: state.prod2.nombre,        precio: 0,     qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now });
+        carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
+        carrito.push({ id: now + 3, nombre: `Gaseosa ${sabor}`,         precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
+        localStorage.setItem('dp_promoLasEsp_obs', `PROMO 48K - ${state.categoria}`);
+        actualizarComanda();
+    }
+};
+
+// ── PROMO PEPPERONI 28K ────────────────────────────────────────────────────
+
+const SABORES_KIT = ['Hawaiana', 'Tres Carnes', 'Jamón', 'Pepperoni', 'Pollo'];
+
+window.abrirPromoKit = function () {
+    const modal        = document.getElementById('modal-seleccion');
+    const titulo       = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+
+    modal.querySelector('.modal-content').classList.remove('modal-sabor2');
+    titulo.innerHTML = `Kit Pizzeritos · 25K<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el sabor</small>`;
+    gridOpciones.className = 'opciones-grid';
+    gridOpciones.innerHTML = SABORES_KIT.map(s =>
+        `<button class="btn-tamano" onclick="_promoKitSelSabor('${s}')">${s}</button>`
+    ).join('');
+    modal.style.display = 'flex';
+};
+
+window._promoKitSelSabor = function (sabor) {
+    carrito.push({
+        id: Date.now(),
+        nombre: `Kit Pizzeritos - ${sabor}`,
+        precio: 25000,
+        qty: 1,
+        esPromoKit: true,
+    });
+    localStorage.setItem('dp_promoKit_obs', 'KIT PIZZERITOS 25K');
+    cerrarModal();
+    actualizarComanda();
+};
+
+window.abrirPromoPepperoni = function () {
+    carrito.push({
+        id: Date.now(),
+        nombre: 'Pizza Pepperoni 6 Porciones',
+        precio: 28000,
+        qty: 1,
+        esPromoPepperoni: true,
+    });
+    localStorage.setItem('dp_promoPepperoni_obs', 'PROMO PEPPERONI 28K');
+    actualizarComanda();
+};
+
 // Iniciar
 init();
+
+// ── Cart bar: listeners (mobile) ──────────────────────────────────────────
+document.getElementById('cart-bar-btn')?.addEventListener('click', abrirCartPanel);
+document.getElementById('cart-overlay')?.addEventListener('click', cerrarCartPanel);
 
 //Limpiado automático del buscador con Escape
 document.addEventListener('keydown', (e) => {

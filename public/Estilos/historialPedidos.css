@@ -1,0 +1,1254 @@
+
+/* Asegurar que html/body llenen exactamente el iframe (sin depender de vh) */
+html, body {
+    height: 100%;
+    min-height: unset;
+}
+
+/* ── LAYOUT PRINCIPAL ─────────────────────────────────────────── */
+.historial__main {
+    margin-top: 90px;
+    padding: 2rem;
+    padding-bottom: 0;
+    height: calc(100vh - 90px);
+    height: calc(100dvh - 90px);
+    font-size: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* ── BARRA SUPERIOR ───────────────────────────────────────────── */
+.historial__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.historial__title {
+    font-size: 2.4rem;
+    color: var(--color-primario);
+    flex: 1;
+    text-align: center;
+}
+
+.btn-volver {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-volver:hover {
+    background-color: var(--color-quinto);
+}
+
+.btn-actualizar {
+    background-color: var(--color-secundario);
+    color: var(--color-primario);
+    border: 1px solid var(--color-primario);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-actualizar:hover {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+.btn-exportar {
+    background-color: var(--color-cuaternario);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-exportar:hover {
+    background-color: var(--color-quinto);
+}
+
+/* ── PANEL LATERAL DE FILTROS ─────────────────────────────────── */
+.filtros-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+}
+
+.filtros-overlay.open {
+    display: block;
+}
+
+.filtros-panel {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--color-secundario);
+    box-shadow: 4px 0 16px rgba(0,0,0,0.15);
+    z-index: 201;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.filtros-panel.open {
+    left: 0;
+}
+
+.filtros-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.6rem 2rem;
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    font-size: 1.6rem;
+    font-weight: bold;
+}
+
+.btn-cerrar-panel {
+    background: none;
+    border: none;
+    color: var(--color-secundario);
+    font-size: 2.4rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.filtros-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filtro-grupo label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--color-primario);
+    text-align: center;
+}
+
+.filtro-grupo input,
+.filtro-grupo select {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1.3rem;
+    background-color: #fff;
+    color: var(--color-terciario);
+    width: 100%;
+}
+
+.btn-filtrar {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-filtrar:hover {
+    background-color: var(--color-quinto);
+}
+
+.btn-limpiar {
+    background-color: transparent;
+    color: var(--color-primario);
+    border: 1px solid var(--color-primario);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    transition: all 0.2s;
+}
+
+.btn-limpiar:hover {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+
+/* ── BOTÓN ABRIR PANEL Y TOPBAR ACTIONS ───────────────────────── */
+.topbar-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn-filtros-toggle {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-filtros-toggle:hover {
+    background-color: var(--color-quinto);
+}
+
+/* ── RESUMEN ──────────────────────────────────────────────────── */
+.historial__resumen {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.resumen-card {
+    flex: 1;
+    min-width: 140px;
+    background-color: var(--color-secundario);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border-top: 4px solid var(--color-primario);
+}
+
+.resumen-label {
+    font-size: 1.2rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.resumen-valor {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--color-primario);
+}
+
+/* Todos los encabezados y celdas del historial centrados — neutraliza overrides de styles.css */
+.inventory-management__thead th { text-align: center !important; }
+.inventory-management__cell { text-align: center !important; }
+
+/* ── FILTROS DE COLUMNA ───────────────────────────────────────── */
+.filtros-columna th {
+    padding: 4px 8px;
+    background-color: var(--color-secundario);
+}
+
+.col-filter {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    background-color: #fff;
+    color: var(--color-terciario);
+    box-sizing: border-box;
+}
+
+.col-filter:focus {
+    outline: none;
+    border-color: var(--color-primario);
+}
+
+/* ── FILA ACTIVA (pedido gestionable por pizzería) ────────────── */
+.fila-activa {
+    background: #fffbf5 !important;
+    border-left: 3px solid #e67e22;
+    cursor: pointer;
+}
+
+/* ── FILA RESERVA ─────────────────────────────────────────────── */
+.fila-reserva {
+    background: #f9f4ff !important;
+    border-left: 3px solid #6c3d8f;
+    cursor: pointer;
+}
+
+/* ── RESUMEN CARD RESERVAS ────────────────────────────────────── */
+.resumen-card--reserva {
+    border-left: 3px solid #6c3d8f;
+}
+
+.resumen-card--reserva .resumen-label {
+    color: #6c3d8f;
+}
+
+/* ── TABLA ────────────────────────────────────────────────────── */
+.inventory-management {
+    background-color: var(--color-secundario);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    overflow-x: auto;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Anchos mínimos por columna — evita que los inputs colapsen durante carga */
+.inventory-management .inventory-management__table th:nth-child(1)  { min-width: 55px;  } /* N° */
+.inventory-management .inventory-management__table th:nth-child(2)  { min-width: 130px; } /* Fecha/Hora */
+.inventory-management .inventory-management__table th:nth-child(3)  { min-width: 120px; } /* Cliente */
+.inventory-management .inventory-management__table th:nth-child(4)  { min-width: 120px; } /* Dirección */
+.inventory-management .inventory-management__table th:nth-child(5)  { min-width: 80px;  } /* Canal */
+.inventory-management .inventory-management__table th:nth-child(6)  { min-width: 90px;  } /* Sede */
+.inventory-management .inventory-management__table th:nth-child(7)  { min-width: 90px;  } /* Asesor */
+.inventory-management .inventory-management__table th:nth-child(8)  { min-width: 100px; } /* Estado */
+.inventory-management .inventory-management__table th:nth-child(9)  { min-width: 50px;  } /* Obs. */
+.inventory-management .inventory-management__table th:nth-child(10) { min-width: 80px;  } /* Total */
+
+/* ── PAGINACIÓN ───────────────────────────────────────────────── */
+.paginacion {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background-color: var(--color-secundario);
+    border-top: 1px solid #ddd;
+}
+
+.pag-btn {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pag-btn:hover:not(:disabled) {
+    background-color: var(--color-quinto);
+}
+
+.pag-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.pag-info {
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+}
+
+/* ── PEDIDOS ACTIVOS (pizzería) ───────────────────────────────── */
+#pedidos-activos {
+    margin-bottom: 2rem;
+}
+
+.activos-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+}
+
+.activos-title {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-primario);
+}
+
+.stat-badges { display: flex; gap: 8px; }
+
+.stat-badge {
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.stat-badge.preparacion { background: #fdf0e0; color: #e67e22; }
+.stat-badge.despachado  { background: #e3f1fb; color: #27ae60; }
+
+.activos-empty {
+    text-align: center;
+    color: #bbb;
+    font-size: 1.2rem;
+    padding: 2rem 0;
+    margin: 0;
+}
+
+.activos-sep {
+    border: none;
+    border-top: 2px solid #f0f0f0;
+    margin: 2rem 0;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.order-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    cursor: pointer;
+    border-left: 5px solid transparent;
+    transition: box-shadow 0.18s, transform 0.15s;
+}
+
+.order-row:hover {
+    box-shadow: 0 5px 18px rgba(0,0,0,0.12);
+    transform: translateY(-1px);
+}
+
+.order-row.estado-preparacion { border-left-color: #e67e22; }
+.order-row.estado-despachado  { border-left-color: #27ae60; }
+
+.order-row-info { flex: 1; min-width: 0; }
+
+.order-row-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 3px;
+    flex-wrap: wrap;
+}
+
+.order-npedido  { font-size: 1.1rem; font-weight: 900; color: #e67e22; white-space: nowrap; }
+.order-cliente  { font-size: 1rem; font-weight: 700; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.order-estado-badge {
+    margin-left: auto;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.badge-preparacion { background: #fdf0e0; color: #e67e22; }
+.badge-despachado  { background: #e3f1fb; color: #27ae60; }
+
+.order-row-sub   { font-size: 0.9rem; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-row-chevron { color: #ccc; font-size: 1.2rem; flex-shrink: 0; }
+
+/* ── MODAL DETALLE PEDIDO ─────────────────────────────────────── */
+#modal-detalle {
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-pedido-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 78vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.mpedido-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 0;
+}
+
+.mpedido-npedido {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #e67e22;
+}
+
+.mpedido-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+.mpedido-close:hover { background: #f0f0f0; color: #555; }
+
+.mpedido-body {
+    padding: 12px 20px 0;
+}
+
+.mpedido-cliente {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.mpedido-meta {
+    font-size: 1.3rem;
+    color: #777;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.mpedido-meta small {
+    font-size: 1.15rem;
+    color: #999;
+}
+
+.mpedido-entrega {
+    font-size: 1.3rem;
+    background: #f7f7f7;
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: #444;
+    margin-bottom: 14px;
+}
+
+.mpedido-sep {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 0 0 12px;
+}
+
+.mpedido-productos-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    margin-bottom: 8px;
+}
+
+.mpedido-productos {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+}
+
+.mpedido-productos li {
+    font-size: 1.3rem;
+    color: #333;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.mpedido-productos li:last-child { border-bottom: none; }
+
+/* ── DATOS DE RESERVA EN MODAL ───────────────────────────────── */
+.reserva-dato {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.reserva-dato:last-child { border-bottom: none; }
+.reserva-dato__label {
+    font-size: 1.3rem;
+    color: #888;
+    font-weight: 600;
+}
+.reserva-dato__valor {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #333;
+}
+
+.mpedido-adicion {
+    font-size: 1.15rem !important;
+    color: #999 !important;
+    padding-left: 16px !important;
+}
+
+.mpedido-totals {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.mpedido-totals-box {
+    margin: 10px 0;
+    padding: 10px 12px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.mpedido-total {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.mpedido-domicilio {
+    font-size: 1.1rem;
+    color: #e67e22;
+    font-weight: 600;
+}
+
+.mpedido-obs {
+    font-size: 1.3rem;
+    color: #888;
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+}
+
+/* ── STEPPER (en modal historial) ────────────────────────────── */
+.stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 18px 16px 16px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    min-width: 60px;
+}
+
+.step-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 1.4rem;
+}
+
+.step-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.step-connector {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 25px;
+    min-width: 8px;
+    background: #e0e0e0;
+}
+
+.step-connector.active { background: #27ae60; }
+
+.step-done .step-circle {
+    background: #e8f8ef;
+    border: 2px solid #27ae60;
+    color: #27ae60;
+}
+.step-done .step-label { color: #27ae60; }
+
+.step-active .step-circle {
+    background: #fdf0e0;
+    border: 2px solid #e67e22;
+    color: #e67e22;
+    box-shadow: 0 0 0 5px rgba(230,126,34,0.14);
+}
+.step-active .step-label { color: #e67e22; font-weight: 800; }
+
+.step-next {
+    cursor: pointer;
+}
+.step-next .step-circle {
+    background: #eaf4fc;
+    border: 2.5px dashed #2980b9;
+    color: #2980b9;
+}
+.step-next:hover .step-circle {
+    background: #2980b9;
+    color: white;
+    border-style: solid;
+    transform: scale(1.1);
+    box-shadow: 0 4px 14px rgba(41,128,185,0.35);
+}
+.step-next .step-label { color: #2980b9; }
+.step-next:hover .step-label { font-weight: 800; }
+
+.step-locked .step-circle {
+    background: #f2f2f2;
+    border: 2px solid #ddd;
+    color: #ccc;
+    filter: grayscale(1);
+}
+.step-locked .step-label { color: #ccc; }
+
+.step-time {
+    font-size: 1.1rem;
+    text-align: center;
+    white-space: nowrap;
+    color: #aaa;
+    line-height: 1;
+}
+.step-done .step-time   { color: #27ae60; }
+.step-active .step-time { color: #e67e22; }
+
+/* ── CANCELAR PEDIDO (modal activos) ─────────────────────────── */
+.mpedido-cancel-area {
+    padding: 8px 20px 20px;
+}
+
+.btn-cancelar-pedido {
+    width: 100%;
+    padding: 11px;
+    border: 1.5px solid #e74c3c;
+    background: none;
+    color: #e74c3c;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-cancelar-pedido:hover { background: #e74c3c; color: white; }
+.btn-marcar-recibido {
+    width: 100%;
+    padding: 11px;
+    border: 1.5px solid #27ae60;
+    background: none;
+    color: #27ae60;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    margin-top: 8px;
+}
+.btn-marcar-recibido:hover { background: #27ae60; color: white; }
+.btn-marcar-recibido:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Indicador de impresión en modal */
+.badge-impreso {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.badge-impreso--si { background: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
+.badge-impreso--no { background: #fef9e7; color: #b7770d; border: 1px solid #f9e79f; }
+
+/* Pedido cancelado */
+.modal-cancelado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 20px;
+    background: #fff5f5;
+    border-top: 1px solid #fdd;
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.modal-cancelado small {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #999;
+}
+
+
+/* Estilos Demora Pedidos Pizzerias */
+/* Punto pulsante de demora */
+.punto-demora {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.punto-naranja {
+    background-color: #e67e22;
+    animation: pulso-naranja 1.5s infinite;
+}
+
+.punto-rojo {
+    background-color: #c0392b;
+    animation: pulso-rojo 1s infinite;
+}
+
+.punto-rojo-fijo {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #c0392b;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.punto-despachado {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #27ae60;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+@keyframes pulso-naranja {
+    0%   { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(230, 126, 34, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+}
+
+@keyframes pulso-rojo {
+    0%   { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+    70%  { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+@keyframes pulso {
+    0%   { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4); }
+    70%  { box-shadow: 0 0 0 8px rgba(192, 57, 43, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+.demora-timer {
+    display: inline-block;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
+
+
+
+
+
+
+/* ── RESPONSIVE ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .historial__main {
+        margin-top: 58px;
+        padding: 0.8rem;
+        padding-right: max(0.8rem, env(safe-area-inset-right, 0.8rem));
+        padding-left: max(0.8rem, env(safe-area-inset-left, 0.8rem));
+        padding-bottom: 1rem;
+        height: auto;
+        overflow: visible;
+        font-size: 1.1rem;
+    }
+
+    .historial__topbar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .topbar-actions {
+        gap: 0.5rem;
+    }
+
+    .btn-filtros-toggle,
+    .btn-actualizar {
+        font-size: 1rem;
+        padding: 6px 10px;
+    }
+
+    .btn-exportar { display: none !important; }
+
+    .historial__title {
+        font-size: 1.4rem;
+        text-align: left;
+    }
+
+    .historial__filtros {
+        flex-direction: column;
+    }
+
+    .filtro-grupo input,
+    .filtro-grupo select {
+        min-width: 100%;
+    }
+
+    .historial__resumen {
+        gap: 0.4rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .resumen-card {
+        min-width: 70px;
+        padding: 0.3rem 0.5rem;
+        gap: 2px;
+        border-top-width: 3px;
+    }
+
+    .resumen-label { font-size: 0.75rem; }
+    .resumen-valor { font-size: 1.1rem; }
+
+    .inventory-management { padding-top: 0; }
+
+    /* Tabla: ancho fijo desde el inicio, sin layout shifts */
+    .inventory-management__table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    /* Anchos de las 5 columnas visibles en mobile — modo normal */
+    .inventory-management__table th:nth-child(1) { width: 12%; }   /* N° */
+    .inventory-management__table th:nth-child(2) { width: 25%; }   /* Fecha */
+    .inventory-management__table th:nth-child(3) { width: 30%; }   /* Cliente */
+    .inventory-management__table th:nth-child(6) { width: 18%; }   /* Sede */
+    .inventory-management__table th:nth-child(8) { width: 15%; }   /* Estado */
+    /* Modo reservas: Estado oculto, Total visible */
+    .modo-reservas .inventory-management__table th:nth-child(8)  { width: 0; }
+    .modo-reservas .inventory-management__table th:nth-child(10) { width: 15%; } /* Total */
+    /* Encabezados: texto wrappeable, compacto y centrado */
+    .inventory-management__table th {
+        white-space: normal;
+        word-break: break-word;
+        font-size: 0.75rem;
+        text-align: center;
+        padding: 4px 3px;
+        line-height: 1.2;
+    }
+    /* Celdas de datos: ellipsis para textos largos */
+    .inventory-management__table td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 5px 3px;
+    }
+    /* Badge estado: ellipsis si no cabe, padding derecho para que no se corte */
+    .inventory-management__table td span[style] {
+        font-size: 0.65rem !important;
+        padding: 2px 6px 2px 4px !important;
+        display: inline-block !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        vertical-align: middle;
+    }
+    /* Fila de filtros: compacta para que quepan los selects */
+    .filtros-columna th { padding: 2px 1px; }
+    .col-filter {
+        font-size: 0.7rem;
+        padding: 2px 1px;
+        width: 100%;
+    }
+
+    .paginacion {
+        position: static;
+        gap: 0.6rem;
+        padding: 0.8rem 1rem;
+        border-top: 1px solid #ddd;
+        box-shadow: none;
+        margin-top: 0;
+    }
+    .inventory-management {
+        padding-bottom: 0;
+        max-height: 68vh;
+        overflow-y: auto;
+    }
+
+    .pag-btn {
+        padding: 5px 20px;
+        font-size: 0.95rem;
+    }
+
+    .pag-info {
+        font-size: 0.9rem;
+        text-align: center;
+        flex: 1;
+    }
+
+    /* Mobile general: ocultar Dirección(4), Canal(5), Asesor(7), Obs(9), Total(10) */
+    .inventory-management__table th:nth-child(4),
+    .inventory-management__table th:nth-child(5),
+    .inventory-management__table th:nth-child(7),
+    .inventory-management__table th:nth-child(9),
+    .inventory-management__table th:nth-child(10),
+    .inventory-management__table td:nth-child(4),
+    .inventory-management__table td:nth-child(5),
+    .inventory-management__table td:nth-child(7),
+    .inventory-management__table td:nth-child(9),
+    .inventory-management__table td:nth-child(10) { display: none; }
+
+    /* Modo reservas: ocultar además Estado(8), restaurar Total(10) */
+    .modo-reservas .inventory-management__table th:nth-child(8),
+    .modo-reservas .inventory-management__table td:nth-child(8) { display: none; }
+    .modo-reservas .inventory-management__table th:nth-child(10),
+    .modo-reservas .inventory-management__table td:nth-child(10) { display: table-cell; }
+
+    /* Ocultar puntos de demora en mobile — evitan espacio residual */
+    .punto-demora,
+    .punto-rojo-fijo,
+    .punto-despachado,
+    .demora-timer { display: none !important; }
+
+    /* Stepper — contenedor con padding lateral */
+    #modal-stepper {
+        padding: 0 16px;
+    }
+
+    /* Stepper — compacto en mobile */
+    .stepper {
+        padding: 12px 8px 10px;
+        gap: 0;
+    }
+    .step {
+        min-width: 0;
+        gap: 4px;
+    }
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    .step-label {
+        font-size: 0.85rem;
+    }
+    .step-time {
+        font-size: 0.78rem;
+    }
+    .step-connector {
+        margin-top: 16px;
+        min-width: 4px;
+    }
+    .step-active .step-circle {
+        box-shadow: 0 0 0 3px rgba(230,126,34,0.18);
+    }
+}
+
+/* ── REPORTE ASESORES ─────────────────────────────────────────── */
+.ra-topbar {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 2.4rem;
+    flex-wrap: wrap;
+}
+
+.ra-title {
+    font-size: 2.2rem;
+    color: var(--color-primario);
+    font-weight: 700;
+    margin: 0;
+}
+
+.ra-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+
+.ra-controls label { font-size: 1.4rem; font-weight: 600; }
+
+.ra-controls input[type="date"] {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    font-family: inherit;
+}
+
+.ra-btn {
+    padding: 8px 20px;
+    background: var(--color-primario);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+
+.ra-btn:hover { background: var(--color-cuaternario); }
+
+.ra-section {
+    margin-bottom: 3.2rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.ra-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.ra-section--tarde .ra-section-header,
+.ra-section--noche .ra-section-header { background: var(--color-primario); color: white; }
+
+.ra-section-title { font-size: 1.8rem; font-weight: 700; }
+.ra-section-title small { font-size: 1.3rem; font-weight: 400; opacity: 0.85; }
+
+.ra-avg-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 1.3rem;
+}
+
+.ra-table-wrap { overflow-x: auto; background: white; }
+
+.ra-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.4rem;
+}
+
+.ra-table th {
+    padding: 10px 16px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.ra-table td { text-align: center; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+
+.ra-table th.col-tarde,
+.ra-table th.col-noche { background: var(--color-primario); color: white; }
+
+.ra-th-asesor { text-align: left; }
+
+.ra-avg-label { text-align: right; font-weight: 600; color: #555; }
+
+.ra-table tbody tr:hover { background: #fafafa; }
+
+.ra-rank-1 { background: #e8f5e9 !important; }
+.ra-rank-2 { background: #f1f8e9 !important; }
+.ra-rank-3 { background: #f9fbe7 !important; }
+
+.ra-avg-row td { background: #f9f9f9; border-top: 2px dashed #ddd; font-size: 1.3rem; }
+
+.ra-num     { text-align: center; }
+.ra-name    { font-weight: 600; }
+.ra-bold    { font-weight: 700; }
+.ra-medal   { font-size: 1.8rem; text-align: center; }
+.ra-rate    { color: var(--color-primario); font-size: 1.35rem; }
+.ra-horario { font-size: 1.25rem; color: #555; white-space: nowrap; }
+.ra-dur     { color: #aaa; }
+
+.ra-empty { text-align: center; padding: 40px; color: #aaa; font-size: 1.4rem; }
+
+.ra-excluido td { opacity: 0.5; }
+.ra-excluido-icon { font-size: 1.4rem; color: #bbb; }
+
+.ra-total-dia {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 14px 20px;
+    background: var(--color-primario);
+    color: white;
+    border-radius: 12px;
+    font-size: 1.6rem;
+}
+
+.ra-total-dia strong { font-size: 2rem; }
+
+/* ── Reporte Asesores — mobile ────────────────────────────────── */
+@media (max-width: 768px) {
+    /* Ocultar columna Horario activo */
+    .ra-table th:nth-child(3),
+    .ra-table td.ra-horario { display: none; }
+
+    /* Topbar: apilado, controles en fila con input flexible */
+    .ra-topbar { margin-top: 50px; flex-direction: column; align-items: stretch; margin-bottom: 1.6rem; gap: 0.8rem; }
+    .ra-title { font-size: 1.8rem; }
+    .ra-controls { margin-left: 0; }
+    .ra-controls input[type="date"] { flex: 1; min-width: 0; }
+
+    /* Sección: título ancho completo → badges pasan a segunda fila como row */
+    .ra-section { margin-bottom: 2rem; border-radius: 8px; }
+    .ra-section-header { padding: 10px 14px; gap: 0.4rem; }
+    .ra-section-title { width: 100%; font-size: 1.4rem; }
+    .ra-section-title small { display: none; }
+    .ra-avg-badge { font-size: 1rem; padding: 3px 8px; }
+
+    /* Tabla: las 4 columnas visibles suman 100% */
+    .ra-table-wrap { overflow-x: hidden; }
+    .ra-table { font-size: 1.2rem; width: 100%; table-layout: fixed; }
+    .ra-table th:nth-child(1) { width: 10%; }   /* # / medalla */
+    .ra-table th:nth-child(2) { width: 45%; }   /* Asesor */
+    .ra-table th:nth-child(4) { width: 15%; }   /* Pedidos */
+    .ra-table th:nth-child(5) { width: 30%; }   /* Ped/hora */
+    .ra-table th { padding: 7px 6px; font-size: 1.05rem; }
+    .ra-table td { padding: 7px 6px; }
+    .ra-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ra-medal { font-size: 1.3rem; }
+    .ra-rate { font-size: 1.05rem; }
+    .ra-rate .ra-dur { display: none; }   /* Ocultar "(X bloques)" */
+    .ra-avg-row td { font-size: 1.1rem; padding: 6px 6px; }
+
+    /* Total día */
+    .ra-total-dia { font-size: 1.3rem; padding: 12px 14px; border-radius: 8px; }
+    .ra-total-dia strong { font-size: 1.6rem; }
+}
+

@@ -1,0 +1,167 @@
+/* ═══════════════════════════════════════════════════════════════════
+   workspace.css — Layout 3 bloques para pedidosCallCenter
+
+   Mecanismo de paneles: ancho (width) — los paneles son flex items
+   del #workspace, empujando el contenido central al abrirse.
+
+   Colapsado → width: 60px  (muestra el icono como pestaña)
+   Expandido → width: 350px (panel completo visible)
+
+   La pestaña tiene border-radius en el lado que da al centro:
+     WA  → 0 30px 30px 0  (esquinas derechas redondeadas)
+     PBX → 30px 0 0 30px  (esquinas izquierdas redondeadas)
+   Al expandirse el border-radius desaparece.
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Contenedor raíz ──────────────────────────────────────────── */
+#workspace {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 100px);
+    overflow: hidden;
+    background: var(--color-secundario);
+}
+
+/* ── Bloque central ───────────────────────────────────────────── */
+#layout-center {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+#layout-center .layout-main {
+    height: 100%;
+}
+
+/* ── Panel lateral — flex item, anima de 60px → 350px ────────── */
+.side-panel {
+    flex-shrink: 0;
+    width: 60px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 260ms ease, border-radius 260ms ease;
+}
+
+/* WA: margin-left negativo lo empuja fuera; overflow:hidden del workspace lo recorta.
+   El ícono queda a la derecha del header → visible en los 60px que asoман. */
+#panel-wa {
+    width: 350px;
+    margin-left: -290px;
+    transition: margin-left 260ms ease;
+}
+#panel-wa.expanded  { margin-left: 0; }
+
+/* PBX: width creciente desde la derecha (ya funciona bien). */
+#panel-pbx.expanded { width: 350px; }
+
+/* ── Animación del icono al hacer clic ───────────────────────── */
+@keyframes strip-tap {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.82); }
+    100% { transform: scale(1); }
+}
+
+/* ── Panel-header — 350px fijo ────────────────────────────────── */
+/*   WA:  [ 16px | WhatsApp ——————————— ● icono 60px ]  (ícono a la derecha)
+     PBX: [ ● icono 60px | Softphone ——————————— 16px ]  (ícono a la izquierda)
+     El panel/workspace recorta los 60px del ícono como pestaña.  */
+.panel-header {
+    width: 350px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+#panel-wa  .panel-header { border-radius: 0 0 30px 0; }
+#panel-wa  .panel-header__title { flex: 0; margin-left: auto; }
+#panel-pbx .panel-header { border-radius: 0 0 0 30px; }
+
+.panel-header__title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex: 1;
+}
+
+/* Icono-toggle dentro del header */
+.panel-header__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.panel-header__icon:hover  { background: var(--color-cuaternario); }
+.panel-header__icon.tapped { animation: strip-tap 0.22s ease; }
+
+/* ── Cuerpo scrolleable ───────────────────────────────────────── */
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    background: var(--color-secundario);
+}
+
+/* ── Botones de panel en header (solo mobile) ─────────────────── */
+.btn-panel-mobile { display: none; }
+
+/* ── Overlay compartido (cierra paneles en mobile) ────────────── */
+#workspace-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 498;
+}
+#workspace-overlay.active { display: block; }
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+    #workspace {
+        height: calc(100vh - 54px);
+    }
+
+    #layout-center .layout-main {
+        height: 100%;
+    }
+
+    /* En mobile: panels salen del flujo flex y se posicionan fijos */
+    .side-panel {
+        position: fixed;
+        top: 54px;
+        height: calc(100vh - 54px);
+        z-index: 499;
+        width: 0;
+        border-radius: 0;
+        transition: width 250ms ease;
+    }
+    .side-panel.mobile-open {
+        width: min(85vw, 340px);
+    }
+
+    #panel-wa  { left: 0; right: auto; width: 0; margin-left: 0; transition: width 250ms ease; }
+    #panel-pbx { right: 0; left: auto; }
+
+    /* En mobile el header ocupa el ancho del panel */
+    .panel-header { width: 100%; padding-right: 16px; }
+
+    .btn-panel-mobile { display: flex; }
+}

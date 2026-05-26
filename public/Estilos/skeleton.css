@@ -1,0 +1,191 @@
+/* ═══════════════════════════════════════════════════════════════
+   SKELETON LOADER — EverestCentral
+   100% CSS/JS frontend. Sin consultas a Firebase.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── ANIMACIÓN SHIMMER ────────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+}
+
+.sk-block {
+    background: linear-gradient(90deg, #e0d8cc 25%, #f0ebe1 50%, #e0d8cc 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: 6px;
+}
+
+/* ── CONTENEDOR PRINCIPAL ─────────────────────────────────────── */
+.sk-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.sk-page.oculto {
+    display: none;
+}
+
+/* ── HEADER SKELETON ──────────────────────────────────────────── */
+.sk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-primario);
+    padding: 0 4rem;
+    height: 80px;
+    gap: 2rem;
+    flex-shrink: 0;
+}
+
+.sk-header .sk-logo  { width: 60px;  height: 50px; opacity: 0.3; }
+.sk-header .sk-title { flex: 1; max-width: 300px; height: 28px; opacity: 0.3; margin: 0 auto; }
+.sk-header .sk-btn   { width: 100px; height: 32px; opacity: 0.3; }
+
+/* ── BODY WRAPPER ─────────────────────────────────────────────── */
+.sk-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex: 1;
+}
+
+/* ── TARJETAS ─────────────────────────────────────────────────── */
+.sk-cards {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.sk-cards .sk-card {
+    flex: 1;
+    height: 80px;
+    border-radius: 10px;
+}
+
+/* ── TABLA ────────────────────────────────────────────────────── */
+.sk-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sk-table .sk-table-header {
+    height: 44px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+}
+
+.sk-table .sk-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.sk-table .sk-row .sk-block {
+    flex: 1;
+    height: 28px;
+}
+
+/* ── FORMULARIO (login) ───────────────────────────────────────── */
+.sk-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6rem;
+    flex: 1;
+    padding: 4rem 2rem;
+}
+
+.sk-form .sk-form-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+}
+
+.sk-form .sk-form-title {
+    width: 200px;
+    height: 28px;
+}
+
+.sk-form .sk-form-input {
+    width: 100%;
+    max-width: 360px;
+    height: 44px;
+    border-radius: 8px;
+}
+
+.sk-form .sk-form-btn {
+    width: 100%;
+    max-width: 360px;
+    height: 48px;
+    border-radius: 8px;
+}
+
+/* ── GRID DE PRODUCTOS (pedidosCallCenter) ────────────────────── */
+.sk-layout-productos {
+    display: grid;
+    grid-template-columns: 200px 1fr 380px;
+    gap: 2rem;
+    flex: 1;
+    padding: 1rem 2rem;
+}
+
+.sk-sidebar-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sk-sidebar-cats .sk-block {
+    height: 36px;
+    border-radius: 20px;
+}
+
+.sk-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.2rem;
+    align-content: start;
+}
+
+.sk-product-grid .sk-block {
+    height: 90px;
+    border-radius: 8px;
+}
+
+.sk-order-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-left: 1px solid #ddd;
+    padding-left: 1.5rem;
+}
+
+.sk-order-panel .sk-block {
+    height: 36px;
+}
+
+.sk-order-panel .sk-order-total {
+    height: 50px;
+    margin-top: auto;
+}
+
+/* ── PANEL CALLCENTER (callcenter.html) ───────────────────────── */
+.sk-panel-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 2rem;
+    width: 70%;
+    margin: 2rem auto;
+}
+
+.sk-panel-cards .sk-block {
+    height: 120px;
+    border-radius: 12px;
+}

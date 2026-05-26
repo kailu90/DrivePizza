@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos por Asesor — CallCenter</title>
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
+</head>
+<body data-skeleton="historial">
+
+<div id="skeleton" class="sk-page"></div>
+<div id="header-container"></div>
+
+<div id="contenido-principal" style="display:none;">
+    <main class="historial__main">
+
+        <div class="ra-topbar">
+            <h2 class="ra-title">👥 Ranking de Asesores</h2>
+            <div class="ra-controls">
+                <label for="filtro-fecha">Fecha:</label>
+                <input type="date" id="filtro-fecha">
+                <button class="ra-btn" id="btn-consultar">Consultar</button>
+            </div>
+        </div>
+
+        <div id="reporte-contenedor">
+            <p class="ra-empty">Selecciona una fecha y presiona Consultar.</p>
+        </div>
+
+    </main>
+</div>
+
+<script type="module" src="./reporteAsesores.js"></script>
+
+</body>
+</html>

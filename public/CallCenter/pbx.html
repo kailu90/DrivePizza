@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor PBX — DrivePizza</title>
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="pedidosCallCenter.css">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: var(--color-secundario);
+            margin: 0; padding: 0;
+        }
+
+        .pbx-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 100px);
+        }
+
+        /* ── Sidebar ── */
+        .pbx-sidebar {
+            width: 220px;
+            background: var(--color-primario);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s;
+        }
+        .sidebar-section-label {
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(244,236,223,0.5);
+            padding: 16px 16px 6px;
+            white-space: nowrap;
+        }
+        .pbx-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            color: rgba(244,236,223,0.85);
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-left: 3px solid transparent;
+            background: none;
+            width: 100%;
+            text-align: left;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .pbx-nav-item:hover { background: rgba(244,236,223,0.1); }
+        .pbx-nav-item.active {
+            background: rgba(244,236,223,0.15);
+            color: var(--color-secundario);
+            border-left-color: var(--color-quinto);
+        }
+        .pbx-nav-item .nav-icon { font-size: 17px; flex-shrink: 0; }
+
+        /* ── Main ── */
+        .pbx-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .pbx-section        { display: none; }
+        .pbx-section.active { display: block; }
+
+        /* ── Card base ── */
+        .card-panel {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid rgba(40,76,34,0.12);
+            box-shadow: 0 2px 12px rgba(40,76,34,0.07);
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+        .card-panel h2 {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #888;
+            margin: 0 0 16px;
+        }
+
+        /* ── Resumen strip ── */
+        .summary-strip {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+        .summary-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid rgba(40,76,34,0.12);
+            box-shadow: 0 2px 8px rgba(40,76,34,0.06);
+            padding: 14px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 110px;
+        }
+        .summary-card .sc-num {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--color-primario);
+            line-height: 1;
+        }
+        .summary-card .sc-lbl {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            text-align: center;
+        }
+        .summary-card.sc-incall .sc-num { color: #3b82f6; }
+        .summary-card.sc-reg   .sc-num { color: #22c55e; }
+
+        /* ── Grid de agentes ── */
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
+        }
+
+        .agent-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid rgba(40,76,34,0.12);
+            box-shadow: 0 2px 8px rgba(40,76,34,0.06);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: box-shadow 0.15s;
+        }
+        .agent-card:hover { box-shadow: 0 4px 16px rgba(40,76,34,0.12); }
+        .agent-card.ac-incall {
+            border-color: rgba(59,130,246,0.35);
+            background: rgba(59,130,246,0.03);
+        }
+        .agent-card.ac-offline { opacity: 0.55; }
+
+        .agent-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .agent-avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .agent-avatar.av-offline  { background: #e5e7eb; color: #9ca3af; }
+        .agent-avatar.av-incall   { background: #3b82f6; }
+        .agent-avatar.av-ringing  { background: #f59e0b; }
+
+        .agent-info { flex: 1; min-width: 0; }
+        .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-terciario);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agent-ext {
+            font-size: 11px;
+            color: #888;
+            margin-top: 1px;
+        }
+
+        /* ── Badges ── */
+        .agent-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+        .badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .badge-sip-on    { background: rgba(34,197,94,0.12);  color: #16a34a; }
+        .badge-sip-off   { background: rgba(156,163,175,0.15); color: #6b7280; }
+        .badge-queue-on  { background: rgba(40,76,34,0.1);    color: var(--color-primario); }
+        .badge-queue-off { background: rgba(245,158,11,0.12); color: #b45309; }
+        .badge-incall    {
+            background: rgba(59,130,246,0.12); color: #2563eb;
+            animation: badge-pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes badge-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.6; }
+        }
+
+        /* ── Llamada activa en card ── */
+        .agent-call-info {
+            background: rgba(59,130,246,0.07);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .agent-call-num {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1d4ed8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agent-call-dur {
+            font-size: 12px;
+            font-family: monospace;
+            color: #2563eb;
+            flex-shrink: 0;
+        }
+
+        /* ── Tabla historial ── */
+        .empty-msg { color: #aaa; font-size: 13px; text-align: center; padding: 30px 0; }
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .hist-table th {
+            text-align: left; padding: 8px 10px;
+            color: #999; font-weight: 500;
+            border-bottom: 1.5px solid rgba(40,76,34,0.12);
+            font-size: 12px;
+        }
+        .hist-table td { padding: 10px; border-bottom: 1px solid rgba(40,76,34,0.07); vertical-align: middle; }
+        .hist-table tr:hover td { background: rgba(40,76,34,0.03); }
+        .num-cell   { font-weight: 600; color: var(--color-terciario); }
+        .time-cell  { color: #999; font-size: 12px; }
+        .dur-cell   { font-family: monospace; color: #888; font-size: 12px; }
+        .badge-contestada { background: rgba(40,76,34,0.1);   color: var(--color-primario); }
+        .badge-perdida    { background: rgba(220,38,38,0.1);  color: #dc2626; }
+        .badge-en_curso   { background: rgba(59,130,246,0.12); color: #2563eb; animation: badge-pulse 1.4s ease-in-out infinite; }
+        .badge-connect    { background: rgba(34,197,94,0.12);  color: #16a34a; }
+        .badge-disconnect { background: rgba(220,38,38,0.1);  color: #dc2626; }
+
+        /* ── SIP dot header ── */
+        .sip-dot-badge {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+            flex-shrink: 0;
+        }
+        .sip-dot-badge.registered { background: #22c55e; }
+        .sip-dot-badge.incall     { background: #3b82f6; }
+        .sip-dot-badge.offline    { background: #ef4444; }
+        .sip-dot-badge.ringing    { background: #f59e0b; animation: sip-pulse-hdr 0.7s infinite; }
+        @keyframes sip-pulse-hdr {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+        }
+
+        /* ── Mobile ── */
+        .sidebar-toggle {
+            display: none;
+            background: none; border: none;
+            cursor: pointer;
+            color: var(--color-secundario);
+            font-size: 22px;
+            padding: 0 6px; line-height: 1;
+        }
+        .pbx-sidebar-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 899;
+        }
+        .pbx-sidebar-overlay.active { display: block; }
+
+        @media (max-width: 768px) {
+            .sidebar-toggle { display: block; }
+            .pbx-sidebar {
+                position: fixed; top: 0; left: 0;
+                height: 100vh; z-index: 900; width: 0;
+            }
+            .pbx-sidebar.open { width: 220px; }
+            .pbx-body { height: calc(100vh - 54px); }
+            .pbx-main { padding: 12px; }
+            .agents-grid { grid-template-columns: 1fr; }
+            .summary-strip { gap: 8px; }
+            .summary-card { min-width: 80px; padding: 10px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="contenido-principal" style="display:none;">
+
+<header class="main-header no-print">
+    <div class="header-left">
+        <img src="../Imagenes/logo.png" alt="DrivePizza">
+    </div>
+
+    <div class="header-name">
+        <button class="btn-home with-tooltip" data-tooltip="Regresar al Panel"
+                onclick="window.location.href='./callcenter.html'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        </button>
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Menu">&#9776;</button>
+        <div class="header-username" id="username">PBX Monitor</div>
+    </div>
+
+    <div class="header-controls">
+
+        <!-- Indicador SIP (teléfono + dot) -->
+        <div id="sip-status" style="display:flex; align-items:center; gap:4px;">
+            <button class="btn-historial with-tooltip" id="btn-sip-btn" data-tooltip="Estado SIP">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.98-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                </svg>
+            </button>
+            <span id="sip-dot-hdr" class="sip-dot-badge"></span>
+            <div id="sip-popover">
+                <div class="sip-pop-row">
+                    <span class="sip-pop-label">Estado</span>
+                    <span id="sip-pop-estado">—</span>
+                </div>
+                <div class="sip-pop-row">
+                    <span class="sip-pop-label">Extensión</span>
+                    <span id="sip-pop-ext">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial Pedidos -->
+        <button class="btn-historial with-tooltip" data-tooltip="Historial de Pedidos"
+                onclick="window.location.href='./historialPedidos.html'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+            </svg>
+        </button>
+
+        <!-- Cerrar sesión -->
+        <button id="btn-logout" class="header-link">
+            <span class="logout-text">Cerrar Sesión</span>
+            <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </div>
+</header>
+
+<div class="pbx-sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="pbx-body">
+
+    <nav class="pbx-sidebar" id="pbx-sidebar">
+        <div class="sidebar-section-label">PBX Monitor</div>
+
+        <button class="pbx-nav-item active" data-section="asesores">
+            <span class="nav-icon">&#128101;</span> Asesores
+        </button>
+
+        <button class="pbx-nav-item" data-section="historial">
+            <span class="nav-icon">&#128222;</span> Historial Llamadas
+        </button>
+
+        <button class="pbx-nav-item" data-section="monitor">
+            <span class="nav-icon">&#128202;</span> Actividad
+        </button>
+    </nav>
+
+    <main class="pbx-main">
+
+        <!-- ── Sección: Asesores ── -->
+        <div class="pbx-section active" id="section-asesores">
+            <div class="summary-strip" id="summary-strip">
+                <div class="summary-card">
+                    <span class="sc-num" id="sc-total">—</span>
+                    <span class="sc-lbl">Total ext.</span>
+                </div>
+                <div class="summary-card sc-reg">
+                    <span class="sc-num" id="sc-reg">—</span>
+                    <span class="sc-lbl">Registrados</span>
+                </div>
+                <div class="summary-card sc-reg">
+                    <span class="sc-num" id="sc-queue">—</span>
+                    <span class="sc-lbl">En cola</span>
+                </div>
+                <div class="summary-card sc-incall">
+                    <span class="sc-num" id="sc-incall">—</span>
+                    <span class="sc-lbl">En llamada</span>
+                </div>
+            </div>
+
+            <div class="agents-grid" id="agents-grid">
+                <div style="color:#aaa; font-size:13px; padding:20px;">Cargando asesores...</div>
+            </div>
+        </div>
+
+        <!-- ── Sección: Historial Llamadas ── -->
+        <div class="pbx-section" id="section-historial">
+            <div class="card-panel">
+                <h2>Historial de llamadas</h2>
+                <p class="empty-msg" id="empty-calls">Cargando...</p>
+                <table class="hist-table" id="calls-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Asesor</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calls-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Sección: Actividad (sesiones) ── -->
+        <div class="pbx-section" id="section-monitor">
+            <div class="card-panel">
+                <h2>Actividad de asesores</h2>
+                <p class="empty-msg" id="empty-sessions">Cargando...</p>
+                <table class="hist-table" id="sessions-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>Asesor</th>
+                            <th>Extensión</th>
+                            <th>Evento</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+</div><!-- /contenido-principal -->
+
+<script type="module">
+    import { plantaDB }           from '../Api/firebaseConfig.js';
+    import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { doc, getDocFromServer }       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { PBX_URL, WS_URL }    from '../Api/config.js';
+
+    const ROLES = ['callcenter', 'callcenter-admin', 'admin'];
+
+    // ── Popover SIP ──────────────────────────────────────────────────────────
+    document.getElementById('btn-sip-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('sip-popover').classList.toggle('visible');
+    });
+    document.addEventListener('click', () => document.getElementById('sip-popover').classList.remove('visible'));
+
+    // ── Estado SIP desde shell (postMessage) ─────────────────────────────────
+    const SIP_DOT_CLS = { registered: 'registered', ringing: 'ringing', incall: 'incall', offline: 'offline' };
+    const SIP_LABELS  = { registered: 'Registrado', ringing: 'Llamando...', incall: 'En llamada', offline: 'Desconectado' };
+    window.addEventListener('message', e => {
+        if (e.data?.type !== 'sip-state') return;
+        const s   = e.data.state || 'offline';
+        const dot = document.getElementById('sip-dot-hdr');
+        if (dot) { dot.className = 'sip-dot-badge ' + (SIP_DOT_CLS[s] || ''); }
+        const est = document.getElementById('sip-pop-estado');
+        const ext = document.getElementById('sip-pop-ext');
+        if (est) est.textContent = SIP_LABELS[s] || s;
+        if (ext) ext.textContent = e.data.extension ? 'Ext. ' + e.data.extension : '—';
+    });
+
+    // ── Sidebar toggle ────────────────────────────────────────────────────────
+    const sidebar   = document.getElementById('pbx-sidebar');
+    const overlay   = document.getElementById('sidebar-overlay');
+    document.getElementById('sidebar-toggle').addEventListener('click', () => {
+        const open = sidebar.classList.toggle('open');
+        overlay.classList.toggle('active', open);
+    });
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    });
+
+    // ── Navegación secciones ──────────────────────────────────────────────────
+    let activeSection = 'asesores';
+    document.querySelectorAll('.pbx-nav-item[data-section]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.section;
+            document.querySelectorAll('.pbx-nav-item[data-section]').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.pbx-section').forEach(s => s.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('section-' + target)?.classList.add('active');
+            activeSection = target;
+            if (target === 'asesores')  loadAgents();
+            if (target === 'historial') loadCalls();
+            if (target === 'monitor')   loadSessions();
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        });
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function fmtDuration(secs) {
+        if (!secs) return '0:00';
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function fmtHora(iso) {
+        return new Date(iso).toLocaleTimeString('es-CO', {
+            hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Bogota'
+        });
+    }
+
+    function fmtFecha(iso) {
+        return new Date(iso).toLocaleDateString('es-CO', {
+            day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'America/Bogota'
+        });
+    }
+
+    function initials(str) {
+        if (!str) return '?';
+        return str.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    // ── Timer global (llamadas en curso) ─────────────────────────────────────
+    setInterval(() => {
+        document.querySelectorAll('[data-hora-inicio]').forEach(el => {
+            const t = parseInt(el.dataset.horaInicio, 10);
+            if (!isNaN(t)) el.textContent = fmtDuration(Math.floor((Date.now() - t) / 1000));
+        });
+    }, 1000);
+
+    // ── Agentes ───────────────────────────────────────────────────────────────
+    async function loadAgents() {
+        try {
+            const r = await fetch(`${PBX_URL}/pbx/agents/status`);
+            if (!r.ok) return;
+            const agents = await r.json();
+
+            const total  = agents.length;
+            const reg    = agents.filter(a => a.sip_registered).length;
+            const queue  = agents.filter(a => a.queue_connected).length;
+            const incall = agents.filter(a => a.in_call).length;
+
+            document.getElementById('sc-total').textContent  = total;
+            document.getElementById('sc-reg').textContent    = reg;
+            document.getElementById('sc-queue').textContent  = queue;
+            document.getElementById('sc-incall').textContent = incall;
+
+            const grid = document.getElementById('agents-grid');
+            grid.innerHTML = agents.map(a => {
+                const name    = a.username || ('Ext. ' + a.extension);
+                const ini     = initials(a.username || a.extension);
+                const inCall  = a.in_call;
+                const offline = !a.sip_registered;
+
+                const avCls   = inCall ? 'av-incall' : offline ? 'av-offline' : '';
+                const cardCls = inCall ? 'ac-incall' : offline ? 'ac-offline' : '';
+
+                const badgeSip   = a.sip_registered
+                    ? '<span class="badge badge-sip-on">Registrado</span>'
+                    : '<span class="badge badge-sip-off">Sin conexión</span>';
+                const badgeQueue = a.queue_connected
+                    ? '<span class="badge badge-queue-on">En cola</span>'
+                    : (a.sip_registered ? '<span class="badge badge-queue-off">Pausado</span>' : '');
+                const badgeCall  = inCall
+                    ? '<span class="badge badge-incall">En llamada</span>'
+                    : '';
+
+                const callInfo = inCall ? `
+                    <div class="agent-call-info">
+                        <span class="agent-call-num">${a.numero_cliente || 'Desconocido'}</span>
+                        <span class="agent-call-dur" data-hora-inicio="${new Date(a.hora_inicio).getTime()}">0:00</span>
+                    </div>` : '';
+
+                return `
+                <div class="agent-card ${cardCls}">
+                    <div class="agent-top">
+                        <div class="agent-avatar ${avCls}">${ini}</div>
+                        <div class="agent-info">
+                            <div class="agent-name">${name}</div>
+                            <div class="agent-ext">Ext. ${a.extension}</div>
+                        </div>
+                    </div>
+                    <div class="agent-badges">
+                        ${badgeSip}${badgeQueue}${badgeCall}
+                    </div>
+                    ${callInfo}
+                </div>`;
+            }).join('');
+
+        } catch {
+            document.getElementById('agents-grid').innerHTML =
+                '<div style="color:#aaa;font-size:13px;padding:20px;">Error al cargar asesores</div>';
+        }
+    }
+
+    // ── Historial llamadas ────────────────────────────────────────────────────
+    async function loadCalls() {
+        try {
+            const r = await fetch(`${PBX_URL}/pbx/calls/recent`);
+            if (!r.ok) return;
+            const rows = await r.json();
+            const empty = document.getElementById('empty-calls');
+            const table = document.getElementById('calls-table');
+            const body  = document.getElementById('calls-body');
+            if (!rows.length) {
+                empty.textContent = 'Sin llamadas registradas';
+                return;
+            }
+            empty.style.display = 'none';
+            table.style.display = '';
+            body.innerHTML = rows.map(c => {
+                const durStr = c.duracion_seg
+                    ? fmtDuration(c.duracion_seg)
+                    : '—';
+                let badge;
+                if (c.estado === 'en_curso')    badge = '<span class="badge badge-en_curso">En curso</span>';
+                else if (c.estado === 'perdida') badge = '<span class="badge badge-perdida">Perdida</span>';
+                else                            badge = '<span class="badge badge-contestada">Contestada</span>';
+                return `<tr>
+                    <td class="num-cell">${c.numero_cliente || '—'}</td>
+                    <td>${c.username || c.extension || '—'}</td>
+                    <td class="time-cell">${fmtFecha(c.hora_inicio)}</td>
+                    <td class="time-cell">${fmtHora(c.hora_inicio)}</td>
+                    <td class="dur-cell">${durStr}</td>
+                    <td>${badge}</td>
+                </tr>`;
+            }).join('');
+        } catch {
+            document.getElementById('empty-calls').textContent = 'Error al cargar historial';
+        }
+    }
+
+    // ── Sesiones de asesores ─────────────────────────────────────────────────
+    async function loadSessions() {
+        try {
+            const r = await fetch(`${PBX_URL}/pbx/sessions/recent`);
+            if (!r.ok) return;
+            const rows = await r.json();
+            const empty = document.getElementById('empty-sessions');
+            const table = document.getElementById('sessions-table');
+            const body  = document.getElementById('sessions-body');
+            if (!rows.length) {
+                empty.textContent = 'Sin actividad registrada';
+                return;
+            }
+            empty.style.display = 'none';
+            table.style.display = '';
+            body.innerHTML = rows.map(s => {
+                const badge = s.evento === 'connect'
+                    ? '<span class="badge badge-connect">Conectado</span>'
+                    : '<span class="badge badge-disconnect">Desconectado</span>';
+                return `<tr>
+                    <td class="num-cell">${s.username || '—'}</td>
+                    <td>${s.extension}</td>
+                    <td>${badge}</td>
+                    <td class="time-cell">${fmtFecha(s.timestamp)}</td>
+                    <td class="time-cell">${fmtHora(s.timestamp)}</td>
+                </tr>`;
+            }).join('');
+        } catch {
+            document.getElementById('empty-sessions').textContent = 'Error al cargar actividad';
+        }
+    }
+
+    // ── WebSocket — actualizaciones en tiempo real ────────────────────────────
+    function initWs() {
+        const ws = new WebSocket(WS_URL);
+        ws.onopen = () => { if (activeSection === 'asesores') loadAgents(); };
+        ws.onmessage = e => {
+            try {
+                const { tipo } = JSON.parse(e.data);
+                if (tipo === 'pbx:llamada') {
+                    if (activeSection === 'asesores')  loadAgents();
+                    if (activeSection === 'historial') loadCalls();
+                }
+                if (tipo === 'pbx:sesion') {
+                    if (activeSection === 'asesores') loadAgents();
+                    if (activeSection === 'monitor')  loadSessions();
+                }
+            } catch {}
+        };
+        ws.onclose = () => setTimeout(initWs, 5000);
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    onAuthStateChanged(plantaDB.auth, async user => {
+        if (!user) { window.location.href = '../index.html'; return; }
+        const snap = await getDocFromServer(doc(plantaDB.db, 'Usuarios', user.uid));
+        if (!snap.exists()) { window.location.href = '../index.html'; return; }
+        const data = snap.data();
+        if (!ROLES.includes(data.rol)) { window.location.href = '../index.html'; return; }
+
+        document.getElementById('username').textContent = data.username || user.email;
+        document.getElementById('contenido-principal').style.display = '';
+        document.body.classList.add('loaded');
+
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            if (confirm('Cerrar sesion?')) await signOut(plantaDB.auth)
+                .then(() => { window.location.href = '../index.html'; });
+        });
+
+        // Cargar sección inicial
+        loadAgents();
+        setInterval(() => { if (activeSection === 'asesores') loadAgents(); }, 10000);
+
+        initWs();
+    });
+</script>
+
+</body>
+</html>

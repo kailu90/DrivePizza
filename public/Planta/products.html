@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos Sedes</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body class="orders_body">
+<main class="orders_main">
+    <!-- Modal bienvenida -->
+    <dialog id="modal-bienvenida">
+        <div class="mbienvenida__header">
+            <span class="mbienvenida__greeting">👋 ¡Hola, <strong id="mb-username"></strong>!</span>
+            <p class="mbienvenida__texto">Estás realizando el pedido para la sede</p>
+            <p class="mbienvenida__sede" id="mb-sede"></p>
+        </div>
+        <div class="mbienvenida__body">
+            <p class="mbienvenida__pregunta">¿Para qué día es el pedido?</p>
+            <div class="mbienvenida__opciones">
+                <button type="button" class="mbienvenida__opcion" id="mb-hoy">
+                    <span class="mbienvenida__opcion-label">HOY</span>
+                    <span class="mbienvenida__opcion-fecha" id="mb-fecha-hoy"></span>
+                </button>
+                <button type="button" class="mbienvenida__opcion" id="mb-manana">
+                    <span class="mbienvenida__opcion-label">MAÑANA</span>
+                    <span class="mbienvenida__opcion-fecha" id="mb-fecha-manana"></span>
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Barra de contexto: aparece al cerrar el modal de bienvenida -->
+    <div id="barra-contexto" style="display:none">
+        <span class="bc-icono">📦</span>
+        <span id="bc-sede"></span>
+        <span class="bc-sep">·</span>
+        <span id="bc-fecha"></span>
+    </div>
+
+    <!-- Instrucción sobre las categorías -->
+    <p id="instruccion-productos" style="display:none">
+        Abre las categorías y selecciona lo que necesitas
+    </p>
+
+    <form class="form_products" id="form">
+        <ul class="list_products" id="products-list">
+            <!-- Sede y fecha ocultas, se llenan desde el modal -->
+            <li class="list_location" style="display:none">
+                <label>SEDE</label>
+                <select name="user" id="location" required>
+                    <option value="" disabled selected>Seleccionar</option>
+                </select>
+            </li>
+            <li class="day_delivery" style="display:none">
+                <label for="day_delivery">FECHA</label>
+                <input type="date" name="deliveryDate" id="day_delivery" required>
+            </li>
+        </ul>   
+    </form>
+
+    <!-- Barra fija inferior -->
+    <div id="barra-continuar" style="display:none">
+        <button class="btn_orders" type="submit" form="form" id="btn_orders">Continuar</button>
+    </div>
+
+    <!-- Modal confirmación de pedido -->
+    <dialog id="modal-confirm">
+        <div class="mconfirm__header">
+            <p class="mconfirm__info" id="mc-info"></p>
+        </div>
+        <div id="mc-form">
+            <div class="mconfirm__lista-wrap">
+                <ul class="mconfirm__lista" id="mc-lista"></ul>
+                <div class="scroll-indicator" id="scroll-indicator">▼</div>
+            </div>
+            <div class="mconfirm__obs">
+                <label class="mconfirm__obs-label">Observación (opcional)</label>
+                <textarea id="mc-obs" class="mconfirm__textarea" placeholder="Ej: Necesito la harina antes del mediodía..."></textarea>
+            </div>
+            <div class="mconfirm__acciones">
+                <button type="button" id="mc-enviar" class="mconfirm__btn mconfirm__btn--send">Enviar pedido</button>
+            </div>
+        </div>
+        <div id="mc-success" style="display:none">
+            <span class="mconfirm__success-icon">✅</span>
+            <h3 class="mconfirm__success-title">¡Pedido enviado!</h3>
+            <p class="mconfirm__success-sub">Pedido N° <strong id="mc-npedido"></strong></p>
+        </div>
+    </dialog>
+</main>
+
+
+<script type="module" src="./products.js"></script>
+
+
+
+    
+</body>
+</html>

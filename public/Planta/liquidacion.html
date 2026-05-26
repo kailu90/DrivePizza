@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidación Semanal - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/informes.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+    <style>
+        /* ── Grid de tarjetas ── */
+        .liq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.4rem;
+        }
+        .liq-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .liq-card__header {
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            padding: 0.7rem 1.1rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .liq-card__table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.2rem;
+        }
+        .liq-card__table th {
+            background: #f5f5f5;
+            padding: 0.45rem 0.8rem;
+            text-align: left;
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+        }
+        .liq-card__table td {
+            padding: 0.45rem 0.8rem;
+            border-bottom: 1px solid #f2f2f2;
+            color: #333;
+        }
+        .liq-card__table td.col-total { text-align: right; font-weight: 500; }
+        .liq-card__table tr:last-child td { border-bottom: none; }
+        .liq-card__table tr:hover td { background: #fafafa; }
+        .liq-card__footer {
+            background: #f8f8f8;
+            border-top: 2px solid #e0e0e0;
+            padding: 0.65rem 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .liq-card__subtotal-label { font-size: 1.2rem; color: #666; }
+        .liq-card__subtotal-value { font-size: 1.4rem; font-weight: 700; color: var(--color-primario); }
+
+        /* ── Total general ── */
+        .liq-total-bar {
+            margin-top: 2rem;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* ── Estado badge ── */
+        .liq-estado {
+            font-size: 1rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+        .liq-estado--pendiente { background: #fff3cd; color: #856404; }
+        .liq-estado--entregado { background: #d1e7dd; color: #0f5132; }
+        .liq-estado--pagado    { background: #cfe2ff; color: #084298; }
+        .liq-estado--cancelado { background: #f8d7da; color: #842029; }
+
+        /* ── Devoluciones ── */
+        .liq-dev-header td {
+            background: #fff8f0;
+            color: #c0392b;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.4rem 0.8rem;
+            border-top: 1px solid #f0d0c0;
+        }
+        .liq-dev-row td { background: #fffaf8; color: #555; font-size: 1.1rem; }
+        .liq-dev-valor { color: #c0392b !important; font-weight: 600 !important; }
+        .col-precio { color: #888; font-size: 1.05rem; }
+        .liq-dev-subtotal td {
+            background: #fef0ed;
+            font-weight: 600;
+            color: #c0392b;
+            border-top: 1px dashed #f0c0b0;
+            font-size: 1.1rem;
+        }
+
+        /* ── Print específico ── */
+        @media print {
+            .inf-label { font-size: 1.2rem; }
+            .liq-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+            .liq-card { break-inside: avoid; }
+            .liq-total-bar { margin-top: 1rem; }
+        }
+        @media (max-width: 600px) {
+            .liq-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="inf-main" id="liq-main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+
+        <div class="inf-toolbar">
+            <div class="inf-nav-group">
+                <button class="inf-nav" id="liq-prev">‹</button>
+                <span class="inf-label" id="liq-semana-label"></span>
+                <button class="inf-nav" id="liq-next">›</button>
+            </div>
+            <div class="inf-actions">
+                <button class="ap-btn ap-btn--ghost" id="liq-print">🖨️ Imprimir</button>
+            </div>
+        </div>
+
+        <div id="liq-content">
+            <p class="inf-empty">Selecciona una semana para generar el informe.</p>
+        </div>
+    </main>
+
+    <script type="module" src="./liquidacion.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Movimientos</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/movimientos.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+
+    <section class="dashboard__section">
+
+    <!-- Toolbar -->
+    <div class="mv-toolbar">
+        <div class="mv-filters">
+            <input type="search" id="mv-search" class="mv-input" placeholder="Buscar producto...">
+
+            <div class="mv-producto-wrap">
+                <input type="text" id="mv-producto-input" class="mv-input" placeholder="Filtrar por producto..." autocomplete="off" list="mv-producto-list">
+                <datalist id="mv-producto-list"></datalist>
+            </div>
+
+            <select id="mv-tipo" class="mv-select">
+                <option value="">Todos los tipos</option>
+                <option value="Entrada">Entrada</option>
+                <option value="Ajuste">Ajuste</option>
+                            <option value="Devolución">Devolución</option>
+                <option value="Salida">Salida</option>
+                <option value="Activación">Activación</option>
+                <option value="Desactivación">Desactivación</option>
+                <option value="Cambio precio">Cambio precio</option>
+                <option value="Cambio cantidades">Cambio cantidades</option>
+                <option value="Cambio unidad">Cambio unidad</option>
+                <option value="Cambio nombre">Cambio nombre</option>
+                <option value="Cambio categoría">Cambio categoría</option>
+                <option value="Modificación">Modificación</option>
+                <option value="Edición pedido">Edición pedido</option>
+                <option value="Creación">Creación</option>
+                <option value="Eliminación">Eliminación</option>
+            </select>
+
+            <div class="mv-date-group">
+                <label for="mv-desde">Desde</label>
+                <input type="date" id="mv-desde" class="mv-input">
+            </div>
+            <div class="mv-date-group">
+                <label for="mv-hasta">Hasta</label>
+                <input type="date" id="mv-hasta" class="mv-input">
+            </div>
+        </div>
+
+        <div class="mv-filters-quick">
+            <button class="mv-btn-quick active" id="mv-btn-hoy">Hoy</button>
+            <button class="mv-btn-quick" id="mv-btn-semana">Esta semana</button>
+            <button class="mv-btn-quick" id="mv-btn-mes">Este mes</button>
+            <button class="mv-btn-quick mv-btn-resumen" id="mv-btn-resumen" style="display:none">📊 Resumen</button>
+            <button class="mv-btn-quick mv-btn-export" id="mv-btn-export">⬇ Excel</button>
+            <button class="mv-btn-quick" id="mv-btn-sync-sqlite" style="display:none" title="Sincronizar SQLite con Firestore (últimos 7 días)">🔄 Sincronizar</button>
+        </div>
+    </div>
+
+    <p class="mv-count" id="mv-count"></p>
+
+    <!-- Tabla -->
+    <div class="mv-table-wrap">
+        <table class="mv-table">
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>TIPO</th>
+                    <th>PRODUCTO</th>
+                    <th>DETALLE</th>
+                    <th>USUARIO</th>
+                </tr>
+            </thead>
+            <tbody id="mv-tbody">
+                <tr><td colspan="6" class="mv-loading">Cargando movimientos...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="mv-pagination" id="mv-pagination"></div>
+
+    </section>
+</main>
+
+<footer class="inventory__footer">
+    <p class="inventory__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+</footer>
+
+<!-- Modal de detalle de movimiento -->
+<dialog id="mv-det" class="mv-det">
+    <div class="mv-det__header">
+        <h3 id="mv-det-titulo" class="mv-det__titulo"></h3>
+        <button id="mv-det-cerrar" class="mv-det__cerrar" title="Cerrar">✕</button>
+    </div>
+    <div class="mv-det__meta">
+        <span class="mv-det__meta-item">
+            <span class="mv-det__meta-label">Tipo</span>
+            <span id="mv-det-tipo"></span>
+        </span>
+        <span class="mv-det__meta-item">
+            <span class="mv-det__meta-label">Asesor</span>
+            <span id="mv-det-asesor"></span>
+        </span>
+    </div>
+    <ul id="mv-det-lista" class="mv-det__lista"></ul>
+</dialog>
+
+<!-- Modal resumen por día -->
+<dialog id="mv-modal-resumen" class="mv-modal-resumen">
+    <div class="mv-det__header">
+        <h3 id="mv-resumen-titulo" class="mv-det__titulo"></h3>
+        <button id="mv-resumen-cerrar" class="mv-det__cerrar" title="Cerrar">✕</button>
+    </div>
+    <div class="mv-modal-resumen__body">
+        <table class="mv-table mv-table--resumen">
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th class="col-right">SALIDAS</th>
+                </tr>
+            </thead>
+            <tbody id="mv-resumen-tbody"></tbody>
+            <tfoot>
+                <tr id="mv-resumen-total" class="mv-resumen-total"></tr>
+            </tfoot>
+        </table>
+    </div>
+</dialog>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script type="module" src="movimientos.js"></script>
+
+</body>
+</html>

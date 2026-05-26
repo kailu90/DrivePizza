@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+    <title>Pedidos en Curso - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../CallCenter/pedidosCallCenter.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+</head>
+<body>
+
+<div id="skeleton" class="sk-page"></div>
+
+<div id="contenido-principal" style="display:none;">
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="../Imagenes/logo.png" alt="">
+        </div>
+        <div class="header-name">
+            <button class="btn-home with-tooltip" data-tooltip="Regresar al Panel" id="btn-home">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="icon-home">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </button>
+            <div class="header-username" id="username">Hola</div>
+        </div>
+        <div class="header-controls">
+            <button id="btn-logout" class="header-link">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h2>Pedidos en Curso &mdash; <span id="sede-label"></span></h2>
+        <div class="stat-badges">
+            <span class="stat-badge preparacion" id="count-preparacion">0 preparando</span>
+            <span class="stat-badge despachado" id="count-despachado">0 despachados</span>
+        </div>
+    </div>
+
+    <div class="orders-list" id="orders-list"></div>
+
+    <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">🍕</div>
+        <p>Sin pedidos activos por ahora</p>
+    </div>
+
+</div><!-- /contenido-principal -->
+
+<!-- Modal detalle del pedido -->
+<div id="modal-pedido" class="modal-overlay" style="display:none;">
+    <div class="modal-pedido-content">
+
+        <div class="mpedido-header">
+            <span class="mpedido-npedido" id="mp-npedido"></span>
+            <button class="mpedido-close" id="btn-cerrar-pedido">✕</button>
+        </div>
+
+        <div class="mpedido-body">
+            <div class="mpedido-cliente" id="mp-cliente"></div>
+            <div class="mpedido-tel" id="mp-tel"></div>
+            <div class="mpedido-entrega" id="mp-entrega"></div>
+            <hr class="mpedido-sep">
+            <div class="mpedido-productos-title">Productos</div>
+            <ul class="mpedido-productos" id="mp-productos"></ul>
+            <div class="mpedido-totals">
+                <span class="mpedido-total" id="mp-total"></span>
+                <span class="mpedido-domicilio" id="mp-domicilio"></span>
+            </div>
+        </div>
+
+        <div id="mp-stepper"></div>
+        <div class="mpedido-cancel-area" id="mp-cancel-area"></div>
+
+    </div>
+</div>
+
+<!-- Modal cancelación -->
+<div id="modal-cancelar" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+        <h3>Cancelar Pedido</h3>
+        <p id="cancelar-descripcion" style="margin:8px 0; color:#555;"></p>
+        <textarea id="cancelar-motivo" placeholder="Motivo de cancelación (opcional)..."
+            style="width:100%; margin-top:8px; padding:10px; border-radius:8px; border:1px solid #ddd; min-height:80px; font-size:14px; box-sizing:border-box; resize:vertical;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button id="btn-confirmar-cancelar" class="btn-accion btn-cancelar" style="flex:1; padding:12px;">Confirmar Cancelación</button>
+            <button id="btn-cerrar-cancelar" class="btn-accion" style="flex:1; padding:12px; background:#95a5a6; color:white;">Volver</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="pedidosPizzeria.js"></script>
+
+</body>
+</html>

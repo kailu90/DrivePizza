@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizzeria - DrivePizza </title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body class="panel">
+
+
+<!--*****************Injección de contenido por JS****************-->
+<div id="header-container"></div>
+
+    <main class="panel__content">
+        <h1 class="panel__welcome-title">¿Qué deseas gestionar hoy?</h1>
+        
+        <section class="cards_container">
+            <div class="card card--active" id="btn_pedidos_sedes">
+                <div class="card__icon">🍕</div> 
+                <p class="card__text">Pedidos Planta</p>
+            </div>
+
+            <div class="card card--active" id="btn_historial_cc">
+                <div class="card__icon">📋</div>
+                <p class="card__text">Historial CallCenter</p>
+            </div>
+
+            <div class="card card--active" id="btn_historial_planta">
+                <div class="card__icon">📦</div>
+                <p class="card__text">Historial Pedidos Planta</p>
+            </div>
+
+            <div class="card card--active" id="btn_liquidacion">
+                <div class="card__icon">💰</div>
+                <p class="card__text">Liquidación Planta</p>
+            </div>
+
+            <div class="card card--active" id="btn_reservas">
+                <div class="card__icon">📅</div>
+                <p class="card__text">Reservas</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+
+             <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="panel__footer">
+        <p class="footer__text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script type="module" src="../Auth/authCheck.js"></script>
+    <script type="module" src="../Shared/components.js"></script>
+    <script type="module" src="pizzerias.js"></script>
+
+</body>
+</html>

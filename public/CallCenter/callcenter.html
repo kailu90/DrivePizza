@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel CallCenter</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body class="panel" data-skeleton="callcenter">
+
+<div id="skeleton" class="sk-page"></div>
+
+
+<!--*****************Injección de contenido por JS****************-->
+<div id="header-container"></div>
+
+    <main id="contenido-principal" class="panel__content" style="display:none;">
+        <h1 class="panel__welcome-title">¿Qué deseas gestionar hoy?</h1>
+        
+        <section class="cards_container">
+            <div class="card card--active" id="btn_pedidos_sedes">
+                <div class="card__icon">🎧</div> 
+                <p class="card__text">Pedidos CallCenter</p>
+            </div>
+
+            <div class="card card--active" id="btn_historial">
+                <div class="card__icon">📋</div>
+                <p class="card__text">Historial Pedidos</p>
+            </div>
+
+            <div class="card card--active" id="btn_reporte_asesores">
+                <div class="card__icon">👥</div>
+                <p class="card__text">Pedidos por Asesor</p>
+            </div>
+
+            <div class="card card--active" id="btn_reservas">
+                <div class="card__icon">📅</div>
+                <p class="card__text">Reservas</p>
+            </div>
+
+            <div class="card card--active" id="btn_pbx">
+                <div class="card__icon">📞</div>
+                <p class="card__text">PBX</p>
+            </div>
+
+            <div class="card card--disabled">
+                <div class="card__icon">🔒</div>
+                <p class="card__text">Próximamente</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="panel__footer">
+        <p class="footer__text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script type="module" src="../Auth/authCheck.js"></script>
+    <script type="module" src="../Shared/components.js"></script>
+    <script type="module" src="../CallCenter/callcenter.js"></script>
+
+</body>
+</html>

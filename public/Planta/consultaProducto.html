@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Consulta por Producto - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/movimientos.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="dashboard__main" id="dashboard__main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+
+        <section class="dashboard__section">
+
+            <!-- Formulario de consulta -->
+            <div class="cp-card">
+                <h2 class="cp-titulo">Consulta de salidas por producto</h2>
+
+                <div class="cp-form">
+                    <div class="cp-field">
+                        <label class="cp-label" for="cp-producto">Producto</label>
+                        <input type="text" id="cp-producto" class="cp-input" placeholder="Escribe el nombre..." autocomplete="off" list="cp-producto-list">
+                        <datalist id="cp-producto-list"></datalist>
+                    </div>
+
+                    <div class="cp-field">
+                        <label class="cp-label" for="cp-desde">Desde</label>
+                        <input type="date" id="cp-desde" class="cp-input">
+                    </div>
+
+                    <div class="cp-field">
+                        <label class="cp-label" for="cp-hasta">Hasta</label>
+                        <input type="date" id="cp-hasta" class="cp-input">
+                    </div>
+
+                    <button id="cp-btn-generar" class="cp-btn-generar" disabled>Generar resumen</button>
+                </div>
+
+                <p id="cp-error" class="cp-error" style="display:none"></p>
+            </div>
+
+            <!-- Resultados -->
+            <div id="cp-resultados" class="cp-resultados" style="display:none">
+                <div class="cp-resultados-header">
+                    <h3 id="cp-resultado-titulo" class="cp-resultado-titulo"></h3>
+                    <button id="cp-btn-export" class="mv-btn-quick mv-btn-export">⬇ Excel</button>
+                </div>
+
+                <div class="mv-table-wrap cp-table-wrap">
+                    <table class="mv-table cp-table">
+                        <thead>
+                            <tr>
+                                <th>DÍA</th>
+                                <th>FECHA</th>
+                                <th class="col-center">CANTIDAD PEDIDA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cp-tbody"></tbody>
+                        <tfoot>
+                            <tr id="cp-tfoot" class="mv-resumen-total"></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="inventory__footer">
+        <p class="inventory__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="consultaProducto.js"></script>
+</body>
+</html>

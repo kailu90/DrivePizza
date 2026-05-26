@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Softphone Test - DrivePizza</title>
+    <script src="/pbx/jssip.min.js"></script>
+    <style>
+        body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .status { padding: 10px; border-radius: 6px; margin: 10px 0; text-align: center; font-weight: bold; }
+        .conectado { background: #d4edda; color: #155724; }
+        .desconectado { background: #f8d7da; color: #721c24; }
+        .llamando { background: #fff3cd; color: #856404; }
+        button { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .btn-conectar { background: #284c22; color: white; }
+        .btn-llamar { background: #28a745; color: white; }
+        .btn-colgar { background: #dc3545; color: white; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        #logs { margin-top: 15px; background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 12px; padding: 10px; border-radius: 6px; height: 200px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h2>Softphone DrivePizza</h2>
+    <div id="status" class="status desconectado">Desconectado</div>
+    <button class="btn-conectar" onclick="conectar()">Conectar</button>
+    <input type="text" id="numero" placeholder="Numero a marcar">
+    <button class="btn-llamar" onclick="llamar()">Llamar</button>
+    <button class="btn-colgar" onclick="colgar()">Colgar</button>
+    <audio id="remoteAudio" autoplay></audio>
+    <div id="logs">-- Logs --
+</div>
+
+    <script>
+        let ua = null
+        let session = null
+
+        const iceServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+
+        function log(msg) {
+            const el = document.getElementById('logs')
+            const ts = new Date().toLocaleTimeString()
+            el.textContent += '[' + ts + '] ' + msg + '\n'
+            el.scrollTop = el.scrollHeight
+            console.log(msg)
+        }
+
+        function conectar() {
+            const config = {
+                sockets: [new JsSIP.WebSocketInterface('wss://pbx.everest-central.com/ws')],
+                uri: 'sip:8001@pbx.everest-central.com',
+                password: 'Asesor8001*',
+                register: true,
+                pcConfig: { iceServers }
+            }
+
+            ua = new JsSIP.UA(config)
+
+            ua.on('connected', function() { setStatus('Conectado', 'conectado'); log('WS conectado') })
+            ua.on('disconnected', function() { setStatus('Desconectado', 'desconectado'); log('WS desconectado') })
+            ua.on('registered', function() { setStatus('Registrado OK', 'conectado'); log('SIP registrado OK') })
+            ua.on('unregistered', function() { setStatus('No registrado', 'desconectado'); log('SIP no registrado') })
+            ua.on('registrationFailed', function(e) { setStatus('Error: ' + e.cause, 'desconectado'); log('ERROR registro: ' + e.cause) })
+
+            ua.on('newRTCSession', function(e) {
+                session = e.session
+                log('Nueva sesion - direccion: ' + session.direction)
+
+                session.on('failed', function(ev) {
+                    var msg = 'SESION FALLIDA - cause: ' + ev.cause + ' | originator: ' + ev.originator
+                    if (ev.message) msg += ' | status: ' + ev.message.status_code + ' ' + ev.message.reason_phrase
+                    log(msg)
+                    setStatus('Llamada fallida: ' + ev.cause, 'desconectado')
+                })
+                session.on('ended', function(ev) {
+                    log('Sesion terminada - cause: ' + ev.cause + ' | originator: ' + ev.originator)
+                    setStatus('Llamada terminada', 'desconectado')
+                })
+                session.on('accepted', function(ev) {
+                    log('Llamada ACEPTADA - originator: ' + ev.originator)
+                    setStatus('En llamada', 'conectado')
+                })
+                session.on('confirmed', function() { log('Sesion confirmada (ACK)') })
+                session.on('icecandidate', function(ev) {
+                    log('ICE candidate: ' + ev.candidate.candidate.substr(0, 80))
+                })
+
+                if (session.direction === 'incoming') {
+                    setStatus('Llamada entrante...', 'llamando')
+                    log('Respondiendo llamada entrante...')
+
+                    session.answer({
+                        mediaConstraints: { audio: true, video: false },
+                        pcConfig: { iceServers }
+                    })
+
+                    var pc = session.connection
+                    if (pc) {
+                        pc.ontrack = function(ev) {
+                            log('Track remoto recibido: ' + ev.track.kind)
+                            document.getElementById('remoteAudio').srcObject = ev.streams[0]
+                        }
+                        pc.oniceconnectionstatechange = function() { log('ICE state: ' + pc.iceConnectionState) }
+                        pc.onsignalingstatechange = function() { log('Signaling state: ' + pc.signalingState) }
+                        pc.onconnectionstatechange = function() { log('Connection state: ' + pc.connectionState) }
+                    }
+                }
+            })
+
+            ua.start()
+            log('Iniciando UA...')
+        }
+
+        function llamar() {
+            if (!ua) return alert('Primero conectate')
+            var numero = document.getElementById('numero').value
+            if (!numero) return alert('Ingresa un numero')
+            session = ua.call('sip:' + numero + '@pbx.everest-central.com', {
+                mediaConstraints: { audio: true, video: false },
+                pcConfig: { iceServers }
+            })
+            setStatus('Llamando...', 'llamando')
+        }
+
+        function colgar() {
+            if (session) session.terminate()
+            setStatus('Llamada terminada', 'desconectado')
+        }
+
+        function setStatus(msg, cls) {
+            var el = document.getElementById('status')
+            el.textContent = msg
+            el.className = 'status ' + cls
+        }
+    </script>
+</body>
+</html>

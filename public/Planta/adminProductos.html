@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Productos - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/adminProductos.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="ap-main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+        <!-- Toolbar -->
+        <div class="ap-toolbar">
+            <div class="ap-toolbar__filters">
+                <input
+                    type="search"
+                    id="ap-search"
+                    class="ap-input"
+                    placeholder="Buscar producto..."
+                    autocomplete="off"
+                >
+                <select id="ap-filter-rotacion" class="ap-select">
+                    <option value="">Todas las rotaciones</option>
+                    <option value="alta">Alta rotación</option>
+                    <option value="media">Media rotación</option>
+                    <option value="baja">Baja rotación</option>
+                    <option value="sin">Sin clasificar</option>
+                </select>
+                <select id="ap-filter-cat" class="ap-select">
+                    <option value="">Todas las categorías</option>
+                </select>
+                <select id="ap-filter-status" class="ap-select">
+                    <option value="">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                </select>
+            </div>
+            <button class="ap-btn ap-btn--primary" id="ap-btn-nuevo">+ Nuevo producto</button>
+        </div>
+
+        <!-- Contador -->
+        <p class="ap-count" id="ap-count"></p>
+
+        <!-- Tabla -->
+        <div class="ap-table-wrap">
+            <table class="ap-table">
+                <thead>
+                    <tr>
+                        <th class="ap-col-center">Rotación</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th class="ap-col-num">Precio</th>
+                        <th class="ap-col-num">Stock</th>
+                        <th>Unidad</th>
+                        <th>Presentaciones</th>
+                        <th class="ap-col-center">Activo</th>
+                        <th class="ap-col-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ap-tbody">
+                    <tr id="ap-loading-row">
+                        <td colspan="9" class="ap-loading">Cargando productos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal crear / editar producto -->
+    <dialog id="ap-modal" class="ap-modal-dialog">
+        <form id="ap-form" class="ap-modal__form" novalidate>
+            <h2 class="ap-modal__title" id="ap-modal-title">Nuevo producto</h2>
+
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="f-nombre">Nombre *</label>
+                    <input class="ap-input" id="f-nombre" name="nombre" type="text" required autocomplete="off">
+                </div>
+
+                <div class="ap-field">
+                    <label class="ap-label" for="f-categoria">Categoría *</label>
+                    <select class="ap-select" id="f-categoria" name="categoria" required>
+                        <option value="">Seleccionar</option>
+                    </select>
+                </div>
+
+                <div class="ap-field">
+                    <label class="ap-label" for="f-unidad">Unidad de medida *</label>
+                    <select class="ap-select" id="f-unidad" name="unidad" required></select>
+                </div>
+
+                <div class="ap-field">
+                    <label class="ap-label" for="f-precio">Precio ($) *</label>
+                    <input class="ap-input" id="f-precio" name="precio" type="number" min="0" step="0.01" required>
+                </div>
+
+                <div class="ap-field" id="f-stock-wrap">
+                    <label class="ap-label" for="f-stock">Stock inicial *</label>
+                    <input class="ap-input" id="f-stock" name="stock" type="number" min="0" step="1" required>
+                </div>
+
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="f-presentaciones">
+                        Presentaciones
+                        <span class="ap-label__hint">(cantidades separadas por coma, ej: 1,5,10)</span>
+                    </label>
+                    <input class="ap-input" id="f-presentaciones" name="presentaciones" type="text" autocomplete="off" placeholder="1,5,10">
+                </div>
+
+                <div class="ap-field ap-field--full ap-field--row">
+                    <label class="ap-label" for="f-activo">Activo</label>
+                    <input type="checkbox" id="f-activo" name="activo" class="ap-checkbox">
+                </div>
+
+                <div class="ap-field ap-field--full ap-field--row">
+                    <label class="ap-label" for="f-sin-limite">Sin límite de stock
+                        <span class="ap-label__hint">(las pizzerías pueden pedirlo aunque el stock sea 0)</span>
+                    </label>
+                    <input type="checkbox" id="f-sin-limite" name="sinLimiteStock" class="ap-checkbox">
+                </div>
+
+                <div class="ap-field">
+                    <label class="ap-label" for="f-rotacion">Rotación</label>
+                    <select class="ap-select" id="f-rotacion" name="rotacion">
+                        <option value="">Sin clasificar</option>
+                        <option value="alta">Alta rotación</option>
+                        <option value="media">Media rotación</option>
+                        <option value="baja">Baja rotación</option>
+                    </select>
+                </div>
+            </div>
+
+            <p class="ap-modal__error" id="ap-modal-error"></p>
+
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="ap-btn-cancelar">Cancelar</button>
+                <button type="submit" class="ap-btn ap-btn--primary" id="ap-btn-guardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script type="module" src="./adminProductos.js"></script>
+</body>
+</html>

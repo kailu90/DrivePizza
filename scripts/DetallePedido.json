@@ -1,0 +1,10 @@
+[
+  {
+    "idOrderDetail": 3,
+    "idOrder": 1,
+    "idProducto": 8,
+    "cantidad": 100,
+    "precioUnitaro": 1500,
+    "price": 150000
+  }
+]

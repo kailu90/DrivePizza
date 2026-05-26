@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión Inventario</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/adminProductos.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+ <!--*****************Injección de header por medio de JS****************-->
+ <div id="header-container"></div>
+
+
+
+ <!--*********************Injección de barra lateral con botones con JS*****************-->  
+<div id="sidebar-container"></div>
+
+
+
+
+<!--*********************Tabla de listado de los productos*****************-->
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+    <section class="dashboard__section dashboard__overview">
+        <div id="resumen-panel" style="display:none">
+            <h3 class="dashboard__overview-subtitle">Productos</h3>
+            <div class="dashboard__overview-cards">
+                <div class="card">
+                    <h3 class="card__title">Valor total</h3>
+                    <p class="card__info" id="total-value-counter">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">En stock</h3>
+                    <p class="card__info" id="total-products-counter">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">Agotados</h3>
+                    <p class="card__info" id="out-of-stock-counter">0</p>
+                </div>
+            </div>
+
+            <h3 class="dashboard__overview-subtitle">Cajas</h3>
+            <div class="dashboard__overview-cards">
+                <div class="card">
+                    <h3 class="card__title">Valor total</h3>
+                    <p class="card__info" id="cajas-value-counter">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">En stock</h3>
+                    <p class="card__info" id="cajas-in-stock-counter">0</p>
+                </div>
+                <div class="card">
+                    <h3 class="card__title">Agotadas</h3>
+                    <p class="card__info" id="cajas-out-of-stock-counter">0</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+<!--*********************Botones de gestion de inventario*****************-->    
+    <section class="inventory__section inventory-management">        
+        <div class="ap-toolbar">
+            <div class="ap-toolbar__filters">
+                <input type="search" id="inv-search" class="ap-input" placeholder="Buscar producto...">
+                <div class="filtros-dropdown" id="filtros-dropdown">
+                    <button class="ap-btn ap-btn--filter" id="btn-filtros">
+                        ⚙ Filtros <span class="filtros-badge" id="filtros-badge" style="display:none">0</span>
+                    </button>
+                    <div class="filtros-panel" id="filtros-panel" style="display:none">
+                        <p class="filtros-panel__title">Mostrar solo</p>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-sin-limite"> Sin límite de stock
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-agotados"> Agotados (stock = 0)
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-con-stock"> Con stock (stock > 0)
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-activos"> Activos
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-inactivos"> Inactivos
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-cajas"> Cajas
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-sin-precio"> Sin precio (precio = 0)
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-solo-negativos"> Stocks negativos
+                        </label>
+                        <p class="filtros-panel__title">Ocultar</p>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-ocultar-inactivos"> Productos inactivos
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-ocultar-sin-limite"> Productos sin límite de stock
+                        </label>
+                        <label class="filtros-opcion">
+                            <input type="checkbox" id="f-ocultar-negativos"> Stocks negativos
+                        </label>
+                        <div class="filtros-panel__footer">
+                            <button class="ap-btn ap-btn--ghost" id="btn-limpiar-filtros">Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-add-stock" class="ap-btn ap-btn--primary">+ Agregar Stock</button>
+            <button id="btn-ajuste-stock" class="ap-btn ap-btn--primary" style="display:none">⚖ Ajuste de Inventario</button>
+            <button id="btn-exportar-excel" class="ap-btn ap-btn--primary">⬇ Excel</button>
+            <button id="btn-resumen-toggle" class="ap-btn ap-btn--primary">📊 Resumen</button>
+            <button id="btn-sync-productos" class="ap-btn ap-btn--secondary" style="display:none" title="Sincronizar productos con Firestore">🔄 Sincronizar</button>
+        </div>
+
+
+
+<!--*********************Estructura base de tabla de productos Inventario*****************-->  
+       <table class="inventory-management__table" id="table-inventory">
+    <thead class="inventory-management__thead">
+        <tr>
+            <th class="inventory-management__heading">ID</th>
+            <th class="inventory-management__heading">NOMBRE DEL PRODUCTO</th>
+            <th class="inventory-management__heading">UNIDAD DE MEDIDA</th>
+            <th class="inventory-management__heading">STOCK</th>
+            <th class="inventory-management__heading">PRECIO UNIDAD</th>
+            <th class="inventory-management__heading">PRECIO TOTAL</th>
+        </tr>
+    </thead>
+            <tbody class="inventory-management__tbody" id="productsContainer">
+                <!-- <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">Azúcar Blanca</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">20</td>
+                    <td class="inventory-management__cell">✅</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr>
+                <tr class="inventory-management__row">
+                    <td class="inventory-management__cell">champiñones</td>
+                    <td class="inventory-management__cell">Pizzas</td>
+                    <td class="inventory-management__cell">15</td>
+                    <td class="inventory-management__cell">❌</td>
+                    <td class="inventory-management__cell">
+                        <a class="inventory-management__link" href="#">Editar</a> | 
+                        <a class="inventory-management__link" href="#">Eliminar</a>
+                    </td>
+                </tr> -->
+            </tbody>
+        </table>
+
+    </section>
+
+         
+
+<!--*********************Modal de formulario para ingreso de Stock*****************-->
+<dialog id="modal-stock" class="ap-modal-dialog">
+    <form class="ap-modal__form" id="form-stock" novalidate>
+        <h2 class="ap-modal__title">Ingreso de Stock</h2>
+        <div class="ap-modal__grid">
+            <div class="ap-field ap-field--full">
+                <label class="ap-label">Producto</label>
+                <input type="text" id="stock-buscar-input" class="ap-input" placeholder="Busca el producto..." autocomplete="off">
+                <div id="stock-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                <div id="stock-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                    <p style="margin:0;font-weight:600;" id="stock-nombre-prod"></p>
+                </div>
+            </div>
+            <div class="ap-field">
+                <label class="ap-label" for="stock-quantity">Cantidad</label>
+                <input type="number" id="stock-quantity" class="ap-input" placeholder="Cantidad a ingresar" required min="1">
+            </div>
+            <div class="ap-field">
+                <label class="ap-label">Proveedor</label>
+                <input type="text" id="supplier-buscar-input" class="ap-input" placeholder="Busca el proveedor..." autocomplete="off">
+                <div id="supplier-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                <div id="supplier-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                    <p style="margin:0;font-weight:600;" id="supplier-nombre"></p>
+                </div>
+            </div>
+            <div class="ap-field ap-field--full">
+                <label class="ap-label" for="stock-observation">Observación</label>
+                <textarea id="stock-observation" class="ap-input" rows="3" placeholder="Detalles del ingreso..."></textarea>
+            </div>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="btn-cancel">Cancelar</button>
+            <button type="submit" class="ap-btn ap-btn--primary" id="btn-enviar">Guardar</button>
+        </div>
+    </form>
+</dialog>
+
+
+<!--*********************Modal de Confirmación de Stock*****************-->
+<dialog id="modal-confirm-stock" class="ap-modal-dialog">
+    <div class="ap-modal__form">
+        <h2 class="ap-modal__title">Confirmar ingreso de stock</h2>
+        <div class="ap-modal__grid" style="gap:8px;">
+            <div class="ap-field ap-field--full">
+                <table style="width:100%;border-collapse:collapse;font-size:15px;">
+                    <tbody id="confirm-stock-tabla"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="btn-confirm-stock-cancelar">Cancelar</button>
+            <button type="button" class="ap-btn ap-btn--primary" id="btn-confirm-stock-ok">✓ Confirmar</button>
+        </div>
+    </div>
+</dialog>
+
+<!--*********************Modal de Ajuste de Inventario*****************-->
+<dialog id="modal-ajuste" class="ap-modal-dialog">
+    <form class="ap-modal__form" id="form-ajuste" novalidate>
+        <h2 class="ap-modal__title">Ajuste de Inventario</h2>
+        <div class="ap-modal__grid">
+            <div class="ap-field ap-field--full">
+                <label class="ap-label">Producto</label>
+                <input type="text" id="ajuste-buscar-input" class="ap-input" placeholder="Busca el producto..." autocomplete="off">
+                <div id="ajuste-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                <div id="ajuste-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                    <p style="margin:0;font-weight:600;" id="ajuste-nombre-prod"></p>
+                </div>
+            </div>
+            <div class="ap-field">
+                <label class="ap-label">Stock actual (sistema)</label>
+                <input type="text" id="ajuste-stock-actual" class="ap-input" disabled placeholder="—">
+            </div>
+            <div class="ap-field">
+                <label class="ap-label" for="ajuste-stock-real">Stock real contado</label>
+                <input type="number" id="ajuste-stock-real" class="ap-input" placeholder="Ingresa el conteo real" required min="0">
+            </div>
+            <div class="ap-field ap-field--full" id="ajuste-diferencia-wrap" style="display:none">
+                <p id="ajuste-diferencia-label" style="font-weight:600;margin:0;padding:6px 10px;border-radius:6px"></p>
+            </div>
+            <div class="ap-field ap-field--full">
+                <label class="ap-label" for="ajuste-motivo">Motivo del ajuste <span style="color:#c0392b">*</span></label>
+                <textarea id="ajuste-motivo" class="ap-input" rows="2" placeholder="Ej: Novedad en inventario inicio de mes" required></textarea>
+            </div>
+            <div class="ap-field ap-field--full">
+                <label class="ap-label" for="ajuste-notas">Notas adicionales</label>
+                <textarea id="ajuste-notas" class="ap-input" rows="2" placeholder="Observaciones opcionales..."></textarea>
+            </div>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="btn-ajuste-cancel">Cancelar</button>
+            <button type="submit" class="ap-btn ap-btn--primary" id="btn-ajuste-enviar">Guardar Ajuste</button>
+        </div>
+    </form>
+</dialog>
+
+</main>
+
+
+
+<!--*********************Footer de Inventory***************************-->  
+<footer class="inventory__footer" id="inventory__footer">
+    <p class="inventory__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+</footer>
+     
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="Inventory.js"></script>
+
+</body>
+</html>
