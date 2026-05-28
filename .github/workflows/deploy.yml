@@ -10,18 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: 65.109.225.149
-          username: root
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          script: echo "SSH OK desde $(hostname)"
-
-      - name: Setup SSH key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.HETZNER_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 65.109.225.149 >> ~/.ssh/known_hosts
 
@@ -30,9 +22,5 @@ jobs:
           rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" public/ root@65.109.225.149:/root/frontend/
 
       - name: Verificar deploy
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: 65.109.225.149
-          username: root
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          script: echo "Archivos en frontend $(ls /root/frontend/ | wc -l)"
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "echo 'Archivos: $(ls /root/frontend/ | wc -l)'"
