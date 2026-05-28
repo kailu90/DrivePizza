@@ -1,9 +1,6 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-
-const db = plantaDB.db;
 let offsetDias = 0;
 
 // ── Producción — productos a reportar (idProduct = String(id_product)) ────
@@ -74,12 +71,16 @@ async function cargarInforme() {
     const dia = formatDia(fecha);
 
     try {
-        const snap = await getDocs(query(
-            collection(db, 'Planta', 'principal', 'PedidosPlanta'),
-            where('deliveryDate', '==', fecha)
-        ));
+        const { data: rawPedidos, error } = await supabase
+            .from('pedidos_planta')
+            .select('user_sede, status, products')
+            .eq('delivery_date', fecha);
 
-        const pedidos = snap.docs.map(d => d.data()).filter(p => p.status !== 'cancelado');
+        if (error) throw error;
+
+        const pedidos = (rawPedidos || [])
+            .filter(p => p.status !== 'cancelado')
+            .map(p => ({ user: p.user_sede, status: p.status, products: p.products }));
 
         if (pedidos.length === 0) {
             content.innerHTML = '<p class="inf-empty">Sin pedidos para esta fecha.</p>';

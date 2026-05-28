@@ -1,10 +1,7 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables } from '../Shared/semanas.js';
-
-const db = plantaDB.db;
 
 let offsetSemanas = 0;
 
@@ -50,30 +47,40 @@ async function cargarInforme() {
 
     try {
         // Consultar pedidos y devoluciones en paralelo
-        const [snapPedidos, snapDevoluciones] = await Promise.all([
-            getDocs(query(
-                collection(db, 'Planta', 'principal', 'PedidosPlanta'),
-                where('deliveryDate', '>=', desde),
-                where('deliveryDate', '<=', hasta),
-                orderBy('deliveryDate', 'asc')
-            )),
-            getDocs(query(
-                collection(db, 'Planta', 'principal', 'Movimientos'),
-                where('tipo', '==', 'Devolución'),
-                where('fecha', '>=', Timestamp.fromDate(desdeDate)),
-                where('fecha', '<=', Timestamp.fromDate(hastaDate)),
-                orderBy('fecha', 'asc')
-            ))
+        const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
+            supabase
+                .from('pedidos_planta')
+                .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
+                .gte('delivery_date', desde)
+                .lte('delivery_date', hasta)
+                .order('delivery_date', { ascending: true }),
+            supabase
+                .from('movimientos')
+                .select('sede, producto_nombre, cantidad, unidad_medida, precio, valor_total, subtipo')
+                .eq('tipo', 'Devolución')
+                .gte('fecha', desdeDate.toISOString())
+                .lte('fecha', hasta + 'T23:59:59')
+                .order('fecha', { ascending: true }),
         ]);
 
-        if (snapPedidos.empty) {
+        if (errP) throw errP;
+        if (errD) throw errD;
+
+        if (!rawPedidos?.length) {
             content.innerHTML = '<p class="inf-empty">Sin pedidos para esta semana.</p>';
             return;
         }
 
         // Agrupar pedidos por sede (normalizado a minúscula)
         const gruposPedidos = {};
-        pedidosLiquidables(snapPedidos.docs.map(d => d.data())).forEach(p => {
+        pedidosLiquidables((rawPedidos || []).map(r => ({
+            idPedido:    r.id_pedido,
+            deliveryDate: r.delivery_date,
+            user:        r.user_sede,
+            total:       r.total,
+            status:      r.status,
+            eliminado:   r.eliminado,
+        }))).forEach(p => {
             const sede = (p.user || 'Sin sede').toLowerCase();
             if (sede === 'planta producción') return;
             if (!gruposPedidos[sede]) gruposPedidos[sede] = [];
@@ -82,12 +89,18 @@ async function cargarInforme() {
 
         // Agrupar devoluciones por sede (normalizado a minúscula)
         const gruposDev = {};
-        snapDevoluciones.forEach(d => {
-            const m = d.data();
-            const sede = m.sede ? m.sede.toLowerCase() : null;
+        (rawDevs || []).forEach(r => {
+            const sede = r.sede ? r.sede.toLowerCase() : null;
             if (!sede) return;
             if (!gruposDev[sede]) gruposDev[sede] = [];
-            gruposDev[sede].push(m);
+            gruposDev[sede].push({
+                productoNombre: r.producto_nombre,
+                cantidad:       r.cantidad,
+                unidadMedida:   r.unidad_medida,
+                precio:         r.precio,
+                valorTotal:     r.valor_total,
+                subtipo:        r.subtipo,
+            });
         });
 
         const sedes = Object.keys(gruposPedidos).sort();
