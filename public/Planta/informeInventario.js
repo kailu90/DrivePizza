@@ -2,7 +2,7 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 
-import { HETZNER_URL } from '../Api/config.js';
+import { supabase } from '../Api/supabaseConfig.js';
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
@@ -79,12 +79,15 @@ async function generarInforme() {
     btn.textContent = 'Generando...';
 
     try {
-        // ── 1. Categorías + Productos (Hetzner — 0 lecturas Firestore) ────
+        // ── 1. Categorías + Productos ─────────────────────────────────────
         status.textContent = 'Cargando categorías y productos...';
-        const [categorias, productos] = await Promise.all([
-            fetch(`${HETZNER_URL}/planta/categorias`).then(r => r.json()),
+        const [{ data: rawCategorias, error: errCat }, productos] = await Promise.all([
+            supabase.from('categorias').select('id_category, name'),
             getProductos(),
         ]);
+        if (errCat) throw errCat;
+
+        const categorias = rawCategorias.map(c => ({ idCategory: c.id_category, name: c.name }));
 
         const categoriasMap = {}; // idCategory → name
         categorias.forEach(c => { categoriasMap[c.idCategory] = c.name; });
@@ -149,18 +152,43 @@ async function generarInforme() {
                 'Unidad':    p.measurementUnit || '',
             }));
 
-        // ── 2. Pedidos + Movimientos en paralelo (Hetzner — 0 lecturas Firestore) ──
+        // ── 2. Pedidos + Movimientos en paralelo ──────────────────────────
         status.textContent = 'Cargando pedidos y movimientos...';
-        const [pedidosData, movimientosData] = await Promise.all([
-            fetch(`${HETZNER_URL}/planta/pedidos/rango?desde=${desde}&hasta=${hasta}`).then(r => {
-                if (!r.ok) throw new Error(`Error pedidos: ${r.status}`);
-                return r.json();
-            }),
-            fetch(`${HETZNER_URL}/planta/movimientos/rango?desde=${desde}&hasta=${hasta}`).then(r => {
-                if (!r.ok) throw new Error(`Error movimientos: ${r.status}`);
-                return r.json();
-            }),
+        const [{ data: rawPedidos, error: errP }, { data: rawMovs, error: errM }] = await Promise.all([
+            supabase.from('pedidos_planta')
+                .select('id, id_pedido, delivery_date, user_sede, status, net_cost, products, eliminado')
+                .gte('delivery_date', desde)
+                .lte('delivery_date', hasta)
+                .order('id_pedido', { ascending: true }),
+            supabase.from('movimientos')
+                .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
+                .gte('fecha', desde + 'T00:00:00')
+                .lte('fecha', hasta + 'T23:59:59')
+                .order('fecha', { ascending: true }),
         ]);
+        if (errP) throw errP;
+        if (errM) throw errM;
+
+        const pedidosData = (rawPedidos || []).map(p => ({
+            idPedido:    p.id_pedido,
+            deliveryDate: p.delivery_date,
+            user:        p.user_sede,
+            status:      p.status,
+            netCost:     p.net_cost,
+            products:    p.products,
+            eliminado:   p.eliminado,
+        }));
+
+        const movimientosData = (rawMovs || []).map(m => ({
+            fecha:         m.fecha,
+            tipo:          m.tipo,
+            productoNombre: m.producto_nombre,
+            cantidad:      m.cantidad,
+            pedidoNumero:  m.pedido_numero,
+            motivo:        m.motivo,
+            usuario:       m.usuario,
+            sede:          m.sede,
+        }));
 
         // Índice nombre producto → categoría (para Detalle Pedidos)
         const nombreCatMap = {};
