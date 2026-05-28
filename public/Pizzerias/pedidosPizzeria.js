@@ -1,16 +1,7 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
-
-const db   = plantaDB.db;
-const auth = plantaDB.auth;
-
-import { HETZNER_URL, WS_URL } from '../Api/config.js'
 const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparación', 'despachado']);
 
-let ws = null;
-let wsCerradoIntencional = false;
 let sedeActual = '';
 let pedidosActuales = {};       // id → objeto pedido
 let pedidoEnModal   = null;     // id del pedido abierto en el modal
@@ -20,10 +11,7 @@ const MINUTOS_AUTO_PREPARACION = 5;
 const timersPreparacion = new Map(); // pedidoId → timeoutId
 
 function toDate(ts) {
-    if (!ts) return null;
-    if (ts.toDate) return ts.toDate();
-    if (ts._seconds) return new Date(ts._seconds * 1000);
-    return new Date(ts);
+    return ts ? new Date(ts) : null;
 }
 
 // ── ICONOS SVG ────────────────────────────────────────────────────
@@ -74,48 +62,67 @@ const STEPS = [
 mostrarSkeleton('callcenter');
 
 // ── AUTH ───────────────────────────────────────────────────────────
-onAuthStateChanged(auth, async (user) => {
+(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { window.location.href = '../index.html'; return; }
 
-    const userDoc = await getDoc(doc(db, 'Usuarios', user.uid));
-    if (!userDoc.exists()) { window.location.href = '../index.html'; return; }
+    const { data, error } = await supabase.from('usuarios').select('username, sede, rol, active').eq('id', user.id).single();
+    if (error || !data?.active || !['pizzeria', 'planta', 'admin'].includes(data.rol)) {
+        window.location.href = '../index.html';
+        return;
+    }
 
-    const { username = '', sede = '' } = userDoc.data();
+    const { username = '', sede = '' } = data;
 
     document.getElementById('username').textContent   = `Hola ${username}`;
     document.getElementById('sede-label').textContent = sede.toUpperCase();
 
     ocultarSkeleton('contenido-principal');
     iniciarListener(sede);
-});
+})();
 
 // ── LOGOUT ────────────────────────────────────────────────────────
 document.getElementById('btn-logout').addEventListener('click', async () => {
     if (confirm('¿Cerrar sesión?')) {
-        wsCerradoIntencional = true;
-        ws?.close();
-        await signOut(auth);
+        await supabase.auth.signOut();
         window.location.href = '../index.html';
     }
 });
 
 document.getElementById('btn-home').addEventListener('click', () => {
-    wsCerradoIntencional = true;
-    ws?.close();
     window.location.href = '../Pizzerias/pizzerias.html';
 });
 
-// ── CARGA DESDE HETZNER ───────────────────────────────────────────
+// ── CARGA DESDE SUPABASE ──────────────────────────────────────────
 async function cargarPedidosActivos() {
     const hoy = new Date().toISOString().split('T')[0];
     try {
-        const res     = await fetch(`${HETZNER_URL}/callcenter/pedidos/rango?desde=${hoy}&hasta=${hoy}&sede=${sedeActual}&estado=`);
-        const pedidos = await res.json();
+        const { data: rawPedidos, error } = await supabase
+            .from('pedidos_callcenter')
+            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido')
+            .eq('sede', sedeActual)
+            .gte('fecha', hoy + 'T00:00:00')
+            .lte('fecha', hoy + 'T23:59:59')
+            .in('estado', [...ESTADOS_ACTIVOS]);
+
+        if (error) throw error;
 
         pedidosActuales = {};
-        pedidos
-            .filter(p => ESTADOS_ACTIVOS.has(p.estado))
-            .forEach(p => { pedidosActuales[p.id] = p; });
+        (rawPedidos || []).forEach(r => {
+            const id = String(r.id);
+            pedidosActuales[id] = {
+                id:         id,
+                nPedido:    r.n_pedido,
+                nombre:     r.nombre,
+                telefono:   r.telefono,
+                direccion:  r.direccion,
+                productos:  r.productos,
+                total:      r.total,
+                domicilio:  r.domicilio,
+                estado:     r.estado,
+                tsRecibido: r.ts_recibido,
+            };
+        });
 
         gestionarAutoPreparacion(Object.values(pedidosActuales));
         renderLista(Object.values(pedidosActuales));
@@ -126,43 +133,19 @@ async function cargarPedidosActivos() {
             else cerrarModalPedido();
         }
     } catch (err) {
-        console.error('Error cargando pedidos desde Hetzner:', err);
+        console.error('Error cargando pedidos:', err);
     }
-}
-
-let wsConectado = false;
-
-function conectarWebSocket() {
-    ws = new WebSocket(WS_URL);
-
-    ws.onopen = () => {
-        console.log('WebSocket pizzería conectado');
-        if (wsConectado) cargarPedidosActivos(); // refrescar solo en reconexión
-        wsConectado = true;
-    };
-
-    ws.onmessage = (event) => {
-        try {
-            const msg = JSON.parse(event.data);
-            if (msg.tipo === 'callcenter:actualizado') cargarPedidosActivos();
-        } catch (e) {
-            console.error('Error WS:', e);
-        }
-    };
-
-    ws.onclose = () => {
-        if (wsCerradoIntencional) return;
-        console.log('WebSocket desconectado, reconectando en 5s...');
-        setTimeout(conectarWebSocket, 5000);
-    };
-
-    ws.onerror = (err) => console.error('WebSocket error:', err);
 }
 
 function iniciarListener(sede) {
     sedeActual = sede;
     cargarPedidosActivos();
-    conectarWebSocket();
+
+    supabase.channel('pizzeria-pedidos')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_callcenter' }, () => {
+            cargarPedidosActivos();
+        })
+        .subscribe();
 }
 
 // ── AUTO-AVANCE RECIBIDO → EN PREPARACIÓN ─────────────────────────
@@ -187,11 +170,10 @@ function gestionarAutoPreparacion(pedidos) {
         const timerId = setTimeout(async () => {
             timersPreparacion.delete(p.id);
             try {
-                await fetch(`${HETZNER_URL}/callcenter/pedidos/${p.id}/estado`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ estado: 'en preparación' })
-                });
+                await supabase
+                    .from('pedidos_callcenter')
+                    .update({ estado: 'en preparación', ts_preparacion: new Date().toISOString() })
+                    .eq('id', p.id);
             } catch (e) {
                 console.error('Error auto-preparación:', e);
             }
@@ -334,14 +316,23 @@ function renderStepper(p) {
 }
 
 // ── CAMBIAR ESTADO ────────────────────────────────────────────────
+const TS_MAP = {
+    'en preparación': 'ts_preparacion',
+    'despachado':     'ts_despachado',
+    'entregado':      'ts_entregado',
+};
+
 window.cambiarEstado = async (pedidoId, nuevoEstado) => {
     try {
-        const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/${pedidoId}/estado`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: nuevoEstado })
-        });
-        if (!res.ok) throw new Error((await res.json()).error);
+        const campos = { estado: nuevoEstado };
+        if (TS_MAP[nuevoEstado]) campos[TS_MAP[nuevoEstado]] = new Date().toISOString();
+
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update(campos)
+            .eq('id', pedidoId);
+
+        if (error) throw error;
     } catch (e) {
         alert('Error al actualizar el estado. Intenta de nuevo.');
         console.error(e);
@@ -373,12 +364,11 @@ document.getElementById('btn-confirmar-cancelar').addEventListener('click', asyn
     const motivo = document.getElementById('cancelar-motivo').value.trim();
 
     try {
-        const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/${pedidoPendienteCancelar}/cancelar`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ motivoCancelacion: motivo })
-        });
-        if (!res.ok) throw new Error((await res.json()).error);
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ estado: 'cancelado', motivo_cancelacion: motivo || null })
+            .eq('id', pedidoPendienteCancelar);
+        if (error) throw error;
         cerrarModalCancelar();
         cerrarModalPedido();
     } catch (e) {
