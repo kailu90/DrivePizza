@@ -119,29 +119,24 @@
     </div>
 
     <script type="module">
-        import { plantaDB } from './Api/firebaseConfig.js';
-        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { supabase } from './Api/supabaseConfig.js';
 
-        const auth = plantaDB.auth;
-        const db   = plantaDB.db;
+        (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = 'index.html'; return; }
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
+            const { data, error } = await supabase.from('usuarios').select('username, rol').eq('id', user.id).single();
+            if (error || data?.rol !== 'admin') {
                 window.location.href = 'index.html';
                 return;
             }
-            const userDoc = await getDoc(doc(db, 'Usuarios', user.uid));
-            if (!userDoc.exists() || userDoc.data().rol !== 'admin') {
-                window.location.href = 'index.html';
-                return;
-            }
-            document.getElementById('sel-username').textContent = userDoc.data().username || user.email;
+
+            document.getElementById('sel-username').textContent = data.username || user.email;
             document.body.classList.add('loaded');
-        });
+        })();
 
         document.getElementById('sel-btn-logout').addEventListener('click', async () => {
-            await signOut(auth);
+            await supabase.auth.signOut();
             window.location.href = 'index.html';
         });
     </script>
