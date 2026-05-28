@@ -530,17 +530,39 @@
     })();
 
     window.enviarAFirebase = async (datosPedido) => {
-        const res = await fetch('https://api.everest-central.com/callcenter/pedidos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...datosPedido, asesor: asesorActual })
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error ?? 'Error al crear pedido');
+        const { data: nPedido, error: rpcError } = await supabase.rpc('siguiente_n_pedido_callcenter');
+        if (rpcError) throw new Error('Error obteniendo número de pedido: ' + rpcError.message);
+
+        const esReserva = datosPedido.tipo === 'reserva';
+        const fila = {
+            n_pedido:  nPedido,
+            nombre:    datosPedido.nombre,
+            telefono:  datosPedido.telefono,
+            sede:      datosPedido.sede,
+            obs:       datosPedido.obs ?? '',
+            asesor:    asesorActual,
+            canal:     datosPedido.canal,
+            impreso:   false,
+            estado:    'pendiente',
+            fecha:     new Date().toISOString(),
+        };
+
+        if (esReserva) {
+            fila.tipo              = 'reserva';
+            fila.fecha_reserva     = datosPedido.fechaReserva ?? null;
+            fila.hora_reserva      = datosPedido.horaReserva ?? null;
+            fila.cantidad_personas = datosPedido.cantidadPersonas ?? null;
+        } else {
+            fila.direccion = datosPedido.direccion ?? '';
+            fila.pago      = datosPedido.pago;
+            fila.productos = datosPedido.productos;
+            fila.total     = datosPedido.total;
+            fila.domicilio = datosPedido.domicilio ?? null;
         }
-        const pedido = await res.json();
-        return pedido.nPedido;
+
+        const { data, error } = await supabase.from('pedidos_callcenter').insert(fila).select('n_pedido').single();
+        if (error) throw new Error('Error creando pedido: ' + error.message);
+        return data.n_pedido;
     };
 </script>
 
