@@ -1,7 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables } from '../Shared/semanas.js';
+import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 
 let offsetSemanas = 0;
 
@@ -59,7 +59,7 @@ async function cargarInforme() {
                 .select('sede, producto_nombre, cantidad, unidad_medida, precio, valor_total, subtipo')
                 .eq('tipo', 'Devolución')
                 .gte('fecha', desdeDate.toISOString())
-                .lte('fecha', hasta + 'T23:59:59')
+                .lte('fecha', colFechaToUTC(hasta, 'fin'))
                 .order('fecha', { ascending: true }),
         ]);
 

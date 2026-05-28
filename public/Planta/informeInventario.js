@@ -3,6 +3,7 @@ import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/componen
 import { getProductos } from '../Shared/productosService.js';
 
 import { supabase } from '../Api/supabaseConfig.js';
+import { colFechaToUTC } from '../Shared/semanas.js';
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
@@ -162,8 +163,8 @@ async function generarInforme() {
                 .order('id_pedido', { ascending: true }),
             supabase.from('movimientos')
                 .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
-                .gte('fecha', desde + 'T00:00:00')
-                .lte('fecha', hasta + 'T23:59:59')
+                .gte('fecha', colFechaToUTC(desde, 'inicio'))
+                .lte('fecha', colFechaToUTC(hasta, 'fin'))
                 .order('fecha', { ascending: true }),
         ]);
         if (errP) throw errP;

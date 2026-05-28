@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from '../Shared/components.js';
-import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables } from '../Shared/semanas.js';
+import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 
 let sedeUsuario   = null;
 let offsetSemanas = 0;
@@ -58,7 +58,7 @@ async function cargarInforme() {
                 .eq('tipo', 'Devolución')
                 .eq('sede', sedeUsuario)
                 .gte('fecha', desdeDate.toISOString())
-                .lte('fecha', hasta + 'T23:59:59')
+                .lte('fecha', colFechaToUTC(hasta, 'fin'))
                 .order('fecha', { ascending: true })
         ]);
 

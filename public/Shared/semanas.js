@@ -80,3 +80,17 @@ export function toISO(date) {
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
 }
+
+/**
+ * Convierte una fecha local Colombia 'YYYY-MM-DD' a timestamp UTC para queries Supabase.
+ * Colombia siempre UTC-5 (sin cambio de horario).
+ * tipo='inicio' → medianoche Colombia = 05:00 UTC
+ * tipo='fin'    → 23:59:59.999 Colombia = 04:59:59.999 UTC del día siguiente
+ */
+export function colFechaToUTC(fechaLocal, tipo = 'inicio') {
+    const [y, m, d] = fechaLocal.split('-').map(Number);
+    if (tipo === 'inicio') {
+        return new Date(Date.UTC(y, m - 1, d, 5, 0, 0, 0)).toISOString();
+    }
+    return new Date(Date.UTC(y, m - 1, d + 1, 5, 0, 0, 0) - 1).toISOString();
+}

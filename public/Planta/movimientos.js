@@ -2,6 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
+import { colFechaToUTC } from '../Shared/semanas.js';
 
 // ── Auth guard ─────────────────────────────────────────────────────────────
 verificarAccesoPlanta(({ sede }) => {
@@ -435,8 +436,8 @@ async function cargarMovimientos() {
             .select('*')
             .order('fecha', { ascending: false });
 
-        if (desde) query = query.gte('fecha', desde + 'T00:00:00');
-        if (hasta) query = query.lte('fecha', hasta + 'T23:59:59');
+        if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
+        if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
 
         // Filtra por nombre exacto (case-insensitive) cuando el usuario eligió un producto del datalist
         if (productoId && productoNombre) {

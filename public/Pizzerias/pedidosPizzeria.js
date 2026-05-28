@@ -1,5 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
+import { colFechaToUTC } from '../Shared/semanas.js';
 const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparación', 'despachado']);
 
 let sedeActual = '';
@@ -101,8 +102,8 @@ async function cargarPedidosActivos() {
             .from('pedidos_callcenter')
             .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido')
             .eq('sede', sedeActual)
-            .gte('fecha', hoy + 'T00:00:00')
-            .lte('fecha', hoy + 'T23:59:59')
+            .gte('fecha', colFechaToUTC(hoy, 'inicio'))
+            .lte('fecha', colFechaToUTC(hoy, 'fin'))
             .in('estado', [...ESTADOS_ACTIVOS]);
 
         if (error) throw error;

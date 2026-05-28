@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
+import { colFechaToUTC } from "../Shared/semanas.js";
 
 // ── CONDICIONES DE VALIDEZ POR JORNADA ───────────────────────────────────
 // Un asesor entra al ranking si cumple AMBAS:
@@ -239,8 +240,8 @@ async function cargarReporte(fecha) {
         let q = supabase
             .from('pedidos_callcenter')
             .select('n_pedido, asesor, fecha, sede, estado')
-            .gte('fecha', fecha + 'T00:00:00')
-            .lte('fecha', fecha + 'T23:59:59')
+            .gte('fecha', colFechaToUTC(fecha, 'inicio'))
+            .lte('fecha', colFechaToUTC(fecha, 'fin'))
             .order('fecha', { ascending: true });
         const { data, error } = await q;
         if (error) throw error;

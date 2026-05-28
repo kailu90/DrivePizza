@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
+import { colFechaToUTC } from "../Shared/semanas.js";
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
@@ -154,8 +155,8 @@ async function cargaCompleta(filtros) {
         let q = supabase
             .from('pedidos_callcenter')
             .select('*')
-            .gte('fecha', desde + 'T00:00:00')
-            .lte('fecha', hasta + 'T23:59:59')
+            .gte('fecha', colFechaToUTC(desde, 'inicio'))
+            .lte('fecha', colFechaToUTC(hasta, 'fin'))
             .order('fecha', { ascending: false });
 
         if (filtros.sede)   q = q.eq('sede',   filtros.sede);
@@ -651,8 +652,8 @@ async function exportarLiquidacion() {
         let q = supabase
             .from('pedidos_callcenter')
             .select('*')
-            .gte('fecha', desde + 'T00:00:00')
-            .lte('fecha', hasta + 'T23:59:59')
+            .gte('fecha', colFechaToUTC(desde, 'inicio'))
+            .lte('fecha', colFechaToUTC(hasta, 'fin'))
             .order('fecha', { ascending: false });
         if (sedeFilter) q = q.eq('sede', sedeFilter);
         const { data: rawPedidos, error: liqErr } = await q;
