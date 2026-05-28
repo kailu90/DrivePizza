@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Órdenes de Producción - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/adminProductos.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+    <div id="header-container"></div>
+    <div id="sidebar-container"></div>
+
+    <main class="ap-main">
+        <button class="toggle-btn" id="toggle-btn"><</button>
+
+        <!-- Toolbar -->
+        <div class="ap-toolbar">
+            <div class="ap-toolbar__filters">
+                <input type="search" id="ord-search" class="ap-input" placeholder="Buscar orden..." autocomplete="off">
+                <select id="ord-filter-estado" class="ap-select">
+                    <option value="">Todos los estados</option>
+                    <option value="en_proceso">En proceso</option>
+                    <option value="finalizado">Finalizado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+                <input type="date" id="ord-filter-fecha" class="ap-input">
+            </div>
+            <button class="ap-btn ap-btn--primary" id="ord-btn-nuevo">+ Nueva Orden</button>
+        </div>
+
+        <p class="ap-count" id="ord-count"></p>
+
+        <!-- Tabla -->
+        <div class="ap-table-wrap">
+            <table class="ap-table ord-table">
+                <thead>
+                    <tr>
+                        <th class="ap-col-num">#</th>
+                        <th>Nombre</th>
+                        <th>Producto generado</th>
+                        <th class="ap-col-num">Cant.</th>
+                        <th class="ap-col-num">Costo/u</th>
+                        <th>Responsable</th>
+                        <th>Fecha</th>
+                        <th class="ap-col-center">Estado</th>
+                        <th class="ap-col-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ord-tbody">
+                    <tr id="ord-loading-row">
+                        <td colspan="9" class="ap-loading">Cargando órdenes...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal nueva orden -->
+    <dialog id="ord-modal" class="ap-modal-dialog ord-modal-dialog">
+        <form id="ord-form" class="ap-modal__form" novalidate>
+            <h2 class="ap-modal__title">Nueva Orden de Producción</h2>
+
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="ord-f-nombre">Nombre de la orden *</label>
+                    <input class="ap-input" id="ord-f-nombre" type="text" required autocomplete="off" placeholder="Ej: Producción Piña">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="ord-f-responsable">Responsable *</label>
+                    <input class="ap-input" id="ord-f-responsable" type="text" required autocomplete="off">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="ord-f-fecha">Fecha *</label>
+                    <input class="ap-input" id="ord-f-fecha" type="date" required>
+                </div>
+            </div>
+
+            <!-- Materias primas -->
+            <div class="ord-section">
+                <div class="ord-section__header">
+                    <span class="ord-section__title">Materias primas consumidas</span>
+                    <button type="button" class="ap-btn ap-btn--ghost" id="ord-btn-agregar-mat">+ Agregar material</button>
+                </div>
+                <table class="ord-mat-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40%">Producto</th>
+                            <th style="width:16%">Cantidad</th>
+                            <th style="width:20%">Costo unitario ($)</th>
+                            <th style="width:16%">Subtotal</th>
+                            <th style="width:8%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ord-mat-tbody"></tbody>
+                </table>
+                <p class="ord-empty-msg" id="ord-mat-empty">Agrega al menos un material</p>
+            </div>
+
+            <!-- Producto generado -->
+            <div class="ord-section">
+                <span class="ord-section__title">Producto generado</span>
+                <div class="ap-modal__grid" style="margin-top:1rem">
+                    <div class="ap-field ap-field--full" style="position:relative">
+                        <label class="ap-label" for="ord-f-salida-buscar">Buscar producto *</label>
+                        <input class="ap-input" id="ord-f-salida-buscar" type="text" autocomplete="off" placeholder="Escribe el nombre del producto...">
+                        <input type="hidden" id="ord-f-salida-id">
+                        <div class="ord-autocomplete" id="ord-f-salida-drop"></div>
+                    </div>
+                    <div class="ap-field">
+                        <label class="ap-label" for="ord-f-salida-cant">Cantidad producida *</label>
+                        <input class="ap-input" id="ord-f-salida-cant" type="number" min="1" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Costo calculado -->
+            <div class="ord-costos">
+                <span>Costo total materiales: <strong id="ord-costo-total">$0</strong></span>
+                <span>Costo por unidad: <strong id="ord-costo-unidad">$0</strong></span>
+            </div>
+
+            <!-- Notas -->
+            <div class="ap-field ap-field--full" style="margin-top:1.6rem">
+                <label class="ap-label" for="ord-f-notas">Notas</label>
+                <textarea class="ap-input" id="ord-f-notas" rows="2" style="resize:vertical"></textarea>
+            </div>
+
+            <p class="ap-modal__error" id="ord-modal-error"></p>
+
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="ord-btn-cancelar-modal">Cancelar</button>
+                <button type="submit" class="ap-btn ap-btn--ghost" id="ord-btn-guardar-proceso">Guardar en proceso</button>
+                <button type="button" class="ap-btn ap-btn--primary" id="ord-btn-guardar-finalizar">Guardar y finalizar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal detalle (solo lectura) -->
+    <dialog id="ord-modal-detalle" class="ap-modal-dialog ord-modal-dialog">
+        <div class="ap-modal__form">
+            <h2 class="ap-modal__title" id="ord-det-title"></h2>
+            <div id="ord-det-body"></div>
+            <div class="ap-modal__actions" style="justify-content:flex-end;margin-top:2rem">
+                <button type="button" class="ap-btn ap-btn--ghost" id="ord-det-cerrar">Cerrar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script type="module" src="./ordenes.js"></script>
+</body>
+</html>

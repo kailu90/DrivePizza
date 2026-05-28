@@ -1,13 +1,8 @@
-import { HETZNER_URL, WS_URL } from '../Api/config.js'
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { runTransaction, doc, updateDoc, increment, collection, getDocs, getDoc, query, orderBy, serverTimestamp, where} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js'
-import { registrarMovimiento, ejecutarAjusteStock, notificarCacheProducto } from './inventoryService.js';
+import { supabase } from '../Api/supabaseConfig.js';
+import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js';
+import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar } from '../Shared/components.js';
-
-const db   = plantaDB.db;
-const auth = plantaDB.auth;
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 CargarSidebar();
@@ -85,8 +80,7 @@ const formatter = new Intl.NumberFormat('es-CO', {
 // ── IDs de cajas/empaques (se muestran en grupo separado) ──────────────────
 const IDS_CAJAS = new Set([28, 29, 30, 31, 32, 33, 34, 35, 36, 63, 64]);
 
-// ──Productos para la tabla ──────────────────────────────────────
-
+// ── Productos para la tabla ──────────────────────────────────────
 let todosLosProductos = [];
 
 // ── Render tabla ───────────────────────────────────────────────────────────
@@ -99,7 +93,7 @@ function renderProductos(productos) {
 
     productos.forEach(product => {
         const totalProductValue = product.stock * product.price;
-        const esCaja = IDS_CAJAS.has(Number(product.id_product));
+        const esCaja = IDS_CAJAS.has(Number(product.id));
 
         if (product.stock >= 0) {
             if (esCaja) {
@@ -113,7 +107,7 @@ function renderProductos(productos) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="inventory-management__cell">${product.id_product ?? ''}</td>
+            <td class="inventory-management__cell">${product.id ?? ''}</td>
             <td class="inventory-management__cell" title="${product.name}">${product.name}</td>
             <td class="inventory-management__cell">${product.proveedorNombre || '—'}</td>
             <td class="inventory-management__cell">${product.measurementUnit}</td>
@@ -135,16 +129,14 @@ function renderProductos(productos) {
 // ── Cargar productos ───────────────────────────────────────────────────────
 async function cargarProductos(forzar = false) {
     try {
-        const [productos] = await Promise.all([getProductos(forzar), obtenerProveedoresParaStock()])
-        const sinNombre = productos.filter(p => !p.name)
-        console.log('Productos sin nombre:', sinNombre)
-        todosLosProductos = productos.slice().sort((a, b) => 
+        const [productos] = await Promise.all([getProductos(forzar), obtenerProveedoresParaStock()]);
+        todosLosProductos = productos.slice().sort((a, b) =>
             (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
-        )
-        renderProductos(todosLosProductos)
+        );
+        renderProductos(todosLosProductos);
     } catch (error) {
-        console.error('Error al cargar productos:', error)
-        productsContainer.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:red;">Error al cargar productos.</td></tr>`
+        console.error('Error al cargar productos:', error);
+        productsContainer.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:red;">Error al cargar productos.</td></tr>`;
     }
 }
 cargarProductos();
@@ -167,7 +159,7 @@ const fCheck = {
 };
 
 function aplicarFiltros() {
-    const term      = searchInput.value.trim().toLowerCase();
+    const term       = searchInput.value.trim().toLowerCase();
     const provFilter = document.getElementById('inv-filter-proveedor').value;
     let filtrados = todosLosProductos;
     if (term)       filtrados = filtrados.filter(p => p.name.toLowerCase().includes(term));
@@ -177,7 +169,7 @@ function aplicarFiltros() {
     if (fCheck.soloConStock())     filtrados = filtrados.filter(p => (p.stock ?? 0) > 0);
     if (fCheck.soloActivos())      filtrados = filtrados.filter(p => p.active !== false);
     if (fCheck.soloInactivos())    filtrados = filtrados.filter(p => p.active === false);
-    if (fCheck.soloCajas())        filtrados = filtrados.filter(p => IDS_CAJAS.has(Number(p.id_product)));
+    if (fCheck.soloCajas())        filtrados = filtrados.filter(p => IDS_CAJAS.has(Number(p.id)));
     if (fCheck.soloSinPrecio())    filtrados = filtrados.filter(p => !p.price || p.price === 0);
     if (fCheck.soloNegativos())    filtrados = filtrados.filter(p => (p.stock ?? 0) < 0);
     if (fCheck.ocultarInactivos()) filtrados = filtrados.filter(p => p.active !== false);
@@ -283,9 +275,13 @@ async function obtenerProveedoresParaStock() {
     try {
         let proveedores = modalCacheRead('inv_proveedores');
         if (!proveedores) {
-            const q = query(collection(db, 'Planta', 'principal', 'Proveedores'), orderBy('name', 'asc'));
-            const snap = await getDocs(q);
-            proveedores = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
+            const { data, error } = await supabase
+                .from('proveedores')
+                .select('id,nombre')
+                .eq('active', true)
+                .order('nombre');
+            if (error) throw error;
+            proveedores = data.map(p => ({ id: String(p.id), name: p.nombre }));
             modalCacheSave('inv_proveedores', proveedores);
         }
         _proveedoresList = proveedores;
@@ -378,17 +374,13 @@ stockForm.addEventListener('submit', (event) => {
         btnEnviar.textContent = 'Procesando...';
 
         try {
-            const productRef = doc(db, 'Planta', 'principal', 'Productos', productId);
-            await runTransaction(db, async (transaction) => {
-                const productSnap = await transaction.get(productRef);
-                if (!productSnap.exists()) throw 'Producto no encontrado.';
-                transaction.update(productRef, {
-                    stock: increment(quantityToAdd),
-                    ultimaActualizacion: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
+            // 1. Incrementar stock en Supabase
+            const { error: errStock } = await supabase.rpc('increment_stock', {
+                p_id: parseInt(productId), p_delta: quantityToAdd
             });
+            if (errStock) throw errStock;
 
+            // 2. Registrar movimiento + actualizar proveedor del producto en paralelo
             await Promise.all([
                 registrarMovimiento({
                     tipo:            'ENTRADA',
@@ -400,24 +392,23 @@ stockForm.addEventListener('submit', (event) => {
                     unidadMedida,
                     motivo:          'Ingreso Manual Stock',
                     notas:           observations || '',
-                    usuario:         usuarioActual
+                    usuario:         usuarioActual,
                 }),
-                updateDoc(doc(db, 'Planta', 'principal', 'Productos', productId), {
-                    proveedorId:     supplierId,
-                    proveedorNombre: supplierName,
-                })
+                supabase.from('productos').update({
+                    proveedor_id:     parseInt(supplierId),
+                    proveedor_nombre: supplierName,
+                }).eq('id', parseInt(productId)),
             ]);
 
-            alert(`✅ Ingreso exitoso\n\n${productName}\n${quantityToAdd} ${unidad}${quantityToAdd !== 1 ? 's' : ''}`);
+            alert(`Ingreso exitoso\n\n${productName}\n${quantityToAdd} ${unidad}${quantityToAdd !== 1 ? 's' : ''}`);
 
             actualizarStockEnCache(productId, quantityToAdd);
-            notificarCacheProducto(productId);
             aplicarFiltros();
             closeModal();
 
         } catch (error) {
-            console.error('❌ Error en la transacción:', error);
-            alert('Error: ' + error);
+            console.error('Error en la transacción:', error);
+            alert('Error: ' + error.message);
         } finally {
             btnEnviar.disabled = false;
             btnEnviar.textContent = 'Enviar';
@@ -485,8 +476,12 @@ ajusteResultados?.addEventListener('click', async (e) => {
     ajusteDifWrap.style.display = 'none';
     ajusteStockReal.value = '';
     try {
-        const snap = await getDoc(doc(db, 'Planta', 'principal', 'Productos', item.dataset.id));
-        ajusteStockActual.value = snap.exists() ? (snap.data().stock ?? 0) : '—';
+        const { data, error } = await supabase
+            .from('productos')
+            .select('stock')
+            .eq('id', parseInt(item.dataset.id))
+            .single();
+        ajusteStockActual.value = error ? '—' : (data.stock ?? 0);
     } catch {
         ajusteStockActual.value = '—';
     }
@@ -538,64 +533,41 @@ formAjuste?.addEventListener('submit', async (e) => {
         });
 
         const signo = diferencia >= 0 ? `+${diferencia}` : `${diferencia}`;
-        alert(`✅ Ajuste realizado\n\n${productName}\n${stockAnterior} → ${stockNuevo} (${signo})`);
+        alert(`Ajuste realizado\n\n${productName}\n${stockAnterior} → ${stockNuevo} (${signo})`);
 
         invalidarProductos();
         await cargarProductos(true);
         closeModalAjuste();
     } catch (error) {
-        console.error('❌ Error en ajuste:', error);
-        alert('Error al guardar el ajuste: ' + error);
+        console.error('Error en ajuste:', error);
+        alert('Error al guardar el ajuste: ' + error.message);
     } finally {
         btnAjusteEnviar.disabled = false;
         btnAjusteEnviar.textContent = 'Guardar Ajuste';
     }
 });
 
-// ── WebSocket: actualización en tiempo real ────────────────────────────────
-let wsInventario;
-function conectarWebSocketInventario() {
-    wsInventario = new WebSocket(WS_URL);
+// ── Realtime: actualización en tiempo real ─────────────────────────────────
+supabase.channel('inventario-productos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, async () => {
+        invalidarProductos();
+        await cargarProductos(true);
+    })
+    .subscribe();
 
-    wsInventario.onopen = () => {
-        console.log('Inventario WebSocket conectado');
-    };
-
-    wsInventario.onmessage = (event) => {
-        try {
-            const mensaje = JSON.parse(event.data);
-            if (mensaje.tipo === 'planta:productos:actualizado') {
-                cargarProductos(true);
-            }
-        } catch (e) {
-            console.error('Error procesando mensaje WebSocket inventario:', e);
-        }
-    };
-
-    wsInventario.onclose = () => {
-        console.log('Inventario WebSocket desconectado, reconectando en 5s...');
-        setTimeout(conectarWebSocketInventario, 5000);
-    };
-
-    wsInventario.onerror = (err) => {
-        console.error('Inventario WebSocket error:', err);
-    };
-}
-conectarWebSocketInventario();
-
-// ── Sincronizar productos con Firestore ────────────────────────────────────
+// ── Sincronizar productos (recarga directa desde Supabase) ─────────────────
 document.getElementById('btn-sync-productos')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-sync-productos');
     btn.disabled = true;
     btn.textContent = 'Sincronizando...';
     try {
-        const res = await fetch(`${HETZNER_URL}/planta/cache/sync-productos`, { method: 'POST' });
-        const data = await res.json();
-        btn.textContent = res.ok ? `✅ ${data.sincronizados ?? 0} productos` : 'Error';
+        invalidarProductos();
+        await cargarProductos(true);
+        btn.textContent = `Sincronizado`;
     } catch {
         btn.textContent = 'Error';
     }
-    setTimeout(() => { btn.textContent = '🔄 Sincronizar'; btn.disabled = false; }, 3000);
+    setTimeout(() => { btn.textContent = 'Sincronizar'; btn.disabled = false; }, 3000);
 });
 
 // ── Exportar inventario a Excel ────────────────────────────────────────────
@@ -606,7 +578,7 @@ document.getElementById('btn-exportar-excel')?.addEventListener('click', () => {
     }
 
     const filas = productosRenderizados.map(p => ({
-        'ID':             p.id_product ?? '',
+        'ID':             p.id ?? '',
         'Producto':       p.name,
         'Proveedor':      p.proveedorNombre || '',
         'Unidad':         p.measurementUnit || '',

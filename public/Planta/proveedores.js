@@ -1,13 +1,7 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import {
-  collection, getDocs, addDoc, doc, updateDoc,
-  query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-
-const db = plantaDB.db;
 
 let usuarioActual = 'Admin';
 
@@ -54,10 +48,20 @@ async function loadProveedores() {
         allProveedores = cached;
         return;
     }
-    const snap = await getDocs(
-        query(collection(db, 'Planta', 'principal', 'Proveedores'), orderBy('name'))
-    );
-    allProveedores = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    const { data, error } = await supabase
+        .from('proveedores')
+        .select('id,nombre,telefono,asesor,descripcion,active')
+        .order('nombre')
+    if (error) throw error
+    allProveedores = data.map(p => ({
+        _docId:      String(p.id),
+        idSupplier:  p.id,
+        name:        p.nombre,
+        telefono:    p.telefono,
+        asesor:      p.asesor,
+        descripcion: p.descripcion,
+        active:      p.active,
+    }))
     cacheGuardar(allProveedores);
 }
 
@@ -119,7 +123,8 @@ document.getElementById('prov-tbody').addEventListener('change', async (e) => {
     const newActive = checkbox.checked;
     const p = allProveedores.find(x => x._docId === docId);
     try {
-        await updateDoc(doc(db, 'Planta', 'principal', 'Proveedores', docId), { active: newActive });
+        const { error } = await supabase.from('proveedores').update({ active: newActive }).eq('id', parseInt(docId))
+        if (error) throw error
         if (p) p.active = newActive;
         cacheGuardar(allProveedores);
         renderTable();
@@ -189,13 +194,15 @@ form.addEventListener('submit', async (e) => {
     try {
         if (isEdit) {
             const antes = allProveedores.find(p => p._docId === editingDocId);
-            const data = { name: nombre, telefono, asesor, descripcion };
-            await updateDoc(doc(db, 'Planta', 'principal', 'Proveedores', editingDocId), data);
+            const supaData = { nombre, telefono: telefono || null, asesor: asesor || null, descripcion: descripcion || null }
+            const { error } = await supabase.from('proveedores').update(supaData).eq('id', parseInt(editingDocId))
+            if (error) throw error
             const idx = allProveedores.findIndex(p => p._docId === editingDocId);
-            if (idx !== -1) allProveedores[idx] = { ...allProveedores[idx], ...data };
+            if (idx !== -1) allProveedores[idx] = { ...allProveedores[idx], name: nombre, telefono, asesor, descripcion };
             allProveedores.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
             cacheGuardar(allProveedores);
 
+            const data = { name: nombre, telefono, asesor, descripcion };
             const camposAuditables = ['name', 'telefono', 'asesor', 'descripcion'];
             const cambios = camposAuditables
                 .filter(campo => String(antes?.[campo] ?? '') !== String(data[campo] ?? ''))
@@ -211,11 +218,11 @@ form.addEventListener('submit', async (e) => {
                 }).catch(console.error);
             }
         } else {
-            const maxId = allProveedores.reduce((m, p) => Math.max(m, p.idSupplier || 0), 0);
-            const nuevoId = maxId + 1;
-            const data = { idSupplier: nuevoId, name: nombre, telefono, asesor, descripcion };
-            const ref = await addDoc(collection(db, 'Planta', 'principal', 'Proveedores'), data);
-            allProveedores.push({ _docId: ref.id, ...data });
+            const supaData = { nombre, telefono: telefono || null, asesor: asesor || null, descripcion: descripcion || null, active: true }
+            const { data: newRow, error } = await supabase.from('proveedores').insert(supaData).select().single()
+            if (error) throw error
+            const newId = String(newRow.id)
+            allProveedores.push({ _docId: newId, idSupplier: newRow.id, name: nombre, telefono, asesor, descripcion, active: true });
             allProveedores.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
             cacheGuardar(allProveedores);
 

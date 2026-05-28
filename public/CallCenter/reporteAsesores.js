@@ -1,11 +1,6 @@
-import { plantaDB } from "../Api/firebaseConfig.js";
-import { collection, query, where, getDocs, Timestamp, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
-
-const USAR_HETZNER = true;
-import { HETZNER_URL } from '../Api/config.js'
 
 // ── CONDICIONES DE VALIDEZ POR JORNADA ───────────────────────────────────
 // Un asesor entra al ranking si cumple AMBAS:
@@ -21,9 +16,7 @@ const JORNADAS = [
 ];
 
 function toDate(fecha) {
-    if (fecha?.toDate)        return fecha.toDate();
-    if (fecha?._seconds)      return new Date(fecha._seconds * 1000);
-    return new Date(fecha);
+    return fecha ? new Date(fecha) : new Date();
 }
 
 function getJornada(fecha) {
@@ -243,22 +236,17 @@ async function cargarReporte(fecha) {
     contenedor.innerHTML = `<p class="ra-empty">Cargando...</p>`;
 
     try {
-        let pedidos = [];
-
-        if (USAR_HETZNER) {
-            const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/rango?desde=${fecha}&hasta=${fecha}&sede=&estado=`);
-            pedidos = await res.json();
-        } else {
-            const COLECCION = collection(plantaDB.db, "CallCenter", "principal", "PedidosCallCenter");
-            const q = query(
-                COLECCION,
-                where("fecha", ">=", Timestamp.fromDate(new Date(fecha + "T00:00:00"))),
-                where("fecha", "<=", Timestamp.fromDate(new Date(fecha + "T23:59:59"))),
-                orderBy("fecha", "asc")
-            );
-            const snap = await getDocs(q);
-            pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        }
+        let q = supabase
+            .from('pedidos_callcenter')
+            .select('n_pedido, asesor, fecha, sede, estado')
+            .gte('fecha', fecha + 'T00:00:00')
+            .lte('fecha', fecha + 'T23:59:59')
+            .order('fecha', { ascending: true });
+        const { data, error } = await q;
+        if (error) throw error;
+        let pedidos = (data || []).map(p => ({
+            nPedido: p.n_pedido, asesor: p.asesor, fecha: p.fecha, sede: p.sede, estado: p.estado
+        }));
 
         if (sedeUsuario) pedidos = pedidos.filter(p => p.sede === sedeUsuario);
 
@@ -342,21 +330,21 @@ async function cargarReporte(fecha) {
 // ── AUTH ──────────────────────────────────────────────────────────────────
 mostrarSkeleton('historial');
 
-async function obtenerUsuarioCC(user) {
+async function obtenerUsuarioCC() {
     if (window.parent !== window && window.parent._usuarioCCPromise) {
         return await window.parent._usuarioCCPromise;
     }
-    const snap = await getDoc(doc(plantaDB.db, "Usuarios", user.uid));
-    if (!snap.exists()) throw new Error("Usuario no encontrado");
-    const d = snap.data();
-    return { uid: user.uid, email: user.email, username: d.username || "", sede: d.sede || "", rol: d.rol || "" };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+    if (!data) return null;
+    return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "" };
 }
 
-onAuthStateChanged(plantaDB.auth, async (user) => {
-    if (!user) { window.top.location.href = "../index.html"; return; }
+(async () => {
     try {
-        const usuario = await obtenerUsuarioCC(user);
-        if (!usuario.rol) { window.top.location.href = "../index.html"; return; }
+        const usuario = await obtenerUsuarioCC();
+        if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
 
         sedeUsuario = usuario.rol === 'pizzeria' ? usuario.sede : null;
         CargarHeader(usuario.sede, './callcenter.html');
@@ -380,4 +368,4 @@ onAuthStateChanged(plantaDB.auth, async (user) => {
         console.error('Error en auth reporte asesores:', err);
         document.body.classList.add('loaded');
     }
-});
+})();

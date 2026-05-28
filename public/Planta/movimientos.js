@@ -1,39 +1,46 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import {
-    collection, getDocs, query, orderBy, where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 
-import { HETZNER_URL } from '../Api/config.js';
-
-const db = plantaDB.db;
-
 // ── Auth guard ─────────────────────────────────────────────────────────────
-verificarAccesoPlanta(({ sede, rol }) => {
+verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarSidebar();
-
-    if (['admin', 'planta-admin'].includes(rol)) {
-        const btnSync = document.getElementById('mv-btn-sync-sqlite');
-        btnSync.style.display = '';
-        btnSync.addEventListener('click', async () => {
-            btnSync.disabled = true;
-            btnSync.textContent = 'Sincronizando...';
-            try {
-                const res = await fetch(`${HETZNER_URL}/planta/movimientos/sync`, { method: 'POST' });
-                const data = await res.json();
-                btnSync.textContent = `Listo: ${data.insertados ?? 0} nuevos`;
-                setTimeout(() => { btnSync.textContent = 'Sincronizar'; btnSync.disabled = false; }, 3000);
-            } catch (e) {
-                btnSync.textContent = 'Error';
-                setTimeout(() => { btnSync.textContent = 'Sincronizar'; btnSync.disabled = false; }, 3000);
-            }
-        });
-    }
 });
 
+
+// ── Normaliza fila Supabase al formato camelCase usado en todo el módulo ────
+function normalizarMovimiento(row) {
+    return {
+        fecha:           row.fecha,
+        tipo:            row.tipo,
+        entidad:         row.entidad,
+        productoNombre:  row.producto_nombre,
+        cantidad:        row.cantidad,
+        pedidoNumero:    row.pedido_numero,
+        motivo:          row.motivo,
+        usuario:         row.usuario,
+        notas:           row.notas,
+        referenciaId:    row.referencia_id,
+        sede:            row.sede,
+        precio:          row.precio,
+        valorTotal:      row.valor_total,
+        unidadMedida:    row.unidad_medida,
+        proveedorNombre: row.proveedor_nombre,
+        proveedorId:     row.proveedor_id,
+        stockAnterior:   row.stock_anterior,
+        stockNuevo:      row.stock_nuevo,
+        diferencia:      row.diferencia,
+        cambios:         row.cambios,
+        productos:       row.productos,
+        subtipo:         row.subtipo,
+        // Campos de formato anterior (una sola modificación de campo)
+        campo:           row.campo,
+        valorAnterior:   row.valor_anterior,
+        valorNuevo:      row.valor_nuevo,
+    };
+}
 
 // ════════════════════════ UTILIDADES ════════════════════════════════════════
 
@@ -49,16 +56,6 @@ function toTitleCase(str) {
 // ── Helpers de fecha ───────────────────────────────────────────────────────
 function toISO(date) {
     return date.toISOString().split('T')[0];
-}
-
-function inicioDelDia(isoStr) {
-    const d = new Date(isoStr + 'T00:00:00');
-    return d;
-}
-
-function finDelDia(isoStr) {
-    const d = new Date(isoStr + 'T23:59:59');
-    return d;
 }
 
 function inicioSemana() {
@@ -427,53 +424,33 @@ async function cargarMovimientos() {
     tbody.innerHTML = '<tr><td colspan="6" class="mv-loading">Cargando...</td></tr>';
     document.getElementById('mv-btn-resumen').style.display = 'none';
 
-    const productoId = getProductoId();
+    const productoId    = getProductoId();
+    const productoNombre = productoInput.value.trim();
     const desde = desdeEl.value;
     const hasta = hastaEl.value;
 
     try {
+        let query = supabase
+            .from('movimientos')
+            .select('*')
+            .order('fecha', { ascending: false });
+
+        if (desde) query = query.gte('fecha', desde + 'T00:00:00');
+        if (hasta) query = query.lte('fecha', hasta + 'T23:59:59');
+
+        // Filtra por nombre exacto (case-insensitive) cuando el usuario eligió un producto del datalist
+        if (productoId && productoNombre) {
+            query = query.ilike('producto_nombre', productoNombre);
+        }
+
+        const { data: rows, error } = await query;
+        if (error) throw error;
+
+        allMovimientos = (rows || []).map(normalizarMovimiento);
+
+        // Resumen de salidas por día: solo cuando hay producto exacto + rango de fechas
         if (productoId && desde && hasta) {
-            // ── Consulta por producto → Hetzner/SQLite (0 lecturas Firestore) ──
-            const tipo = tipoEl.value
-                ? tipoEl.value.toUpperCase().replace('ó', 'O').replace('Ó', 'O')
-                : '';
-            const params = new URLSearchParams({ productoId, desde, hasta });
-            if (tipo) params.append('tipo', tipo);
-
-            const res  = await fetch(`${HETZNER_URL}/planta/movimientos?${params}`);
-            const rows = await res.json();
-
-            // Adaptar estructura plana de SQLite al formato que espera renderMovimientos
-            allMovimientos = rows.map(r => ({
-                fecha:          r.fecha,
-                tipo:           r.tipo,
-                productoNombre: r.productoNombre,
-                cantidad:       r.cantidad,
-                pedidoNumero:   r.pedidoNumero,
-                entidad:        r.entidad,
-                referenciaId:   r.referenciaId,
-                motivo:         r.motivo,
-                usuario:        r.usuario,
-                sede:           r.sede,
-                precio:         r.precio,
-                valorTotal:     r.valorTotal,
-            }));
-
-            renderResumen(rows);
-        } else {
-            // ── Sin producto seleccionado → Firestore (comportamiento original) ──
-            const ref = collection(db, 'Planta', 'principal', 'Movimientos');
-            let q;
-            if (desde && hasta) {
-                q = query(ref,
-                    where('fecha', '>=', inicioDelDia(desde)),
-                    where('fecha', '<=', finDelDia(hasta)),
-                    orderBy('fecha', 'desc'));
-            } else {
-                q = query(ref, orderBy('fecha', 'desc'));
-            }
-            const snap = await getDocs(q);
-            allMovimientos = snap.docs.map(d => d.data());
+            renderResumen(allMovimientos);
         }
 
         paginaActual = 1;

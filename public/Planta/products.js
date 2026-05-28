@@ -1,16 +1,8 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { collection, getDocs, addDoc, doc, runTransaction, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { RECARGO_SERVICIO } from './planta.config.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { getProductos } from '../Shared/productosService.js';
 import { registrarMovimiento } from './inventoryService.js';
-
-const db = plantaDB.db;
-
-import { HETZNER_URL } from '../Api/config.js';
-function notificarCachePedido(docId) {
-    fetch(`${HETZNER_URL}/planta/cache/pedido/${docId}`, { method: 'POST' }).catch(() => {});
-}
 
 // Estado del módulo
 let productsData = [];
@@ -74,10 +66,10 @@ function mostrarContexto(fechaTexto) {
 }
 
 // ── Sedes ─────────────────────────────────────────────────────────────────────
-const CACHE_SEDES_KEY = 'planta_sedes';
+const CACHE_SEDES_KEY = 'planta_sedes_sup';
 const CACHE_SEDES_TTL = 60 * 60 * 1000; // 60 min
 
-async function fetchSedesFromFirestore() {
+async function fetchSedesFromSupabase() {
   try {
     const raw = sessionStorage.getItem(CACHE_SEDES_KEY);
     if (raw) {
@@ -88,9 +80,13 @@ async function fetchSedesFromFirestore() {
       }
       sessionStorage.removeItem(CACHE_SEDES_KEY);
     }
-    const snap = await getDocs(query(collection(db, 'Sedes'), orderBy("name")));
-    snap.forEach(d => sedesData.push(d.data()));
-    sessionStorage.setItem(CACHE_SEDES_KEY, JSON.stringify({ t: Date.now(), data: sedesData }));
+    const { data: rows, error } = await supabase
+      .from('sedes')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    sedesData.push(...rows);
+    sessionStorage.setItem(CACHE_SEDES_KEY, JSON.stringify({ t: Date.now(), data: rows }));
   } catch (e) {
     console.error("Error al obtener las sedes:", e);
   }
@@ -104,7 +100,7 @@ async function initializeForm({ username, sede, rol }) {
   sedeAsignada    = esPlanta ? null : sede;
   usernameUsuario = username;
 
-  await fetchSedesFromFirestore();
+  await fetchSedesFromSupabase();
 
   userSelect.innerHTML = '<option value="" disabled selected>Seleccionar</option>';
   sedesData.forEach(s => {
@@ -158,7 +154,7 @@ async function initializeForm({ username, sede, rol }) {
 // ── Categorías ────────────────────────────────────────────────────────────────
 async function fetchCategoriasMap() {
   const CACHE_KEY = 'products_categorias';
-  const TTL = 60 * 60 * 1000; // 60 min (cambian muy poco)
+  const TTL = 60 * 60 * 1000;
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
     if (raw) {
@@ -168,12 +164,13 @@ async function fetchCategoriasMap() {
     }
   } catch {}
 
-  const snap = await getDocs(query(collection(db, 'Planta', 'principal', 'Categorias'), orderBy('name')));
+  const { data: rows, error } = await supabase
+    .from('categorias')
+    .select('id_category, name')
+    .order('name');
+  if (error) throw new Error(error.message);
   const map = {};
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.idCategory) map[data.idCategory] = data.name;
-  });
+  rows.forEach(row => { if (row.id_category) map[row.id_category] = row.name; });
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data: map })); } catch {}
   return map;
 }
@@ -278,8 +275,6 @@ function createOutOfStockElement() {
 }
 
 // ── Stepper genérico ─────────────────────────────────────────────────────────
-// values: array de cantidades permitidas (productos con presentaciones)
-// max:    límite superior (productos con stock finito), Infinity si sin límite
 function createStepper(product, { max = Infinity, values = null } = {}) {
   const wrapper = document.createElement('div');
   wrapper.className = 'stepper';
@@ -521,7 +516,7 @@ document.getElementById('mc-enviar').addEventListener('click', async () => {
       total,
       recargo: netCost * RECARGO_SERVICIO,
       orderNotes: obs,
-      idUser: sedeDoc ? (sedeDoc.idUser || null) : null,
+      idUser: sedeDoc ? (sedeDoc.id_user || null) : null,
       status: 'pendiente',
       orderDate: new Date().toISOString()
     };
@@ -563,21 +558,33 @@ document.getElementById('mc-enviar').addEventListener('click', async () => {
   }
 });
 
-// ── Transacción Firestore ─────────────────────────────────────────────────────
+// ── Crear pedido en Supabase con ID consecutivo atómico ───────────────────────
 async function saveOrderWithConsecutiveId(pedidoData) {
-  const contadorRef = doc(db, "Planta", "principal", "Contadores", "idPedidos");
-  const pedidosRef = collection(db, "Planta", "principal", "PedidosPlanta");
+  // Obtiene el siguiente id_pedido vía secuencia PostgreSQL (atómico)
+  const { data: nuevoId, error: seqError } = await supabase.rpc('siguiente_id_pedido');
+  if (seqError) throw seqError;
 
-  let nuevoId;
-  let docId;
-  await runTransaction(db, async (transaction) => {
-    const contadorDoc = await transaction.get(contadorRef);
-    nuevoId = contadorDoc.exists() ? contadorDoc.data().ultimoId + 1 : 1500;
-    const ref = await addDoc(pedidosRef, { ...pedidoData, idPedido: nuevoId, updatedAt: serverTimestamp() });
-    docId = ref.id;
-    transaction.set(contadorRef, { ultimoId: nuevoId });
-  });
+  const { data: newRow, error: insertError } = await supabase
+    .from('pedidos_planta')
+    .insert({
+      id_pedido:     nuevoId,
+      user_sede:     pedidoData.user,
+      delivery_date: pedidoData.deliveryDate,
+      products:      pedidoData.products,
+      net_cost:      pedidoData.netCost,
+      total:         pedidoData.total,
+      recargo:       pedidoData.recargo,
+      order_notes:   pedidoData.orderNotes || null,
+      id_user:       pedidoData.idUser,
+      status:        pedidoData.status,
+      order_date:    pedidoData.orderDate,
+      eliminado:     false,
+      updated_at:    new Date().toISOString()
+    })
+    .select('id')
+    .single();
 
-  notificarCachePedido(docId);
-  return { nuevoId, docId };
+  if (insertError) throw insertError;
+
+  return { nuevoId, docId: String(newRow.id) };
 }

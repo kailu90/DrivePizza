@@ -311,9 +311,7 @@
     <script src="app.js"></script>
 
     <script type="module">
-    import { plantaDB } from "../Api/firebaseConfig.js";
-    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { supabase } from '../Api/supabaseConfig.js';
     import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
     import { domicilios } from "./domicilios.js";
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
@@ -340,13 +338,10 @@
 
     document.getElementById("btn-logout").addEventListener("click", async () => {
         if (confirm("¿Cerrar sesión?")) {
-            await signOut(plantaDB.auth);
+            await supabase.auth.signOut();
             window.location.href = "../index.html";
         }
     });
-
-    const db = plantaDB.db;
-    const auth = plantaDB.auth;
 
     let asesorActual = "";
 
@@ -415,21 +410,22 @@
         window.actualizarTotalCheckout?.();
     };
 
-    async function obtenerUsuarioCC(user) {
+    async function obtenerUsuarioCC() {
         if (window.parent !== window && window.parent._usuarioCCPromise) {
             return await window.parent._usuarioCCPromise;
         }
         // Fallback: acceso directo sin shell
-        const userDoc = await getDoc(doc(db, "Usuarios", user.uid));
-        if (!userDoc.exists()) throw new Error("Usuario no encontrado");
-        const d = userDoc.data();
-        return { uid: user.uid, email: user.email, username: d.username || "", sede: d.sede || "", rol: d.rol || "" };
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+        if (!data) return null;
+        return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "" };
     }
 
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.top.location.href = "../index.html"; return; }
+    (async () => {
         try {
-            const usuario = await obtenerUsuarioCC(user);
+            const usuario = await obtenerUsuarioCC();
+            if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
             asesorActual = usuario.username;
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
@@ -438,7 +434,7 @@
         }
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
-    });
+    })();
 
     // ── Estado SIP desde el shell padre ──────────────────────────────────────
     const SIP_LABELS = { registered: 'Registrado', incall: 'En llamada', ringing: 'Llamada entrante', offline: 'Desconectado' };

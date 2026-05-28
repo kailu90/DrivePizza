@@ -1,5 +1,4 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js'
 
 export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
@@ -59,7 +58,8 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
     // Lógica del botón logout
     document.getElementById("link_logout")?.addEventListener("click", async () => {
         if (confirm("¿Cerrar sesión?")) {
-            await signOut(plantaDB.auth);
+            await supabase.auth.signOut()
+            window.top.location.href = '../index.html'
         }
     });
 }

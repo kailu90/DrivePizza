@@ -234,6 +234,134 @@
 
 /* ap-modal__error, ap-modal__actions → movidos a styles.css (globales) */
 
+/* ── ap-btn--danger (global para páginas que importan adminProductos.css) ───── */
+.ap-btn--danger {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: .5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+.ap-btn--danger:hover { filter: brightness(1.1); }
+
+/* ── Órdenes de Producción ──────────────────────────────────────────────────── */
+.ord-table th:nth-child(1) { width: 5%;  }
+.ord-table th:nth-child(2) { width: 17%; }
+.ord-table th:nth-child(3) { width: 17%; }
+.ord-table th:nth-child(4) { width: 6%;  }
+.ord-table th:nth-child(5) { width: 8%;  }
+.ord-table th:nth-child(6) { width: 12%; }
+.ord-table th:nth-child(7) { width: 10%; }
+.ord-table th:nth-child(8) { width: 10%; }
+.ord-table th:nth-child(9) { width: 15%; }
+
+.ord-modal-dialog { max-width: 740px; width: 95%; }
+
+.ord-section {
+  border: 1px solid #e0d8ce;
+  border-radius: 8px;
+  padding: 1.4rem;
+  margin-top: 1.6rem;
+}
+.ord-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.ord-section__title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primario);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.ord-mat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.3rem;
+}
+.ord-mat-table th, .ord-mat-table td {
+  padding: .6rem .8rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.ord-mat-table thead tr { background: #f5f0e8; }
+.ord-mat-table th { font-weight: 600; }
+
+.ord-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  z-index: 200;
+  display: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.ord-autocomplete-item {
+  padding: .8rem 1rem;
+  cursor: pointer;
+  font-size: 1.3rem;
+}
+.ord-autocomplete-item:hover { background: #f0faf4; }
+
+.ord-costos {
+  display: flex;
+  gap: 2.4rem;
+  margin-top: 1.4rem;
+  padding: 1rem 1.4rem;
+  background: #f5f9f2;
+  border: 1px solid #d4e8cc;
+  border-radius: 8px;
+  font-size: 1.4rem;
+}
+
+.ord-badge {
+  display: inline-block;
+  padding: .3rem .9rem;
+  border-radius: 20px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ord-badge--proceso    { background: #fff3cd; color: #856404; }
+.ord-badge--finalizado { background: #d1e7dd; color: #0f5132; }
+.ord-badge--cancelado  { background: #f8d7da; color: #842029; }
+
+.ord-det-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.ord-det-item {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  font-size: 1.4rem;
+}
+.ord-det-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.ord-empty-msg {
+  color: #aaa;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: .8rem 0 .2rem;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .ap-main {

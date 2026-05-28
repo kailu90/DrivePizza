@@ -1,20 +1,12 @@
-import { plantaDB } from "../Api/firebaseConfig.js";
-import { collection, query, orderBy, getDocs, where, Timestamp, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
-
-const db = plantaDB.db;
-const COLECCION = collection(db, "CallCenter", "principal", "PedidosCallCenter");
-const USAR_HETZNER = true
-import { HETZNER_URL, WS_URL } from '../Api/config.js'
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
 let rolUsuario      = null;
 let filtrosActuales = {};
 let pedidoPendienteCancelar = null;
-let ultimaSincronizacion    = null; // Timestamp de la última carga exitosa desde Firestore
 
 const MODO_RESERVAS = new URLSearchParams(window.location.search).get('tipo') === 'reserva';
 if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
@@ -22,21 +14,14 @@ if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparación", "despachado"]);
 
 // ── SESSION STORAGE CACHÉ ──────────────────────────────────────────────
-const CACHE_TTL    = 5 * 60 * 1000;
-const CACHE_VERSION = "v3";
-const CACHE_PREFIX = `historial_cc_${CACHE_VERSION}_`
+const CACHE_TTL     = 5 * 60 * 1000;
+const CACHE_VERSION = "v4";  // bump: Supabase devuelve ISO strings, sin conversión
+const CACHE_PREFIX  = `historial_cc_${CACHE_VERSION}_`;
 
 function _cacheKey(f) { return CACHE_PREFIX + JSON.stringify(f); }
 
-const TS_FIELDS = ["fecha", "tsRecibido", "tsPreparacion", "tsDespachado"];
-
 function guardarCache(filtros, pedidos) {
-    const data = pedidos.map(p => {
-        const r = { ...p };
-        TS_FIELDS.forEach(f => { if (r[f]?.toDate) r[f] = r[f].toDate().toISOString(); });
-        return r;
-    });
-    try { sessionStorage.setItem(_cacheKey(filtros), JSON.stringify({ ts: Date.now(), data })); }
+    try { sessionStorage.setItem(_cacheKey(filtros), JSON.stringify({ ts: Date.now(), data: pedidos })); }
     catch(e) { console.warn("sessionStorage no disponible:", e); }
 }
 
@@ -46,11 +31,7 @@ function leerCache(filtros) {
         if (!raw) return null;
         const { ts, data } = JSON.parse(raw);
         if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(_cacheKey(filtros)); return null; }
-        return data.map(p => {
-            const r = { ...p };
-            TS_FIELDS.forEach(f => { if (r[f]) r[f] = { toDate: () => new Date(r[f]) }; });
-            return r;
-        });
+        return data;
     } catch(e) { return null; }
 }
 
@@ -82,36 +63,50 @@ function badgeEstado(estado) {
     return `<span style="background:${e.bg};color:${e.color};padding:3px 8px;border-radius:4px;font-size:1.1rem;font-weight:bold;white-space:nowrap;">${estado}</span>`;
 }
 
+// ── NORMALIZAR FILA SUPABASE ───────────────────────────────────────────
+function normalizarPedido(row) {
+    return {
+        id:               String(row.id),
+        nPedido:          row.n_pedido,
+        nombre:           row.nombre,
+        telefono:         row.telefono,
+        direccion:        row.direccion,
+        sede:             row.sede,
+        pago:             row.pago,
+        obs:              row.obs,
+        productos:        row.productos || [],
+        total:            row.total,
+        impreso:          row.impreso,
+        asesor:           row.asesor,
+        fecha:            row.fecha,
+        estado:           row.estado,
+        canal:            row.canal,
+        domicilio:        row.domicilio || null,
+        tipo:             row.tipo || null,
+        tsRecibido:       row.ts_recibido,
+        tsPreparacion:    row.ts_preparacion,
+        tsDespachado:     row.ts_despachado,
+        motivoCancelacion: row.motivo_cancelacion,
+        cantidadPersonas:  row.cantidad_personas,
+        fechaReserva:     row.fecha_reserva,
+        horaReserva:      row.hora_reserva,
+    };
+}
+
 // ── FORMATO ────────────────────────────────────────────────────────────
 function formatFecha(timestamp) {
-    if (!timestamp) return "—"
-    let d
-    if (timestamp.toDate) {
-        d = timestamp.toDate()
-    } else if (timestamp._seconds) {
-        d = new Date(timestamp._seconds * 1000)
-    } else {
-        d = new Date(timestamp)
-    }
+    if (!timestamp) return "—";
     return new Intl.DateTimeFormat("es-CO", {
         year: "numeric", month: "2-digit", day: "2-digit",
         hour: "2-digit", minute: "2-digit", hour12: true,
-    }).format(d)
+    }).format(new Date(timestamp));
 }
 
 function formatHora(ts) {
-    if (!ts) return ""
-    let d
-    if (ts.toDate) {
-        d = ts.toDate()
-    } else if (ts._seconds) {
-        d = new Date(ts._seconds * 1000)
-    } else {
-        d = new Date(ts)
-    }
-    return new Intl.DateTimeFormat("es-CO", { 
-        hour: "2-digit", minute: "2-digit", hour12: true 
-    }).format(d)
+    if (!ts) return "";
+    return new Intl.DateTimeFormat("es-CO", {
+        hour: "2-digit", minute: "2-digit", hour12: true
+    }).format(new Date(ts));
 }
 
 function formatHora12(hora24) {
@@ -131,7 +126,6 @@ async function cargarPedidos(filtros = {}, forzar = false) {
     const cambioFiltros = JSON.stringify(filtros) !== JSON.stringify(filtrosActuales);
     filtrosActuales = filtros;
 
-    // 1. Caché sessionStorage (solo si no se fuerza y los filtros no cambiaron)
     if (!forzar && !cambioFiltros) {
         const cached = leerCache(filtros);
         if (cached) {
@@ -144,69 +138,7 @@ async function cargarPedidos(filtros = {}, forzar = false) {
         }
     }
 
-    // 2. Delta sync: mismos filtros + ya hay una sincronización previa
-    if (!cambioFiltros && ultimaSincronizacion) {
-        await sincronizarDelta();
-        return;
-    }
-
-    // 3. Carga completa (primer load o cambio de filtros)
     await cargaCompleta(filtros);
-}
-
-// Consulta solo los documentos modificados desde la última sincronización.
-// Si no hubo cambios → 0 lecturas Firestore.
-async function sincronizarDelta() {
-    if (USAR_HETZNER) {
-        await cargaCompleta(filtrosActuales)
-        return
-    }
-
-    const tsCorte = ultimaSincronizacion
-    ultimaSincronizacion = Timestamp.now()
-
-    try {
-        const snap = await getDocs(query(COLECCION, where("updatedAt", ">", tsCorte)))
-
-        if (snap.empty) {
-            mostrarEstadoCache(false)
-            return
-        }
-
-        const hoy = new Date().toISOString().split("T")[0]
-        const desde = new Date((filtrosActuales.desde || hoy) + "T00:00:00")
-        const hasta = new Date((filtrosActuales.hasta || hoy) + "T23:59:59")
-
-        snap.docs.forEach(d => {
-            const nuevo = { id: d.id, ...d.data() }
-            const fechaDoc = nuevo.fecha?.toDate ? nuevo.fecha.toDate() : new Date(nuevo.fecha)
-            const enRango      = fechaDoc >= desde && fechaDoc <= hasta
-            const coincideSede = !filtrosActuales.sede   || nuevo.sede   === filtrosActuales.sede
-            const coincideEst  = !filtrosActuales.estado || nuevo.estado === filtrosActuales.estado
-            const idx = pedidosCargados.findIndex(p => p.id === nuevo.id)
-
-            if (enRango && coincideSede && coincideEst) {
-                if (idx !== -1) pedidosCargados[idx] = nuevo
-                else pedidosCargados.push(nuevo)
-            } else if (idx !== -1) {
-                pedidosCargados.splice(idx, 1)
-            }
-        })
-
-        pedidosCargados.sort((a, b) => {
-            const fa = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha)
-            const fb = b.fecha?.toDate ? b.fecha.toDate() : new Date(b.fecha)
-            return fb - fa
-        })
-
-        guardarCache(filtrosActuales, pedidosCargados)
-        poblarSelectAsesores()
-        filtrarColumnas()
-        mostrarEstadoCache(false)
-    } catch (err) {
-        console.warn("Delta sync falló, recargando completo:", err)
-        await cargaCompleta(filtrosActuales)
-    }
 }
 
 async function cargaCompleta(filtros) {
@@ -215,41 +147,27 @@ async function cargaCompleta(filtros) {
     tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="9" style="text-align:center;padding:30px;">Cargando...</td></tr>`;
 
     try {
-        let pedidos = []
+        const hoy   = hoyLocal();
+        const desde = filtros.desde || hoy;
+        const hasta = filtros.hasta || hoy;
 
-        if (USAR_HETZNER) {
-            const hoy = new Date().toISOString().split("T")[0]
-            const desde = filtros.desde || hoy
-            const hasta = filtros.hasta || hoy
-            const sede = filtros.sede || ''
-            const estado = filtros.estado || ''
-            const response = await fetch(`${HETZNER_URL}/callcenter/pedidos/rango?desde=${desde}&hasta=${hasta}&sede=${sede}&estado=${estado}`)
-            pedidos = await response.json()
-        } else {
-            // Fallback — lee directo de Firestore
-            const hoy = new Date().toISOString().split("T")[0]
-            const desde = filtros.desde || hoy
-            const hasta = filtros.hasta || hoy
+        let q = supabase
+            .from('pedidos_callcenter')
+            .select('*')
+            .gte('fecha', desde + 'T00:00:00')
+            .lte('fecha', hasta + 'T23:59:59')
+            .order('fecha', { ascending: false });
 
-            let q = query(
-                COLECCION,
-                where("fecha", ">=", Timestamp.fromDate(new Date(desde + "T00:00:00"))),
-                where("fecha", "<=", Timestamp.fromDate(new Date(hasta + "T23:59:59"))),
-                orderBy("fecha", "desc"),
-                limit(500)
-            )
-            if (filtros.sede)   q = query(q, where("sede",   "==", filtros.sede))
-            if (filtros.estado) q = query(q, where("estado", "==", filtros.estado))
+        if (filtros.sede)   q = q.eq('sede',   filtros.sede);
+        if (filtros.estado) q = q.eq('estado', filtros.estado);
 
-            const snap = await getDocs(q)
-            pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.eliminado)
-        }
+        const { data, error } = await q;
+        if (error) throw error;
 
-        ultimaSincronizacion = Timestamp.now()
-        pedidosCargados = pedidos
-        guardarCache(filtros, pedidosCargados)
-        poblarSelectAsesores()
-        filtrarColumnas()
+        pedidosCargados = (data || []).map(normalizarPedido);
+        guardarCache(filtros, pedidosCargados);
+        poblarSelectAsesores();
+        filtrarColumnas();
 
     } catch (error) {
         tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="9" style="text-align:center;color:red;">Error al cargar: ${error.message}</td></tr>`;
@@ -259,7 +177,7 @@ async function cargaCompleta(filtros) {
 function mostrarEstadoCache(desdeCache) {
     const btn = document.getElementById("btn-actualizar");
     if (!btn) return;
-    btn.title = desdeCache ? "Datos desde caché. Click para actualizar." : "Datos actualizados desde Firebase.";
+    btn.title = desdeCache ? "Datos desde caché. Click para actualizar." : "Datos actualizados.";
     btn.style.opacity = desdeCache ? "0.7" : "1";
 }
 
@@ -267,11 +185,8 @@ function mostrarEstadoCache(desdeCache) {
 let timerDemoraInterval = null
 
 function calcularMinutos(tsRecibido) {
-    if (!tsRecibido) return 0
-    const recibido = tsRecibido._seconds
-        ? new Date(tsRecibido._seconds * 1000)
-        : new Date(tsRecibido)
-    return Math.floor((Date.now() - recibido.getTime()) / 60000)
+    if (!tsRecibido) return 0;
+    return Math.floor((Date.now() - new Date(tsRecibido).getTime()) / 60000);
 }
 
 function formatTimer(minutos) {
@@ -291,10 +206,8 @@ function actualizarTimers() {
         console.log('pedido:', pedido.nPedido, 'minutos:', minutos)
         if (minutos < 30) return
 
-        const fechaPedido = pedido.fecha?._seconds
-            ? new Date(pedido.fecha._seconds * 1000)
-            : new Date(pedido.fecha)
-        const esHoy = fechaPedido.toDateString() === new Date().toDateString()
+        const fechaPedido = new Date(pedido.fecha);
+        const esHoy = fechaPedido.toDateString() === new Date().toDateString();
         console.log('esHoy:', esHoy, 'fecha:', fechaPedido)
 
         const celdaNPedido = fila.querySelector('td:nth-child(1)')
@@ -365,10 +278,8 @@ function renderTabla(pedidos) {
         const enPreparacion = p.estado === 'en preparación'
         const minutos = enPreparacion ? calcularMinutos(p.tsRecibido) : 0
 
-        const fechaPedido = p.fecha?._seconds
-            ? new Date(p.fecha._seconds * 1000)
-            : new Date(p.fecha)
-        const esHoy = fechaPedido.toDateString() === new Date().toDateString()
+        const fechaPedido = new Date(p.fecha);
+        const esHoy = fechaPedido.toDateString() === new Date().toDateString();
 
         const puntoCelda = (() => {
             if (esReserva) return ''
@@ -435,59 +346,22 @@ function renderResumen(pedidos) {
     el("resumen-reservas").textContent = pedidos.filter(p => p.tipo === "reserva").length;
 }
 
-// ── REFRESCO PERIÓDICO (cada 5 min, solo si la pestaña está visible) ───────
+// ── REALTIME + REFRESCO PERIÓDICO ──────────────────────────────────────
 function iniciarListenerActivos() {
-    const INTERVALO = 5 * 60 * 1000
-
-    // WebSocket para tiempo real
-    let ws = null
-
-    let wsConectado = false
-
-    function conectarWebSocket() {
-        ws = new WebSocket(WS_URL)
-
-        ws.onopen = () => {
-            console.log('WebSocket conectado')
-            if (wsConectado) cargarPedidos(filtrosActuales, true) // refrescar solo en reconexión
-            wsConectado = true
-        }
-
-        ws.onmessage = (event) => {
-            try {
-                const mensaje = JSON.parse(event.data)
-                if (mensaje.tipo === 'callcenter:actualizado') {
-                    cargarPedidos(filtrosActuales, true)
-                }
-            } catch (e) {
-                console.error('Error procesando mensaje WebSocket:', e)
-            }
-        }
-
-        ws.onclose = () => {
-            console.log('WebSocket desconectado, reconectando en 5s...')
-            setTimeout(conectarWebSocket, 5000)
-        }
-
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err)
-        }
-    }
-
-    conectarWebSocket()
+    supabase.channel('historial-callcenter')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_callcenter' }, () => {
+            cargarPedidos(filtrosActuales, true);
+        })
+        .subscribe();
 
     // Refresco periódico como respaldo (cada 5 min)
     setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            cargarPedidos(filtrosActuales, true)
-        }
-    }, INTERVALO)
+        if (document.visibilityState === 'visible') cargarPedidos(filtrosActuales, true);
+    }, 5 * 60 * 1000);
 
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            cargarPedidos(filtrosActuales, true)
-        }
-    })
+        if (document.visibilityState === 'visible') cargarPedidos(filtrosActuales, true);
+    });
 }
 
 // ── STEPPER ────────────────────────────────────────────────────────────
@@ -572,30 +446,18 @@ window.marcarRecibido = async function(pedidoId, impreso) {
     const btn = document.querySelector('.btn-marcar-recibido');
     if (btn) { btn.disabled = true; btn.textContent = 'Marcando...'; }
     try {
-        const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/${pedidoId}/impreso`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: '{}',
-        });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error ?? 'Error al marcar');
-        }
-        const data = await res.json();
-        // Actualizar caché local
+        const { data: rows, error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ estado: 'recibido', impreso: true, ts_recibido: new Date().toISOString() })
+            .eq('id', pedidoId)
+            .select('*');
+        if (error) throw error;
+        const updated = normalizarPedido(rows[0]);
         const idx = pedidosCargados.findIndex(p => p.id === pedidoId);
-        if (idx !== -1) pedidosCargados[idx] = { ...pedidosCargados[idx], ...data };
-        // Actualizar modal
-        document.getElementById('modal-stepper').innerHTML = renderStepper(data, false);
+        if (idx !== -1) pedidosCargados[idx] = updated;
+        document.getElementById('modal-stepper').innerHTML = renderStepper(updated, false);
         document.getElementById('modal-cancel-area').innerHTML = '';
         document.getElementById('modal-impreso').innerHTML = '';
-        // Actualizar badge en tabla
-        const fila = document.querySelector(`tr[data-id="${pedidoId}"]`);
-        if (fila) {
-            fila.querySelectorAll('.inventory-management__cell').forEach(cell => {
-                if (cell.querySelector('.status-badge')) cell.innerHTML = badgeEstado(data.estado ?? 'recibido');
-            });
-        }
     } catch (e) {
         alert('Error: ' + e.message);
         if (btn) { btn.disabled = false; btn.textContent = '✓ Marcar como recibido'; }
@@ -697,23 +559,23 @@ function cerrarDetalle() {
 
 // ── CAMBIAR ESTADO ─────────────────────────────────────────────────────
 const TS_MAP = {
-    "en preparación": "tsPreparacion",
-    "despachado":     "tsDespachado",
+    "en preparación": "ts_preparacion",
+    "despachado":     "ts_despachado",
 };
 
 window.cambiarEstado = async (pedidoId, nuevoEstado) => {
     try {
-        const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/${pedidoId}/estado`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: nuevoEstado })
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error ?? 'Error al actualizar estado');
-        }
+        const updateData = { estado: nuevoEstado };
+        const tsCol = TS_MAP[nuevoEstado];
+        if (tsCol) updateData[tsCol] = new Date().toISOString();
+
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update(updateData)
+            .eq('id', pedidoId);
+        if (error) throw error;
         cerrarDetalle();
-        sincronizarDelta();
+        await cargarPedidos(filtrosActuales, true);
     } catch (e) {
         alert("Error al actualizar el estado. Intenta de nuevo.");
         console.error(e);
@@ -742,18 +604,14 @@ document.getElementById("btn-confirmar-cancelar").addEventListener("click", asyn
     if (!pedidoPendienteCancelar) return;
     const motivo = document.getElementById("cancelar-motivo").value.trim();
     try {
-        const res = await fetch(`${HETZNER_URL}/callcenter/pedidos/${pedidoPendienteCancelar}/cancelar`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ motivoCancelacion: motivo })
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error ?? 'Error al cancelar');
-        }
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ estado: 'cancelado', motivo_cancelacion: motivo || null })
+            .eq('id', pedidoPendienteCancelar);
+        if (error) throw error;
         cerrarModalCancelar();
         cerrarDetalle();
-        sincronizarDelta();
+        await cargarPedidos(filtrosActuales, true);
     } catch (e) {
         alert("Error al cancelar. Intenta de nuevo.");
         console.error(e);
@@ -790,8 +648,16 @@ async function exportarLiquidacion() {
         const hasta      = document.getElementById("filtro-hasta").value;
         const sedeFilter = document.getElementById("filtro-sede").value;
 
-        const response = await fetch(`${HETZNER_URL}/callcenter/pedidos/rango?desde=${desde}&hasta=${hasta}&sede=${sedeFilter}&estado=`);
-        const pedidos  = await response.json();
+        let q = supabase
+            .from('pedidos_callcenter')
+            .select('*')
+            .gte('fecha', desde + 'T00:00:00')
+            .lte('fecha', hasta + 'T23:59:59')
+            .order('fecha', { ascending: false });
+        if (sedeFilter) q = q.eq('sede', sedeFilter);
+        const { data: rawPedidos, error: liqErr } = await q;
+        if (liqErr) throw liqErr;
+        const pedidos = rawPedidos.map(normalizarPedido);
 
         const TARIFA_PERSONA   = 10000;
         const COMISION_PCT     = 0.05;
@@ -1021,22 +887,22 @@ document.getElementById("modal-detalle").addEventListener("click", e => {
 // ── SKELETON + AUTH ────────────────────────────────────────────────────
 mostrarSkeleton("historial");
 
-async function obtenerUsuarioCC(user) {
+async function obtenerUsuarioCC() {
     if (window.parent !== window && window.parent._usuarioCCPromise) {
         return await window.parent._usuarioCCPromise;
     }
     // Fallback: acceso directo sin shell
-    const userDoc = await getDoc(doc(plantaDB.db, "Usuarios", user.uid));
-    if (!userDoc.exists()) throw new Error("Usuario no encontrado");
-    const d = userDoc.data();
-    return { uid: user.uid, email: user.email, username: d.username || "", sede: d.sede || "", rol: d.rol || "" };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+    if (!data) return null;
+    return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "" };
 }
 
-onAuthStateChanged(plantaDB.auth, async (user) => {
-    if (!user) { window.top.location.href = "../index.html"; return; }
+(async () => {
     try {
-        const usuario = await obtenerUsuarioCC(user);
-        if (!usuario.rol) { window.top.location.href = "../index.html"; return; }
+        const usuario = await obtenerUsuarioCC();
+        if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
 
         const { sede, rol } = usuario;
         rolUsuario = rol;
@@ -1053,9 +919,9 @@ onAuthStateChanged(plantaDB.auth, async (user) => {
             sedeUsuario = sede;
             const selectSede = document.getElementById("filtro-sede");
             selectSede.value    = sede;
-            selectSede.disabled = true;           
+            selectSede.disabled = true;
         }
-        
+
         // Ajustes visuales si estamos en modo reservas
         if (MODO_RESERVAS) {
             document.title = "Reservas - CallCenter";
@@ -1066,13 +932,11 @@ onAuthStateChanged(plantaDB.auth, async (user) => {
                 titulo.style.cssText = "margin:0 0 0 8px; font-size:1.6rem; color:var(--color-primario);";
                 topbar.insertAdjacentElement("afterbegin", titulo);
             }
-            // Ocultar cards de resumen que no aplican en modo reservas
             document.getElementById("resumen-total")?.closest(".resumen-card")?.style.setProperty("display", "none");
             document.getElementById("resumen-whatsapp")?.closest(".resumen-card")?.style.setProperty("display", "none");
             document.getElementById("resumen-ivr")?.closest(".resumen-card")?.style.setProperty("display", "none");
         }
 
-        // Iniciar WebSocket para todos los roles
         iniciarListenerActivos();
 
         const hoy = hoyLocal();
@@ -1086,7 +950,7 @@ onAuthStateChanged(plantaDB.auth, async (user) => {
         document.getElementById("filtro-hasta").value = hasta;
         if (sedeUsuario) document.getElementById("filtro-sede").value = sedeUsuario;
 
-        document.body.classList.add('loaded'); // mostrar skeleton mientras carga
+        document.body.classList.add('loaded');
         await cargarPedidos({ desde, hasta, ...(sedeUsuario && { sede: sedeUsuario }) });
 
         ocultarSkeleton("contenido-principal");
@@ -1094,4 +958,4 @@ onAuthStateChanged(plantaDB.auth, async (user) => {
         console.error("Error en auth historial:", error);
         document.body.classList.add('loaded');
     }
-});
+})();

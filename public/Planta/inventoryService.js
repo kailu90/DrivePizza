@@ -1,25 +1,24 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { runTransaction, doc, collection, increment, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 
-const db = plantaDB.db;
+// ── Helpers internos ──────────────────────────────────────────────────────────
 
-import { HETZNER_URL } from '../Api/config.js';
-
-export function notificarCacheProducto(productId) {
-    fetch(`${HETZNER_URL}/planta/cache/producto/${productId}`, { method: 'POST' })
-        .catch(() => {});
+async function _incrementStock(productId, delta) {
+    const { error } = await supabase.rpc('increment_stock', {
+        p_id: parseInt(productId), p_delta: delta
+    });
+    if (error) throw error;
 }
 
-function pushMovimiento(firestoreId, movimiento) {
-    const payload = { ...movimiento, firestoreId, fecha: new Date().toISOString() };
-    fetch(`${HETZNER_URL}/planta/movimientos/push`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    }).catch(() => {});
+async function _insertMovimiento(data) {
+    const { error } = await supabase.from('movimientos').insert(data);
+    if (error) {
+        console.error('Error al insertar movimiento:', error);
+        throw error;
+    }
 }
 
-/***************************** FUNCIÓN CENTRALIZADA DE INVENTARIO PARA CREACIÓN DE MOVIMIENTO Y SUMA/DESCUENTO DE STOCK************************/
+// ── ejecutarTransaccionStock ──────────────────────────────────────────────────
+// Suma o descuenta stock de un producto y registra el movimiento.
 export async function ejecutarTransaccionStock({
     productId,
     name,
@@ -28,86 +27,42 @@ export async function ejecutarTransaccionStock({
     tipoMovimiento = null,
     subtipo = null,
     referenciaId,
-    notas = "",
-    usuario = "Admin",
+    notas = '',
+    usuario = 'Admin',
     sede = null,
     precio = null,
 }) {
     try {
-        const productRef = doc(db, "Planta", "principal", "Productos", productId);
-        const impacto = (tipo === 'ENTRADA') ? cantidad : -cantidad;
+        const impacto = tipo === 'ENTRADA' ? cantidad : -cantidad;
+        await _incrementStock(productId, impacto);
 
-        // 1. Transacción SOLO sobre el producto (sin contador compartido)
-        await runTransaction(db, async (transaction) => {
-            const productSnap = await transaction.get(productRef);
-            if (!productSnap.exists()) throw "Producto no encontrado";
-
-            transaction.update(productRef, {
-                stock: increment(impacto),
-                ultimaActualizacion: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-        });
-
-        // 2. Registro del movimiento con addDoc (sin competencia de contador)
-        const movimiento = {
-            movimientoId:   Date.now(),
-            fecha:          serverTimestamp(),
-            tipo:           tipoMovimiento || tipo,
-            entidad:        'Producto',
-            productoId:     productId,
-            productoNombre: name,
-            cantidad:       cantidad,
-            referenciaId:   referenciaId,
-            motivo:         tipo === 'SALIDA' ? "Entrega de Pedido" : "Ingreso Manual",
-            notas:          notas,
-            usuario:        usuario
+        const movData = {
+            movimiento_id:   Date.now(),
+            fecha:           new Date().toISOString(),
+            tipo:            tipoMovimiento || tipo,
+            entidad:         'Producto',
+            producto_id:     parseInt(productId) || null,
+            producto_nombre: name,
+            cantidad,
+            motivo:          tipo === 'SALIDA' ? 'Entrega de Pedido' : 'Ingreso Manual',
+            notas:           notas || null,
+            usuario,
+            referencia_id:   referenciaId || null,
         };
-        if (sede)    movimiento.sede       = sede;
-        if (subtipo) movimiento.subtipo   = subtipo;
-        if (precio)  movimiento.precio    = precio;
-        if (precio && subtipo !== 'correccion') movimiento.valorTotal = cantidad * precio;
-        const docRef = await addDoc(collection(db, "Planta", "principal", "Movimientos"), movimiento);
-        notificarCacheProducto(productId);
-        pushMovimiento(docRef.id, movimiento);
-
+        if (sede)    movData.sede    = sede;
+        if (subtipo) movData.subtipo = subtipo;
+        if (precio)  movData.precio  = precio;
+        if (precio && subtipo !== 'correccion') movData.valor_total = cantidad * precio;
+        await _insertMovimiento(movData);
         return true;
     } catch (e) {
-        console.error("Error en ejecutarTransaccionStock:", e);
+        console.error('Error en ejecutarTransaccionStock:', e);
         throw e;
     }
 }
 
-// ── FUNCIÓN CENTRALIZADA DE LOG ────────────────────────────────────────────
-// Registra cualquier evento del sistema en /Planta/principal/Movimientos
-// sin tocar el stock del producto.
-//
-// Params:
-//   tipo            'ENTRADA' | 'SALIDA' | 'MODIFICACION' | 'ELIMINACION' | 'CREACION'
-//   entidad         'Producto' (extensible a 'Proveedor', etc.)
-//   productoId      ID del documento Firestore del producto
-//   productoNombre  Nombre legible
-//   campo           (solo MODIFICACION) campo que cambió: 'name','price','stock','active',...
-//   valorAnterior   (solo MODIFICACION) valor antes del cambio
-//   valorNuevo      (solo MODIFICACION) valor después del cambio
-//   cantidad        (solo ENTRADA/SALIDA) unidades
-//   proveedorId     (solo ENTRADA) id del proveedor
-//   proveedorNombre (solo ENTRADA) nombre del proveedor
-//   motivo          texto libre
-//   notas           observaciones adicionales
-//   usuario         username del usuario logueado
-
-// ── FUNCIÓN PARA SALIDA DE PEDIDO (batch de stocks + 1 movimiento) ──────────
-// Descuenta el stock de todos los productos en una sola operación (writeBatch)
-// y genera un único documento de movimiento con el array de productos.
-//
-// Params:
-//   productos      [{ productId, name, cantidad }]
-//   pedidoId       ID del documento Firestore del pedido
-//   pedidoNumero   Número visible del pedido (ej: 1234)
-//   notas          Observaciones adicionales
-//   usuario        Username del usuario logueado
-
+// ── ejecutarAjusteStock ───────────────────────────────────────────────────────
+// Fija el stock de un producto al valor exacto y registra el ajuste.
 export async function ejecutarAjusteStock({
     productId,
     name,
@@ -117,38 +72,26 @@ export async function ejecutarAjusteStock({
     usuario = 'Admin'
 }) {
     try {
-        const productRef = doc(db, 'Planta', 'principal', 'Productos', productId);
-        let stockAnterior = 0;
-
-        await runTransaction(db, async (transaction) => {
-            const snap = await transaction.get(productRef);
-            if (!snap.exists()) throw 'Producto no encontrado';
-            stockAnterior = snap.data().stock ?? 0;
-            transaction.update(productRef, {
-                stock: stockNuevo,
-                ultimaActualizacion: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
+        const { data: stockAnterior, error } = await supabase.rpc('ajuste_stock', {
+            p_id: parseInt(productId), p_nuevo: stockNuevo
         });
+        if (error) throw error;
 
         const diferencia = stockNuevo - stockAnterior;
-        const movAjuste = {
-            movimientoId:   Date.now(),
-            fecha:          serverTimestamp(),
-            tipo:           'AJUSTE',
-            entidad:        'Producto',
-            productoId:     productId,
-            productoNombre: name,
-            stockAnterior,
-            stockNuevo,
+        await _insertMovimiento({
+            movimiento_id:   Date.now(),
+            fecha:           new Date().toISOString(),
+            tipo:            'AJUSTE',
+            entidad:         'Producto',
+            producto_id:     parseInt(productId) || null,
+            producto_nombre: name,
+            stock_anterior:  stockAnterior,
+            stock_nuevo:     stockNuevo,
             diferencia,
             motivo,
-            notas,
-            usuario
-        };
-        const docRef = await addDoc(collection(db, 'Planta', 'principal', 'Movimientos'), movAjuste);
-        notificarCacheProducto(productId);
-        pushMovimiento(docRef.id, movAjuste);
+            notas:           notas || null,
+            usuario,
+        });
 
         return { stockAnterior, diferencia };
     } catch (e) {
@@ -157,6 +100,8 @@ export async function ejecutarAjusteStock({
     }
 }
 
+// ── ejecutarSalidaPedido ──────────────────────────────────────────────────────
+// Descuenta stock de todos los productos de un pedido y genera un movimiento.
 export async function ejecutarSalidaPedido({
     productos,
     pedidoId,
@@ -165,45 +110,24 @@ export async function ejecutarSalidaPedido({
     usuario = 'Admin'
 }) {
     try {
-        // 1. Transacción: lee y actualiza todos los productos (fuerza sync con servidor)
-        const refs = productos.map(({ productId }) =>
-            doc(db, 'Planta', 'principal', 'Productos', productId));
+        for (const p of productos) {
+            await _incrementStock(p.productId, -p.cantidad);
+        }
 
-        await runTransaction(db, async (transaction) => {
-            // Reads secuenciales primero (requerido por Firestore)
-            const snaps = [];
-            for (const ref of refs) {
-                snaps.push(await transaction.get(ref));
-            }
-            // Writes después de todos los reads
-            snaps.forEach((snap, i) => {
-                if (!snap.exists()) throw new Error(`Producto ${productos[i].productId} no encontrado`);
-                transaction.update(refs[i], {
-                    stock: increment(-productos[i].cantidad),
-                    ultimaActualizacion: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
-            });
-        });
-
-        // 2. Notificar cache de cada producto modificado
-        productos.forEach(p => notificarCacheProducto(p.productId));
-
-        // 3. Un único registro de movimiento con el array completo de productos
         await registrarMovimiento({
-            tipo: 'SALIDA',
-            entidad: 'Pedido',
+            tipo:           'SALIDA',
+            entidad:        'Pedido',
             productoNombre: `Pedido #${pedidoNumero}`,
-            referenciaId: pedidoId,
+            referenciaId:   pedidoId,
             pedidoNumero,
-            productos: productos.map(p => ({
+            productos:      productos.map(p => ({
                 productoId:     p.productId,
                 productoNombre: p.name,
-                cantidad:       p.cantidad
+                cantidad:       p.cantidad,
             })),
-            motivo: `Entrega de Pedido #${pedidoNumero}`,
+            motivo:  `Entrega de Pedido #${pedidoNumero}`,
             notas,
-            usuario
+            usuario,
         });
 
         return true;
@@ -213,6 +137,8 @@ export async function ejecutarSalidaPedido({
     }
 }
 
+// ── registrarMovimiento ───────────────────────────────────────────────────────
+// Registra cualquier evento del sistema en movimientos sin tocar el stock.
 export async function registrarMovimiento({
     tipo,
     entidad = 'Producto',
@@ -234,56 +160,96 @@ export async function registrarMovimiento({
     usuario = 'Admin'
 }) {
     try {
-        const movimiento = {
-            movimientoId:  Date.now(),
-            fecha:         serverTimestamp(),
+        const movData = {
+            movimiento_id:   Date.now(),
+            fecha:           new Date().toISOString(),
             tipo,
             entidad,
-            productoId,
-            productoNombre,
+            producto_id:     productoId ? (parseInt(productoId) || null) : null,
+            producto_nombre: productoNombre,
             usuario,
         };
 
         if (tipo === 'MODIFICACION') {
-            if (cambios && cambios.length > 0) {
-                // Formato nuevo: array de cambios (múltiples campos en una sola escritura)
-                movimiento.cambios = cambios;
+            if (cambios?.length > 0) {
+                movData.cambios = cambios;
             } else {
-                // Formato anterior: campo único (toggle activo/inactivo)
-                movimiento.campo         = campo;
-                movimiento.valorAnterior = String(valorAnterior);
-                movimiento.valorNuevo    = String(valorNuevo);
+                movData.campo          = campo;
+                movData.valor_anterior = String(valorAnterior);
+                movData.valor_nuevo    = String(valorNuevo);
             }
         }
         if (tipo === 'ELIMINACION' && productos?.length > 0) {
-            movimiento.productos = productos;
+            movData.productos = productos;
         }
         if (tipo === 'CREACION' && entidad === 'Pedido' && productos?.length > 0) {
-            movimiento.productos = productos;
+            movData.productos = productos;
         }
         if (tipo === 'ENTRADA' || tipo === 'SALIDA') {
-            if (productos && productos.length > 0) {
-                // Formato nuevo: array de productos (salida de pedido)
-                movimiento.productos = productos;
+            if (productos?.length > 0) {
+                movData.productos = productos;
             } else {
-                // Formato anterior: producto único
-                movimiento.cantidad        = cantidad;
-                movimiento.proveedorId     = proveedorId;
-                movimiento.proveedorNombre = proveedorNombre;
-                if (unidadMedida) movimiento.unidadMedida = unidadMedida;
+                movData.cantidad         = cantidad;
+                movData.proveedor_id     = proveedorId ? (parseInt(proveedorId) || null) : null;
+                movData.proveedor_nombre = proveedorNombre || null;
+                if (unidadMedida) movData.unidad_medida = unidadMedida;
             }
         }
-        if (referenciaId) movimiento.referenciaId = referenciaId;
-        if (pedidoNumero)  movimiento.pedidoNumero = pedidoNumero;
-        if (motivo) movimiento.motivo = motivo;
-        if (notas)  movimiento.notas  = notas;
+        if (referenciaId) movData.referencia_id = referenciaId;
+        if (pedidoNumero)  movData.pedido_numero = pedidoNumero;
+        if (motivo) movData.motivo = motivo;
+        if (notas)  movData.notas  = notas;
 
-        const docRef = await addDoc(collection(db, 'Planta', 'principal', 'Movimientos'), movimiento);
-        pushMovimiento(docRef.id, movimiento);
-
-        return movimiento.movimientoId;
+        const { error } = await supabase.from('movimientos').insert(movData);
+        if (error) throw error;
+        return movData.movimiento_id;
     } catch (e) {
         console.error('❌ registrarMovimiento error:', e);
+        throw e;
+    }
+}
+
+// ── ejecutarOrdenProduccion ───────────────────────────────────────────────────
+// Descuenta materias primas, suma producto final y registra la orden.
+export async function ejecutarOrdenProduccion({
+    ordenId,
+    ordenNumero,
+    materiales,
+    productoSalida,
+    usuario = 'Admin'
+}) {
+    try {
+        for (const m of materiales) {
+            await _incrementStock(m.productoId, -m.cantidad);
+        }
+        await _incrementStock(productoSalida.productoId, productoSalida.cantidad);
+
+        const movData = {
+            movimiento_id:   Date.now(),
+            fecha:           new Date().toISOString(),
+            tipo:            'PRODUCCION',
+            entidad:         'OrdenProduccion',
+            producto_nombre: `Orden #${ordenNumero}`,
+            referencia_id:   ordenId,
+            orden_numero:    ordenNumero,
+            materiales:      materiales.map(m => ({
+                productoId:     m.productoId,
+                productoNombre: m.productoNombre,
+                cantidad:       m.cantidad,
+                costoUnitario:  m.costoUnitario,
+            })),
+            producto_salida: {
+                productoId:     productoSalida.productoId,
+                productoNombre: productoSalida.productoNombre,
+                cantidad:       productoSalida.cantidad,
+            },
+            usuario,
+        };
+        const { error } = await supabase.from('movimientos').insert(movData);
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.error('Error en ejecutarOrdenProduccion:', e);
         throw e;
     }
 }

@@ -1,29 +1,48 @@
 // ── Servicio centralizado de productos ────────────────────────────────────────
-// Todas las pantallas leen desde Hetzner/Redis
-// Las escrituras siguen yendo directo a Firestore
+// Lee directamente desde Supabase.
 
-import { HETZNER_URL } from '../Api/config.js'
+import { supabase } from '../Api/supabaseConfig.js'
 
 let _cache = null
 
+// Normaliza una fila de Supabase al formato que usa toda la app
+function _normalizar(row) {
+    return {
+        id:              String(row.id),
+        firestore_id:    row.firestore_id,
+        name:            row.name,
+        idCategory:      row.id_category,
+        measurementUnit: row.measurement_unit || row.unidad || null,
+        price:           parseFloat(row.price) || 0,
+        stock:           parseFloat(row.stock) ?? 0,
+        active:          row.active,
+        sinLimiteStock:  row.sin_limite_stock,
+        quantities:      row.quantities || null,
+        presentaciones:  row.presentaciones || [],
+        rotacion:        row.rotacion || null,
+        proveedorId:     row.proveedor_id ? String(row.proveedor_id) : null,
+        proveedorNombre: row.proveedor_nombre || null,
+        updated_at:      row.updated_at,
+    }
+}
+
 /**
- * Retorna todos los productos activos desde Hetzner.
+ * Retorna todos los productos desde Supabase.
  * Si ya están en memoria, no hace fetch.
- * @param {boolean} forzar - Si true, ignora caché en memoria y recarga desde Hetzner
+ * @param {boolean} forzar - Si true, ignora caché en memoria y recarga
  */
 export async function getProductos(forzar = false) {
     if (!forzar && _cache) return _cache
 
-    try {
-        const response = await fetch(`${HETZNER_URL}/planta/productos`)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        _cache = await response.json()
-        console.log('[productosService] Productos cargados desde Hetzner:', _cache.length)
-        return _cache
-    } catch (err) {
-        console.warn('[productosService] Error Hetzner, fallback a Firestore:', err)
-        return await _cargarDesdeFirestore()
-    }
+    const { data, error } = await supabase
+        .from('productos')
+        .select('*')
+        .order('name', { ascending: true })
+
+    if (error) throw error
+    _cache = data.map(_normalizar)
+    console.log('[productosService] Productos cargados desde Supabase:', _cache.length)
+    return _cache
 }
 
 /**
@@ -36,28 +55,13 @@ export function invalidarProductos() {
 }
 
 /**
- * Actualiza el stock de un producto en caché sin ir a Firestore ni Hetzner.
- * Usar después de una escritura exitosa en Firestore para mantener el display sincronizado.
- * @param {string} productId - ID del documento Firestore
+ * Actualiza el stock de un producto en caché sin ir a Supabase.
+ * @param {string} productId - ID del producto (Supabase id como string)
  * @param {number} delta     - Cantidad a sumar (positivo) o restar (negativo)
  */
 export function actualizarStockEnCache(productId, delta) {
     if (!_cache) return
-    const p = _cache.find(p => p.id === productId)
+    const p = _cache.find(p => p.id === productId || p.firestore_id === productId)
     if (p !== undefined) p.stock = (p.stock ?? 0) + delta
 }
 
-/**
- * Fallback — solo se usa si Hetzner no responde
- */
-async function _cargarDesdeFirestore() {
-    const { getDocs, query, collection, orderBy } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")
-    const { plantaDB } = await import('../Api/firebaseConfig.js')
-    const snap = await getDocs(query(
-        collection(plantaDB.db, 'Planta', 'principal', 'Productos'),
-        orderBy('name', 'asc')
-    ))
-    _cache = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    console.log('[productosService] Productos cargados desde Firestore (fallback):', _cache.length)
-    return _cache
-}

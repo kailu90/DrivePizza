@@ -1,11 +1,6 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from '../Shared/components.js';
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables } from '../Shared/semanas.js';
-
-const db   = plantaDB.db;
-const auth = plantaDB.auth;
 
 let sedeUsuario   = null;
 let offsetSemanas = 0;
@@ -49,31 +44,47 @@ async function cargarInforme() {
     document.getElementById('liq-semana-label').textContent = formatLabel(desdeDate, hastaDate);
 
     try {
-        const [snapPedidos, snapDev] = await Promise.all([
-            getDocs(query(
-                collection(db, 'Planta', 'principal', 'PedidosPlanta'),
-                where('user', '==', sedeUsuario),
-                where('deliveryDate', '>=', desde),
-                where('deliveryDate', '<=', hasta),
-                orderBy('deliveryDate', 'asc')
-            )),
-            getDocs(query(
-                collection(db, 'Planta', 'principal', 'Movimientos'),
-                where('tipo', '==', 'Devolución'),
-                where('sede', '==', sedeUsuario),
-                where('fecha', '>=', Timestamp.fromDate(desdeDate)),
-                where('fecha', '<=', Timestamp.fromDate(hastaDate)),
-                orderBy('fecha', 'asc')
-            ))
+        const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
+            supabase
+                .from('pedidos_planta')
+                .select('id_pedido, delivery_date, total, status, eliminado')
+                .eq('user_sede', sedeUsuario)
+                .gte('delivery_date', desde)
+                .lte('delivery_date', hasta)
+                .order('delivery_date', { ascending: true }),
+            supabase
+                .from('movimientos')
+                .select('producto_nombre, cantidad, unidad_medida, precio, valor_total, subtipo')
+                .eq('tipo', 'Devolución')
+                .eq('sede', sedeUsuario)
+                .gte('fecha', desdeDate.toISOString())
+                .lte('fecha', hasta + 'T23:59:59')
+                .order('fecha', { ascending: true })
         ]);
 
-        if (snapPedidos.empty) {
+        if (errP) throw errP;
+        if (errD) throw errD;
+
+        if (!rawPedidos?.length) {
             content.innerHTML = '<p class="inf-empty">Sin pedidos para esta semana.</p>';
             return;
         }
 
-        const pedidos      = pedidosLiquidables(snapPedidos.docs.map(d => d.data()));
-        const devoluciones = devolucionesLiquidables(snapDev.docs.map(d => d.data()));
+        const pedidos = pedidosLiquidables((rawPedidos || []).map(r => ({
+            idPedido:     r.id_pedido,
+            deliveryDate: r.delivery_date,
+            total:        r.total,
+            status:       r.status,
+            eliminado:    r.eliminado,
+        })));
+        const devoluciones = devolucionesLiquidables((rawDevs || []).map(r => ({
+            productoNombre: r.producto_nombre,
+            cantidad:       r.cantidad,
+            unidadMedida:   r.unidad_medida,
+            precio:         r.precio,
+            valorTotal:     r.valor_total,
+            subtipo:        r.subtipo,
+        })));
 
         const subtotalPedidos = pedidos.reduce((s, p) => s + (p.total || 0), 0);
         const subtotalDev     = devoluciones.reduce((s, d) => s + (d.valorTotal || 0), 0);
@@ -138,19 +149,17 @@ async function cargarInforme() {
 }
 
 // ── Auth + init ────────────────────────────────────────────────────────────
-onAuthStateChanged(auth, async (user) => {
+(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { window.top.location.href = '../index.html'; return; }
 
-    const snap = await getDoc(doc(db, 'Usuarios', user.uid));
-    if (!snap.exists()) { window.top.location.href = '../index.html'; return; }
-
-    const { sede, rol, active } = snap.data();
-    if (!active || !['pizzeria', 'planta', 'admin'].includes(rol)) {
+    const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+    if (!data?.active || !['pizzeria', 'planta', 'admin'].includes(data.rol)) {
         window.top.location.href = '../index.html';
         return;
     }
 
-    sedeUsuario = sede.toLowerCase();
+    sedeUsuario = data.sede.toLowerCase();
     CargarHeader(sedeUsuario, './pizzerias.html');
     await cargarInforme();
     document.body.classList.add('loaded');
@@ -158,4 +167,4 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('liq-prev').addEventListener('click', () => { offsetSemanas--; cargarInforme(); });
     document.getElementById('liq-next').addEventListener('click', () => { offsetSemanas++; cargarInforme(); });
     document.getElementById('liq-print').addEventListener('click', () => window.print());
-});
+})();

@@ -1,56 +1,34 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { MostrarBotonSelector } from '../Shared/components.js';
+import { supabase } from '../Api/supabaseConfig.js'
+import { MostrarBotonSelector } from '../Shared/components.js'
 
-const auth = plantaDB.auth;
-const db   = plantaDB.db;
-
-const ROLES_PLANTA = ['planta', 'admin', 'planta-admin'];
-const LOGIN_URL    = '../index.html';
+const ROLES_PLANTA = ['planta', 'admin', 'planta-admin']
+const LOGIN_URL    = '../index.html'
 
 /**
  * Verifica que el usuario tenga sesión activa y rol permitido.
- * Lee el documento de Usuarios directamente por UID (1 lectura exacta).
+ * Lee el perfil desde public.usuarios en Supabase.
  *
  * @param {Function} onSuccess  Callback que recibe { uid, username, sede, rol }
- *                              Se ejecuta solo si el acceso es válido.
- * @param {string[]} [roles]    Roles permitidos. Por defecto ['planta', 'admin'].
+ * @param {string[]} [roles]    Roles permitidos. Por defecto ['planta', 'admin', 'planta-admin']
  */
 export function verificarAccesoPlanta(onSuccess, roles = ROLES_PLANTA) {
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            window.location.href = LOGIN_URL;
-            return;
-        }
-
+    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
+        if (error || !user) { window.location.href = LOGIN_URL; return }
         try {
-            const userDoc = await getDoc(doc(db, 'Usuarios', user.uid));
+            const { data: perfil, error: perfilError } = await supabase
+                .from('usuarios')
+                .select('username, sede, rol')
+                .eq('id', user.id)
+                .single()
 
-            if (!userDoc.exists()) {
-                window.location.href = LOGIN_URL;
-                return;
-            }
+            if (perfilError || !perfil)     { window.location.href = LOGIN_URL; return }
+            if (!roles.includes(perfil.rol)) { window.location.href = LOGIN_URL; return }
 
-            const { username, sede, rol } = userDoc.data();
-
-            if (!roles.includes(rol)) {
-                window.location.href = LOGIN_URL;
-                return;
-            }
-
-            onSuccess({
-                uid:      user.uid,
-                username: username || user.email,
-                sede,
-                rol,
-            });
-
-            if (rol === 'admin') MostrarBotonSelector();
-
-        } catch (error) {
-            console.error('plantaAuth — error verificando acceso:', error);
-            window.location.href = LOGIN_URL;
+            onSuccess({ uid: user.id, username: perfil.username, sede: perfil.sede, rol: perfil.rol })
+            if (perfil.rol === 'admin') MostrarBotonSelector()
+        } catch (err) {
+            console.error('plantaAuth — error verificando acceso:', err)
+            window.location.href = LOGIN_URL
         }
-    });
+    })
 }

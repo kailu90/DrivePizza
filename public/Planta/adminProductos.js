@@ -1,18 +1,10 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import {collection, getDocs, addDoc, doc, updateDoc, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { getProductos, invalidarProductos } from '../Shared/productosService.js'
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { UNIDADES_MEDIDA } from './planta.config.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 
-
-const db = plantaDB.db;
-
-import { HETZNER_URL, WS_URL } from '../Api/config.js';
-function notificarCacheProducto(productId) {
-    fetch(`${HETZNER_URL}/planta/cache/producto/${productId}`, { method: 'POST' }).catch(() => {});
-}
 
 let usuarioActual = 'Admin';
 
@@ -59,15 +51,13 @@ async function loadCategorias() {
     categoriasArr = cached.arr;
     categoriasMap = cached.map;
   } else {
-    const snap = await getDocs(
-      query(collection(db, 'Planta', 'principal', 'Categorias'), orderBy('name'))
-    );
-    snap.forEach(d => {
-      const data = d.data();
-      categoriasArr.push({ idCategory: data.idCategory, name: data.name });
-      categoriasMap[data.idCategory] = data.name;
-    });
-    cacheGuardar(CACHE_CATEGORIAS, { arr: categoriasArr, map: categoriasMap });
+    const { data, error } = await supabase.from('categorias').select('id_category,name').order('name')
+    if (error) throw error
+    data.forEach(c => {
+      categoriasArr.push({ idCategory: c.id_category, name: c.name })
+      categoriasMap[c.id_category] = c.name
+    })
+    cacheGuardar(CACHE_CATEGORIAS, { arr: categoriasArr, map: categoriasMap })
   }
 
   // Poblar select del formulario
@@ -91,9 +81,10 @@ async function loadProveedores() {
     if (cached) {
         _proveedoresList = cached;
     } else {
-        const snap = await getDocs(query(collection(db, 'Planta', 'principal', 'Proveedores'), orderBy('name', 'asc')));
-        _proveedoresList = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
-        cacheGuardar('ap_proveedores', _proveedoresList);
+        const { data, error } = await supabase.from('proveedores').select('id,nombre').eq('active', true).order('nombre')
+        if (error) throw error
+        _proveedoresList = data.map(p => ({ id: String(p.id), name: p.nombre }))
+        cacheGuardar('ap_proveedores', _proveedoresList)
     }
     const sel = document.getElementById('ap-filter-proveedor');
     sel.innerHTML = '<option value="">Todos los proveedores</option>';
@@ -206,9 +197,9 @@ document.getElementById('ap-tbody').addEventListener('change', async (e) => {
   const newActive = checkbox.checked;
   const p = allProducts.find(x => x._docId === docId);
   try {
-    await updateDoc(doc(db, 'Planta', 'principal', 'Productos', docId), { active: newActive, updatedAt: serverTimestamp() });
+    const { error: toggleErr } = await supabase.from('productos').update({ active: newActive, updated_at: new Date().toISOString() }).eq('id', parseInt(docId))
+    if (toggleErr) throw toggleErr
     if (p) p.active = newActive;
-    notificarCacheProducto(docId);
     invalidarProductos();
     renderTable();
     registrarMovimiento({
@@ -357,10 +348,18 @@ form.addEventListener('submit', async (e) => {
   try {
     if (isEdit) {
       const antes = allProducts.find(p => p._docId === editingDocId);
-      await updateDoc(doc(db, 'Planta', 'principal', 'Productos', editingDocId), { ...data, updatedAt: serverTimestamp() });
+      const supaData = {
+        name: nombre, id_category: idCategory, measurement_unit: unidad,
+        price: precio, active: activo, quantities: presentaciones,
+        sin_limite_stock: sinLimiteStock, rotacion: rotacion || null,
+        proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
+        proveedor_nombre: _proveedorSeleccionado?.name || null,
+        updated_at: new Date().toISOString(),
+      }
+      const { error: updErr } = await supabase.from('productos').update(supaData).eq('id', parseInt(editingDocId))
+      if (updErr) throw updErr
       const idx = allProducts.findIndex(p => p._docId === editingDocId);
       if (idx !== -1) allProducts[idx] = { ...allProducts[idx], ...data };
-      notificarCacheProducto(editingDocId);
       invalidarProductos();
 
       // Registrar un único documento con todos los campos que cambiaron
@@ -383,19 +382,24 @@ form.addEventListener('submit', async (e) => {
         }).catch(console.error);
       }
     } else {
-      data.stock = stock;
-      data.updatedAt = serverTimestamp();
-      const maxId = allProducts.reduce((m, p) => Math.max(m, p.id_product || 0), 0);
-      data.id_product = maxId + 1;
-      const ref = await addDoc(collection(db, 'Planta', 'principal', 'Productos'), data);
-      allProducts.push({ _docId: ref.id, ...data });
+      const supaData = {
+        name: nombre, id_category: idCategory, measurement_unit: unidad,
+        price: precio, stock, active: activo, quantities: presentaciones,
+        sin_limite_stock: sinLimiteStock, rotacion: rotacion || null,
+        proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
+        proveedor_nombre: _proveedorSeleccionado?.name || null,
+        updated_at: new Date().toISOString(),
+      }
+      const { data: newRow, error: insErr } = await supabase.from('productos').insert(supaData).select().single()
+      if (insErr) throw insErr
+      const newId = String(newRow.id)
+      allProducts.push({ _docId: newId, id: newId, ...data, stock });
       allProducts.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
-      notificarCacheProducto(ref.id);
       invalidarProductos();
 
       registrarMovimiento({
         tipo: 'CREACION',
-        productoId: ref.id,
+        productoId: newId,
         productoNombre: nombre,
         cantidad: stock,
         motivo: 'Creación de producto',
@@ -414,35 +418,11 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// ── WebSocket: actualización en tiempo real ────────────────────────────────
-let wsAdmin;
-function conectarWebSocketAdmin() {
-    wsAdmin = new WebSocket(WS_URL);
-
-    wsAdmin.onopen = () => {
-        console.log('AdminProductos WebSocket conectado');
-    };
-
-    wsAdmin.onmessage = async (event) => {
-        try {
-            const mensaje = JSON.parse(event.data);
-            if (mensaje.tipo === 'planta:productos:actualizado') {
-                invalidarProductos();
-                await loadProducts();
-                renderTable();
-            }
-        } catch (e) {
-            console.error('Error procesando mensaje WebSocket adminProductos:', e);
-        }
-    };
-
-    wsAdmin.onclose = () => {
-        console.log('AdminProductos WebSocket desconectado, reconectando en 5s...');
-        setTimeout(conectarWebSocketAdmin, 5000);
-    };
-
-    wsAdmin.onerror = (err) => {
-        console.error('AdminProductos WebSocket error:', err);
-    };
-}
-conectarWebSocketAdmin();
+// ── Supabase Realtime: actualización en tiempo real ───────────────────────────
+supabase.channel('admin-productos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, async () => {
+        invalidarProductos();
+        await loadProducts();
+        renderTable();
+    })
+    .subscribe();

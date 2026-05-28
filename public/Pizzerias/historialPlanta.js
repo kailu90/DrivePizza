@@ -1,19 +1,23 @@
-import { plantaDB } from '../Api/firebaseConfig.js';
-import {
-    doc, getDoc, getDocs, collection,
-    query, where, orderBy, limit, startAfter, updateDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader } from '../Shared/components.js';
 import { RECARGO_SERVICIO } from '../Planta/planta.config.js';
 import { registrarMovimiento } from '../Planta/inventoryService.js';
+import { getProductos } from '../Shared/productosService.js';
 
-const db   = plantaDB.db;
-const auth = plantaDB.auth;
-
-import { HETZNER_URL } from '../Api/config.js';
-function notificarCachePedido(docId) {
-    fetch(`${HETZNER_URL}/planta/cache/pedido/${docId}`, { method: 'POST' }).catch(() => {});
+function normalizarPedido(row) {
+    return {
+        id:           String(row.id),
+        idPedido:     row.id_pedido,
+        user:         row.user_sede,
+        deliveryDate: row.delivery_date,
+        orderNotes:   row.order_notes,
+        netCost:      row.net_cost,
+        total:        row.total,
+        recargo:      row.recargo,
+        products:     row.products || [],
+        status:       row.status,
+        eliminado:    row.eliminado,
+    };
 }
 
 const fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
@@ -21,16 +25,11 @@ const fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'CO
 // ── Estado ────────────────────────────────────────────────────────────────────
 let sedeUsuario            = null;
 let usuarioActual          = null;
-let unsubscribeOrders      = null;
 let pedidoEnEdicion        = null;
-let productosDisponibles   = null;
 let productoAgregarSeleccionado = null;
 
 const PAGE_SIZE = 20;
-let paginaActual          = 1;
-let cursorActual          = null;
-let paginaCursorHistory   = [];
-let ultimoDocPagina       = null;
+let paginaActual = 1;
 
 // ── DOM ───────────────────────────────────────────────────────────────────────
 const ordersContainer  = document.getElementById('ordersContainer');
@@ -40,31 +39,26 @@ const paidCount        = document.getElementById('paid-orders');
 const totalCount       = document.getElementById('total-orders');
 
 // ── Auth: obtener sede del usuario ────────────────────────────────────────────
-onAuthStateChanged(auth, async (user) => {
+(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { window.top.location.href = '../index.html'; return; }
 
-    const userDoc = await getDoc(doc(db, 'Usuarios', user.uid));
-    if (!userDoc.exists()) { window.top.location.href = '../index.html'; return; }
-
-    const { sede, rol, username } = userDoc.data();
-    if (!['pizzeria', 'planta', 'admin'].includes(rol)) {
+    const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+    if (!data || !['pizzeria', 'planta', 'admin'].includes(data.rol)) {
         window.top.location.href = '../index.html'; return;
     }
 
-    sedeUsuario   = sede;
-    usuarioActual = username || sede;
-    CargarHeader(sede, '../Pizzerias/pizzerias.html');
+    sedeUsuario   = data.sede;
+    usuarioActual = data.username || data.sede;
+    CargarHeader(data.sede, '../Pizzerias/pizzerias.html');
     setQuickActive('btn-recientes');
     listenForOrders();
     document.body.classList.add('loaded');
-});
+})();
 
 // ── Paginación ────────────────────────────────────────────────────────────────
 function resetPaginacion() {
-    paginaActual        = 1;
-    cursorActual        = null;
-    paginaCursorHistory = [];
-    ultimoDocPagina     = null;
+    paginaActual = 1;
 }
 
 function actualizarBotonesPaginacion(cantDocs) {
@@ -84,7 +78,7 @@ function getFechas() {
 }
 
 // ── Render tabla ──────────────────────────────────────────────────────────────
-function renderRows(snap) {
+function renderRows(pedidos) {
     ordersContainer.innerHTML = '';
     const { desde, hasta } = getFechas();
     const modoFecha  = !!(desde || hasta);
@@ -93,7 +87,7 @@ function renderRows(snap) {
     const paginationEl = document.getElementById('pagination-controls');
     if (paginationEl) paginationEl.style.display = modoFecha ? 'none' : 'flex';
 
-    if (snap.empty) {
+    if (!pedidos.length) {
         const msg = !modoFecha
             ? 'Sin pedidos registrados'
             : mismaFecha
@@ -106,28 +100,16 @@ function renderRows(snap) {
     }
 
     let totalPedidos = 0, pedidosPendientes = 0, pedidosEnviados = 0, pedidosPagados = 0;
-    const docs = [...snap.docs];
 
-    if (!modoFecha) {
-        ultimoDocPagina = docs[docs.length - 1];
-        actualizarBotonesPaginacion(docs.length);
-    }
+    if (!modoFecha) actualizarBotonesPaginacion(pedidos.length);
 
     const sortOrder = document.getElementById('sort')?.value || 'desc';
     if (modoFecha && desde !== hasta) {
-        docs.sort((a, b) => {
-            const diff = b.data().idPedido - a.data().idPedido;
-            return sortOrder === 'asc' ? -diff : diff;
-        });
+        pedidos.sort((a, b) => sortOrder === 'asc' ? a.idPedido - b.idPedido : b.idPedido - a.idPedido);
     }
 
-    docs.forEach(docSnap => {
-        const pedido = docSnap.data();
-        const docId  = docSnap.id;
-
-        if (pedido.eliminado) return;
-
-        if (pedido.status === 'pendiente')  pedidosPendientes++;
+    pedidos.forEach(pedido => {
+        if (pedido.status === 'pendiente')      pedidosPendientes++;
         else if (pedido.status === 'entregado') pedidosEnviados++;
         else if (pedido.status === 'pagado')    pedidosPagados++;
 
@@ -135,7 +117,7 @@ function renderRows(snap) {
 
         const tr = document.createElement('tr');
         tr.className = 'inventory-management__row';
-        tr.dataset.id = docId;
+        tr.dataset.id = pedido.id;
         tr.style.cursor = 'pointer';
         tr.innerHTML = `
             <td class="inventory-management__cell">${pedido.idPedido}</td>
@@ -155,38 +137,35 @@ function renderRows(snap) {
 }
 
 // ── Cargar pedidos ────────────────────────────────────────────────────────────
-function listenForOrders() {
+async function listenForOrders() {
     if (!sedeUsuario) return;
 
     const { desde, hasta } = getFechas();
-    const pedidosRef = collection(db, 'Planta', 'principal', 'PedidosPlanta');
-    const sortOrder  = document.getElementById('sort')?.value || 'desc';
+    const sortOrder = document.getElementById('sort')?.value || 'desc';
+    const ascending = sortOrder === 'asc';
 
-    if (!desde && !hasta) {
-        // Modo paginación
-        const constraints = [where('user', '==', sedeUsuario), orderBy('idPedido', 'desc'), limit(PAGE_SIZE)];
-        if (cursorActual) constraints.push(startAfter(cursorActual));
-        const q = query(pedidosRef, ...constraints);
+    try {
+        let q = supabase
+            .from('pedidos_planta')
+            .select('*')
+            .eq('user_sede', sedeUsuario)
+            .eq('eliminado', false);
 
-        getDocs(q).then(renderRows).catch(err => console.error('getDocs error:', err));
-    } else if (desde === hasta) {
-        // Mismo día: lectura única
-        const q = query(pedidosRef,
-            where('user', '==', sedeUsuario),
-            where('deliveryDate', '==', desde),
-            orderBy('idPedido', sortOrder),
-            limit(100)
-        );
-        getDocs(q).then(renderRows).catch(err => console.error('getDocs error:', err));
-    } else {
-        // Rango de fechas: lectura única
-        const q = query(pedidosRef,
-            where('user', '==', sedeUsuario),
-            where('deliveryDate', '>=', desde),
-            where('deliveryDate', '<=', hasta),
-            orderBy('deliveryDate')
-        );
-        getDocs(q).then(renderRows).catch(err => console.error('getDocs error:', err));
+        if (!desde && !hasta) {
+            // Modo paginación por offset
+            const from = (paginaActual - 1) * PAGE_SIZE;
+            q = q.order('id_pedido', { ascending: false }).range(from, from + PAGE_SIZE - 1);
+        } else if (desde === hasta) {
+            q = q.eq('delivery_date', desde).order('id_pedido', { ascending });
+        } else {
+            q = q.gte('delivery_date', desde).lte('delivery_date', hasta).order('delivery_date', { ascending: true });
+        }
+
+        const { data, error } = await q;
+        if (error) throw error;
+        renderRows((data || []).map(normalizarPedido));
+    } catch (err) {
+        console.error('Error cargando pedidos:', err);
     }
 }
 
@@ -251,16 +230,12 @@ document.getElementById('sort').addEventListener('change', () => { resetPaginaci
 
 // ── Paginación botones ────────────────────────────────────────────────────────
 document.getElementById('btn-next-page').addEventListener('click', () => {
-    if (!ultimoDocPagina) return;
-    paginaCursorHistory.push(cursorActual);
-    cursorActual = ultimoDocPagina;
     paginaActual++;
     listenForOrders();
 });
 
 document.getElementById('btn-prev-page').addEventListener('click', () => {
     if (paginaActual <= 1) return;
-    cursorActual = paginaCursorHistory.pop();
     paginaActual--;
     listenForOrders();
 });
@@ -305,23 +280,7 @@ function esEditable(pedido) {
 }
 
 async function cargarProductosDisponibles() {
-    if (productosDisponibles) return productosDisponibles;
-    const KEY = 'dash_productos', TTL = 10 * 60 * 1000;
-    try {
-        const cached = sessionStorage.getItem(KEY);
-        if (cached) {
-            const { ts, data } = JSON.parse(cached);
-            if (Date.now() - ts < TTL) { productosDisponibles = data; return data; }
-        }
-    } catch (_) {}
-    const snap = await getDocs(collection(db, 'Planta', 'principal', 'Productos'));
-    const data = snap.docs
-        .filter(d => d.data().active !== false && d.data().name)
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    try { sessionStorage.setItem(KEY, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
-    productosDisponibles = data;
-    return data;
+    return getProductos();
 }
 
 function actualizarTotalesModal(productos) {
@@ -416,7 +375,6 @@ async function guardarCambiosPedido() {
 
     const cambios = [];
     const nombresNuevos = new Set(productos.map(p => p.name));
-    const nombresOrig   = new Set((original.products || []).map(p => p.name));
 
     // Productos eliminados
     (original.products || []).forEach(p => {
@@ -443,20 +401,25 @@ async function guardarCambiosPedido() {
         btnGuardar.disabled    = true;
         btnGuardar.textContent = 'Guardando...';
 
-        await updateDoc(doc(db, 'Planta', 'principal', 'PedidosPlanta', docId), {
-            products: productos,
-            netCost:  neto,
-            total:    total,
-            recargo:  Math.round(neto * RECARGO_SERVICIO),
-            updatedAt: serverTimestamp()
-        });
-        notificarCachePedido(docId);
+        const { error } = await supabase
+            .from('pedidos_planta')
+            .update({
+                products:   productos,
+                net_cost:   neto,
+                total:      total,
+                recargo:    Math.round(neto * RECARGO_SERVICIO),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', docId);
+        if (error) throw error;
+
         await registrarMovimiento({
-            tipo: 'Edición pedido',
+            tipo:         'MODIFICACION',
+            entidad:      'Pedido',
             pedidoNumero: original.idPedido,
             referenciaId: docId,
             cambios,
-            usuario: usuarioActual
+            usuario:      usuarioActual
         });
         renderTablaModal(productos, false);
         actualizarTotalesModal(productos);
@@ -475,10 +438,14 @@ async function guardarCambiosPedido() {
 }
 
 async function abrirModal(docId) {
-    const snap = await getDoc(doc(db, 'Planta', 'principal', 'PedidosPlanta', docId));
-    if (!snap.exists()) return;
+    const { data: row, error } = await supabase
+        .from('pedidos_planta')
+        .select('*')
+        .eq('id', docId)
+        .single();
+    if (error || !row) return;
 
-    const pedido = snap.data();
+    const pedido = normalizarPedido(row);
     document.getElementById('modal-id-pedido').textContent = pedido.idPedido;
     document.getElementById('modal-sede').textContent      = pedido.user;
     document.getElementById('modal-fecha').textContent     = pedido.deliveryDate;

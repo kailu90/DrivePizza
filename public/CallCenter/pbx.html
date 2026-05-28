@@ -476,10 +476,8 @@
 </div><!-- /contenido-principal -->
 
 <script type="module">
-    import { plantaDB }           from '../Api/firebaseConfig.js';
-    import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { doc, getDocFromServer }       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-    import { PBX_URL, WS_URL }    from '../Api/config.js';
+    import { supabase }        from '../Api/supabaseConfig.js';
+    import { PBX_URL, WS_URL } from '../Api/config.js';
 
     const ROLES = ['callcenter', 'callcenter-admin', 'admin'];
 
@@ -724,28 +722,28 @@
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
-    onAuthStateChanged(plantaDB.auth, async user => {
+    (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) { window.location.href = '../index.html'; return; }
-        const snap = await getDocFromServer(doc(plantaDB.db, 'Usuarios', user.uid));
-        if (!snap.exists()) { window.location.href = '../index.html'; return; }
-        const data = snap.data();
-        if (!ROLES.includes(data.rol)) { window.location.href = '../index.html'; return; }
+        const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+        if (!data || !ROLES.includes(data.rol)) { window.location.href = '../index.html'; return; }
 
         document.getElementById('username').textContent = data.username || user.email;
         document.getElementById('contenido-principal').style.display = '';
         document.body.classList.add('loaded');
 
         document.getElementById('btn-logout').addEventListener('click', async () => {
-            if (confirm('Cerrar sesion?')) await signOut(plantaDB.auth)
-                .then(() => { window.location.href = '../index.html'; });
+            if (confirm('Cerrar sesion?')) {
+                await supabase.auth.signOut();
+                window.location.href = '../index.html';
+            }
         });
 
-        // Cargar sección inicial
         loadAgents();
         setInterval(() => { if (activeSection === 'asesores') loadAgents(); }, 10000);
 
         initWs();
-    });
+    })();
 </script>
 
 </body>

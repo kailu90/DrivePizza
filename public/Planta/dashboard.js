@@ -1,8 +1,4 @@
-//IMPORTA FUNCIONES DE LA BASE DE DATOS
-
-import { plantaDB } from '../Api/firebaseConfig.js';
-import { doc, updateDoc, getDoc, onSnapshot, getDocs, runTransaction, collection, query, where, orderBy, addDoc, serverTimestamp, Timestamp, limit, startAfter }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { supabase } from '../Api/supabaseConfig.js';
 import { ejecutarSalidaPedido, registrarMovimiento, ejecutarTransaccionStock } from './inventoryService.js'
 import { CargarHeader, CargarSidebar } from '../Shared/components.js'
 import { RECARGO_SERVICIO } from './planta.config.js'
@@ -10,26 +6,34 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js'
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js'
 import { getProductos, invalidarProductos } from '../Shared/productosService.js'
 
-const db = plantaDB.db;
-const auth = plantaDB.auth;
-const USAR_HETZNER = true
-import { HETZNER_URL, WS_URL } from '../Api/config.js'
-
-function notificarCachePedido(docId) {
-    fetch(`${HETZNER_URL}/planta/cache/pedido/${docId}`, { method: 'POST' }).catch(() => {});
-}
 const ordersContainer = document.getElementById('ordersContainer');
 
 // Estado del modal de edición
 let pedidoEnEdicion = null;   // { docId, data, productos: [{idProduct, name, quantity, unitPrice, totalPrice}] }
 let unsubscribeModalDoc = null;
-let todosPedidosHetzner = [] // caché local de todos los pedidos de Planta
+let todosPedidosSup = [] // caché local de todos los pedidos de Planta
 
 function cerrarListenerModal() {
     if (unsubscribeModalDoc) { unsubscribeModalDoc(); unsubscribeModalDoc = null; }
 }
 let productosDisponibles = null;  // caché de la colección Productos
 const fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+
+// Mapea columnas snake_case de Supabase al formato camelCase usado en todo el módulo
+function normalizarPedido(p) {
+    return {
+        idPedido:     p.id_pedido,
+        user:         p.user_sede,
+        deliveryDate: p.delivery_date,
+        orderNotes:   p.order_notes,
+        netCost:      p.net_cost,
+        total:        p.total,
+        recargo:      p.recargo,
+        products:     p.products || [],
+        status:       p.status,
+        eliminado:    p.eliminado,
+    };
+}
 
 // ── STEPPER DE ESTADO ─────────────────────────────────────────────────────
 const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
@@ -98,7 +102,7 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
     mostrarOverlay('Procesando...');
     try {
         await actualizarEstadoYDescontar(docId, nuevoEstado);
-        // Solo actualiza la UI del stepper si Firestore confirmó el cambio
+        // Solo actualiza la UI del stepper si Supabase confirmó el cambio
         pedidoEnEdicion.data.status = nuevoEstado;
         actualizarBadgeFila(docId, nuevoEstado);
         ocultarOverlay(nuevoEstado === 'entregado');
@@ -119,10 +123,6 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
 
 
 
-
-
-
-
 CargarSidebar(() => {
     setQuickActive('btn-recientes');
     listenForOrders();
@@ -131,42 +131,21 @@ CargarSidebar(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /****************TRAE TODOS LOS PEDIDOS DE LA BASE DE DATOS************/
-
-// Variable global para controlar la escucha activa
-let unsubscribeOrders = null;
 
 // ── Paginación ──────────────────────────────────────────────────────────────
 const PAGE_SIZE = 15;
 let paginaActual = 1;
-let cursorActual = null;          // startAfter cursor de la página actual (null = página 1)
-let paginaCursorHistory = [];     // pila de cursores para poder retroceder
-let ultimoDocPagina = null;       // último doc de la página actual (para avanzar)
+let cursorActual = null;          // (mantenido por compatibilidad con UI)
+let paginaCursorHistory = [];
+let ultimoDocPagina = null;
 
 function resetPaginacion() {
   paginaActual = 1;
   cursorActual = null;
   paginaCursorHistory = [];
   ultimoDocPagina = null;
-  todosPedidosHetzner = [];
+  todosPedidosSup = [];
 }
 
 function actualizarBotonesPaginacion(cantDocs) {
@@ -222,7 +201,7 @@ function renderRows(querySnapshot, ordersContainer, sortOrder) {
     actualizarBotonesPaginacion(docs.length);
   }
 
-  // Ordenar en memoria solo para rango de fechas (Firestore ordena por deliveryDate)
+  // Ordenar en memoria solo para rango de fechas
   if (modoFecha && !mismaFecha) {
     docs.sort((a, b) => {
       const diff = b.data().idPedido - a.data().idPedido;
@@ -267,12 +246,10 @@ function renderRows(querySnapshot, ordersContainer, sortOrder) {
 
 }
 
-let pollTimer = null;
 let pedidosMap = new Map();   // docId → data — caché en memoria para merge incremental
-let lastPollTs = null;        // Timestamp de la última carga/poll
 let sortOrderActual = 'desc'; // sort activo al momento del último render
 
-// Fake snapshot compatible con renderRows para re-renders incrementales
+// Fake snapshot compatible con renderRows
 function crearFakeSnapshot(entries) {
     return {
         empty: entries.length === 0,
@@ -280,155 +257,99 @@ function crearFakeSnapshot(entries) {
     };
 }
 
+// Realtime: se inicia una sola vez y persiste durante toda la sesión
+let _realtimeStarted = false;
 
-// Inicia el intervalo de poll + listener de visibilidad.
-// Devuelve función de limpieza que cancela ambos.
 function iniciarPoll() {
-    let ws = null
-
-    function conectarWebSocket() {
-        ws = new WebSocket(WS_URL)
-
-        ws.onopen = () => {
-            console.log('Planta WebSocket conectado')
-        }
-
-        ws.onmessage = (event) => {
-            try {
-                const mensaje = JSON.parse(event.data)
-                if (mensaje.tipo === 'planta:pedidos:actualizado') {
-                    todosPedidosHetzner = [] // limpiar caché para forzar recarga
-                    listenForOrders(sortOrderActual)
-                }
-                if (mensaje.tipo === 'planta:productos:actualizado') {
-                    invalidarCacheInventario()
-                }
-            } catch (e) {
-                console.error('Error procesando mensaje WebSocket:', e)
-            }
-        }
-
-        ws.onclose = () => {
-            console.log('Planta WebSocket desconectado, reconectando en 5s...')
-            setTimeout(conectarWebSocket, 5000)
-        }
-
-        ws.onerror = (err) => {
-            console.error('Planta WebSocket error:', err)
-        }
-    }
-
-    conectarWebSocket()
+    // Supabase Realtime: recarga la vista al detectar cambios en pedidos_planta
+    supabase
+        .channel('planta-pedidos')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_planta' }, () => {
+            todosPedidosSup = [];
+            listenForOrders(sortOrderActual);
+        })
+        .subscribe();
 
     // Refresco periódico como respaldo cada 5 min
-    const timer = setInterval(() => {
+    setInterval(() => {
         if (document.visibilityState === 'visible') {
-            todosPedidosHetzner = []
-            listenForOrders(sortOrderActual)
+            todosPedidosSup = [];
+            listenForOrders(sortOrderActual);
         }
-    }, 5 * 60 * 1000)
+    }, 5 * 60 * 1000);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            todosPedidosHetzner = []
-            listenForOrders(sortOrderActual)
+            todosPedidosSup = [];
+            listenForOrders(sortOrderActual);
         }
-    })
-
-    return () => {
-        clearInterval(timer)
-        ws?.close()
-    }
+    });
 }
 
 function listenForOrders(sortOrder = 'desc') {
     if (!ordersContainer) return;
     sortOrderActual = sortOrder;
-
-    if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
     pedidosMap.clear();
-    lastPollTs = null;
+
+    // Inicia Realtime una sola vez
+    if (!_realtimeStarted) {
+        _realtimeStarted = true;
+        iniciarPoll();
+    }
 
     const { desde, hasta } = getFechas();
-    const pedidosRef = collection(db, "Planta", "principal", "PedidosPlanta");
 
-  if (!desde && !hasta) {
-    if (USAR_HETZNER) {
+    if (!desde && !hasta) {
+        // Modo recientes: carga todo y pagina en memoria
         const cargarYPaginar = (pedidos) => {
-            pedidosMap.clear()
-            pedidos.forEach(p => pedidosMap.set(p.id, p))
-            lastPollTs = Timestamp.now()
-            const entries = [...pedidosMap.entries()].map(([id, data]) => ({ id, data }))
-            const inicio = (paginaActual - 1) * PAGE_SIZE
-            const slice = entries.slice(inicio, inicio + PAGE_SIZE)
-            ultimoDocPagina = slice[slice.length - 1]
-            actualizarBotonesPaginacion(slice.length)
-            renderRows(crearFakeSnapshot(slice), ordersContainer, sortOrder)
-        }
+            pedidosMap.clear();
+            pedidos.forEach(p => pedidosMap.set(String(p.id), normalizarPedido(p)));
+            const entries = [...pedidosMap.entries()].map(([id, data]) => ({ id, data }));
+            const inicio = (paginaActual - 1) * PAGE_SIZE;
+            const slice = entries.slice(inicio, inicio + PAGE_SIZE);
+            ultimoDocPagina = slice[slice.length - 1];
+            actualizarBotonesPaginacion(slice.length);
+            renderRows(crearFakeSnapshot(slice), ordersContainer, sortOrder);
+        };
 
-        if (todosPedidosHetzner.length > 0) {
-            cargarYPaginar(todosPedidosHetzner)
+        if (todosPedidosSup.length > 0) {
+            cargarYPaginar(todosPedidosSup);
         } else {
-            fetch(`${HETZNER_URL}/planta/pedidos/rango?desde=&hasta=`)
-                .then(r => r.json())
-                .then(pedidos => {
-                    todosPedidosHetzner = pedidos
-                    cargarYPaginar(pedidos)
-                })
-                .catch(err => console.error('Error cargando pedidos Hetzner:', err))
+            supabase
+                .from('pedidos_planta')
+                .select('*')
+                .eq('eliminado', false)
+                .order('id_pedido', { ascending: false })
+                .then(({ data: pedidos, error }) => {
+                    if (error) { console.error('Error cargando pedidos:', error); return; }
+                    todosPedidosSup = pedidos || [];
+                    cargarYPaginar(todosPedidosSup);
+                });
         }
     } else {
-        const constraints = [orderBy('idPedido', 'desc'), limit(PAGE_SIZE)]
-        if (cursorActual) constraints.push(startAfter(cursorActual))
-        getDocs(query(pedidosRef, ...constraints)).then(snap => {
-            snap.docs.forEach(d => pedidosMap.set(d.id, d.data()))
-            lastPollTs = Timestamp.now()
-            renderRows(snap, ordersContainer, sortOrder)
-        }).catch(err => console.error("Error al cargar página:", err))
+        // Modo fecha: consulta filtrada, sin paginación
+        let query = supabase.from('pedidos_planta').select('*').eq('eliminado', false);
+        if (desde === hasta && desde) {
+            query = query.eq('delivery_date', desde);
+        } else {
+            if (desde) query = query.gte('delivery_date', desde);
+            if (hasta) query = query.lte('delivery_date', hasta);
+        }
+        query
+            .order('id_pedido', { ascending: sortOrder === 'asc' })
+            .then(({ data: pedidos, error }) => {
+                if (error) { console.error('Error cargando pedidos por fecha:', error); return; }
+                pedidosMap.clear();
+                const all = pedidos || [];
+                const entries = all.map(p => {
+                    const data = normalizarPedido(p);
+                    pedidosMap.set(String(p.id), data);
+                    return { id: String(p.id), data };
+                });
+                renderRows(crearFakeSnapshot(entries), ordersContainer, sortOrder);
+            });
     }
-
-    if (paginaActual === 1) unsubscribeOrders = iniciarPoll()
-
-} else if (desde === hasta) {
-    if (USAR_HETZNER) {
-        fetch(`${HETZNER_URL}/planta/pedidos/rango?desde=${desde}&hasta=${hasta}`)
-            .then(r => r.json())
-            .then(pedidos => {
-                pedidosMap.clear()
-                pedidos.forEach(p => pedidosMap.set(p.id, p))
-                lastPollTs = Timestamp.now()
-                renderRows(crearFakeSnapshot(pedidos.map(p => ({ id: p.id, data: p }))), ordersContainer, sortOrder)
-            })
-            .catch(err => console.error('Error cargando pedidos Hetzner:', err))
-    } else {
-        getDocs(query(pedidosRef, where("deliveryDate", "==", desde), orderBy("idPedido", sortOrder), limit(100))).then(snap => {
-            snap.docs.forEach(d => pedidosMap.set(d.id, d.data()))
-            lastPollTs = Timestamp.now()
-            renderRows(snap, ordersContainer, sortOrder)
-        }).catch(err => console.error("Error al cargar pedidos del día:", err))
-    }
-    unsubscribeOrders = iniciarPoll()
-
-} else {
-    if (USAR_HETZNER) {
-        fetch(`${HETZNER_URL}/planta/pedidos/rango?desde=${desde}&hasta=${hasta}`)
-            .then(r => r.json())
-            .then(pedidos => {
-                pedidosMap.clear()
-                pedidos.forEach(p => pedidosMap.set(p.id, p))
-                lastPollTs = Timestamp.now()
-                renderRows(crearFakeSnapshot(pedidos.map(p => ({ id: p.id, data: p }))), ordersContainer, sortOrder)
-            })
-            .catch(err => console.error('Error cargando pedidos Hetzner:', err))
-    } else {
-        getDocs(query(pedidosRef, where("deliveryDate", ">=", desde), where("deliveryDate", "<=", hasta), orderBy("deliveryDate")))
-            .then(snap => renderRows(snap, ordersContainer, sortOrder))
-            .catch(err => {
-                console.error("Error al cargar rango:", err)
-                ordersContainer.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:red;">Error al cargar pedidos: ${err.message}</td></tr>`
-            })
-    }
-}}
+}
 
 
 /****************FILTROS DE FECHA Y ORDEN***********/
@@ -495,37 +416,18 @@ document.getElementById('btn-recientes')?.addEventListener('click', () => {
 // ── Paginación ─────────────────────────────────────────────────────────────
 document.getElementById('btn-next-page')?.addEventListener('click', () => {
   if (!ultimoDocPagina) return;
-  paginaCursorHistory.push(cursorActual);  // guarda cursor de página actual para poder volver
-  cursorActual = ultimoDocPagina;           // avanza al siguiente bloque
+  paginaCursorHistory.push(cursorActual);
+  cursorActual = ultimoDocPagina;
   paginaActual++;
   listenForOrders(getOrder());
 });
 
 document.getElementById('btn-prev-page')?.addEventListener('click', () => {
   if (paginaActual <= 1) return;
-  cursorActual = paginaCursorHistory.pop(); // recupera cursor de página anterior
+  cursorActual = paginaCursorHistory.pop();
   paginaActual--;
   listenForOrders(getOrder());
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -555,12 +457,16 @@ ordersContainer.addEventListener('click', async (e) => {
     if (syncBtn) {
         e.stopPropagation();
         try {
-            const docRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                const pedido = snap.data();
-                actualizarBadgeFila(docId, pedido.status);
-                await updateDoc(docRef, { updatedAt: serverTimestamp() });
+            const { data: pedidoSup, error } = await supabase
+                .from('pedidos_planta')
+                .select('status')
+                .eq('id', docId)
+                .single();
+            if (!error && pedidoSup) {
+                actualizarBadgeFila(docId, pedidoSup.status);
+                await supabase.from('pedidos_planta')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', docId);
             }
             syncBtn.textContent = '✅';
             setTimeout(() => syncBtn.textContent = '🔄', 2000);
@@ -575,25 +481,35 @@ ordersContainer.addEventListener('click', async (e) => {
 })};
 
 
-/********************CONFIRMACIÓN DE ELIMINACIÓN DE PEDIDO EN FIREBASE***************/
+/********************CONFIRMACIÓN DE ELIMINACIÓN DE PEDIDO***************/
 async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
     const confirmacion = confirm(`¿Estás seguro de que deseas eliminar el pedido N° ${idPedidoVisual}?`);
 
     if (confirmacion) {
         try {
-            const docRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
+            const { data: pedidoSup, error: fetchErr } = await supabase
+                .from('pedidos_planta')
+                .select('*')
+                .eq('id', docId)
+                .single();
 
-            const snap = await getDoc(docRef);
-            const pedidoData = snap.exists() ? snap.data() : null;
-            const productosList = (pedidoData?.products || []).map(p => ({
+            if (fetchErr || !pedidoSup) throw new Error('Pedido no encontrado');
+            const pedidoData = normalizarPedido(pedidoSup);
+
+            const productosList = (pedidoData.products || []).map(p => ({
                 productoNombre: p.name,
                 cantidad: p.quantity
             }));
 
-            await updateDoc(docRef, { eliminado: true, updatedAt: serverTimestamp() });
-            notificarCachePedido(docId);
+            const { error: updateErr } = await supabase
+                .from('pedidos_planta')
+                .update({ eliminado: true, updated_at: new Date().toISOString() })
+                .eq('id', docId);
+
+            if (updateErr) throw updateErr;
+
             pedidosMap.delete(docId);
-            todosPedidosHetzner = todosPedidosHetzner.filter(p => p.id !== docId);
+            todosPedidosSup = todosPedidosSup.filter(p => String(p.id) !== docId);
 
             registrarMovimiento({
                 tipo: 'ELIMINACION',
@@ -625,77 +541,79 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
 
 
 
-
-
-
-
-
-
-
 /**********************ABRIR MODAL CON DETALLES DEL PEDIDO***************/
-function abrirModalPedido(docId, esEdicion = false) {
+async function abrirModalPedido(docId, esEdicion = false) {
     cerrarListenerModal();
 
-    const pedidoRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
-    let initialRenderDone = false;
+    const { data: pedidoSup, error } = await supabase
+        .from('pedidos_planta')
+        .select('*')
+        .eq('id', docId)
+        .single();
 
-    unsubscribeModalDoc = onSnapshot(pedidoRef, (docSnap) => {
-        if (!docSnap.exists()) return;
-        const pedido = docSnap.data();
+    if (error || !pedidoSup) {
+        alert("No se pudieron cargar los detalles del pedido.");
+        return;
+    }
 
-        if (!initialRenderDone) {
-            // ── Primer disparo: render completo (equivale al getDoc anterior) ──
-            initialRenderDone = true;
+    const pedido = normalizarPedido(pedidoSup);
 
-            document.getElementById('modal-id-pedido').textContent = pedido.idPedido;
-            document.getElementById('modal-sede').textContent = (pedido.user || '').toLowerCase();
-            document.getElementById('modal-fecha').textContent = pedido.deliveryDate;
-            document.getElementById('modal-fecha').style.display = '';
-            document.getElementById('modal-fecha-input').style.display = 'none';
-            document.getElementById('modal-obs').textContent = pedido.orderNotes || 'Sin observaciones';
+    document.getElementById('modal-id-pedido').textContent = pedido.idPedido;
+    document.getElementById('modal-sede').textContent = (pedido.user || '').toLowerCase();
+    document.getElementById('modal-fecha').textContent = pedido.deliveryDate;
+    document.getElementById('modal-fecha').style.display = '';
+    document.getElementById('modal-fecha-input').style.display = 'none';
+    document.getElementById('modal-obs').textContent = pedido.orderNotes || 'Sin observaciones';
 
-            const productos = (pedido.products || [])
-                .map(p => ({ ...p, unitPrice: p.quantity > 0 ? p.totalPrice / p.quantity : 0 }))
-                .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
+    const productos = (pedido.products || [])
+        .map(p => ({ ...p, unitPrice: p.quantity > 0 ? p.totalPrice / p.quantity : 0 }))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
 
-            pedidoEnEdicion = { docId, data: pedido, productos };
-            renderTablaModal(productos, esEdicion);
-            actualizarTotalesModal(productos);
+    pedidoEnEdicion = { docId, data: pedido, productos };
+    renderTablaModal(productos, esEdicion);
+    actualizarTotalesModal(productos);
 
-            const editable = pedido.status === 'pendiente' || (pedido.status === 'entregado' && ['planta-admin', 'admin'].includes(rolUsuario));
-            if (esEdicion) {
-                setModoEdicionDashboard();
-            } else {
-                setModoVistaDashboard(editable);
-            }
-            document.getElementById('modal-stepper').style.display = esEdicion ? 'none' : 'block';
-            if (!esEdicion) renderStepperModal(pedido.status);
+    const editable = pedido.status === 'pendiente' || (pedido.status === 'entregado' && ['planta-admin', 'admin'].includes(rolUsuario));
+    if (esEdicion) {
+        setModoEdicionDashboard();
+    } else {
+        setModoVistaDashboard(editable);
+    }
+    document.getElementById('modal-stepper').style.display = esEdicion ? 'none' : 'block';
+    if (!esEdicion) renderStepperModal(pedido.status);
 
-            cerrarModalAgregarProducto(true);
-            if (esEdicion) cargarProductosDisponibles();
+    cerrarModalAgregarProducto(true);
+    if (esEdicion) cargarProductosDisponibles();
 
-            const btnSyncModal = document.getElementById('btn-sync-modal');
-            if (btnSyncModal) btnSyncModal.style.display = ['planta-admin', 'planta', 'admin'].includes(rolUsuario) ? '' : 'none';
+    const btnSyncModal = document.getElementById('btn-sync-modal');
+    if (btnSyncModal) btnSyncModal.style.display = ['planta-admin', 'planta', 'admin'].includes(rolUsuario) ? '' : 'none';
 
-            if (modalDetalle) {
-                modalDetalle.style.display = 'flex';
-                document.body.classList.add('no-scroll');
-            }
-        } else {
-            // ── Actualizaciones posteriores: solo stepper, si no está editando ──
+    if (modalDetalle) {
+        modalDetalle.style.display = 'flex';
+        document.body.classList.add('no-scroll');
+    }
+
+    // Suscripción Realtime para actualizaciones en vivo del pedido abierto
+    const modalChannel = supabase
+        .channel(`modal-pedido-${docId}`)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'pedidos_planta',
+            filter: `id=eq.${docId}`
+        }, (payload) => {
             if (!pedidoEnEdicion) return;
             const enEdicion = document.getElementById('btn-save-modal').style.display !== 'none';
             if (enEdicion) return;
+            const updated = normalizarPedido(payload.new);
+            pedidoEnEdicion.data = updated;
+            renderStepperModal(updated.status);
+            document.getElementById('modal-fecha').textContent = updated.deliveryDate;
+            setModoVistaDashboard(updated.status === 'pendiente' || (updated.status === 'entregado' && ['planta-admin', 'admin'].includes(rolUsuario)));
+        })
+        .subscribe();
 
-            pedidoEnEdicion.data = pedido;
-            renderStepperModal(pedido.status);
-            document.getElementById('modal-fecha').textContent = pedido.deliveryDate;
-            setModoVistaDashboard(pedido.status === 'pendiente' || (pedido.status === 'entregado' && ['planta-admin', 'admin'].includes(rolUsuario)));
-        }
-    }, (error) => {
-        console.error("Error al cargar detalles:", error);
-        alert("No se pudieron cargar los detalles del pedido.");
-    });
+    unsubscribeModalDoc = () => supabase.removeChannel(modalChannel);
 }
 
 function renderTablaModal(productos, esEdicion) {
@@ -725,11 +643,14 @@ function actualizarTotalesModal(productos) {
 /*****************************IMPRIMIR COMANDA DE PEDIDO PLANTA*****************************/
 async function imprimirDirecto(docId) {
     try {
-        const pedidoRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
-        const snap = await getDoc(pedidoRef);
-        if (!snap.exists()) { alert("Pedido no encontrado."); return; }
+        const { data: pedidoSup, error } = await supabase
+            .from('pedidos_planta')
+            .select('*')
+            .eq('id', docId)
+            .single();
+        if (error || !pedidoSup) { alert("Pedido no encontrado."); return; }
 
-        const pedido = snap.data();
+        const pedido = normalizarPedido(pedidoSup);
         const fmtNum = (n) => new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0 }).format(n || 0);
 
         // Embeber logo como base64 igual que printer.mjs para evitar problemas de carga y color
@@ -1039,14 +960,23 @@ async function guardarCambiosPedido() {
         btnGuardar.disabled = true;
         btnGuardar.textContent = 'Guardando...';
 
-        const updateData = { products: productosFS, netCost, total, recargo, updatedAt: serverTimestamp() };
+        const updateData = {
+            products: productosFS,
+            net_cost: netCost,
+            total,
+            recargo,
+            updated_at: new Date().toISOString()
+        };
         if (nuevaFecha && nuevaFecha !== pedidoOriginal.deliveryDate) {
-            updateData.deliveryDate = nuevaFecha;
+            updateData.delivery_date = nuevaFecha;
         }
 
-        const pedidoRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
-        await updateDoc(pedidoRef, updateData);
-        notificarCachePedido(docId);
+        const { error } = await supabase
+            .from('pedidos_planta')
+            .update(updateData)
+            .eq('id', docId);
+
+        if (error) throw error;
 
         if (cambios.length > 0) {
             await registrarMovimiento({
@@ -1074,16 +1004,6 @@ async function guardarCambiosPedido() {
         btnGuardar.textContent = '✅';
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1126,14 +1046,18 @@ document.getElementById('btn-sync-modal')?.addEventListener('click', async () =>
     if (!pedidoEnEdicion) return;
     const btn = document.getElementById('btn-sync-modal');
     try {
-        const docRef = doc(db, "Planta", "principal", "PedidosPlanta", pedidoEnEdicion.docId);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-            const pedido = snap.data();
-            pedidoEnEdicion.data.status = pedido.status;
-            actualizarBadgeFila(pedidoEnEdicion.docId, pedido.status);
-            renderStepperModal(pedido.status);
-            await updateDoc(docRef, { updatedAt: serverTimestamp() });
+        const { data: pedidoSup, error } = await supabase
+            .from('pedidos_planta')
+            .select('status, delivery_date')
+            .eq('id', pedidoEnEdicion.docId)
+            .single();
+        if (!error && pedidoSup) {
+            pedidoEnEdicion.data.status = pedidoSup.status;
+            actualizarBadgeFila(pedidoEnEdicion.docId, pedidoSup.status);
+            renderStepperModal(pedidoSup.status);
+            await supabase.from('pedidos_planta')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', pedidoEnEdicion.docId);
         }
         if (btn) { btn.textContent = '✅'; setTimeout(() => btn.textContent = '🔄', 2000); }
     } catch (err) {
@@ -1341,34 +1265,8 @@ function mostrarToast(mensaje) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*****************CAMBIO DE ESTADO DE LOS PEDIDOS DEL DASHBOARD*******************/    
-// 1. Selecciona el contenedor padre que sí existe al inicio del script (el <tbody>)
-
+/*****************CAMBIO DE ESTADO DE LOS PEDIDOS DEL DASHBOARD*******************/
     if (ordersContainer) {
-        // 2. Adjunta el escuchador de eventos 'change' al contenedor padre (ordersContainer)
         ordersContainer.addEventListener('change', async (event) => {
 
             if (event.target.matches('.status-select')) {
@@ -1387,14 +1285,12 @@ function mostrarToast(mensaje) {
 
                 try {
                     await actualizarEstadoYDescontar(docId, nuevoEstado);
-                    // Éxito: actualizar el atributo de referencia
                     select.setAttribute('data-estado-actual', nuevoEstado);
                     select.value = nuevoEstado;
                     actualizarBadgeFila(docId, nuevoEstado);
                     ocultarOverlay(nuevoEstado === 'entregado');
                 } catch (e) {
                     ocultarOverlay(false);
-                    // Fallo: el select ya revirtió al estado anterior arriba
                     console.warn('Cambio de estado revertido por error.');
                 } finally {
                     select.disabled = false;
@@ -1402,43 +1298,28 @@ function mostrarToast(mensaje) {
             }
         });
     } else {
-        // Esto solo aparecería si el <tbody> con ID ordersContainer fue eliminado del HTML
         console.error("Error: No se encontró el contenedor padre con ID 'ordersContainer'.");
     }
 
 function esTransicionValida(actual, nuevo) {
     if (actual === nuevo) {
-        return true; 
+        return true;
     }
 
     switch (actual) {
         case 'pendiente':
-            // Desde pendiente, solo permite avanzar (entregado o pagado)
             return nuevo === 'entregado' || nuevo === 'pagado';
-            
+
         case 'entregado':
-            // Desde entregado, solo permite avanzar a pagado. No permite volver a pendiente.
             return nuevo === 'pagado';
-            
+
         case 'pagado':
-            // Desde pagado, NUNCA permite cambiar a otro estado.
             return false;
-            
+
         default:
-            return true; 
+            return true;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 function actualizarBadgeFila(docId, nuevoEstado) {
     const row = ordersContainer?.querySelector(`tr[data-doc-id="${docId}"]`);
@@ -1449,54 +1330,50 @@ function actualizarBadgeFila(docId, nuevoEstado) {
     badge.className = `status-badge ${badgeClass}`;
     badge.textContent = nuevoEstado;
     // Sincronizar cachés para que el próximo re-render no revierta el badge
-    const cached = todosPedidosHetzner.find(p => p.id === docId);
+    const cached = todosPedidosSup.find(p => String(p.id) === docId);
     if (cached) cached.status = nuevoEstado;
     if (pedidosMap.has(docId)) pedidosMap.get(docId).status = nuevoEstado;
 }
 
 /******** FUNCIÓN PARA ACTUALIZAR Y DESCONTAR LOS PRODUCTOS DEL STOCK *******/
 async function actualizarEstadoYDescontar(docId, nuevoEstado) {
-    // 1. Define la referencia al documento
-    const pedidoRef = doc(db, "Planta", "principal", "PedidosPlanta", docId);
-
     try {
-        // 2. OBTENER el estado actual del pedido para validar
-        const pedidoSnapshot = await getDoc(pedidoRef);
-        
-        if (!pedidoSnapshot.exists()) {
-            console.error(`Error: Pedido con ID ${docId} no encontrado.`);
-            return; 
-        }
-        
-        const pedidoData = pedidoSnapshot.data();
-        const estadoActual = pedidoData.status;
-        const numeroPedidoVisible = pedidoData.idPedido || pedidoId;
+        // Obtener pedido actual de Supabase para validar
+        const { data: pedidoSup, error: fetchErr } = await supabase
+            .from('pedidos_planta')
+            .select('*')
+            .eq('id', docId)
+            .single();
 
-        // 3. VALIDACIÓN DE REGLAS
+        if (fetchErr || !pedidoSup) {
+            console.error(`Error: Pedido con ID ${docId} no encontrado.`);
+            return;
+        }
+
+        const pedidoData = normalizarPedido(pedidoSup);
+        const estadoActual = pedidoData.status;
+
+        // Validación de reglas de transición
         if (!esTransicionValida(estadoActual, nuevoEstado)) {
             console.warn(`❌ Transición inválida: No se puede cambiar de '${estadoActual}' a '${nuevoEstado}'.`);
             return;
         }
 
-        // 4. SI EL NUEVO ESTADO ES ENTREGADO, descontar inventario PRIMERO
-        //    Solo si el descuento es exitoso se actualiza el status en Firestore
-        if (nuevoEstado === "entregado") {
+        // Si el nuevo estado es ENTREGADO, descontar inventario primero
+        if (nuevoEstado === 'entregado') {
             actualizarOverlay('Descontando inventario...');
             await descontarInventario(docId, usuarioActual);
             invalidarCacheInventario();
             actualizarOverlay('Actualizando estado...');
         }
 
-        // 5. Actualiza el estado vía Hetzner (actualiza caché + broadcast WS a todos los clientes)
-        const resp = await fetch(`${HETZNER_URL}/planta/pedidos/${docId}/estado`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: nuevoEstado })
-        });
-        if (!resp.ok) {
-            const err = await resp.json().catch(() => ({}));
-            throw new Error(err.error || `Error al actualizar estado (${resp.status})`);
-        }
+        // Actualizar estado en Supabase (el Realtime notificará a todos los clientes)
+        const { error: updateErr } = await supabase
+            .from('pedidos_planta')
+            .update({ status: nuevoEstado, updated_at: new Date().toISOString() })
+            .eq('id', docId);
+
+        if (updateErr) throw new Error(updateErr.message || `Error al actualizar estado`);
 
         console.log(`✅ Estado del pedido ${docId} actualizado a '${nuevoEstado}' con éxito.`);
 
@@ -1510,30 +1387,21 @@ async function actualizarEstadoYDescontar(docId, nuevoEstado) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-/********FUNCIÓN PARA DESCONTAR DEL INVENTARIO Y GENERAR UN REGISTRO DE TRANSACCIÓN*******/                       
+/********FUNCIÓN PARA DESCONTAR DEL INVENTARIO Y GENERAR UN REGISTRO DE TRANSACCIÓN*******/
 async function descontarInventario(pedidoId, usuario = 'Admin') {
     console.log("🚀 Iniciando descuento de inventario para Pedido:", pedidoId);
 
-    const pedidoRef = doc(db, "Planta", "principal", "PedidosPlanta", pedidoId);
-    const pedidoSnapshot = await getDoc(pedidoRef);
+    const { data: pedidoSup, error } = await supabase
+        .from('pedidos_planta')
+        .select('*')
+        .eq('id', pedidoId)
+        .single();
 
-    if (!pedidoSnapshot.exists()) {
+    if (error || !pedidoSup) {
         throw new Error(`El Pedido con ID ${pedidoId} no existe.`);
     }
 
-    const pedidoData = pedidoSnapshot.data();
+    const pedidoData = normalizarPedido(pedidoSup);
     const productosDelPedido = pedidoData.products;
     const numeroPedidoVisible = pedidoData.idPedido || pedidoId;
 
@@ -1542,7 +1410,7 @@ async function descontarInventario(pedidoId, usuario = 'Admin') {
         return;
     }
 
-    // Usar todos los productos activos (sin filtrar por stock) para resolver nombres
+    // Usar todos los productos activos para resolver nombres
     const todosProductos = await getProductos();
     const mapaNombre = {};
     todosProductos.forEach(p => {
@@ -1561,7 +1429,6 @@ async function descontarInventario(pedidoId, usuario = 'Admin') {
             return { productId: docId, name: item.name, cantidad: item.quantity, resuelto };
         });
 
-    // Si no se resolvió por nombre, se usa idProduct como fallback (todos los docIds son numéricos en este proyecto)
     const noResueltos = productosMapeados.filter(p => !p.resuelto);
     if (noResueltos.length > 0) {
         console.warn(`⚠️ Productos sin resolución por nombre (usando fallback idProduct): ${noResueltos.map(p => `"${p.name}" → ${p.productId}`).join(', ')}`);
@@ -1592,14 +1459,6 @@ async function descontarInventario(pedidoId, usuario = 'Admin') {
 
 
 
-
-
-
-
-
-
-
-
 /*************************************FUNCIÓN PARA CERRAR SESIÓN****************************************/
 let usuarioActual = 'Admin';
 let rolUsuario = '';
@@ -1614,22 +1473,13 @@ verificarAccesoPlanta(({ username, sede, rol }) => {
     }
 });
 
-document.getElementById('btn-sync-pedidos')?.addEventListener('click', async () => {
+document.getElementById('btn-sync-pedidos')?.addEventListener('click', () => {
     const btn = document.getElementById('btn-sync-pedidos');
     btn.disabled = true;
-    btn.textContent = 'Sincronizando...';
-    try {
-        const res = await fetch(`${HETZNER_URL}/planta/cache/sync-pedidos`, { method: 'POST' });
-        const data = await res.json();
-        if (res.ok) {
-            btn.textContent = `Listo: ${data.sincronizados ?? 0} nuevos`;
-        } else {
-            btn.textContent = 'Error';
-        }
-    } catch (e) {
-        btn.textContent = 'Error';
-    }
-    setTimeout(() => { btn.textContent = '🔄 Sincronizar caché'; btn.disabled = false; }, 3000);
+    btn.textContent = 'Recargando...';
+    todosPedidosSup = [];
+    listenForOrders(sortOrderActual);
+    setTimeout(() => { btn.textContent = '🔄 Recargar'; btn.disabled = false; }, 1500);
 });
 
 const linkLogout = document.getElementById("link_logout");
@@ -1639,12 +1489,10 @@ if (linkLogout) {
         e.preventDefault();
 
         const confirmar = confirm("¿Estás seguro de que quieres cerrar sesión?");
-        
+
         if (confirmar) {
             try {
-                console.log("Cerrando sesión en Firebase...");
-                await signOut(auth);
-                
+                await supabase.auth.signOut();
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 alert("Hubo un error al salir. Intenta de nuevo.");

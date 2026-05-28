@@ -67,9 +67,7 @@
 <script src="../jssip.min.js"></script>
 
 <script type="module">
-    import { plantaDB } from '../Api/firebaseConfig.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { doc, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { supabase } from '../Api/supabaseConfig.js';
     import { PBX_URL } from '../Api/config.js';
 
     const ICE = [
@@ -114,32 +112,29 @@
     });
 
     // ── Auth + usuario ────────────────────────────────────────────────────────
-    window._usuarioCCPromise = new Promise((resolve, reject) => {
-        onAuthStateChanged(plantaDB.auth, async (user) => {
-            if (!user) { window.location.href = '../index.html'; return; }
-            try {
-                const snap = await getDocFromServer(doc(plantaDB.db, 'Usuarios', user.uid));
-                if (!snap.exists()) { window.location.href = '../index.html'; return; }
-                const data = snap.data();
-                window._usuarioCC = {
-                    uid:         user.uid,
-                    email:       user.email,
-                    username:    data.username    || user.email,
-                    sede:        data.sede        || '',
-                    rol:         data.rol         || '',
-                    extension:   data.extension   || null,
-                    sipPassword: data.sipPassword || null
-                };
-                resolve(window._usuarioCC);
-                if (data.extension) initSIP(data.extension, data.sipPassword || '');
-            } catch (err) {
-                console.error('[shell] Error cargando usuario:', err);
-                reject(err);
-            } finally {
-                document.body.classList.add('loaded');
-            }
-        });
-    });
+    window._usuarioCCPromise = (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { window.location.href = '../index.html'; return; }
+        try {
+            const { data, error } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+            if (error || !data) { window.location.href = '../index.html'; return; }
+            window._usuarioCC = {
+                uid:         user.id,
+                email:       user.email,
+                username:    data.username    || user.email,
+                sede:        data.sede        || '',
+                rol:         data.rol         || '',
+                extension:   data.extension   || null,
+                sipPassword: data.sip_password || null
+            };
+            if (data.extension) initSIP(data.extension, data.sip_password || '');
+            return window._usuarioCC;
+        } catch (err) {
+            console.error('[shell] Error cargando usuario:', err);
+        } finally {
+            document.body.classList.add('loaded');
+        }
+    })();
 
     // ── Desconexión al cerrar el navegador ───────────────────────────────────
     window.addEventListener('pagehide', () => {
