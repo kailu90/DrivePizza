@@ -10,21 +10,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 65.109.225.149
+          username: root
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: echo "SSH OK desde $(hostname)"
+
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 65.109.225.149 >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        run: ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "echo 'SSH OK'"
 
       - name: Deploy public/ a Hetzner
         run: |
           rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" public/ root@65.109.225.149:/root/frontend/
 
       - name: Verificar deploy
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "ls /root/frontend/ | wc -l && echo 'archivos desplegados'"
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 65.109.225.149
+          username: root
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: echo "Archivos en frontend $(ls /root/frontend/ | wc -l)"
