@@ -19,8 +19,8 @@ jobs:
 
       - name: Deploy public/ a Hetzner
         run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" public/ root@65.109.225.149:/root/frontend/
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" public/ root@65.109.225.149:/var/www/frontend/
 
-      - name: Verificar deploy
+      - name: Fijar permisos y verificar deploy
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "echo 'Archivos: $(ls /root/frontend/ | wc -l)'"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "chown -R caddy:caddy /var/www/frontend && echo 'Archivos: $(ls /var/www/frontend/ | wc -l)'"
