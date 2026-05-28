@@ -4,11 +4,7 @@ import { fileURLToPath } from 'url';
 import pkg from 'pdf-to-printer';
 import puppeteer from 'puppeteer';
 import notifier from 'node-notifier';
-import admin from 'firebase-admin';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const serviceAccount = require('./serviceAccountKey.json');
+import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logoPath = path.join(__dirname, 'logo.png');
@@ -20,14 +16,14 @@ const { print } = pkg;
 const MI_SEDE = 'acropolis';
 const NOMBRE_IMPRESORA = 'PIZZEROS';
 const LOG_FILE = 'printer_log.txt';
-const HETZNER_URL = 'https://api.everest-central.com';
 // ─────────────────────────────────────────────────────────────────────────────
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+const { supabaseUrl, serviceRoleKey } = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'supabaseKey.json'), 'utf8')
+);
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
 });
-
-const db = admin.firestore();
 
 function log(mensaje) {
     const ahora = new Intl.DateTimeFormat('es-CO', {
@@ -53,7 +49,7 @@ function formatearHora12(hora24) {
 }
 
 function formatearFecha(fecha) {
-    const d = fecha?.toDate ? fecha.toDate() : new Date(fecha);
+    const d = new Date(fecha);
     return new Intl.DateTimeFormat('es-CO', {
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false,
@@ -221,34 +217,16 @@ async function imprimirPDF(rutaPDF) {
     log('Copia 2 impresa correctamente');
 }
 
-// Notifica a Hetzner para que actualice su caché — no bloquea el flujo principal.
-// Reintenta cada 30s indefinidamente hasta que Hetzner responda.
-function notificarHetzner(id, datos) {
-    (async () => {
-        for (let i = 1; ; i++) {
-            try {
-                const res = await fetch(`${HETZNER_URL}/callcenter/cache/pedido/${id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datos),
-                });
-                if (res.ok) {
-                    log(`Caché Hetzner actualizado para pedido #${datos.nPedido}`);
-                    return;
-                }
-                const err = await res.json().catch(() => ({}));
-                log(`Intento ${i} fallido al notificar Hetzner: ${err.error ?? res.status}. Reintentando en 30s...`);
-            } catch (e) {
-                log(`Intento ${i} fallido al notificar Hetzner: ${e.message}. Reintentando en 30s...`);
-            }
-            await new Promise(r => setTimeout(r, 30000));
-        }
-    })();
-}
-
-async function procesarPedido(docSnap) {
-    const pedido = docSnap.data();
-    const id = docSnap.id;
+async function procesarPedido(rawPedido) {
+    // Normalizar campos snake_case → camelCase para generarHTML/generarHTMLReserva
+    const pedido = {
+        ...rawPedido,
+        nPedido:          rawPedido.n_pedido,
+        fechaReserva:     rawPedido.fecha_reserva,
+        horaReserva:      rawPedido.hora_reserva,
+        cantidadPersonas: rawPedido.cantidad_personas,
+    };
+    const id = rawPedido.id;
     const esReserva = pedido.tipo === 'reserva';
 
     log(`${esReserva ? 'Nueva reserva' : 'Nuevo pedido'} detectado: #${pedido.nPedido} (${id})`);
@@ -289,16 +267,14 @@ async function procesarPedido(docSnap) {
             return;
         }
 
-        // Marcar en Firestore directamente (fuente de verdad, independiente de Hetzner)
-        const ahora = new Date();
-        const update = { impreso: true, estado: 'recibido', tsRecibido: ahora, updatedAt: ahora };
-        await db.collection('CallCenter').doc('principal')
-            .collection('PedidosCallCenter').doc(id)
-            .update(update);
-        log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado en Firestore como recibido`);
-
-        // Notificar a Hetzner en background para actualizar caché (no bloquea el flujo)
-        notificarHetzner(id, { ...pedido, id, ...update });
+        // Marcar en Supabase (el update dispara Realtime a los clientes automáticamente)
+        const ahora = new Date().toISOString();
+        const { error: errUpdate } = await supabase
+            .from('pedidos_callcenter')
+            .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
+            .eq('id', id);
+        if (errUpdate) log(`Advertencia: error marcando pedido en Supabase: ${errUpdate.message}`);
+        else log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado en Supabase como recibido`);
 
         // Limpiar PDF temporal
         fs.unlinkSync(rutaPDF);
@@ -308,24 +284,39 @@ async function procesarPedido(docSnap) {
     }
 }
 
-function iniciar() {
+async function iniciar() {
     log(`Monitor iniciado — Sede: ${MI_SEDE}`);
 
-    const query = db
-        .collection('CallCenter').doc('principal')
-        .collection('PedidosCallCenter')
-        .where('sede', '==', MI_SEDE)
-        .where('impreso', '==', false);
+    // Procesar pedidos no impresos que quedaron pendientes (ej: reinicio del script)
+    const { data: pendientes, error: errPend } = await supabase
+        .from('pedidos_callcenter')
+        .select('*')
+        .eq('sede', MI_SEDE)
+        .eq('impreso', false);
 
-    query.onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
-                procesarPedido(change.doc);
+    if (errPend) {
+        log(`Error cargando pedidos pendientes: ${errPend.message}`);
+    } else {
+        for (const pedido of (pendientes || [])) {
+            await procesarPedido(pedido);
+        }
+    }
+
+    // Escuchar nuevos pedidos en tiempo real
+    supabase.channel(`printer-${MI_SEDE}`)
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'pedidos_callcenter',
+            filter: `sede=eq.${MI_SEDE}`,
+        }, async (payload) => {
+            if (!payload.new.impreso) {
+                await procesarPedido(payload.new);
             }
+        })
+        .subscribe((status) => {
+            log(`Realtime: ${status}`);
         });
-    }, (error) => {
-        log(`Error en el listener de Firestore: ${error.message}`);
-    });
 }
 
 iniciar();

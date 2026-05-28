@@ -10,9 +10,10 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
-# Firebase credenciales
+# Credenciales (nunca commitear)
 public/config.js
 scripts/serviceAccountKey.json
+scripts/supabaseKey.json
 
 # Carpeta de impresión automática (contiene serviceAccountKey)
 impresiónAutomática/
