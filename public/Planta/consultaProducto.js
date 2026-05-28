@@ -2,7 +2,7 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 
-import { HETZNER_URL } from '../Api/config.js';
+import { supabase } from '../Api/supabaseConfig.js';
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
@@ -78,9 +78,19 @@ btnGenerar.addEventListener('click', async () => {
     resultadosEl.style.display = 'none';
 
     try {
-        const params = new URLSearchParams({ desde, hasta });
-        const res    = await fetch(`${HETZNER_URL}/planta/pedidos/rango?${params}`);
-        const pedidos = await res.json();
+        const { data: rawPedidos, error } = await supabase
+            .from('pedidos_planta')
+            .select('delivery_date, eliminado, status, products')
+            .gte('delivery_date', desde)
+            .lte('delivery_date', hasta);
+
+        if (error) throw error;
+        const pedidos = (rawPedidos || []).map(p => ({
+            deliveryDate: p.delivery_date,
+            eliminado:    p.eliminado,
+            status:       p.status,
+            products:     p.products,
+        }));
 
         // Agrupa por deliveryDate las cantidades del producto seleccionado
         const porDia = {};
