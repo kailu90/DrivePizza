@@ -48,7 +48,7 @@ function normalizarMovimiento(row) {
 // ── Formato de nombre ──────────────────────────────────────────────────────
 const EXCEPCIONES_TC = new Set(['x', 'de', 'del', 'la', 'las', 'el', 'los', 'y', 'en', 'con', 'sin', 'por']);
 function toTitleCase(str) {
-    if (!str) return str;
+    if (!str) return '';
     return str.toLowerCase().split(' ').map((w, i) =>
         (i === 0 || !EXCEPCIONES_TC.has(w)) ? w.charAt(0).toUpperCase() + w.slice(1) : w
     ).join(' ');
@@ -146,10 +146,10 @@ const LABEL_CAMPO = {
 // ════════════════════════ DESCRIPCIÓN DE MOVIMIENTOS ════════════════════════
 
 function describeCambio(c) {
-    const nombre = toTitleCase(c.productoNombre);
-    if (c.tipoCambio === 'AGREGADO')  return `Se agregó ${nombre} ×${c.cantidad}`;
+    const nombre = toTitleCase(c.productoNombre) || '—';
+    if (c.tipoCambio === 'AGREGADO')  return `Se agregó ${nombre} ×${c.cantidad ?? '?'}`;
     if (c.tipoCambio === 'ELIMINADO') return `Se eliminó ${nombre}`;
-    if (c.tipoCambio === 'CANTIDAD')  return `Cantidad ${nombre}: ${c.anterior} → ${c.nuevo}`;
+    if (c.tipoCambio === 'CANTIDAD')  return `Cantidad ${nombre}: ${c.anterior ?? '?'} → ${c.nuevo ?? '?'}`;
     return nombre;
 }
 
@@ -171,11 +171,11 @@ function buildDetalle(m) {
         case 'SALIDA': {
             if (m.productos?.length > 0) {
                 const ref = m.pedidoNumero ? `Pedido #${m.pedidoNumero}` : 'Salida de pedido';
-                const items = m.productos.map(p => `${toTitleCase(p.productoNombre)} ×${p.cantidad}`).join(', ');
+                const items = m.productos.map(p => `${toTitleCase(p.productoNombre) || '?'} ×${p.cantidad ?? '?'}`).join(', ');
                 return `${ref}: ${items}`;
             }
             const unit = m.unidadMedida || 'unidades';
-            return `Salida de ${m.cantidad} ${unit}`;
+            return `Salida de ${m.cantidad ?? '—'} ${unit}`;
         }
 
         case 'CREACION':
@@ -190,10 +190,12 @@ function buildDetalle(m) {
                 }
                 // Cambios de campos de producto
                 return m.cambios.map(c => {
-                    const label = LABEL_CAMPO[c.campo] || c.campo;
-                    if (c.campo === 'active') return c.valorNuevo === 'true' ? 'Producto activado' : 'Producto desactivado';
-                    if (c.campo === 'price')  return `Precio: $${c.valorAnterior} → $${c.valorNuevo}`;
-                    return `${label}: "${c.valorAnterior}" → "${c.valorNuevo}"`;
+                    const campo = c.campo || '';
+                    const label = LABEL_CAMPO[campo] || campo || '?';
+                    if (campo === 'active') return c.valorNuevo === 'true' ? 'Producto activado' : 'Producto desactivado';
+                    if (campo === 'price')  return `Precio: $${c.valorAnterior ?? '?'} → $${c.valorNuevo ?? '?'}`;
+                    if (!campo) return c.valorNuevo ?? '—';
+                    return `${label}: "${c.valorAnterior ?? ''}" → "${c.valorNuevo ?? ''}"`;
                 }).join(' | ');
             }
             // Formato anterior: campo único
@@ -208,9 +210,10 @@ function buildDetalle(m) {
         }
 
         case 'AJUSTE': {
-            const signo = m.diferencia >= 0 ? `+${m.diferencia}` : `${m.diferencia}`;
+            const dif = m.diferencia ?? 0;
+            const signo = dif >= 0 ? `+${dif}` : `${dif}`;
             const nota = m.notas ? ` · ${m.notas}` : '';
-            return `${m.stockAnterior} → ${m.stockNuevo} (${signo}) · ${m.motivo}${nota}`;
+            return `${m.stockAnterior ?? '—'} → ${m.stockNuevo ?? '—'} (${signo}) · ${m.motivo ?? '—'}${nota}`;
         }
 
         case 'ELIMINACION':
@@ -228,10 +231,12 @@ function buildDetalle(m) {
 
 // ── Descripción de un ítem individual ─────────────────────────────────────
 function describeCampoProducto(c) {
-    if (c.campo === 'active') return c.valorNuevo === 'true' ? 'Producto activado' : 'Producto desactivado';
-    if (c.campo === 'price')  return `Precio: $${c.valorAnterior} → $${c.valorNuevo}`;
-    const label = LABEL_CAMPO[c.campo] || c.campo;
-    return `${label}: "${c.valorAnterior}" → "${c.valorNuevo}"`;
+    const campo = c.campo || '';
+    if (campo === 'active') return c.valorNuevo === 'true' ? 'Producto activado' : 'Producto desactivado';
+    if (campo === 'price')  return `Precio: $${c.valorAnterior ?? '?'} → $${c.valorNuevo ?? '?'}`;
+    if (!campo) return c.valorNuevo ?? '—';
+    const label = LABEL_CAMPO[campo] || campo;
+    return `${label}: "${c.valorAnterior ?? ''}" → "${c.valorNuevo ?? ''}"`;
 }
 
 function describirItem(m, item) {
@@ -239,9 +244,9 @@ function describirItem(m, item) {
         return item.tipoCambio ? describeCambio(item) : describeCampoProducto(item);
     }
     if (m.tipo === 'SALIDA' || m.tipo === 'ELIMINACION' || m.tipo === 'CREACION') {
-        return `${toTitleCase(item.productoNombre)} ×${item.cantidad}`;
+        return `${toTitleCase(item.productoNombre) || '?'} ×${item.cantidad ?? '?'}`;
     }
-    return '';
+    return '—';
 }
 
 // ── Resumen cuando hay múltiples ítems ─────────────────────────────────────
