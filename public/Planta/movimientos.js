@@ -97,6 +97,7 @@ function getTipoDisplay(m) {
             return 'Modificación';
         }
         // Formato anterior: campo único
+        if (!m.campo) return 'Modificación';
         if (m.campo === 'active') return m.valorNuevo === 'true' ? 'Activación' : 'Desactivación';
         if (m.campo === 'price')           return 'Cambio precio';
         if (m.campo === 'measurementUnit') return 'Cambio unidad';
@@ -197,6 +198,7 @@ function buildDetalle(m) {
             }
             // Formato anterior: campo único
             const campo = m.campo || '';
+            if (!campo) return m.motivo || m.notas || '—';
             if (campo === 'active') return m.valorNuevo === 'true' ? 'Producto activado' : 'Producto desactivado';
             const label = LABEL_CAMPO[campo] || campo;
             if (campo === 'price') return `Cambio de precio: $${m.valorAnterior} → $${m.valorNuevo}`;
