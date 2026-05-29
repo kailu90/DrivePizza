@@ -524,11 +524,12 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
 
             alert(`Pedido ${idPedidoVisual} eliminado con éxito.`);
 
-            if (rowElement) {
-                rowElement.style.transition = "all 0.5s ease";
-                rowElement.style.opacity = "0";
-                rowElement.style.transform = "translateX(20px)";
-                setTimeout(() => rowElement.remove(), 500);
+            const fila = rowElement || document.querySelector(`tr[data-doc-id="${docId}"]`);
+            if (fila) {
+                fila.style.transition = "all 0.5s ease";
+                fila.style.opacity = "0";
+                fila.style.transform = "translateX(20px)";
+                setTimeout(() => fila.remove(), 500);
             }
 
         } catch (error) {
@@ -1031,14 +1032,14 @@ document.getElementById('btn-print-modal')?.addEventListener('click', () => {
 });
 
 // ── Botón "Eliminar" del modal ─────────────────────────────────────────
-document.getElementById('btn-delete-modal')?.addEventListener('click', () => {
+document.getElementById('btn-delete-modal')?.addEventListener('click', async () => {
     if (!pedidoEnEdicion) return;
     const { docId, data: pedido } = pedidoEnEdicion;
-    confirmarEliminacion(docId, pedido.idPedido, null);
     cerrarListenerModal();
     modalDetalle.style.display = 'none';
     document.body.classList.remove('no-scroll');
     pedidoEnEdicion = null;
+    await confirmarEliminacion(docId, pedido.idPedido, null);
 });
 
 // ── Botón "Sync" del modal ─────────────────────────────────────────────
