@@ -119,6 +119,27 @@
                 </form>
             </div>
         </div>
+        <div id="reset_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Nueva Contraseña</h2>
+                <form id="reset_form" class="register_form">
+                    <label for="reset_pass">Nueva contraseña:</label>
+                    <input type="password" id="reset_pass" placeholder="************" required minlength="6">
+                    <label for="reset_confirm_pass">Confirmar contraseña:</label>
+                    <input type="password" id="reset_confirm_pass" placeholder="************" required>
+                    <div class="reg_buttons">
+                        <button type="submit">Guardar contraseña</button>
+                    </div>
+                    <p class="small_text">Ingresa tu nueva contraseña. Mínimo 6 caracteres.</p>
+                </form>
+            </div>
+        </div>
+        <div id="confirmation_reset_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Contraseña actualizada</h2>
+                <p class="small_text">Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.</p>
+            </div>
+        </div>
 
     </main>
 

@@ -160,7 +160,8 @@ forgotForm.addEventListener("submit", async (e) => {
     const email = forgotEmailInput.value.trim()
     if (!email) { displayLoginError("Por favor, ingresa tu correo electrónico."); return }
     try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email)
+        const redirectTo = window.location.origin + window.location.pathname
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
         if (error) throw error
         messageForgot()
         forgotForm.reset()
@@ -175,6 +176,41 @@ function messageForgot() {
     confirmationForgotModal.classList.add('active')
     confirmationForgotModal.onclick = (e) => { if (e.target === confirmationForgotModal) confirmationForgotModal.classList.remove('active') }
 }
+
+
+/*************************** MANEJO DE RECUPERACIÓN DE CONTRASEÑA ******************************/
+
+const resetModal             = document.getElementById("reset_modal")
+const confirmationResetModal = document.getElementById("confirmation_reset_modal")
+const resetForm              = document.getElementById("reset_form")
+
+// Supabase detecta automáticamente el token de recuperación en el hash de la URL
+// y dispara este evento con type='PASSWORD_RECOVERY'
+supabase.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+        resetModal.classList.add('active')
+    }
+})
+
+resetForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const newPass     = document.getElementById("reset_pass").value
+    const confirmPass = document.getElementById("reset_confirm_pass").value
+    if (newPass !== confirmPass) { displayLoginError("Las contraseñas no coinciden."); return }
+    if (newPass.length < 6)     { displayLoginError("La contraseña debe tener al menos 6 caracteres."); return }
+    try {
+        const { error } = await supabase.auth.updateUser({ password: newPass })
+        if (error) throw error
+        resetModal.classList.remove('active')
+        resetForm.reset()
+        confirmationResetModal.classList.add('active')
+        confirmationResetModal.onclick = (e) => { if (e.target === confirmationResetModal) confirmationResetModal.classList.remove('active') }
+        await supabase.auth.signOut()
+    } catch (err) {
+        console.error("Error al cambiar contraseña:", err)
+        displayLoginError(err.message || "Error al cambiar la contraseña.")
+    }
+})
 
 window.addEventListener('load', () => {
     document.body.classList.add('loaded');
