@@ -106,7 +106,16 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
         pedidoEnEdicion.data.status = nuevoEstado;
         actualizarBadgeFila(docId, nuevoEstado);
         ocultarOverlay(nuevoEstado === 'entregado');
-        renderStepperModal(nuevoEstado);
+        if (nuevoEstado === 'entregado') {
+            setTimeout(() => {
+                cerrarListenerModal();
+                modalDetalle.style.display = 'none';
+                document.body.classList.remove('no-scroll');
+                pedidoEnEdicion = null;
+            }, 420);
+        } else {
+            renderStepperModal(nuevoEstado);
+        }
     } catch (e) {
         ocultarOverlay(false);
         // El stepper no avanza — restaurar el botón para que el usuario pueda reintentar
