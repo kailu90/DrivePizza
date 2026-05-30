@@ -117,6 +117,8 @@
   text-align: left;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ap-table th.ap-col-num,
