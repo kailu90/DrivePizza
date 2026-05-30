@@ -27,6 +27,7 @@ let sedeUsuario            = null;
 let usuarioActual          = null;
 let pedidoEnEdicion        = null;
 let productoAgregarSeleccionado = null;
+let productosDisponibles   = null;
 
 const PAGE_SIZE = 20;
 let paginaActual = 1;
@@ -483,7 +484,7 @@ ordersContainer.addEventListener('click', (e) => {
 document.getElementById('btn-edit-modal').addEventListener('click', async () => {
     if (!pedidoEnEdicion) return;
     pedidoEnEdicion.productos = JSON.parse(JSON.stringify(pedidoEnEdicion.data.products || []));
-    await cargarProductosDisponibles();
+    productosDisponibles = await cargarProductosDisponibles();
     renderTablaModal(pedidoEnEdicion.productos, true);
     actualizarTotalesModal(pedidoEnEdicion.productos);
     setModoEdicion();
@@ -503,7 +504,7 @@ document.getElementById('btn-save-modal').addEventListener('click', guardarCambi
 
 // ── Modal agregar producto ────────────────────────────────────────────────────
 document.getElementById('btn-agregar-modal').addEventListener('click', async () => {
-    await cargarProductosDisponibles();
+    productosDisponibles = await cargarProductosDisponibles();
     productoAgregarSeleccionado = null;
     document.getElementById('agregar-buscar-input').value = '';
     document.getElementById('agregar-resultados').innerHTML = '';
