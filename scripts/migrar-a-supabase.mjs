@@ -367,7 +367,9 @@ async function main() {
     console.log(`   Supabase:          ${SUPABASE_URL}\n`)
 
     try {
-        if (args.includes('--solo-pedidos')) {
+        if (args.includes('--solo-callcenter')) {
+            await migrarPedidosCallCenter()
+        } else if (args.includes('--solo-pedidos')) {
             await migrarPedidosPlanta()
             await migrarPedidosCallCenter()
         } else if (args.includes('--solo-movimientos')) {
