@@ -459,7 +459,6 @@ async function cargarMovimientos() {
         if (error) throw error;
 
         allMovimientos = (rows || []).map(normalizarMovimiento);
-        console.log('[DEBUG movimientos] MODIFICACION rows:', allMovimientos.filter(m => m.tipo === 'MODIFICACION').map(m => ({ tipo: m.tipo, productoNombre: m.productoNombre, cambios: m.cambios, campo: m.campo })));
 
         // Resumen de salidas por día: solo cuando hay producto exacto + rango de fechas
         if (productoId && desde && hasta) {
