@@ -442,6 +442,8 @@ async function guardarCambiosPedido() {
         });
         if (nuevaFecha && nuevaFecha !== original.deliveryDate) {
             document.getElementById('modal-fecha').textContent = nuevaFecha;
+            const row = ordersContainer.querySelector(`tr[data-id="${docId}"]`);
+            if (row) row.cells[1].textContent = nuevaFecha;
         }
         renderTablaModal(productos, false);
         actualizarTotalesModal(productos);
