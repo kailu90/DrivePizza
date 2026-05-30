@@ -270,6 +270,8 @@ async function migrarPedidosCallCenter() {
             domicilio:         data.domicilio         || null,
             motivo_cancelacion: data.motivoCancelacion    || null,
             tipo:               data.tipo                 || null,
+            fecha_reserva:      data.fechaReserva         || null,
+            hora_reserva:       data.horaReserva          || null,
             cantidad_personas:  data.cantidadPersonas     || null,
             ts_recibido:       toISO(data.tsRecibido),
             ts_preparacion:    toISO(data.tsPreparacion),
