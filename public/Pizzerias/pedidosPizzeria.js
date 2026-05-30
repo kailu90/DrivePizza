@@ -100,7 +100,7 @@ async function cargarPedidosActivos() {
     try {
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_callcenter')
-            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido')
+            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas')
             .eq('sede', sedeActual)
             .gte('fecha', colFechaToUTC(hoy, 'inicio'))
             .lte('fecha', colFechaToUTC(hoy, 'fin'))
@@ -112,16 +112,20 @@ async function cargarPedidosActivos() {
         (rawPedidos || []).forEach(r => {
             const id = String(r.id);
             pedidosActuales[id] = {
-                id:         id,
-                nPedido:    r.n_pedido,
-                nombre:     r.nombre,
-                telefono:   r.telefono,
-                direccion:  r.direccion,
-                productos:  r.productos,
-                total:      r.total,
-                domicilio:  r.domicilio,
-                estado:     r.estado,
-                tsRecibido: r.ts_recibido,
+                id:               id,
+                nPedido:          r.n_pedido,
+                nombre:           r.nombre,
+                telefono:         r.telefono,
+                direccion:        r.direccion,
+                productos:        r.productos,
+                total:            r.total,
+                domicilio:        r.domicilio,
+                estado:           r.estado,
+                tsRecibido:       r.ts_recibido,
+                tipo:             r.tipo,
+                fechaReserva:     r.fecha_reserva,
+                horaReserva:      r.hora_reserva,
+                cantidadPersonas: r.cantidad_personas,
             };
         });
 
@@ -217,10 +221,13 @@ function renderFila(p) {
     const badgeLabel   = p.estado === 'recibido' ? '⏳ Recibido'
                        : p.estado === 'en preparación' ? 'Preparando'         : 'Despachado';
 
-    const esDomicilio = p.domicilio?.tipo !== 'recoger';
-    const sublinea    = esDomicilio
-        ? `📍 ${p.domicilio?.barrio || p.direccion || ''}`
-        : `🏪 Recoge en tienda`;
+    const esReserva   = p.tipo === 'reserva';
+    const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
+    const sublinea    = esReserva
+        ? `📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}${p.cantidadPersonas ? ` · ${p.cantidadPersonas} personas` : ''}`
+        : esDomicilio
+            ? `📍 ${p.domicilio?.barrio || p.direccion || ''}`
+            : `🏪 Recoge en tienda`;
 
     return `
         <div class="order-row ${estadoClass}" onclick="abrirModalPedido('${p.id}')">
@@ -246,14 +253,17 @@ window.abrirModalPedido = (id) => {
 };
 
 function poblarModal(p) {
-    const esDomicilio = p.domicilio?.tipo !== 'recoger';
+    const esReserva   = p.tipo === 'reserva';
+    const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
 
     document.getElementById('mp-npedido').textContent  = `#${p.nPedido}`;
     document.getElementById('mp-cliente').textContent  = p.nombre;
     document.getElementById('mp-tel').textContent      = `📞 ${p.telefono}`;
-    document.getElementById('mp-entrega').textContent  = esDomicilio
-        ? `📍 ${p.direccion || ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
-        : `🏪 Recoge en tienda`;
+    document.getElementById('mp-entrega').textContent  = esReserva
+        ? `📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}${p.cantidadPersonas ? ` · ${p.cantidadPersonas} personas` : ''}`
+        : esDomicilio
+            ? `📍 ${p.direccion || ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
+            : `🏪 Recoge en tienda`;
 
     document.getElementById('mp-productos').innerHTML =
         (p.productos || [])
