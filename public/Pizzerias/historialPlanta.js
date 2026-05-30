@@ -440,10 +440,13 @@ async function guardarCambiosPedido() {
             cambios,
             usuario:      usuarioActual
         });
-        if (nuevaFecha && nuevaFecha !== original.deliveryDate) {
-            document.getElementById('modal-fecha').textContent = nuevaFecha;
-            const row = ordersContainer.querySelector(`tr[data-id="${docId}"]`);
-            if (row) row.cells[1].textContent = nuevaFecha;
+        const fechaMostrar = (nuevaFecha && nuevaFecha !== original.deliveryDate) ? nuevaFecha : original.deliveryDate;
+        document.getElementById('modal-fecha').textContent = fechaMostrar;
+        const row = ordersContainer.querySelector(`tr[data-id="${docId}"]`);
+        if (row) {
+            row.cells[1].textContent = fechaMostrar;
+            row.cells[4].textContent = fmtCOP.format(neto);
+            row.cells[5].textContent = fmtCOP.format(total);
         }
         renderTablaModal(productos, false);
         actualizarTotalesModal(productos);
