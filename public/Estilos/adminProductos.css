@@ -292,12 +292,14 @@
   padding: .6rem .8rem;
   border-bottom: 1px solid #eee;
   text-align: left;
+}
+.ord-mat-table th {
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ord-mat-table thead tr { background: #f5f0e8; }
-.ord-mat-table th { font-weight: 600; }
 .ord-mat-table td .ap-input {
   width: 100%;
   box-sizing: border-box;
