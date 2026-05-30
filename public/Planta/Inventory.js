@@ -130,9 +130,9 @@ function renderProductos(productos) {
 async function cargarProductos(forzar = false) {
     try {
         const [productos] = await Promise.all([getProductos(forzar), obtenerProveedoresParaStock()]);
-        todosLosProductos = productos.slice().sort((a, b) =>
-            (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
-        );
+        todosLosProductos = productos
+            .filter(p => !p.soloProduccion)
+            .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
         renderProductos(todosLosProductos);
     } catch (error) {
         console.error('Error al cargar productos:', error);

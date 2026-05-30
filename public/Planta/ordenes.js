@@ -8,6 +8,25 @@ let usuarioActual = 'Admin';
 let allProductos  = [];
 let allOrdenes    = [];
 
+// ── Plantilla Salsa Napolitana ─────────────────────────────────────────────────
+const PLANTILLA_NAPOLITANA = {
+    nombre: 'Salsa Napolitana',
+    productoSalidaNombre: 'Salsa Napolitana',
+    cantidadSalida: 48,
+    materiales: [
+        { nombre: 'Vegetales Napolitana',            cantidad: 1    },
+        { nombre: 'Pasta de Tomate Heinz x 3150 Gr', cantidad: 7    },
+        { nombre: 'Aceite Riquisimo frasco x 3000 Ml', cantidad: 1  },
+        { nombre: 'Mantequilla la Fina caja x 500 Gr', cantidad: 1.25 },
+        { nombre: 'Ajo Pelado x 500 Gr',             cantidad: 4    },
+        { nombre: 'Orégano',                          cantidad: 0.74 },
+        { nombre: 'Sal de ajo',                       cantidad: 1.5  },
+        { nombre: 'Pimienta',                         cantidad: 0.2  },
+        { nombre: 'Albahaca',                         cantidad: 0.25 },
+        { nombre: 'Sal',                              cantidad: 1.25 },
+    ],
+};
+
 // ── Auth guard ────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, sede }) => {
     usuarioActual = username;
@@ -231,7 +250,8 @@ function leerFormulario() {
         const nombre = row.querySelector('.ord-mat-buscar').value.trim();
         const cant   = parseFloat(row.querySelector('.ord-mat-cant').value)  || 0;
         const costo  = parseFloat(row.querySelector('.ord-mat-costo').value) || 0;
-        if (id && nombre && cant > 0) materiales.push({ productoId: id, productoNombre: nombre, cantidad: cant, costoUnitario: costo });
+        const prod = allProductos.find(p => p.id === id);
+        if (id && nombre && cant > 0) materiales.push({ productoId: id, productoNombre: nombre, cantidad: cant, costoUnitario: costo, soloProduccion: prod?.soloProduccion ?? false });
     });
 
     return { nombre, responsable, fechaStr, notas, salidaId, salidaNombre, salidaCant, materiales };
@@ -411,8 +431,50 @@ function openDetalle(orden) {
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────
+function cargarPlantilla(plantilla) {
+    openNuevaOrden();
+    document.getElementById('ord-f-nombre').value = plantilla.nombre;
+
+    // Limpiar filas existentes
+    document.getElementById('ord-mat-tbody').innerHTML = '';
+
+    // Agregar una fila por cada material
+    for (const mat of plantilla.materiales) {
+        addMaterialRow();
+        const filas = document.querySelectorAll('.ord-mat-row');
+        const fila  = filas[filas.length - 1];
+        const prod  = allProductos.find(p => p.name.toLowerCase() === mat.nombre.toLowerCase());
+        const buscar = fila.querySelector('.ord-mat-buscar');
+        const idInput= fila.querySelector('.ord-mat-id');
+        const cantInput = fila.querySelector('.ord-mat-cant');
+        const costoInput= fila.querySelector('.ord-mat-costo');
+        const subtotal  = fila.querySelector('.ord-mat-subtotal');
+
+        buscar.value    = prod ? prod.name : mat.nombre;
+        idInput.value   = prod ? prod.id   : '';
+        cantInput.value = mat.cantidad;
+        if (prod?.price) {
+            costoInput.value = prod.price;
+            subtotal.textContent = '$' + (mat.cantidad * prod.price).toLocaleString('es-CO');
+        }
+    }
+    calcularCostos();
+
+    // Producto de salida
+    const prodSalida = allProductos.find(p => p.name.toLowerCase() === plantilla.productoSalidaNombre.toLowerCase());
+    if (prodSalida) {
+        document.getElementById('ord-f-salida-buscar').value = prodSalida.name;
+        document.getElementById('ord-f-salida-id').value     = prodSalida.id;
+    } else {
+        document.getElementById('ord-f-salida-buscar').value = plantilla.productoSalidaNombre;
+    }
+    document.getElementById('ord-f-salida-cant').value = plantilla.cantidadSalida;
+    calcularCostos();
+}
+
 function setupEventListeners() {
     document.getElementById('ord-btn-nuevo').addEventListener('click', openNuevaOrden);
+    document.getElementById('ord-btn-plantilla').addEventListener('click', () => cargarPlantilla(PLANTILLA_NAPOLITANA));
     document.getElementById('ord-btn-cancelar-modal').addEventListener('click', () => document.getElementById('ord-modal').close());
     document.getElementById('ord-det-cerrar').addEventListener('click', () => document.getElementById('ord-modal-detalle').close());
     document.getElementById('ord-btn-agregar-mat').addEventListener('click', addMaterialRow);

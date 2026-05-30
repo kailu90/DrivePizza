@@ -220,6 +220,7 @@ export async function ejecutarOrdenProduccion({
 }) {
     try {
         for (const m of materiales) {
+            if (m.soloProduccion) continue;
             await _incrementStock(m.productoId, -m.cantidad);
         }
         await _incrementStock(productoSalida.productoId, productoSalida.cantidad);

@@ -244,9 +244,10 @@ async function openModal(product = null) {
   document.getElementById('f-unidad').value         = product?.measurementUnit ?? UNIDADES_MEDIDA[0];
   document.getElementById('f-precio').value         = product?.price          ?? '';
   document.getElementById('f-presentaciones').value = product?.quantities     ?? '';
-  document.getElementById('f-activo').checked       = product?.active         ?? true;
-  document.getElementById('f-sin-limite').checked   = product?.sinLimiteStock  ?? false;
-  document.getElementById('f-rotacion').value       = product?.rotacion        ?? '';
+  document.getElementById('f-activo').checked         = product?.active          ?? true;
+  document.getElementById('f-sin-limite').checked     = product?.sinLimiteStock   ?? false;
+  document.getElementById('f-solo-produccion').checked= product?.soloProduccion   ?? false;
+  document.getElementById('f-rotacion').value         = product?.rotacion         ?? '';
 
   // Proveedor
   _proveedorSeleccionado = product?.proveedorId ? { id: product.proveedorId, name: product.proveedorNombre } : null;
@@ -344,6 +345,7 @@ form.addEventListener('submit', async (e) => {
   const presentaciones  = document.getElementById('f-presentaciones').value.trim();
   const activo          = document.getElementById('f-activo').checked;
   const sinLimiteStock  = document.getElementById('f-sin-limite').checked;
+  const soloProduccion  = document.getElementById('f-solo-produccion').checked;
   const rotacion        = document.getElementById('f-rotacion').value;
   const isEdit         = !!editingDocId;
 
@@ -367,6 +369,7 @@ form.addEventListener('submit', async (e) => {
     active: activo,
     quantities: presentaciones,
     sinLimiteStock,
+    soloProduccion,
     rotacion,
     ...(_proveedorSeleccionado ? { proveedorId: _proveedorSeleccionado.id, proveedorNombre: _proveedorSeleccionado.name } : {})
   };
@@ -377,7 +380,8 @@ form.addEventListener('submit', async (e) => {
       const supaData = {
         name: nombre, id_category: idCategory, measurement_unit: unidad,
         price: precio, active: activo, quantities: presentaciones,
-        sin_limite_stock: sinLimiteStock, rotacion: rotacion || null,
+        sin_limite_stock: sinLimiteStock, solo_produccion: soloProduccion,
+        rotacion: rotacion || null,
         proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
         proveedor_nombre: _proveedorSeleccionado?.name || null,
         updated_at: new Date().toISOString(),
@@ -411,7 +415,8 @@ form.addEventListener('submit', async (e) => {
       const supaData = {
         name: nombre, id_category: idCategory, measurement_unit: unidad,
         price: precio, stock, active: activo, quantities: presentaciones,
-        sin_limite_stock: sinLimiteStock, rotacion: rotacion || null,
+        sin_limite_stock: sinLimiteStock, solo_produccion: soloProduccion,
+        rotacion: rotacion || null,
         proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
         proveedor_nombre: _proveedorSeleccionado?.name || null,
         updated_at: new Date().toISOString(),

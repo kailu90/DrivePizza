@@ -183,7 +183,7 @@ async function fetchProductsFromFirestore() {
         const filtrados = productos.filter(p => {
             const activo = p.active == null ? true : Boolean(p.active)
             const tieneStock = p.sinLimiteStock === true || (p.stock ?? 0) > 0
-            return activo && tieneStock
+            return activo && tieneStock && !p.soloProduccion
         })
         filtrados.forEach(p => productsData.push({ ...p, docId: p.id }))
         const categoriasMap = await fetchCategoriasMap()

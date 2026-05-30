@@ -22,6 +22,7 @@ function _normalizar(row) {
         rotacion:        row.rotacion || null,
         proveedorId:     row.proveedor_id ? String(row.proveedor_id) : null,
         proveedorNombre: row.proveedor_nombre || null,
+        soloProduccion:  row.solo_produccion ?? false,
         updated_at:      row.updated_at,
     }
 }
