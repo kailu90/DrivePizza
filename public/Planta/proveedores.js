@@ -188,7 +188,11 @@ document.getElementById('prov-btn-delete-modal').addEventListener('click', async
         }).catch(console.error);
     } catch (err) {
         console.error('Error al eliminar proveedor:', err);
-        alert('Error al eliminar el proveedor. Intenta de nuevo.');
+        const esFk = err?.code === '23503' || err?.message?.toLowerCase().includes('foreign key');
+        alert(esFk
+            ? `No se puede eliminar el proveedor "${p?.name ?? ''}" porque tiene productos asociados.\n\nPrimero reasigna o quita el proveedor de esos productos.`
+            : 'Error al eliminar el proveedor. Intenta de nuevo.'
+        );
     }
 });
 
