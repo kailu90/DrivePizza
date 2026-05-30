@@ -100,7 +100,7 @@ async function cargarPedidosActivos() {
     try {
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_callcenter')
-            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas')
+            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas, obs')
             .eq('sede', sedeActual)
             .gte('fecha', colFechaToUTC(hoy, 'inicio'))
             .lte('fecha', colFechaToUTC(hoy, 'fin'))
@@ -122,6 +122,7 @@ async function cargarPedidosActivos() {
                 domicilio:        r.domicilio,
                 estado:           r.estado,
                 tsRecibido:       r.ts_recibido,
+                obs:              r.obs,
                 tipo:             r.tipo,
                 fechaReserva:     r.fecha_reserva,
                 horaReserva:      r.hora_reserva,
@@ -224,7 +225,7 @@ function renderFila(p) {
     const esReserva   = p.tipo === 'reserva';
     const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
     const sublinea    = esReserva
-        ? `📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}${p.cantidadPersonas ? ` · ${p.cantidadPersonas} personas` : ''}`
+        ? infoReserva(p)
         : esDomicilio
             ? `📍 ${p.domicilio?.barrio || p.direccion || ''}`
             : `🏪 Recoge en tienda`;
@@ -252,6 +253,15 @@ window.abrirModalPedido = (id) => {
     document.getElementById('modal-pedido').style.display = 'flex';
 };
 
+function infoReserva(p) {
+    if (p.fechaReserva || p.horaReserva) {
+        const partes = [`📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}`.trim()];
+        if (p.cantidadPersonas) partes.push(`${p.cantidadPersonas} personas`);
+        return partes.join(' · ');
+    }
+    return p.obs ? `📅 Reserva · ${p.obs}` : '📅 Reserva (sin fecha registrada)';
+}
+
 function poblarModal(p) {
     const esReserva   = p.tipo === 'reserva';
     const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
@@ -260,7 +270,7 @@ function poblarModal(p) {
     document.getElementById('mp-cliente').textContent  = p.nombre;
     document.getElementById('mp-tel').textContent      = `📞 ${p.telefono}`;
     document.getElementById('mp-entrega').textContent  = esReserva
-        ? `📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}${p.cantidadPersonas ? ` · ${p.cantidadPersonas} personas` : ''}`
+        ? infoReserva(p)
         : esDomicilio
             ? `📍 ${p.direccion || ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
             : `🏪 Recoge en tienda`;
