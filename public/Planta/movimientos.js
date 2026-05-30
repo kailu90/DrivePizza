@@ -150,6 +150,7 @@ function describeCambio(c) {
     if (c.tipoCambio === 'AGREGADO')  return `Se agregó ${nombre} ×${c.cantidad ?? '?'}`;
     if (c.tipoCambio === 'ELIMINADO') return `Se eliminó ${nombre}`;
     if (c.tipoCambio === 'CANTIDAD')  return `Cantidad ${nombre}: ${c.anterior ?? '?'} → ${c.nuevo ?? '?'}`;
+    if (c.tipoCambio === 'FECHA')     return `Fecha de entrega: ${c.anterior ?? '?'} → ${c.nuevo ?? '?'}`;
     return nombre;
 }
 
@@ -313,6 +314,9 @@ function abrirModalDetalle(m) {
             } else if (c.tipoCambio === 'CANTIDAD') {
                 li.innerHTML = `<span class="mv-det-campo">${nombre}</span>
                                 <span class="mv-det-valor">${c.anterior} → ${c.nuevo}</span>`;
+            } else if (c.tipoCambio === 'FECHA') {
+                li.innerHTML = `<span class="mv-det-campo">Fecha de entrega</span>
+                                <span class="mv-det-valor">${c.anterior ?? '?'} → ${c.nuevo ?? '?'}</span>`;
             }
             lista.appendChild(li);
         });
@@ -455,6 +459,7 @@ async function cargarMovimientos() {
         if (error) throw error;
 
         allMovimientos = (rows || []).map(normalizarMovimiento);
+        console.log('[DEBUG movimientos] MODIFICACION rows:', allMovimientos.filter(m => m.tipo === 'MODIFICACION').map(m => ({ tipo: m.tipo, productoNombre: m.productoNombre, cambios: m.cambios, campo: m.campo })));
 
         // Resumen de salidas por día: solo cuando hay producto exacto + rango de fechas
         if (productoId && desde && hasta) {
