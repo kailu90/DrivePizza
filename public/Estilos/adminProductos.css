@@ -284,6 +284,7 @@
 
 .ord-mat-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 1.3rem;
 }
@@ -291,9 +292,17 @@
   padding: .6rem .8rem;
   border-bottom: 1px solid #eee;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ord-mat-table thead tr { background: #f5f0e8; }
 .ord-mat-table th { font-weight: 600; }
+.ord-mat-table td .ap-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
 
 .ord-autocomplete {
   position: absolute;

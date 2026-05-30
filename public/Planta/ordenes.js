@@ -138,8 +138,8 @@ function addMaterialRow() {
             <input type="hidden" class="ord-mat-id">
             <div class="ord-autocomplete ord-mat-drop"></div>
         </td>
-        <td><input class="ap-input ord-mat-cant"  type="number" min="0.001" step="0.001" placeholder="0" style="width:90px"></td>
-        <td><input class="ap-input ord-mat-costo" type="number" min="0"     step="1"     placeholder="0" style="width:110px"></td>
+        <td><input class="ap-input ord-mat-cant"  type="number" min="0.001" step="0.001" placeholder="0"></td>
+        <td><input class="ap-input ord-mat-costo" type="number" min="0"     step="1"     placeholder="0"></td>
         <td class="ord-mat-subtotal ap-col-num">$0</td>
         <td><button type="button" class="ap-btn ap-btn--danger ord-mat-remove">✕</button></td>
     `;
@@ -151,7 +151,14 @@ function addMaterialRow() {
     const costoInput= tr.querySelector('.ord-mat-costo');
     const subtotal  = tr.querySelector('.ord-mat-subtotal');
 
-    setupAutocompleteProd(buscar, drop, idInput);
+    setupAutocompleteProd(buscar, drop, idInput, (prod) => {
+        if (prod.price != null) {
+            costoInput.value = prod.price;
+            const cant = parseFloat(cantInput.value) || 0;
+            subtotal.textContent = '$' + (cant * prod.price).toLocaleString('es-CO');
+            calcularCostos();
+        }
+    });
 
     [cantInput, costoInput].forEach(el => el.addEventListener('input', () => {
         const cant  = parseFloat(cantInput.value)  || 0;
@@ -169,7 +176,7 @@ function addMaterialRow() {
 }
 
 // ── Autocomplete genérico ─────────────────────────────────────────────────────
-function setupAutocompleteProd(input, drop, idHidden) {
+function setupAutocompleteProd(input, drop, idHidden, onSelect = null) {
     input.addEventListener('input', () => {
         const q = input.value.toLowerCase().trim();
         drop.innerHTML = '';
@@ -187,6 +194,7 @@ function setupAutocompleteProd(input, drop, idHidden) {
                 input.value    = p.name;
                 idHidden.value = p.id;
                 drop.style.display = 'none';
+                if (onSelect) onSelect(p);
             });
             drop.appendChild(item);
         });
@@ -374,7 +382,12 @@ function openDetalle(orden) {
         <div class="ord-section" style="margin-top:1.6rem">
             <span class="ord-section__title">Materias primas</span>
             <table class="ord-mat-table" style="margin-top:.8rem">
-                <thead><tr><th>Producto</th><th>Cantidad</th><th>Costo unit.</th><th>Subtotal</th></tr></thead>
+                <thead><tr>
+                    <th style="width:44%">Producto</th>
+                    <th style="width:16%">Cantidad</th>
+                    <th style="width:20%">Costo unit.</th>
+                    <th style="width:20%">Subtotal</th>
+                </tr></thead>
                 <tbody>${filasMateria}</tbody>
             </table>
         </div>
