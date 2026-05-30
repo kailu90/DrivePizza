@@ -61,7 +61,10 @@
     <!-- Modal crear / editar proveedor -->
     <dialog id="prov-modal" class="ap-modal-dialog">
         <form id="prov-form" class="ap-modal__form" novalidate>
-            <h2 class="ap-modal__title" id="prov-modal-title">Nuevo proveedor</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h2 class="ap-modal__title" id="prov-modal-title" style="margin:0;">Nuevo proveedor</h2>
+                <button type="button" id="prov-btn-delete-modal" class="btn-modal btn-modal--danger" title="Eliminar proveedor" style="display:none;font-size:18px;">🗑️</button>
+            </div>
 
             <div class="ap-modal__grid">
                 <div class="ap-field ap-field--full">

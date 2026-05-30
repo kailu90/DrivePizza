@@ -104,9 +104,8 @@ function renderTable() {
                     <span class="ap-toggle__slider"></span>
                 </label>
             </td>
-            <td class="ap-cell ap-col-center" style="display:flex;gap:6px;justify-content:center;">
+            <td class="ap-cell ap-col-center">
                 <button class="ap-btn ap-btn--edit" data-id="${p._docId}">Editar</button>
-                <button class="ap-btn ap-btn--danger ap-btn--delete" data-id="${p._docId}" data-name="${p.name || ''}">Eliminar</button>
             </td>`;
         tbody.appendChild(tr);
     });
@@ -144,35 +143,11 @@ document.getElementById('prov-tbody').addEventListener('change', async (e) => {
 });
 
 // ── Delegación en tbody ───────────────────────────────────────────────────────
-document.getElementById('prov-tbody').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('ap-btn--edit')) {
-        const docId = e.target.dataset.id;
-        const p = allProveedores.find(x => x._docId === docId);
-        if (p) openModal(p);
-        return;
-    }
-    if (e.target.classList.contains('ap-btn--delete')) {
-        const docId = e.target.dataset.id;
-        const nombre = e.target.dataset.name;
-        if (!confirm(`¿Eliminar el proveedor "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
-        try {
-            const { error } = await supabase.from('proveedores').delete().eq('id', parseInt(docId));
-            if (error) throw error;
-            allProveedores = allProveedores.filter(x => x._docId !== docId);
-            cacheGuardar(allProveedores);
-            renderTable();
-            registrarMovimiento({
-                tipo: 'ELIMINACION',
-                entidad: 'Proveedor',
-                productoNombre: nombre,
-                motivo: 'Eliminación de proveedor',
-                usuario: usuarioActual
-            }).catch(console.error);
-        } catch (err) {
-            console.error('Error al eliminar proveedor:', err);
-            alert('Error al eliminar el proveedor. Intenta de nuevo.');
-        }
-    }
+document.getElementById('prov-tbody').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('ap-btn--edit')) return;
+    const docId = e.target.dataset.id;
+    const p = allProveedores.find(x => x._docId === docId);
+    if (p) openModal(p);
 });
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -189,8 +164,33 @@ function openModal(proveedor = null) {
     document.getElementById('f-prov-telefono').value     = proveedor?.telefono    ?? '';
     document.getElementById('f-prov-asesor').value       = proveedor?.asesor      ?? '';
     document.getElementById('f-prov-descripcion').value  = proveedor?.descripcion ?? '';
+    document.getElementById('prov-btn-delete-modal').style.display = isEdit ? 'inline-flex' : 'none';
     modal.showModal();
 }
+
+document.getElementById('prov-btn-delete-modal').addEventListener('click', async () => {
+    if (!editingDocId) return;
+    const p = allProveedores.find(x => x._docId === editingDocId);
+    if (!confirm(`¿Eliminar el proveedor "${p?.name ?? ''}"?\n\nEsta acción no se puede deshacer.`)) return;
+    try {
+        const { error } = await supabase.from('proveedores').delete().eq('id', parseInt(editingDocId));
+        if (error) throw error;
+        modal.close();
+        allProveedores = allProveedores.filter(x => x._docId !== editingDocId);
+        cacheGuardar(allProveedores);
+        renderTable();
+        registrarMovimiento({
+            tipo: 'ELIMINACION',
+            entidad: 'Proveedor',
+            productoNombre: p?.name || '',
+            motivo: 'Eliminación de proveedor',
+            usuario: usuarioActual
+        }).catch(console.error);
+    } catch (err) {
+        console.error('Error al eliminar proveedor:', err);
+        alert('Error al eliminar el proveedor. Intenta de nuevo.');
+    }
+});
 
 document.getElementById('prov-btn-nuevo').addEventListener('click', () => openModal());
 document.getElementById('prov-btn-cancelar').addEventListener('click', () => modal.close());

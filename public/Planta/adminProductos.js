@@ -177,9 +177,8 @@ function renderTable() {
           <span class="ap-toggle__slider"></span>
         </label>
       </td>
-      <td class="ap-cell ap-col-center" style="display:flex;gap:6px;justify-content:center;">
+      <td class="ap-cell ap-col-center">
         <button class="ap-btn ap-btn--edit" data-id="${p._docId}">Editar</button>
-        <button class="ap-btn ap-btn--danger ap-btn--delete" data-id="${p._docId}" data-name="${p.name || ''}">Eliminar</button>
       </td>`;
     tbody.appendChild(tr);
   });
@@ -219,35 +218,11 @@ document.getElementById('ap-tbody').addEventListener('change', async (e) => {
   }
 });
 
-document.getElementById('ap-tbody').addEventListener('click', async (e) => {
-  if (e.target.classList.contains('ap-btn--edit')) {
-    const docId = e.target.dataset.id;
-    const p = allProducts.find(x => x._docId === docId);
-    if (p) openModal(p);
-    return;
-  }
-  if (e.target.classList.contains('ap-btn--delete')) {
-    const docId = e.target.dataset.id;
-    const nombre = e.target.dataset.name;
-    if (!confirm(`¿Eliminar el producto "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
-    try {
-      const { error } = await supabase.from('productos').delete().eq('id', parseInt(docId));
-      if (error) throw error;
-      allProducts = allProducts.filter(x => x._docId !== docId);
-      invalidarProductos();
-      renderTable();
-      registrarMovimiento({
-        tipo: 'ELIMINACION',
-        productoId: docId,
-        productoNombre: nombre,
-        motivo: 'Eliminación de producto',
-        usuario: usuarioActual
-      }).catch(console.error);
-    } catch (err) {
-      console.error('Error al eliminar producto:', err);
-      alert('Error al eliminar el producto. Intenta de nuevo.');
-    }
-  }
+document.getElementById('ap-tbody').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('ap-btn--edit')) return;
+  const docId = e.target.dataset.id;
+  const p = allProducts.find(x => x._docId === docId);
+  if (p) openModal(p);
 });
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -297,8 +272,34 @@ async function openModal(product = null) {
     stockInput.value        = '';
   }
 
+  document.getElementById('ap-btn-delete-modal').style.display = isEdit ? 'inline-flex' : 'none';
+
   modal.showModal();
 }
+
+document.getElementById('ap-btn-delete-modal').addEventListener('click', async () => {
+  if (!editingDocId) return;
+  const p = allProducts.find(x => x._docId === editingDocId);
+  if (!confirm(`¿Eliminar el producto "${p?.name ?? ''}"?\n\nEsta acción no se puede deshacer.`)) return;
+  try {
+    const { error } = await supabase.from('productos').delete().eq('id', parseInt(editingDocId));
+    if (error) throw error;
+    modal.close();
+    allProducts = allProducts.filter(x => x._docId !== editingDocId);
+    invalidarProductos();
+    renderTable();
+    registrarMovimiento({
+      tipo: 'ELIMINACION',
+      productoId: editingDocId,
+      productoNombre: p?.name || '',
+      motivo: 'Eliminación de producto',
+      usuario: usuarioActual
+    }).catch(console.error);
+  } catch (err) {
+    console.error('Error al eliminar producto:', err);
+    alert('Error al eliminar el producto. Intenta de nuevo.');
+  }
+});
 
 document.getElementById('ap-btn-nuevo').addEventListener('click', () => openModal());
 document.getElementById('ap-btn-cancelar').addEventListener('click', () => modal.close());
