@@ -347,6 +347,8 @@ function renderTablaModal(productos, esEdicion) {
 }
 
 function setModoVista() {
+    document.getElementById('modal-fecha').style.display       = '';
+    document.getElementById('modal-fecha-input').style.display = 'none';
     document.getElementById('btn-edit-modal').style.display    = '';
     document.getElementById('btn-agregar-modal').style.display = 'none';
     document.getElementById('btn-save-modal').style.display    = 'none';
@@ -355,6 +357,10 @@ function setModoVista() {
 }
 
 function setModoEdicion() {
+    document.getElementById('modal-fecha').style.display       = 'none';
+    const fechaInput = document.getElementById('modal-fecha-input');
+    fechaInput.value = pedidoEnEdicion?.data.deliveryDate || '';
+    fechaInput.style.display = 'inline-block';
     document.getElementById('btn-edit-modal').style.display    = 'none';
     document.getElementById('btn-agregar-modal').style.display = '';
     document.getElementById('btn-save-modal').style.display    = '';
@@ -392,6 +398,13 @@ async function guardarCambiosPedido() {
         }
     });
 
+    // Detectar cambio de fecha
+    const fechaInput = document.getElementById('modal-fecha-input');
+    const nuevaFecha = fechaInput.style.display !== 'none' ? fechaInput.value : null;
+    if (nuevaFecha && nuevaFecha !== original.deliveryDate) {
+        cambios.push({ tipoCambio: 'FECHA', anterior: original.deliveryDate, nuevo: nuevaFecha });
+    }
+
     if (cambios.length === 0) {
         mostrarToast('Sin cambios para guardar.');
         return;
@@ -402,15 +415,20 @@ async function guardarCambiosPedido() {
         btnGuardar.disabled    = true;
         btnGuardar.textContent = 'Guardando...';
 
+        const updateData = {
+            products:   productos,
+            net_cost:   neto,
+            total:      total,
+            recargo:    Math.round(neto * RECARGO_SERVICIO),
+            updated_at: new Date().toISOString()
+        };
+        if (nuevaFecha && nuevaFecha !== original.deliveryDate) {
+            updateData.delivery_date = nuevaFecha;
+        }
+
         const { error } = await supabase
             .from('pedidos_planta')
-            .update({
-                products:   productos,
-                net_cost:   neto,
-                total:      total,
-                recargo:    Math.round(neto * RECARGO_SERVICIO),
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', docId);
         if (error) throw error;
 
@@ -422,6 +440,9 @@ async function guardarCambiosPedido() {
             cambios,
             usuario:      usuarioActual
         });
+        if (nuevaFecha && nuevaFecha !== original.deliveryDate) {
+            document.getElementById('modal-fecha').textContent = nuevaFecha;
+        }
         renderTablaModal(productos, false);
         actualizarTotalesModal(productos);
         setModoVista();
