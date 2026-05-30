@@ -98,13 +98,13 @@ document.getElementById('btn-home').addEventListener('click', () => {
 async function cargarPedidosActivos() {
     const hoy = new Date().toISOString().split('T')[0];
     try {
+        const estadosStr = [...ESTADOS_ACTIVOS].join(',');
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_callcenter')
             .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas, obs')
             .eq('sede', sedeActual)
-            .gte('fecha', colFechaToUTC(hoy, 'inicio'))
-            .lte('fecha', colFechaToUTC(hoy, 'fin'))
-            .in('estado', [...ESTADOS_ACTIVOS]);
+            .in('estado', [...ESTADOS_ACTIVOS])
+            .or(`and(fecha.gte.${colFechaToUTC(hoy, 'inicio')},fecha.lte.${colFechaToUTC(hoy, 'fin')}),tipo.eq.reserva`);
 
         if (error) throw error;
 
