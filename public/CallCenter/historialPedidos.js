@@ -12,7 +12,7 @@ let pedidoPendienteCancelar = null;
 const MODO_RESERVAS = new URLSearchParams(window.location.search).get('tipo') === 'reserva';
 if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
 
-const ESTADOS_ACTIVOS = new Set(["recibido", "en preparación", "despachado"]);
+const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
 
 // ── SESSION STORAGE CACHÉ ──────────────────────────────────────────────
 const CACHE_TTL     = 5 * 60 * 1000;
@@ -53,7 +53,7 @@ let paginaActual = 1;
 const ESTADO_BADGE = {
     "pendiente":      { bg: "#e53935", color: "#fff" },
     "recibido":       { bg: "#1565c0", color: "#fff" },
-    "en preparación": { bg: "#7b1fa2", color: "#fff" },
+    "en preparacion": { bg: "#7b1fa2", color: "#fff" },
     "despachado":     { bg: "#0288d1", color: "#fff" },
     "entregado":      { bg: "#284c22", color: "#fff" },
     "cancelado":      { bg: "#757575", color: "#fff" },
@@ -201,7 +201,7 @@ function actualizarTimers() {
     document.querySelectorAll('tr[data-id]').forEach(fila => {
         const pedidoId = fila.dataset.id
         const pedido = pedidosCargados.find(p => p.id === pedidoId)
-        if (!pedido || pedido.estado !== 'en preparación' || pedido.tipo === 'reserva') return
+        if (!pedido || pedido.estado !== 'en preparacion' || pedido.tipo === 'reserva') return
 
         const minutos = calcularMinutos(pedido.tsRecibido)
         console.log('pedido:', pedido.nPedido, 'minutos:', minutos)
@@ -274,9 +274,9 @@ function renderTabla(pedidos) {
             : `$${formatPrecio(p.total)}`
         const canalLabel = p.canal === "whatsapp" ? "📱 WhatsApp" : p.canal === "ivr" ? "📞 IVR" : p.canal ?? "—"
 
-        // Timer de demora solo para pizzería y callcenter, pedidos en preparación
+        // Timer de demora solo para pizzería y callcenter, pedidos en preparacion
         const esPizzeria = true
-        const enPreparacion = p.estado === 'en preparación'
+        const enPreparacion = p.estado === 'en preparacion'
         const minutos = enPreparacion ? calcularMinutos(p.tsRecibido) : 0
 
         const fechaPedido = new Date(p.fecha);
@@ -381,7 +381,7 @@ const STEPS = [
                </svg>`
     },
     {
-        key: "en preparación", label: "Preparando", tsField: "tsPreparacion",
+        key: "en preparacion", label: "Preparando", tsField: "tsPreparacion",
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
@@ -401,7 +401,7 @@ const STEPS = [
 ];
 
 function estadoAIdx(estado) {
-    return { recibido: 0, "en preparación": 1, despachado: 2 }[estado] ?? -1;
+    return { recibido: 0, "en preparacion": 1, despachado: 2 }[estado] ?? -1;
 }
 
 function renderStepper(p, esActivo) {
@@ -545,7 +545,7 @@ function abrirDetalle(p) {
         : "";
 
     let cancelArea = "";
-    if (esActivo && p.estado === "en preparación" && p.tipo !== 'reserva')
+    if (esActivo && p.estado === "en preparacion" && p.tipo !== 'reserva')
         cancelArea += `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`;
     if (p.estado === "pendiente" && esAdmin)
         cancelArea += `<button class="btn-marcar-recibido" onclick="marcarRecibido('${p.id}', ${impreso})">✓ Marcar como recibido</button>`;
@@ -560,7 +560,7 @@ function cerrarDetalle() {
 
 // ── CAMBIAR ESTADO ─────────────────────────────────────────────────────
 const TS_MAP = {
-    "en preparación": "ts_preparacion",
+    "en preparacion": "ts_preparacion",
     "despachado":     "ts_despachado",
 };
 

@@ -1,7 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
-const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparación', 'despachado']);
+const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparacion', 'despachado']);
 
 let sedeActual = '';
 let pedidosActuales = {};       // id → objeto pedido
@@ -24,7 +24,7 @@ const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="2
 
 const STEPS = [
     {
-        key: 'en preparación',
+        key: 'en preparacion',
         label: 'Preparando',
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2"
@@ -178,7 +178,7 @@ function gestionarAutoPreparacion(pedidos) {
             try {
                 await supabase
                     .from('pedidos_callcenter')
-                    .update({ estado: 'en preparación', ts_preparacion: new Date().toISOString() })
+                    .update({ estado: 'en preparacion', ts_preparacion: new Date().toISOString() })
                     .eq('id', p.id);
             } catch (e) {
                 console.error('Error auto-preparación:', e);
@@ -192,7 +192,7 @@ function gestionarAutoPreparacion(pedidos) {
 // ── LISTA PRINCIPAL ───────────────────────────────────────────────
 function renderLista(pedidos) {
     const recibidos   = pedidos.filter(p => p.estado === 'recibido');
-    const preparacion = pedidos.filter(p => p.estado === 'en preparación');
+    const preparacion = pedidos.filter(p => p.estado === 'en preparacion');
     const despachado  = pedidos.filter(p => p.estado === 'despachado');
 
     document.getElementById('count-preparacion').textContent =
@@ -216,11 +216,11 @@ function renderLista(pedidos) {
 
 function renderFila(p) {
     const estadoClass  = p.estado === 'recibido' ? 'estado-recibido'
-                       : p.estado === 'en preparación' ? 'estado-preparacion' : 'estado-despachado';
+                       : p.estado === 'en preparacion' ? 'estado-preparacion' : 'estado-despachado';
     const badgeClass   = p.estado === 'recibido' ? 'badge-recibido'
-                       : p.estado === 'en preparación' ? 'badge-preparacion'  : 'badge-despachado';
+                       : p.estado === 'en preparacion' ? 'badge-preparacion'  : 'badge-despachado';
     const badgeLabel   = p.estado === 'recibido' ? '⏳ Recibido'
-                       : p.estado === 'en preparación' ? 'Preparando'         : 'Despachado';
+                       : p.estado === 'en preparacion' ? 'Preparando'         : 'Despachado';
 
     const esReserva   = p.tipo === 'reserva';
     const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
@@ -286,7 +286,7 @@ function poblarModal(p) {
         esDomicilio && p.domicilio?.valor ? `+ Dom $${p.domicilio.valor.toLocaleString()}` : '';
 
     document.getElementById('mp-stepper').innerHTML     = renderStepper(p);
-    document.getElementById('mp-cancel-area').innerHTML = p.estado === 'en preparación'
+    document.getElementById('mp-cancel-area').innerHTML = p.estado === 'en preparacion'
         ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`
         : '';
 }
@@ -338,7 +338,7 @@ function renderStepper(p) {
 
 // ── CAMBIAR ESTADO ────────────────────────────────────────────────
 const TS_MAP = {
-    'en preparación': 'ts_preparacion',
+    'en preparacion': 'ts_preparacion',
     'despachado':     'ts_despachado',
     'entregado':      'ts_entregado',
 };
