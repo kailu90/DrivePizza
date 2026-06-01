@@ -267,14 +267,33 @@ async function procesarPedido(rawPedido) {
             return;
         }
 
-        // Marcar en Supabase (el update dispara Realtime a los clientes automáticamente)
+        // Marcar en Supabase como recibido
         const ahora = new Date().toISOString();
         const { error: errUpdate } = await supabase
             .from('pedidos_callcenter')
             .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
             .eq('id', id);
         if (errUpdate) log(`Advertencia: error marcando pedido en Supabase: ${errUpdate.message}`);
-        else log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado en Supabase como recibido`);
+        else {
+            log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado como recibido`);
+
+            // Auto-avance a "en preparacion" después de 2 minutos
+            setTimeout(async () => {
+                const { data: actual } = await supabase
+                    .from('pedidos_callcenter')
+                    .select('estado')
+                    .eq('id', id)
+                    .single();
+                if (actual?.estado === 'recibido') {
+                    const { error: errAvance } = await supabase
+                        .from('pedidos_callcenter')
+                        .update({ estado: 'en preparacion', ts_preparacion: new Date().toISOString() })
+                        .eq('id', id);
+                    if (errAvance) log(`Advertencia: error en auto-avance pedido #${pedido.nPedido}: ${errAvance.message}`);
+                    else log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} → en preparacion (auto-avance)`);
+                }
+            }, 2 * 60 * 1000);
+        }
 
         // Limpiar PDF temporal
         fs.unlinkSync(rutaPDF);
@@ -287,12 +306,15 @@ async function procesarPedido(rawPedido) {
 async function iniciar() {
     log(`Monitor iniciado — Sede: ${MI_SEDE}`);
 
-    // Procesar pedidos no impresos que quedaron pendientes (ej: reinicio del script)
+    // Procesar pedidos no impresos de las últimas 4 horas (ej: reinicio del script)
+    const hace4h = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
     const { data: pendientes, error: errPend } = await supabase
         .from('pedidos_callcenter')
         .select('*')
         .eq('sede', MI_SEDE)
-        .eq('impreso', false);
+        .eq('impreso', false)
+        .neq('estado', 'cancelado')
+        .gte('fecha', hace4h);
 
     if (errPend) {
         log(`Error cargando pedidos pendientes: ${errPend.message}`);

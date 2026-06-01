@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "firebase-admin": "^13.4.0",
     "node-notifier": "^10.0.1",
     "pdf-to-printer": "^5.0.1",
