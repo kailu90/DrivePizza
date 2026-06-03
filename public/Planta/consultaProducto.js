@@ -23,13 +23,17 @@ const tbodyEl        = document.getElementById('cp-tbody');
 const tfootEl        = document.getElementById('cp-tfoot');
 const btnExport      = document.getElementById('cp-btn-export');
 
-// ── Fecha de hoy por defecto ───────────────────────────────────────────────
-const hoy = new Date().toISOString().split('T')[0];
+// ── Fecha de hoy por defecto (hora local Colombia, no UTC) ────────────────
+function getFechaHoy() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const hoy = getFechaHoy();
 inputDesde.value = hoy;
 inputHasta.value = hoy;
 
 // ── Cargar productos en datalist ───────────────────────────────────────────
-let _productosMap = {}; // nombre → id
+let _productosMap = {}; // nombre → id (Supabase)
 
 getProductos().then(productos => {
     productos
@@ -44,7 +48,7 @@ getProductos().then(productos => {
 }).catch(console.error);
 
 function getProductoId() {
-    return _productosMap[inputProducto.value.trim()] || '';
+    return _productosMap[inputProducto.value.trim()] || null;
 }
 
 // ── Habilitar botón cuando los campos están completos ─────────────────────
@@ -80,29 +84,31 @@ btnGenerar.addEventListener('click', async () => {
     try {
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_planta')
-            .select('delivery_date, eliminado, status, products')
+            .select('delivery_date, status, products')
+            .eq('eliminado', false)
             .gte('delivery_date', desde)
             .lte('delivery_date', hasta);
 
         if (error) throw error;
         const pedidos = (rawPedidos || []).map(p => ({
             deliveryDate: p.delivery_date,
-            eliminado:    p.eliminado,
             status:       p.status,
             products:     p.products,
         }));
 
         // Agrupa por deliveryDate las cantidades del producto seleccionado
+        // Todos los pedidos (migrados y nuevos) usan el mismo ID numérico de Supabase
         const porDia = {};
         pedidos
-            .filter(p => !p.eliminado && p.status !== 'cancelado')
+            .filter(p => p.status !== 'cancelado')
             .forEach(p => {
-                const dia  = p.deliveryDate || '—';
-                const item = (p.products || []).find(pr => String(pr.idProduct) === String(productoId));
-                if (!item) return;
-                const cant = Number(item.quantity) || 0;
-                if (!cant) return;
-                porDia[dia] = (porDia[dia] || 0) + cant;
+                const dia = p.deliveryDate || '—';
+                (p.products || []).forEach(pr => {
+                    if (String(pr.idProduct) !== productoId) return;
+                    const cant = Number(pr.quantity) || 0;
+                    if (!cant) return;
+                    porDia[dia] = (porDia[dia] || 0) + cant;
+                });
             });
 
         renderResultados(porDia, inputProducto.value.trim(), desde, hasta);
