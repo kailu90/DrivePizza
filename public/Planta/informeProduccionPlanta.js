@@ -5,33 +5,33 @@ let offsetDias = 0;
 
 // ── Producción — productos a reportar (idProduct = String(id_product)) ────
 const CATEGORIAS = [
-    { label: 'Pollo Desmechado',      ids: new Set(['14']), factor: 5, unidad: 'libras'     },
-    { label: 'Salami Zenú',           ids: new Set(['27']), factor: 2, unidad: 'barras'     },
-    { label: 'Tártara',               ids: new Set(['77']), factor: 1, unidad: 'frascos'    },
+    { label: 'Pollo Desmechado',      ids: new Set(['46']),       factor: 5, unidad: 'libras'     },
+    { label: 'Salami Zenú',           ids: new Set(['89', '186']), factor: 2, unidad: 'barras'     },
+    { label: 'Tártara',               ids: new Set(['144']),      factor: 1, unidad: 'frascos'    },
 ];
 const IDS_RELEVANTES = new Set(CATEGORIAS.flatMap(c => [...c.ids]));
 
 // ── Siropes Artesanales ────────────────────────────────────────────────────
 const SIROPES_CONFIG = [
-    { label: 'Frutos Rojos',    id: '84', thLabel: 'Frutos<br><small>Rojos</small>'    },
-    { label: 'Frutos Amarillos',id: '85', thLabel: 'Frutos<br><small>Amarillos</small>'},
-    { label: 'Tamarindo',       id: '86', thLabel: 'Tama&shy;rindo'                    },
+    { label: 'Frutos Rojos',    id: '154', thLabel: 'Frutos<br><small>Rojos</small>'    },
+    { label: 'Frutos Amarillos',id: '155', thLabel: 'Frutos<br><small>Amarillos</small>'},
+    { label: 'Tamarindo',       id: '156', thLabel: 'Tama&shy;rindo'                    },
 ];
 const SIROPES_IDS = new Set(SIROPES_CONFIG.map(s => s.id));
 
 // ── Masas CC ───────────────────────────────────────────────────────────────
 // Agrupado por idProduct para evitar inconsistencias de nombre entre pedidos
-const MASAS_LABEL = { '9': 'MASA x 140gr', '10': 'MASA x 350gr', '11': 'MASA x 450gr', '12': 'MASA x 700gr' };
+const MASAS_LABEL = { '160': 'MASA x 140gr', '2': 'MASA x 350gr', '13': 'MASA x 450gr', '24': 'MASA x 700gr' };
 const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
 const SEDES_MASA = ['megamall', 'acropolis'];
 
 // ── Carnes ─────────────────────────────────────────────────────────────────
 // 148=Carne para moler · 149=Carne para desmechar · 150=Carne para hamburguesa · 151=Pechuga Pollo
 const CARNES_CONFIG = [
-    { label: 'Carne para moler (Murillo)',   id: '148', thLabel: 'Moler<br><small>(Murillo)</small>'   },
-    { label: 'Carne para desmechar (Aleta)', id: '149', thLabel: 'Desmechar<br><small>(Aleta)</small>' },
-    { label: 'Carne para hamburguesa',       id: '150', thLabel: 'Hambur&shy;guesa'                    },
-    { label: 'Pechuga Pollo x 1000 Gr',     id: '151', thLabel: 'Pechuga<br><small>1000 Gr</small>'   },
+    { label: 'Carne para moler (Murillo)',   id: '55', thLabel: 'Moler<br><small>(Murillo)</small>'   },
+    { label: 'Carne para desmechar (Aleta)', id: '56', thLabel: 'Desmechar<br><small>(Aleta)</small>' },
+    { label: 'Carne para hamburguesa',       id: '58', thLabel: 'Hambur&shy;guesa'                    },
+    { label: 'Pechuga Pollo x 1000 Gr',     id: '59', thLabel: 'Pechuga<br><small>1000 Gr</small>'   },
 ];
 const CARNES_IDS = new Set(CARNES_CONFIG.map(c => c.id));
 
@@ -72,25 +72,14 @@ async function cargarInforme() {
     const dia = formatDia(fecha);
 
     try {
-        const IDS_DEBUG = new Set(['9','10','11','12','14','27','77','84','85','86','148','149','150','151']);
-        const { data: rawDebug, error: errDebug } = await supabase
-            .from('pedidos_planta')
-            .select('delivery_date, user_sede, products')
-            .eq('eliminado', false)
-            .gte('delivery_date', '2026-06-01')
-            .lte('delivery_date', '2026-06-10');
-        if (!errDebug) {
-            const hits = (rawDebug||[]).filter(p => (p.products||[]).some(i => IDS_DEBUG.has(String(i.idProduct||''))));
-            console.log('[debug] Pedidos con productos buscados:', hits.map(p => ({
-                fecha: p.delivery_date, sede: p.user_sede,
-                prods: (p.products||[]).filter(i => IDS_DEBUG.has(String(i.idProduct||''))).map(i => `${i.idProduct}(${i.quantity})`)
-            })));
-        }
-
+        // delivery_date puede estar guardado como timestamp string (ej: "2026-06-03T05:00:00Z")
+        // en migrados de Firebase. Se usa rango gte/lt para cubrir cualquier formato del día.
+        const fechaSiguiente = getFecha(offsetDias + 1);
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_planta')
             .select('user_sede, products')
-            .eq('delivery_date', fecha)
+            .gte('delivery_date', fecha)
+            .lt('delivery_date', fechaSiguiente)
             .eq('eliminado', false);
 
         if (error) throw error;
