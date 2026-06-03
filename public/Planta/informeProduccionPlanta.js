@@ -88,6 +88,11 @@ async function cargarInforme() {
             return;
         }
 
+        // DEBUG TEMPORAL — revisar en consola del navegador
+        console.log(`[informe] ${pedidos.length} pedidos para ${fecha}`);
+        console.log('[informe] idProducts encontrados:', [...new Set(pedidos.flatMap(p => (p.products||[]).map(i => String(i.idProduct??'')).filter(Boolean)))].sort());
+        console.log('[informe] IDs buscados — Producción:', [...IDS_RELEVANTES], '| Masas:', [...MASAS_IDS], '| Carnes:', [...CARNES_IDS], '| Siropes:', [...SIROPES_IDS]);
+
         // ── Tabla 1: Producción ────────────────────────────────────────────
         const totales = Object.fromEntries(CATEGORIAS.map(c => [c.label, 0]));
         pedidos.forEach(p => {
