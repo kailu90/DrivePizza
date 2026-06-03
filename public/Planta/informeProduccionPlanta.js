@@ -20,8 +20,9 @@ const SIROPES_CONFIG = [
 const SIROPES_IDS = new Set(SIROPES_CONFIG.map(s => s.id));
 
 // ── Masas CC ───────────────────────────────────────────────────────────────
-// 9=140gr · 10=350gr · 11=450gr · 12=700gr
-const MASAS_IDS  = new Set(['9', '10', '11', '12']);
+// Agrupado por idProduct para evitar inconsistencias de nombre entre pedidos
+const MASAS_LABEL = { '9': 'MASA x 140gr', '10': 'MASA x 350gr', '11': 'MASA x 450gr', '12': 'MASA x 700gr' };
+const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
 const SEDES_MASA = ['megamall', 'acropolis'];
 
 // ── Carnes ─────────────────────────────────────────────────────────────────
@@ -73,14 +74,14 @@ async function cargarInforme() {
     try {
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_planta')
-            .select('user_sede, status, products')
-            .eq('delivery_date', fecha);
+            .select('user_sede, products')
+            .eq('delivery_date', fecha)
+            .eq('eliminado', false);
 
         if (error) throw error;
 
         const pedidos = (rawPedidos || [])
-            .filter(p => p.status !== 'cancelado')
-            .map(p => ({ user: p.user_sede, status: p.status, products: p.products }));
+            .map(p => ({ user: p.user_sede, products: p.products }));
 
         if (pedidos.length === 0) {
             content.innerHTML = '<p class="inf-empty">Sin pedidos para esta fecha.</p>';
@@ -117,29 +118,30 @@ async function cargarInforme() {
             .forEach(p => {
                 const sede = normalizarSede(p.user);
                 (p.products || []).forEach(item => {
-                    if (!MASAS_IDS.has(String(item.idProduct || ''))) return;
-                    const nombre = item.name;
-                    if (!masas[nombre]) masas[nombre] = { megamall: 0, acropolis: 0 };
+                    const id = String(item.idProduct || '');
+                    if (!MASAS_IDS.has(id)) return;
+                    if (!masas[id]) masas[id] = { megamall: 0, acropolis: 0 };
                     const cant = Number(item.quantity) || 0;
-                    if (sede === 'megamall')  masas[nombre].megamall  += cant;
-                    if (sede === 'acropolis') masas[nombre].acropolis += cant;
+                    if (sede === 'megamall')  masas[id].megamall  += cant;
+                    if (sede === 'acropolis') masas[id].acropolis += cant;
                 });
             });
 
-        const tiposMasa = Object.keys(masas).sort();
+        // Ordenar por ID numérico para mantener orden: 140gr, 350gr, 450gr, 700gr
+        const tiposMasa = Object.keys(masas).sort((a, b) => Number(a) - Number(b));
         let totalMM = 0, totalAC = 0;
 
         let filasMasa;
         if (tiposMasa.length === 0) {
             filasMasa = `<tr><td colspan="4" style="text-align:center;color:#999;padding:1.5rem">Sin masas para esta fecha</td></tr>`;
         } else {
-            filasMasa = tiposMasa.map(tipo => {
-                const { megamall, acropolis } = masas[tipo];
+            filasMasa = tiposMasa.map(id => {
+                const { megamall, acropolis } = masas[id];
                 const total = megamall + acropolis;
                 totalMM += megamall;
                 totalAC += acropolis;
                 return `<tr>
-                    <td>${tipo}</td>
+                    <td>${MASAS_LABEL[id] || id}</td>
                     <td class="inf-cantidad ${megamall === 0 ? 'inf-cantidad--zero' : ''}">${megamall || '—'}</td>
                     <td class="inf-cantidad ${acropolis === 0 ? 'inf-cantidad--zero' : ''}">${acropolis || '—'}</td>
                     <td class="inf-cantidad inf-col-total">${total}</td>
