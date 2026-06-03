@@ -72,6 +72,21 @@ async function cargarInforme() {
     const dia = formatDia(fecha);
 
     try {
+        const IDS_DEBUG = new Set(['9','10','11','12','14','27','77','84','85','86','148','149','150','151']);
+        const { data: rawDebug, error: errDebug } = await supabase
+            .from('pedidos_planta')
+            .select('delivery_date, user_sede, products')
+            .eq('eliminado', false)
+            .gte('delivery_date', '2026-06-01')
+            .lte('delivery_date', '2026-06-10');
+        if (!errDebug) {
+            const hits = (rawDebug||[]).filter(p => (p.products||[]).some(i => IDS_DEBUG.has(String(i.idProduct||''))));
+            console.log('[debug] Pedidos con productos buscados:', hits.map(p => ({
+                fecha: p.delivery_date, sede: p.user_sede,
+                prods: (p.products||[]).filter(i => IDS_DEBUG.has(String(i.idProduct||''))).map(i => `${i.idProduct}(${i.quantity})`)
+            })));
+        }
+
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_planta')
             .select('user_sede, products')
@@ -87,9 +102,6 @@ async function cargarInforme() {
             content.innerHTML = '<p class="inf-empty">Sin pedidos para esta fecha.</p>';
             return;
         }
-
-        // DEBUG TEMPORAL — revisar en consola del navegador
-        console.log('[informe] primer item del primer pedido:', JSON.stringify(pedidos[0]?.products?.[0]));
 
         // ── Tabla 1: Producción ────────────────────────────────────────────
         const totales = Object.fromEntries(CATEGORIAS.map(c => [c.label, 0]));
