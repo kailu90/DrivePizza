@@ -622,11 +622,12 @@ body.orders_body {
   width: 100%;
   background-color: var(--color-primario);
   padding: 0.9rem 1.5rem;
+  padding-bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
-  z-index: 150;
+  z-index: 9999;
   animation: slide-up 0.25s ease;
 }
 

@@ -60,11 +60,6 @@
         </ul>   
     </form>
 
-    <!-- Barra fija inferior -->
-    <div id="barra-continuar" style="display:none">
-        <button class="btn_orders" type="submit" form="form" id="btn_orders">Continuar</button>
-    </div>
-
     <!-- Modal confirmación de pedido -->
     <dialog id="modal-confirm">
         <div class="mconfirm__header">
@@ -91,6 +86,10 @@
     </dialog>
 </main>
 
+<!-- Barra fija inferior — fuera del main para evitar clipping por overflow en iOS -->
+<div id="barra-continuar" style="display:none">
+    <button class="btn_orders" type="submit" form="form" id="btn_orders">Continuar</button>
+</div>
 
 <script type="module" src="./products.js"></script>
 
