@@ -49,6 +49,7 @@ export const domicilios = {
         "Ciudadela Comfenalco (T 1-5)": 6000,
         "Ciudadela Comfenalco (T 6-10)": 7000,
         "Ciudad Valencia": 6000,
+        "Ciudadela Verde": 12000,
         "Club Campestre": 5000,
         "Club House": 6000,
         "Coaviconsa": 9000,
@@ -110,6 +111,7 @@ export const domicilios = {
         "Parque Natura": 8000,
         "Portal Sierra Florida": 7000,
         "Provenza": 8000,
+        "Primavera II": 8000,
         "Porvenir": 9000,
         "Portal de Oviedo": 6000,
         "Rayenari de la Florida": 8000,
@@ -651,6 +653,7 @@ export const domicilios = {
         "Villa Adela": 8000,
         "Villa del Romero": 7000,
         "Villas de andalucia": 6000,
+        "Villas del rio": 6000,
         "Villa Lina": 5000,
         "Villa Marcela": 7000,
         "Villa Nueva": 5000,
@@ -883,6 +886,7 @@ export const domicilios = {
         "Niza": 10000,
         "Paralela": 10000,
         "Cabecera Baja": 10000,
+        "Conucos": 10000,
         "Floresta": 10000,
         "Terrazas": 10000,
         "Sotomayor": 10000,
@@ -931,6 +935,7 @@ export const domicilios = {
         // 12000
         "La Universidad": 12000,
         "Casco Antiguo Floridablanca": 12000,
+        "Abadias": 12000,
 
         // 14000
         "Zona Franca anillo vial": 14000,

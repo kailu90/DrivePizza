@@ -26,7 +26,7 @@ const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
 const SEDES_MASA = ['megamall', 'acropolis'];
 
 // ── Carnes ─────────────────────────────────────────────────────────────────
-// 148=Carne para moler · 149=Carne para desmechar · 150=Carne para hamburguesa · 151=Pechuga Pollo
+// 55=Carne para moler · 56=Carne para desmechar · 58=Carne para hamburguesa · 59=Pechuga Pollo
 const CARNES_CONFIG = [
     { label: 'Carne para moler (Murillo)',   id: '55', thLabel: 'Moler<br><small>(Murillo)</small>'   },
     { label: 'Carne para desmechar (Aleta)', id: '56', thLabel: 'Desmechar<br><small>(Aleta)</small>' },

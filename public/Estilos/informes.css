@@ -85,6 +85,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 1.25rem;
+    table-layout: fixed;
 }
 .inf-table th {
     background: #f5f5f5;
@@ -100,6 +101,9 @@
     padding: 0.7rem 1.2rem;
     border-bottom: 1px solid #f2f2f2;
     color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .inf-table tr:last-child td { border-bottom: none; }
 .inf-table tr:hover td { background: #fafafa; }
@@ -156,8 +160,9 @@
 }
 .inf-card--scroll .inf-table th,
 .inf-card--scroll .inf-table td {
-    word-break: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Responsive ── */
@@ -198,46 +203,55 @@
         justify-content: center;
     }
 
-    /* Tablas de carnes/siropes en móvil: mismo tamaño, padding lateral reducido */
+    /* Encabezados de tarjetas */
+    .inf-card__header {
+        font-size: 1rem;
+        padding: 0.5rem 0.8rem;
+    }
+
+    /* Fecha label */
+    .inf-label {
+        font-size: 1.1rem;
+    }
+
+    /* Tabla producción y masas */
+    .inf-table th {
+        font-size: 0.9rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .inf-table td {
+        font-size: 0.95rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .inf-cantidad {
+        font-size: 1.05rem;
+    }
+
+    /* Tablas carnes/siropes */
     .inf-card--scroll .inf-table {
         table-layout: fixed;
         width: 100%;
     }
+    .inf-card--scroll .inf-table th:first-child,
+    .inf-card--scroll .inf-table td:first-child {
+        width: 35%;
+    }
     .inf-card--scroll .inf-table th {
-        font-size: 1rem;
-        padding: 0.4rem 0.4rem;
+        font-size: 0.85rem;
+        padding: 0.3rem 0.3rem;
         text-align: center;
     }
     .inf-card--scroll .inf-table td {
-        font-size: 1.1rem;
-        padding: 0.5rem 0.4rem;
+        font-size: 0.9rem;
+        padding: 0.3rem 0.3rem;
     }
     .inf-card--scroll .inf-table .inf-cantidad {
-        font-size: 1.2rem;
-    }
-
-    /* Encabezados de tarjetas más pequeños */
-    .inf-card__header {
-        font-size: 1.1rem;
-        padding: 0.6rem 0.9rem;
-    }
-
-    /* Tabla producción y masas más compacta */
-    .inf-table th {
         font-size: 1rem;
-        padding: 0.4rem 0.8rem;
-    }
-    .inf-table td {
-        padding: 0.5rem 0.8rem;
-        font-size: 1.1rem;
-    }
-    .inf-cantidad {
-        font-size: 1.2rem;
     }
 
     /* Badge pedidos */
     .inf-badge-pedidos {
-        font-size: 1.1rem;
+        font-size: 1rem;
         width: 100%;
         text-align: center;
     }
