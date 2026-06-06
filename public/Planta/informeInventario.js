@@ -175,6 +175,8 @@ async function generarInforme() {
         ]);
         if (errP) throw errP;
         if (errM) throw errM;
+        console.log('[DEBUG] movimientos filtro:', colFechaToUTC(desde, 'inicio'), '→', colFechaToUTC(hasta, 'fin'));
+        console.log('[DEBUG] movimientos count:', rawMovs?.length, '| última fecha:', rawMovs?.at(-1)?.fecha);
 
         const pedidosData = (rawPedidos || []).map(p => ({
             idPedido:    p.id_pedido,
