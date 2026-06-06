@@ -170,7 +170,8 @@ async function generarInforme() {
                 .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
                 .gte('fecha', colFechaToUTC(desde, 'inicio'))
                 .lte('fecha', colFechaToUTC(hasta, 'fin'))
-                .order('fecha', { ascending: true }),
+                .order('fecha', { ascending: true })
+                .limit(10000),
         ]);
         if (errP) throw errP;
         if (errM) throw errM;
