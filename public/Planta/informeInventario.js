@@ -158,25 +158,35 @@ async function generarInforme() {
                 'Unidad':    p.measurementUnit || '',
             }));
 
-        // ── 2. Pedidos + Movimientos en paralelo ──────────────────────────
+        // ── 2. Pedidos ─────────────────────────────────────────────────────
         status.textContent = 'Cargando pedidos y movimientos...';
-        const [{ data: rawPedidos, error: errP }, { data: rawMovs, error: errM }] = await Promise.all([
-            supabase.from('pedidos_planta')
-                .select('id, id_pedido, delivery_date, user_sede, status, net_cost, products, eliminado')
-                .gte('delivery_date', desde)
-                .lt('delivery_date', nextDay(hasta))
-                .order('id_pedido', { ascending: true }),
-            supabase.from('movimientos')
-                .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
-                .gte('fecha', colFechaToUTC(desde, 'inicio'))
-                .lte('fecha', colFechaToUTC(hasta, 'fin'))
-                .order('fecha', { ascending: true })
-                .limit(10000),
-        ]);
+        const { data: rawPedidos, error: errP } = await supabase
+            .from('pedidos_planta')
+            .select('id, id_pedido, delivery_date, user_sede, status, net_cost, products, eliminado')
+            .gte('delivery_date', desde)
+            .lt('delivery_date', nextDay(hasta))
+            .order('id_pedido', { ascending: true });
         if (errP) throw errP;
-        if (errM) throw errM;
-        console.log('[DEBUG] movimientos filtro:', colFechaToUTC(desde, 'inicio'), '→', colFechaToUTC(hasta, 'fin'));
-        console.log('[DEBUG] movimientos count:', rawMovs?.length, '| última fecha:', rawMovs?.at(-1)?.fecha);
+
+        // ── 3. Movimientos paginados (max_rows del servidor = 1000) ────────
+        const PAGE = 1000;
+        const fechaInicio = colFechaToUTC(desde, 'inicio');
+        const fechaFin    = colFechaToUTC(hasta, 'fin');
+        let rawMovs = [];
+        let offset = 0;
+        while (true) {
+            const { data: page, error: errM } = await supabase
+                .from('movimientos')
+                .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
+                .gte('fecha', fechaInicio)
+                .lte('fecha', fechaFin)
+                .order('fecha', { ascending: true })
+                .range(offset, offset + PAGE - 1);
+            if (errM) throw errM;
+            rawMovs = rawMovs.concat(page || []);
+            if (!page || page.length < PAGE) break;
+            offset += PAGE;
+        }
 
         const pedidosData = (rawPedidos || []).map(p => ({
             idPedido:    p.id_pedido,
