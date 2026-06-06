@@ -29,6 +29,11 @@ function inicioMes() {
     return toISO(d);
 }
 
+function nextDay(isoDate) {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    return toISO(new Date(y, m - 1, d + 1));
+}
+
 // ── Formato texto ─────────────────────────────────────────────────────────────
 const EXCEPCIONES_TC = new Set(['x', 'de', 'del', 'la', 'las', 'el', 'los', 'y', 'en', 'con', 'sin', 'por']);
 function toTitleCase(str) {
@@ -159,7 +164,7 @@ async function generarInforme() {
             supabase.from('pedidos_planta')
                 .select('id, id_pedido, delivery_date, user_sede, status, net_cost, products, eliminado')
                 .gte('delivery_date', desde)
-                .lte('delivery_date', hasta)
+                .lt('delivery_date', nextDay(hasta))
                 .order('id_pedido', { ascending: true }),
             supabase.from('movimientos')
                 .select('fecha, tipo, producto_nombre, cantidad, pedido_numero, motivo, usuario, sede')
