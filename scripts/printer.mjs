@@ -277,7 +277,8 @@ async function procesarPedido(rawPedido) {
         else {
             log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado como recibido`);
 
-            // Auto-avance a "en preparacion" después de 2 minutos
+            // Auto-avance a "en preparacion" después de 2 minutos (solo pedidos, no reservas)
+            if (esReserva) return;
             setTimeout(async () => {
                 const { data: actual } = await supabase
                     .from('pedidos_callcenter')
