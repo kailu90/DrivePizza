@@ -106,6 +106,8 @@
     outline: none;
     cursor: pointer;
     transition: background 0.15s;
+    overflow: visible;
+    position: relative;
 }
 .panel-header__icon:hover  { background: var(--color-cuaternario); }
 .panel-header__icon.tapped { animation: strip-tap 0.22s ease; }

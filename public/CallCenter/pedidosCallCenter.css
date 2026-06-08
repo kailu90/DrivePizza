@@ -254,6 +254,29 @@ body {
     background-color: transparent;
 }
 
+/* Badge de asesores conectados */
+.agents-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: #22c55e;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 9px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
 /* Strip de asesores: llena el espacio restante de la columna */
 #agents-strip {
     flex: 1;
