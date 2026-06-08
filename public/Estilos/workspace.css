@@ -106,8 +106,6 @@
     outline: none;
     cursor: pointer;
     transition: background 0.15s;
-    overflow: visible;
-    position: relative;
 }
 .panel-header__icon:hover  { background: var(--color-cuaternario); }
 .panel-header__icon.tapped { animation: strip-tap 0.22s ease; }
@@ -120,6 +118,13 @@
     min-height: 0;
     background: var(--color-secundario);
 }
+
+/* Ocultar contenido bajo el header cuando el panel está colapsado (no aplica en mobile-open) */
+#panel-pbx.collapsed:not(.mobile-open) #panel-agents,
+#panel-pbx.collapsed:not(.mobile-open) .panel-body {
+    display: none;
+}
+
 
 /* ── Botones de panel en header (solo mobile) ─────────────────── */
 .btn-panel-mobile { display: none; }

@@ -50,13 +50,11 @@ export function initPanel(panelId, stripId, storageKey, overlayId = 'workspace-o
         saved === 'expanded' ? _expand() : _collapse();
     }
 
-    // ── Toggle al hacer clic en el círculo (desktop) ────────────────────────
+    // ── Toggle al hacer clic en el círculo (desktop y mobile) ──────────────
     strip?.addEventListener('click', () => {
-        if (!isMobile()) {
-            strip.classList.add('tapped');
-            strip.addEventListener('animationend', () => strip.classList.remove('tapped'), { once: true });
-            _toggle();
-        }
+        strip.classList.add('tapped');
+        strip.addEventListener('animationend', () => strip.classList.remove('tapped'), { once: true });
+        isMobile() ? _toggleM() : _toggle();
     });
 
     // ── Cerrar al tocar el overlay (mobile) ─────────────────────────────────

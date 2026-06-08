@@ -145,7 +145,6 @@
             <div class="panel-header">
                 <div id="sip-status">
                     <button class="panel-header__icon" id="strip-pbx" aria-label="Toggle Softphone">
-                        <span id="agents-badge" class="agents-badge" style="display:none;"></span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.98-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
                         </svg>
@@ -171,6 +170,16 @@
                     </div>
                 </div>
             </div>
+            <!-- Asesores en línea -->
+            <div id="panel-agents" style="display:none;">
+                <button id="panel-agents-toggle" class="panel-agents-toggle">
+                    <span>Asesores en línea</span>
+                    <span id="panel-agents-count" class="panel-agents-count-badge"></span>
+                    <svg class="panel-agents-arrow" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <div id="panel-agents-list" class="agents-strip panel-agents-list" style="display:none;"></div>
+            </div>
+
             <div class="panel-body" id="pbx-body">
                 <!-- Contenido: paso 4 (pbxPanel.js) -->
             </div>
@@ -461,43 +470,71 @@
         pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
     });
 
-    // Toggle popover al hacer clic en el dot
-    document.getElementById('sip-dot-hdr').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.getElementById('sip-popover').classList.toggle('visible');
-    });
-    // Cerrar popover al hacer clic fuera
-    document.addEventListener('click', () => {
-        document.getElementById('sip-popover')?.classList.remove('visible');
-    });
     // Botón reconectar → notifica al shell
     document.getElementById('btn-sip-reconectar').addEventListener('click', (e) => {
         e.stopPropagation();
         if (window.parent !== window) window.parent.postMessage({ type: 'sip-reconnect' }, '*');
-        document.getElementById('sip-popover').classList.remove('visible');
     });
 
     // Avisar al shell que el frame está listo para recibir el estado actual
     if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
 
-    // ── Badge de asesores conectados sobre ícono del teléfono ────────────────
+    // ── Asesores conectados ───────────────────────────────────────────────────
+    let panelAgentsExpanded = false;
+
+    document.getElementById('panel-agents-toggle').addEventListener('click', () => {
+        panelAgentsExpanded = !panelAgentsExpanded;
+        document.getElementById('panel-agents-list').style.display = panelAgentsExpanded ? '' : 'none';
+        document.querySelector('.panel-agents-arrow').classList.toggle('expanded', panelAgentsExpanded);
+    });
+
+    function chipInitials(name) {
+        if (!name) return '?';
+        return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    function buildChipsHTML(visibles) {
+        return visibles.map(a => {
+            const name = a.username || ('Ext. ' + a.extension);
+            let cls, label;
+            if (a.in_call)              { cls = 'chip-incall'; label = 'En llamada'; }
+            else if (a.queue_connected) { cls = 'chip-queue';  label = 'Disponible'; }
+            else if (a.sip_registered)  { cls = 'chip-paused'; label = 'Pausado'; }
+            else                        { cls = 'chip-offline'; label = 'Desconectado'; }
+            return `<div class="agent-chip ${cls}">
+                <div class="chip-avatar">${chipInitials(a.username)}</div>
+                <div class="chip-info">
+                    <span class="chip-name">${name}</span>
+                    <span class="chip-status">${label}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
     function setAgentsBadge(count) {
-        const show = count > 0;
-        ['agents-badge', 'agents-badge-mobile'].forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.textContent = count;
-            el.style.display = show ? 'flex' : 'none';
-        });
+        const el = document.getElementById('agents-badge-mobile');
+        if (!el) return;
+        el.textContent = count;
+        el.style.display = count > 0 ? 'flex' : 'none';
     }
 
     async function loadAgentStrip() {
         try {
             const r = await fetch(`${PBX_URL}/pbx/agents/status`);
             if (!r.ok) return;
-            const agents = await r.json();
+            const agents   = await r.json();
             const visibles = agents.filter(a => a.queue_connected || a.in_call);
             setAgentsBadge(visibles.length);
+
+            // Sección dentro del panel PBX
+            const panelAgents = document.getElementById('panel-agents');
+            const panelList   = document.getElementById('panel-agents-list');
+            const panelCount  = document.getElementById('panel-agents-count');
+            if (panelAgents) {
+                panelAgents.style.display = visibles.length ? '' : 'none';
+                if (panelCount) panelCount.textContent = visibles.length;
+                if (panelList)  panelList.innerHTML    = buildChipsHTML(visibles);
+            }
         } catch { /* sin red */ }
     }
 

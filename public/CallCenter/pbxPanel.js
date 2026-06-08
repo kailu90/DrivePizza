@@ -35,16 +35,6 @@ export function initPbxPanel(containerId = 'pbx-body') {
     container.innerHTML = `
         <div class="pbx-screen">
 
-            <!-- Mensaje de estado de conexión -->
-            <div class="pbx-conn-msg" id="pbx-conn-msg" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Asesor conectado al Callcenter-IVR
-            </div>
-
             <!-- Llamada activa del propio asesor (controles SIP) -->
             <div id="pbx-live"></div>
 
@@ -214,8 +204,6 @@ export function initPbxPanel(containerId = 'pbx-body') {
         if (ext)  ext.textContent  = data?.extension ? `Ext. ${data.extension}` : '';
         if (!badge) return;
 
-        const connMsg = document.getElementById('pbx-conn-msg');
-
         if (state === 'ringing') {
             badge.textContent = 'Entrante';
             badge.className   = 'pbx-hdr-badge pbx-hdr-badge--ringing';
@@ -233,13 +221,11 @@ export function initPbxPanel(containerId = 'pbx-body') {
             badge.className   = 'pbx-hdr-badge pbx-hdr-badge--registered';
             badge.disabled    = true;
             updateDot('registered');
-            if (connMsg) connMsg.style.display = 'flex';
         } else {
             badge.textContent = 'Desconectado';
             badge.className   = 'pbx-hdr-badge pbx-hdr-badge--offline';
             badge.disabled    = true;
             updateDot('offline');
-            if (connMsg) connMsg.style.display = 'none';
         }
     }
 
