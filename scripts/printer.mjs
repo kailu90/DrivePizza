@@ -168,12 +168,6 @@ function generarHTMLReserva(pedido) {
 
             <div style="border-top:2px dashed black; margin:10px 0;"></div>
 
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CLIENTE:</strong> ${pedido.nombre}</p>
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${pedido.fecha ? formatearFecha(pedido.fecha) : '---'}</p>
-
             <div style="border-top:3px solid black; margin:12px 0; padding-top:8px; text-align:center;">
                 ${pedido.fechaReserva ? `<div style="font-size:13pt; font-weight:900; margin-bottom:6px;">📅 FECHA RESERVA: ${pedido.fechaReserva.split('-').reverse().join('/')}</div>` : ''}
                 <div style="font-size:16pt; font-weight:900; margin-bottom:4px;">🕐 ${formatearHora12(pedido.horaReserva)}</div>
@@ -181,6 +175,13 @@ function generarHTMLReserva(pedido) {
             </div>
 
             ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
+
+            <div style="border-top:2px dashed black; margin:10px 0;"></div>
+
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CLIENTE:</strong> ${pedido.nombre}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
 
             <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** RESERVA DE MESA ***</p>
         </div>
