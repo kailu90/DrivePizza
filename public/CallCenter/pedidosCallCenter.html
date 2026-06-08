@@ -526,7 +526,14 @@
             const visibles = agents.filter(a => a.queue_connected || a.in_call);
             setAgentsBadge(visibles.length);
 
-            // Sección dentro del panel PBX
+            // Strip en columna de categorías (desktop)
+            const agentsStrip = document.getElementById('agents-strip');
+            if (agentsStrip) {
+                agentsStrip.style.display = visibles.length ? '' : 'none';
+                agentsStrip.innerHTML = buildChipsHTML(visibles);
+            }
+
+            // Sección dentro del panel PBX (mobile)
             const panelAgents = document.getElementById('panel-agents');
             const panelList   = document.getElementById('panel-agents-list');
             const panelCount  = document.getElementById('panel-agents-count');
