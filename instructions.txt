@@ -1,0 +1,127 @@
+================================================================================
+  DRIVE PIZZA — CONFIGURACIÓN ESTACIÓN DE IMPRESIÓN (por sede)
+================================================================================
+
+REQUISITOS PREVIOS
+------------------
+  - Windows 10 u 11
+  - Impresora POS instalada y visible en "Dispositivos e impresoras"
+  - Conexión a internet
+
+--------------------------------------------------------------------------------
+PASO 1 — INSTALAR NODE.JS
+--------------------------------------------------------------------------------
+  1. Ir a https://nodejs.org
+  2. Descargar la versión LTS (18 o superior)
+  3. Instalar con las opciones por defecto
+  4. Verificar la instalación abriendo una terminal (cmd o PowerShell) y ejecutando:
+       node -v
+     Debe mostrar algo como: v18.x.x o superior
+
+--------------------------------------------------------------------------------
+PASO 2 — COPIAR LA CARPETA DEL SCRIPT
+--------------------------------------------------------------------------------
+  1. Copiar la carpeta "scripts" del proyecto a una ubicación fija en el PC,
+     por ejemplo:
+       C:\DrivePizza\scripts\
+
+  Contenido esperado de la carpeta:
+    scripts/
+    ├── printer.mjs
+    ├── serviceAccountKey.json   ← agregar en el siguiente paso
+    └── package.json
+
+--------------------------------------------------------------------------------
+PASO 3 — AGREGAR LA CLAVE DE FIREBASE
+--------------------------------------------------------------------------------
+  1. Solicitar al administrador el archivo serviceAccountKey.json
+  2. Copiarlo dentro de la carpeta scripts:
+       C:\DrivePizza\scripts\serviceAccountKey.json
+
+  IMPORTANTE: Este archivo es confidencial. No compartirlo ni subirlo a internet.
+
+--------------------------------------------------------------------------------
+PASO 4 — CONFIGURAR LA SEDE Y LA IMPRESORA
+--------------------------------------------------------------------------------
+  1. Abrir el archivo printer.mjs con cualquier editor de texto (Notepad, etc.)
+  2. Buscar las líneas al inicio del archivo:
+
+       const MI_SEDE = 'cabecera';
+       const NOMBRE_IMPRESORA = 'POS-80C';
+
+  3. Cambiar MI_SEDE por el nombre exacto de la sede:
+       cabecera / cañaveral / acropolis / piedecuesta / megamall / unico
+
+  4. Para ver el nombre exacto de la impresora instalada, abrir cmd y ejecutar:
+       wmic printer get name
+     Copiar el nombre exactamente como aparece y pegarlo en NOMBRE_IMPRESORA.
+
+  5. Guardar el archivo.
+
+--------------------------------------------------------------------------------
+PASO 5 — INSTALAR DEPENDENCIAS
+--------------------------------------------------------------------------------
+  1. Abrir cmd o PowerShell
+  2. Navegar a la carpeta del script:
+       cd C:\DrivePizza\scripts
+  3. Ejecutar:
+       npm install
+  4. Esperar a que termine (descarga puppeteer y otras dependencias — puede tardar
+     unos minutos la primera vez)
+
+--------------------------------------------------------------------------------
+PASO 6 — INSTALAR PM2 (inicio automático)
+--------------------------------------------------------------------------------
+  1. En la misma terminal, ejecutar:
+       npm install -g pm2
+  2. Iniciar el script con pm2:
+       pm2 start printer.mjs
+  3. Configurar para que inicie automáticamente con Windows:
+       pm2 startup
+     Copiar y ejecutar el comando que genera en pantalla.
+  4. Guardar la configuración actual:
+       pm2 save
+
+  A partir de este momento, el script se iniciará solo cada vez que se encienda
+  el computador.
+
+--------------------------------------------------------------------------------
+PASO 7 — VERIFICAR QUE FUNCIONA
+--------------------------------------------------------------------------------
+  1. Ver el estado del proceso:
+       pm2 status
+     Debe mostrar "online" en la columna status.
+
+  2. Ver los logs en tiempo real:
+       pm2 logs printer
+     Debe mostrar: "[fecha] Monitor iniciado — Sede: <nombre de sede>"
+
+  3. Crear un pedido de prueba desde pedidosCallCenter.html seleccionando
+     la sede correcta y verificar que se imprime automáticamente.
+
+--------------------------------------------------------------------------------
+COMANDOS ÚTILES DE PM2
+--------------------------------------------------------------------------------
+  pm2 status          → ver estado del proceso
+  pm2 logs printer    → ver logs en tiempo real
+  pm2 restart printer → reiniciar el script
+  pm2 stop printer    → detener el script
+  pm2 delete printer  → eliminar el proceso de pm2
+
+--------------------------------------------------------------------------------
+SOLUCIÓN DE PROBLEMAS
+--------------------------------------------------------------------------------
+  - El script no detecta pedidos:
+    Verificar que MI_SEDE coincide exactamente con el campo "sede" en Firestore.
+
+  - Error al imprimir:
+    Verificar que NOMBRE_IMPRESORA coincide exactamente con el nombre en Windows
+    (usar: wmic printer get name)
+
+  - Error "serviceAccountKey.json not found":
+    Verificar que el archivo está dentro de la carpeta scripts/.
+
+  - pm2 no inicia con Windows:
+    Volver a ejecutar: pm2 startup → copiar y ejecutar el comando generado → pm2 save
+
+================================================================================

@@ -21,8 +21,6 @@
     <!-- Toolbar -->
     <div class="mv-toolbar">
         <div class="mv-filters">
-            <input type="search" id="mv-search" class="mv-input" placeholder="Buscar producto...">
-
             <div class="mv-producto-wrap">
                 <input type="text" id="mv-producto-input" class="mv-input" placeholder="Filtrar por producto..." autocomplete="off" list="mv-producto-list">
                 <datalist id="mv-producto-list"></datalist>
@@ -63,7 +61,6 @@
             <button class="mv-btn-quick" id="mv-btn-mes">Este mes</button>
             <button class="mv-btn-quick mv-btn-resumen" id="mv-btn-resumen" style="display:none">📊 Resumen</button>
             <button class="mv-btn-quick mv-btn-export" id="mv-btn-export">⬇ Excel</button>
-            <button class="mv-btn-quick" id="mv-btn-sync-sqlite" style="display:none" title="Sincronizar SQLite con Firestore (últimos 7 días)">🔄 Sincronizar</button>
         </div>
     </div>
 
@@ -78,6 +75,7 @@
                     <th>TIPO</th>
                     <th>PRODUCTO</th>
                     <th>DETALLE</th>
+                    <th>OBSERVACIÓN</th>
                     <th>USUARIO</th>
                 </tr>
             </thead>
@@ -98,23 +96,26 @@
 </footer>
 
 <!-- Modal de detalle de movimiento -->
-<dialog id="mv-det" class="mv-det">
-    <div class="mv-det__header">
-        <h3 id="mv-det-titulo" class="mv-det__titulo"></h3>
-        <button id="mv-det-cerrar" class="mv-det__cerrar" title="Cerrar">✕</button>
+<div class="modal-overlay" id="mv-det" style="display:none; align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-pedido-content">
+        <div class="mpedido-header">
+            <span class="mv-badge" id="mvdet-badge"></span>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span class="mvdet-fecha" id="mvdet-fecha"></span>
+                <button class="mpedido-close" id="mv-det-cerrar">&times;</button>
+            </div>
+        </div>
+        <div class="mpedido-body">
+            <div class="mpedido-cliente" id="mvdet-titulo"></div>
+            <div class="mpedido-meta" id="mvdet-meta"></div>
+            <div class="mpedido-entrega" id="mvdet-contexto"></div>
+            <hr class="mpedido-sep">
+            <div class="mpedido-productos-title" id="mvdet-items-title"></div>
+            <ul class="mpedido-productos" id="mvdet-items"></ul>
+            <div id="mvdet-obs"></div>
+        </div>
     </div>
-    <div class="mv-det__meta">
-        <span class="mv-det__meta-item">
-            <span class="mv-det__meta-label">Tipo</span>
-            <span id="mv-det-tipo"></span>
-        </span>
-        <span class="mv-det__meta-item">
-            <span class="mv-det__meta-label">Asesor</span>
-            <span id="mv-det-asesor"></span>
-        </span>
-    </div>
-    <ul id="mv-det-lista" class="mv-det__lista"></ul>
-</dialog>
+</div>
 
 <!-- Modal resumen por día -->
 <dialog id="mv-modal-resumen" class="mv-modal-resumen">

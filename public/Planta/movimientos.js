@@ -222,7 +222,8 @@ function buildDetalle(m) {
                 const items = m.productos.map(p => `${toTitleCase(p.productoNombre)} ×${p.cantidad}`).join(', ');
                 return `Pedido #${m.pedidoNumero ?? '—'}: ${items}`;
             }
-            if (m.entidad === 'Pedido') return `Pedido eliminado manualmente`;
+            if (m.entidad === 'Pedido')     return `Pedido eliminado manualmente`;
+            if (m.entidad === 'Proveedor')  return `Proveedor eliminado`;
             return `Producto eliminado`;
 
         default:
@@ -250,153 +251,94 @@ function describirItem(m, item) {
     return '—';
 }
 
-// ── Resumen cuando hay múltiples ítems ─────────────────────────────────────
-function resumirItems(m, n) {
-    if (m.tipo === 'SALIDA' || m.tipo === 'ELIMINACION' || m.tipo === 'CREACION') {
-        const ref = m.pedidoNumero ? ` · Pedido #${m.pedidoNumero}` : '';
-        return `${n} producto${n !== 1 ? 's' : ''}${ref}`;
-    }
-    if (m.tipo === 'MODIFICACION') {
-        return m.cambios[0].tipoCambio
-            ? `${n} cambio${n !== 1 ? 's' : ''} en pedido`
-            : `${n} campo${n !== 1 ? 's' : ''} modificado${n !== 1 ? 's' : ''}`;
-    }
-    return `${n} cambios`;
-}
-
-// ── Celda detalle: regla general 1 ítem → directo | 2+ → resumen + Ver ─────
-function buildDetalleCelda(m, idx) {
-    if (m.tipo === 'Devolución' && m.notas) {
-        return `<span>${m.cantidad} ${m.unidadMedida || 'uds.'}</span>
-                <button class="mv-btn-ver" data-idx="${idx}">Ver</button>`;
-    }
-
-    const items =
-        (m.tipo === 'MODIFICACION'  && m.cambios?.length > 0)                                  ? m.cambios :
-        (m.tipo === 'SALIDA'        && m.productos?.length > 0)                                ? m.productos :
-        (m.tipo === 'ELIMINACION'   && m.productos?.length > 0)                                ? m.productos :
-        (m.tipo === 'CREACION' && m.entidad === 'Pedido' && m.productos?.length > 0)           ? m.productos :
-        null;
-
-    if (!items) return buildDetalle(m);
-
-    if (items.length === 1) return describirItem(m, items[0]);
-
-    return `<span>${resumirItems(m, items.length)}</span>
-            <button class="mv-btn-ver" data-idx="${idx}">Ver</button>`;
-}
-
 // ════════════════════════ MODAL DE DETALLE ══════════════════════════════════
 
-// ── Modal de detalle ───────────────────────────────────────────────────────
 function abrirModalDetalle(m) {
-    const modal  = document.getElementById('mv-det');
-    const titulo = document.getElementById('mv-det-titulo');
-    const lista  = document.getElementById('mv-det-lista');
-    lista.innerHTML = '';
+    const tipoDisplay = getTipoDisplay(m);
+    const badgeClass  = BADGE[tipoDisplay] || '';
 
-    document.getElementById('mv-det-tipo').textContent   = getTipoDisplay(m);
-    document.getElementById('mv-det-asesor').textContent = m.usuario || '—';
+    // Header: badge + fecha
+    const badge = document.getElementById('mvdet-badge');
+    badge.textContent = tipoDisplay;
+    badge.className   = `mv-badge ${badgeClass}`;
+    document.getElementById('mvdet-fecha').textContent = formatFecha(m.fecha);
 
-    if (m.tipo === 'MODIFICACION' && m.cambios?.length > 0 && m.cambios[0].tipoCambio) {
-        // Edición de pedido
-        titulo.textContent = toTitleCase(m.productoNombre) || 'Edición de pedido';
-        m.cambios.forEach(c => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            const nombre = toTitleCase(c.productoNombre);
-            if (c.tipoCambio === 'AGREGADO') {
-                li.innerHTML = `<span class="mv-det-campo mv-det-campo--agregado">Agregado</span>
-                                <span class="mv-det-valor">${nombre} ×${c.cantidad}</span>`;
-            } else if (c.tipoCambio === 'ELIMINADO') {
-                li.innerHTML = `<span class="mv-det-campo mv-det-campo--eliminado">Eliminado</span>
-                                <span class="mv-det-valor">${nombre}</span>`;
-            } else if (c.tipoCambio === 'CANTIDAD') {
-                li.innerHTML = `<span class="mv-det-campo">${nombre}</span>
-                                <span class="mv-det-valor">${c.anterior} → ${c.nuevo}</span>`;
-            } else if (c.tipoCambio === 'FECHA') {
-                li.innerHTML = `<span class="mv-det-campo">Fecha de entrega</span>
-                                <span class="mv-det-valor">${c.anterior ?? '?'} → ${c.nuevo ?? '?'}</span>`;
-            }
-            lista.appendChild(li);
-        });
-    } else if (m.tipo === 'MODIFICACION' && m.cambios?.length > 0) {
-        titulo.textContent = `Modificación · ${toTitleCase(m.productoNombre) || '—'}`;
-        m.cambios.forEach(c => {
-            const label = LABEL_CAMPO[c.campo] || c.campo;
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${label}</span>
-                            <span class="mv-det-valor">${c.valorAnterior} → ${c.valorNuevo}</span>`;
-            lista.appendChild(li);
-        });
+    // Título principal
+    let titulo;
+    if (m.tipo === 'ELIMINACION' && m.entidad === 'Pedido' && m.pedidoNumero) {
+        titulo = `Pedido N° ${m.pedidoNumero}`;
+    } else if (m.tipo === 'SALIDA' && m.pedidoNumero) {
+        titulo = `Pedido N° ${m.pedidoNumero}`;
+    } else if (m.tipo === 'CREACION' && m.entidad === 'Pedido' && m.pedidoNumero) {
+        titulo = `Pedido N° ${m.pedidoNumero}`;
+    } else {
+        titulo = toTitleCase(m.productoNombre) || '—';
+    }
+    document.getElementById('mvdet-titulo').textContent = titulo;
+
+    // Meta: usuario + sede
+    const metaParts = [`👤 ${m.usuario || '—'}`];
+    if (m.sede) metaParts.push(`🏬 ${capitalizarSede(m.sede)}`);
+    document.getElementById('mvdet-meta').textContent = metaParts.join(' · ');
+
+    // Contexto (caja destacada)
+    const ctxEl = document.getElementById('mvdet-contexto');
+    let contexto = '';
+    if (m.tipo === 'ENTRADA') {
+        contexto = `Ingreso de ${m.cantidad ?? '—'} ${m.unidadMedida || 'unidades'}`;
+        if (m.proveedorNombre) contexto += ` · Proveedor: ${m.proveedorNombre}`;
     } else if (m.tipo === 'AJUSTE') {
-        titulo.textContent = toTitleCase(m.productoNombre) || 'Ajuste de inventario';
-        const signo = m.diferencia >= 0 ? `+${m.diferencia}` : `${m.diferencia}`;
-        [
-            ['Stock anterior', m.stockAnterior],
-            ['Stock nuevo',    m.stockNuevo],
-            ['Diferencia',     signo],
-            ['Motivo',         m.motivo],
-            m.notas ? ['Notas', m.notas] : null,
-        ].filter(Boolean).forEach(([campo, valor]) => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${campo}</span>
-                            <span class="mv-det-valor">${valor}</span>`;
-            lista.appendChild(li);
-        });
+        const signo = (m.diferencia ?? 0) >= 0 ? `+${m.diferencia}` : `${m.diferencia}`;
+        contexto = `Stock: ${m.stockAnterior ?? '—'} → ${m.stockNuevo ?? '—'} (${signo})`;
+        if (m.motivo) contexto += ` · Motivo: ${m.motivo}`;
     } else if (m.tipo === 'Devolución') {
-        titulo.textContent = toTitleCase(m.productoNombre) || 'Devolución';
-        const unit = m.unidadMedida || 'unidades';
-        [
-            ['Cantidad', `${m.cantidad} ${unit}`],
-            m.sede  ? ['Sede',  m.sede]  : null,
-            m.notas ? ['Notas', m.notas] : null,
-        ].filter(Boolean).forEach(([campo, valor]) => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${campo}</span>
-                            <span class="mv-det-valor">${valor}</span>`;
-            lista.appendChild(li);
-        });
-    } else if (m.tipo === 'SALIDA' && m.productos?.length > 0) {
-        titulo.textContent = m.pedidoNumero ? `Pedido #${m.pedidoNumero}` : 'Salida de pedido';
-        m.productos.forEach(p => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${toTitleCase(p.productoNombre)}</span>
-                            <span class="mv-det-valor">×${p.cantidad}</span>`;
-            lista.appendChild(li);
-        });
-    } else if (m.tipo === 'ELIMINACION' && m.productos?.length > 0) {
-        titulo.textContent = m.pedidoNumero ? `Pedido #${m.pedidoNumero}` : 'Pedido eliminado';
-        m.productos.forEach(p => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${toTitleCase(p.productoNombre)}</span>
-                            <span class="mv-det-valor">×${p.cantidad}</span>`;
-            lista.appendChild(li);
-        });
+        contexto = `Devolución de ${m.cantidad ?? '—'} ${m.unidadMedida || 'unidades'}`;
+    } else if (m.motivo) {
+        contexto = m.motivo;
+    }
+    ctxEl.textContent   = contexto;
+    ctxEl.style.display = contexto ? '' : 'none';
+
+    // Items (productos / cambios)
+    const itemsTitle = document.getElementById('mvdet-items-title');
+    const itemsList  = document.getElementById('mvdet-items');
+
+    let items = null;
+    if (m.tipo === 'MODIFICACION') {
+        if (m.cambios?.length > 0)  items = m.cambios;
+        else if (m.campo)           items = [{ campo: m.campo, valorAnterior: m.valorAnterior, valorNuevo: m.valorNuevo }];
+    } else if ((m.tipo === 'SALIDA' || m.tipo === 'ELIMINACION') && m.productos?.length > 0) {
+        items = m.productos;
     } else if (m.tipo === 'CREACION' && m.entidad === 'Pedido' && m.productos?.length > 0) {
-        titulo.textContent = m.pedidoNumero ? `Pedido #${m.pedidoNumero}` : 'Nuevo pedido';
-        m.productos.forEach(p => {
-            const li = document.createElement('li');
-            li.className = 'mv-det-item';
-            li.innerHTML = `<span class="mv-det-campo">${toTitleCase(p.productoNombre)}</span>
-                            <span class="mv-det-valor">×${p.cantidad}</span>`;
-            lista.appendChild(li);
-        });
+        items = m.productos;
     }
 
-    modal.showModal();
+    if (items?.length > 0) {
+        itemsTitle.textContent   = m.tipo === 'MODIFICACION' ? 'Cambios' : 'Productos';
+        itemsTitle.style.display = '';
+        itemsList.style.display  = '';
+        itemsList.innerHTML = items.map(item => {
+            if (m.tipo === 'MODIFICACION') {
+                return `<li>${describirItem(m, item)}</li>`;
+            }
+            return `<li><strong>${item.cantidad ?? '?'}×</strong> ${toTitleCase(item.productoNombre) || '?'}</li>`;
+        }).join('');
+    } else {
+        itemsTitle.style.display = 'none';
+        itemsList.style.display  = 'none';
+    }
+
+    // Observación
+    document.getElementById('mvdet-obs').innerHTML = m.notas
+        ? `<div class="mpedido-obs">💬 ${m.notas}</div>` : '';
+
+    document.getElementById('mv-det').style.display = 'flex';
 }
 
 // ════════════════════════ ESTADO, DATOS Y RENDER ════════════════════════════
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let allMovimientos = [];
-let currentPageData = [];
 const POR_PAGINA = 50;
 let paginaActual = 1;
 
@@ -404,7 +346,6 @@ let paginaActual = 1;
 const tbody       = document.getElementById('mv-tbody');
 const countEl     = document.getElementById('mv-count');
 const pagination  = document.getElementById('mv-pagination');
-const searchEl    = document.getElementById('mv-search');
 const tipoEl      = document.getElementById('mv-tipo');
 const desdeEl     = document.getElementById('mv-desde');
 const hastaEl     = document.getElementById('mv-hasta');
@@ -530,14 +471,8 @@ function abrirModalResumen() {
 
 // ── Filtrar en memoria (búsqueda + tipo) ───────────────────────────────────
 function getFiltrados() {
-    const term = searchEl.value.trim().toLowerCase();
     const tipo = tipoEl.value;
-
-    return allMovimientos.filter(m => {
-        if (tipo && getTipoDisplay(m) !== tipo) return false;
-        if (term && !(m.productoNombre || '').toLowerCase().includes(term)) return false;
-        return true;
-    });
+    return allMovimientos.filter(m => !tipo || getTipoDisplay(m) === tipo);
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
@@ -559,18 +494,20 @@ function renderMovimientos() {
     }
 
     tbody.innerHTML = '';
-    currentPageData = pagina;
-    pagina.forEach((m, i) => {
+    pagina.forEach(m => {
         const tipoDisplay = getTipoDisplay(m);
         const badgeClass  = BADGE[tipoDisplay] || '';
         const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
         tr.innerHTML = `
             <td class="mv-cell">${formatFecha(m.fecha)}</td>
             <td class="mv-cell"><span class="mv-badge ${badgeClass}">${tipoDisplay}</span></td>
             <td class="mv-cell">${toTitleCase(m.productoNombre) || '—'}</td>
-            <td class="mv-cell mv-cell--detalle" title="${buildDetalle(m)}">${buildDetalleCelda(m, i)}</td>
+            <td class="mv-cell" title="${buildDetalle(m)}">${buildDetalle(m)}</td>
+            <td class="mv-cell">${m.notas || '—'}</td>
             <td class="mv-cell">${m.usuario || '—'}</td>
         `;
+        tr.addEventListener('click', () => abrirModalDetalle(m));
         tbody.appendChild(tr);
     });
 
@@ -655,24 +592,16 @@ desdeEl.addEventListener('change',    () => { setQuickActive(null); cargarMovimi
 hastaEl.addEventListener('change',    () => { setQuickActive(null); cargarMovimientos(); });
 productoInput.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
 
-// Filtros en memoria: no requieren recarga
-searchEl.addEventListener('input', () => { paginaActual = 1; renderMovimientos(); });
-tipoEl.addEventListener('change',  () => { paginaActual = 1; renderMovimientos(); });
-
-// ── Botón "Ver detalle" (delegación) ───────────────────────────────────────
-tbody.addEventListener('click', (e) => {
-    const btn = e.target.closest('.mv-btn-ver');
-    if (!btn) return;
-    const idx = parseInt(btn.dataset.idx);
-    if (!isNaN(idx) && currentPageData[idx]) abrirModalDetalle(currentPageData[idx]);
-});
+// Filtro tipo en memoria: no requiere recarga
+tipoEl.addEventListener('change', () => { paginaActual = 1; renderMovimientos(); });
 
 // ── Cerrar modal de detalle ────────────────────────────────────────────────
 document.getElementById('mv-det-cerrar')?.addEventListener('click', () => {
-    document.getElementById('mv-det').close();
+    document.getElementById('mv-det').style.display = 'none';
 });
 document.getElementById('mv-det')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('mv-det')) document.getElementById('mv-det').close();
+    if (e.target === document.getElementById('mv-det'))
+        document.getElementById('mv-det').style.display = 'none';
 });
 
 // ── Exportar Excel ─────────────────────────────────────────────────────────

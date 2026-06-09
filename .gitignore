@@ -14,6 +14,7 @@ firebase-debug.*.log*
 public/config.js
 scripts/serviceAccountKey.json
 scripts/supabaseKey.json
+KeysOracle/ 
 
 # Carpeta de impresión automática (contiene serviceAccountKey)
 impresiónAutomática/

@@ -114,11 +114,12 @@
   table-layout: fixed;
 }
 
-.mv-table th:nth-child(1) { width: 16%; }  /* Fecha */
-.mv-table th:nth-child(2) { width: 13%; }  /* Tipo */
-.mv-table th:nth-child(3) { width: 24%; }  /* Producto */
-.mv-table th:nth-child(4) { width: 35%; }  /* Detalle */
-.mv-table th:nth-child(5) { width: 12%; }  /* Usuario */
+.mv-table th:nth-child(1) { width: 15%; }  /* Fecha */
+.mv-table th:nth-child(2) { width: 12%; }  /* Tipo */
+.mv-table th:nth-child(3) { width: 20%; }  /* Producto */
+.mv-table th:nth-child(4) { width: 28%; }  /* Detalle */
+.mv-table th:nth-child(5) { width: 15%; }  /* Observación */
+.mv-table th:nth-child(6) { width: 10%; }  /* Usuario */
 
 .mv-table thead {
   background-color: var(--color-primario);
@@ -208,136 +209,114 @@
   cursor: not-allowed;
 }
 
-/* Celda detalle con botón */
-.mv-cell--detalle {
-  white-space: normal;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
+/* ── Modal de detalle (mismo estilo que CallCenter historialPedidos) ──── */
+#mv-det {
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1200;
 }
 
-.mv-btn-ver {
-  flex-shrink: 0;
-  font-family: inherit;
-  font-size: 1.1rem;
-  padding: 0.2rem 0.8rem;
-  border-radius: 12px;
-  border: 1.5px solid var(--color-primario);
-  background: transparent;
-  color: var(--color-primario);
-  cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
+.modal-pedido-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 78vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 
-.mv-btn-ver:hover {
-  background-color: var(--color-primario);
-  color: var(--color-secundario);
+.mpedido-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 0;
 }
 
-/* Modal de detalle */
-.mv-det {
-  border: none;
-  border-radius: 10px;
-  padding: 0;
-  min-width: 320px;
-  max-width: 480px;
-  width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
+.mvdet-fecha {
+    font-size: 1.15rem;
+    color: #aaa;
 }
 
-.mv-det::backdrop {
-  background: rgba(0,0,0,0.35);
+.mpedido-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+.mpedido-close:hover { background: #f0f0f0; color: #555; }
+
+.mpedido-body {
+    padding: 12px 20px 0;
 }
 
-.mv-det__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.4rem 1.8rem 1rem;
-  border-bottom: 1.5px solid #ede6d8;
+.mpedido-cliente {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
 }
 
-.mv-det__titulo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-terciario);
-  margin: 0;
+.mpedido-meta {
+    font-size: 1.3rem;
+    color: #777;
+    margin-bottom: 10px;
+    line-height: 1.6;
 }
 
-.mv-det__cerrar {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #999;
-  line-height: 1;
-  padding: 0 0.2rem;
+.mpedido-entrega {
+    font-size: 1.3rem;
+    background: #f7f7f7;
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: #444;
+    margin-bottom: 14px;
 }
 
-.mv-det__cerrar:hover { color: var(--color-terciario); }
-
-.mv-det__meta {
-  display: flex;
-  gap: 1.2rem;
-  padding: 0.8rem 1.8rem 0.6rem;
-  font-size: 1.2rem;
-  color: #777;
-  border-bottom: 1px solid #f3ede3;
-  flex-wrap: wrap;
+.mpedido-sep {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 0 0 12px;
 }
 
-.mv-det__meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.mpedido-productos-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    margin-bottom: 8px;
 }
 
-.mv-det__meta-label {
-  font-weight: 600;
-  color: #aaa;
-  text-transform: uppercase;
-  font-size: 1.05rem;
-  letter-spacing: 0.04em;
+.mpedido-productos {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
 }
 
-.mv-det__lista {
-  list-style: none;
-  margin: 0;
-  padding: 0.8rem 0 1.2rem;
-  max-height: 55vh;
-  overflow-y: auto;
+.mpedido-productos li {
+    font-size: 1.3rem;
+    color: #333;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
 }
+.mpedido-productos li:last-child { border-bottom: none; }
 
-.mv-det-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.7rem 1.8rem;
-  border-bottom: 1px solid #f3ede3;
-  font-size: 1.35rem;
+.mpedido-obs {
+    font-size: 1.3rem;
+    color: #888;
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    word-break: break-word;
 }
-
-.mv-det-item:last-child { border-bottom: none; }
-
-.mv-det-campo {
-  color: var(--color-terciario);
-  font-weight: 500;
-}
-
-.mv-det-valor {
-  color: #555;
-  font-size: 1.25rem;
-  text-align: right;
-  margin-left: 1rem;
-}
-
-.mv-det-campo--agregado  { color: #155724; font-weight: 700; }
-.mv-det-campo--eliminado { color: #721c24; font-weight: 700; }
 
 /* ── Consulta por Producto ─────────────────────────────────────────────── */
 .cp-card {

@@ -528,6 +528,7 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
                 pedidoNumero: idPedidoVisual,
                 productos: productosList,
                 motivo: 'Pedido eliminado manualmente',
+                notas: pedidoData.orderNotes || '',
                 usuario: usuarioActual
             }).catch(console.error);
 
@@ -1460,6 +1461,7 @@ async function descontarInventario(pedidoId, usuario = 'Admin') {
         productos,
         pedidoId,
         pedidoNumero: numeroPedidoVisible,
+        notas: pedidoData.orderNotes || '',
         usuario
     });
 
