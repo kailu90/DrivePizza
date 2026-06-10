@@ -1,5 +1,4 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
 import { colFechaToUTC } from "../Shared/semanas.js";
 
@@ -907,9 +906,15 @@ async function obtenerUsuarioCC() {
 
         const { sede, rol } = usuario;
         rolUsuario = rol;
-        const homeUrl = rol === "pizzeria" ? "../Pizzerias/pizzerias.html" : "./callcenter.html";
-        const mostrarSala = rol === 'callcenter' || rol === 'callcenter-admin' || rol === 'admin';
-        CargarHeader(sede, homeUrl, mostrarSala);
+        document.getElementById('username').textContent = usuario.username || '';
+        const homeUrl = rol === 'pizzeria' ? '../Pizzerias/pizzerias.html' : './callcenter.html';
+        document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            if (confirm('¿Cerrar sesión?')) {
+                await supabase.auth.signOut();
+                window.top.location.href = '../index.html';
+            }
+        });
 
         if (rol === 'callcenter-admin' || rol === 'admin') {
             document.getElementById("btn-exportar").style.display = "";
@@ -960,3 +965,24 @@ async function obtenerUsuarioCC() {
         document.body.classList.add('loaded');
     }
 })();
+
+// ── Popover SIP ──────────────────────────────────────────────────────────────
+document.getElementById('btn-sip-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('sip-popover').classList.toggle('visible');
+});
+document.addEventListener('click', () => document.getElementById('sip-popover')?.classList.remove('visible'));
+
+// ── Estado SIP desde el shell padre ─────────────────────────────────────────
+const SIP_LABELS_H = { registered: 'Registrado', ringing: 'Llamando...', incall: 'En llamada', offline: 'Desconectado' };
+window.addEventListener('message', e => {
+    if (e.data?.type !== 'sip-state') return;
+    const s   = e.data.state || 'offline';
+    const dot = document.getElementById('sip-dot-hdr');
+    if (dot) { dot.style.display = 'block'; dot.className = s; }
+    const est = document.getElementById('sip-pop-estado');
+    const ext = document.getElementById('sip-pop-ext');
+    if (est) est.textContent = SIP_LABELS_H[s] || s;
+    if (ext) ext.textContent = e.data.extension ? 'Ext. ' + e.data.extension : '—';
+});
+if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');

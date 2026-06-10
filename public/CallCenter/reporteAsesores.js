@@ -1,5 +1,4 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader } from "../Shared/components.js";
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
 import { colFechaToUTC } from "../Shared/semanas.js";
 
@@ -348,7 +347,15 @@ async function obtenerUsuarioCC() {
         if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
 
         sedeUsuario = usuario.rol === 'pizzeria' ? usuario.sede : null;
-        CargarHeader(usuario.sede, './callcenter.html');
+        document.getElementById('username').textContent = usuario.username || '';
+        const homeUrl = usuario.rol === 'pizzeria' ? '../Pizzerias/pizzerias.html' : './callcenter.html';
+        document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            if (confirm('¿Cerrar sesión?')) {
+                await supabase.auth.signOut();
+                window.top.location.href = '../index.html';
+            }
+        });
 
         const hoy = hoyLocal();
         document.getElementById('filtro-fecha').value = hoy;
@@ -370,3 +377,24 @@ async function obtenerUsuarioCC() {
         document.body.classList.add('loaded');
     }
 })();
+
+// ── Popover SIP ──────────────────────────────────────────────────────────────
+document.getElementById('btn-sip-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('sip-popover').classList.toggle('visible');
+});
+document.addEventListener('click', () => document.getElementById('sip-popover')?.classList.remove('visible'));
+
+// ── Estado SIP desde el shell padre ─────────────────────────────────────────
+const SIP_LABELS_R = { registered: 'Registrado', ringing: 'Llamando...', incall: 'En llamada', offline: 'Desconectado' };
+window.addEventListener('message', e => {
+    if (e.data?.type !== 'sip-state') return;
+    const s   = e.data.state || 'offline';
+    const dot = document.getElementById('sip-dot-hdr');
+    if (dot) { dot.style.display = 'block'; dot.className = s; }
+    const est = document.getElementById('sip-pop-estado');
+    const ext = document.getElementById('sip-pop-ext');
+    if (est) est.textContent = SIP_LABELS_R[s] || s;
+    if (ext) ext.textContent = e.data.extension ? 'Ext. ' + e.data.extension : '—';
+});
+if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
