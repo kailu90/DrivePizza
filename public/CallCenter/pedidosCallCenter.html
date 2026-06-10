@@ -228,7 +228,10 @@
 
         <!-- 4-7. Datos del cliente -->
         <div class="form-grid">
-            <input type="tel" id="clienteTelefono" placeholder="Teléfono / WhatsApp">
+            <div class="tel-wrap">
+                <input type="tel" id="clienteTelefono" placeholder="Teléfono / WhatsApp" autocomplete="off">
+                <div id="tel-dropdown" class="tel-dropdown" style="display:none;"></div>
+            </div>
             <input type="text" id="clienteNombre" placeholder="Nombre Cliente">
 
             <!-- Dirección y barrio: solo visible en domicilio — oculto en modo reserva -->
@@ -329,6 +332,7 @@
     import { initPanel }    from "../Shared/panelToggle.js";
     import { initPbxPanel } from "./pbxPanel.js";
     import { PBX_URL, WS_URL } from "../Api/config.js";
+    import { buscarClientes, cargarCliente, upsertCliente } from "./clientesCall.js";
 
     // ── Paneles laterales ─────────────────────────────────────────
     const panelWA  = initPanel('panel-wa',  'strip-wa',  'dp_panel_wa');
@@ -340,6 +344,64 @@
     // Botones del header (solo visibles en mobile — workspace.css)
     document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
     document.getElementById('btn-open-pbx')?.addEventListener('click', () => panelPBX?.toggle());
+
+    // ── Autocomplete teléfono ─────────────────────────────────────
+    const telInput    = document.getElementById('clienteTelefono');
+    const telDropdown = document.getElementById('tel-dropdown');
+    let   telTimer    = null;
+
+    telInput.addEventListener('input', () => {
+        clearTimeout(telTimer);
+        const q = telInput.value.replace(/\D/g, '');
+        if (q.length < 4) { telDropdown.style.display = 'none'; return; }
+        telTimer = setTimeout(async () => {
+            const results = await buscarClientes(q);
+            if (!results.length) { telDropdown.style.display = 'none'; return; }
+            telDropdown.innerHTML = results.map(c => `
+                <div class="tel-dropdown-item" data-tel="${c.telefono}">
+                    <span class="tel-item-nombre">${c.nombre}</span>
+                    <span class="tel-item-tel">${c.telefono}</span>
+                </div>`).join('');
+            telDropdown.style.display = 'block';
+        }, 300);
+    });
+
+    telDropdown.addEventListener('click', async e => {
+        const item = e.target.closest('.tel-dropdown-item');
+        if (!item) return;
+        const tel = item.dataset.tel;
+        telInput.value = tel;
+        telDropdown.style.display = 'none';
+
+        const cliente = await cargarCliente(tel);
+        if (!cliente) return;
+
+        document.getElementById('clienteNombre').value = cliente.nombre || '';
+
+        const dirs = cliente.direcciones_cliente || [];
+        const dir  = dirs[0]; // predeterminada primero (ya ordenadas en cargarCliente)
+        if (dir) {
+            // Activar sede
+            const sedeBtn = document.querySelector(`.sede-btn[data-sede="${dir.sede_id}"]`);
+            sedeBtn?.click();
+
+            // Activar domicilio
+            document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
+
+            document.getElementById('clienteDireccion').value = dir.direccion || '';
+
+            if (dir.barrio) {
+                setTimeout(() => {
+                    document.getElementById('barrioInput').value = dir.barrio;
+                    window.actualizarPrecioDomicilio?.();
+                }, 50);
+            }
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.tel-wrap')) telDropdown.style.display = 'none';
+    });
     window.domicilios = domicilios;
     window.mostrarOverlay  = mostrarOverlay;
     window.actualizarOverlay = actualizarOverlay;
@@ -594,6 +656,20 @@
 
         const { data, error } = await supabase.from('pedidos_callcenter').insert(fila).select('n_pedido').single();
         if (error) throw new Error('Error creando pedido: ' + error.message);
+
+        // Guardar/actualizar cliente en segundo plano
+        if (!esReserva) {
+            const sede   = document.querySelector('.sede-btn.active')?.dataset.sede;
+            const barrio = document.getElementById('barrioInput')?.value;
+            upsertCliente({
+                telefono:  datosPedido.telefono,
+                nombre:    datosPedido.nombre,
+                direccion: datosPedido.direccion,
+                barrio,
+                sedeId:    sede,
+            }).catch(() => {});
+        }
+
         return data.n_pedido;
     };
 </script>

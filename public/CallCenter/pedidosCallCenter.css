@@ -2300,3 +2300,38 @@ body {
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.4; }
 }
+
+/* ── AUTOCOMPLETE TELÉFONO ────────────────────────────────────── */
+.tel-wrap {
+    position: relative;
+}
+
+.tel-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    z-index: 200;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.tel-dropdown-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background .12s;
+}
+.tel-dropdown-item:last-child { border-bottom: none; }
+.tel-dropdown-item:hover      { background: #f9f4ff; }
+
+.tel-item-nombre { font-weight: 700; font-size: 1.4rem; color: #222; }
+.tel-item-tel    { font-size: 1.2rem; color: #888; }

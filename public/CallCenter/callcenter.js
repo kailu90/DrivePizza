@@ -17,3 +17,7 @@ document.getElementById('btn_reservas').addEventListener('click', () => {
 document.getElementById('btn_pbx').addEventListener('click', () => {
     window.location.href = './pbx.html';
 });
+
+document.getElementById('btn_clientes').addEventListener('click', () => {
+    window.location.href = './clientesCall.html';
+});

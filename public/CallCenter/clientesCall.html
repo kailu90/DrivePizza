@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Clientes — CallCenter</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
+    <link rel="stylesheet" href="pedidosCallCenter.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+    <style>
+        .modal-overlay { display: none; }
+
+        /* ── Barra de búsqueda ── */
+        .clientes-topbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.6rem;
+            flex-wrap: wrap;
+        }
+        .clientes-search-wrap {
+            display: flex;
+            flex: 1;
+            min-width: 200px;
+            gap: 8px;
+        }
+        .clientes-search-wrap input {
+            flex: 1;
+            padding: 9px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-family: inherit;
+            transition: border-color .2s;
+        }
+        .clientes-search-wrap input:focus {
+            outline: none;
+            border-color: var(--color-primario);
+        }
+        .btn-buscar-cliente {
+            padding: 9px 20px;
+            background: var(--color-primario);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background .2s;
+            white-space: nowrap;
+        }
+        .btn-buscar-cliente:hover { background: var(--color-cuaternario); }
+
+        .clientes-count {
+            font-size: 1.3rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        /* ── Modal cliente ── */
+        #modal-cliente-detalle {
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-cliente-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,.2);
+        }
+        .modal-cli-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px 0;
+        }
+        .modal-cli-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--color-primario);
+        }
+        .modal-cli-body { padding: 14px 20px 20px; }
+
+        .cli-field { margin-bottom: 14px; }
+        .cli-field label {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 5px;
+        }
+        .cli-field input,
+        .cli-field textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: border-color .2s;
+        }
+        .cli-field input:focus,
+        .cli-field textarea:focus { outline: none; border-color: var(--color-primario); }
+        .cli-field textarea { min-height: 70px; resize: vertical; }
+
+        /* Tags */
+        .tags-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .tag-chip {
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid #ddd;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all .15s;
+            background: #f9f9f9;
+            color: #555;
+            user-select: none;
+        }
+        .tag-chip.active {
+            background: var(--color-primario);
+            color: white;
+            border-color: var(--color-primario);
+        }
+
+        /* Separador */
+        .cli-sep {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 16px 0;
+        }
+
+        .cli-section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 10px;
+        }
+
+        /* Direcciones */
+        .dir-list { display: flex; flex-direction: column; gap: 8px; }
+        .dir-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1.5px solid #eee;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        .dir-item.predeterminada {
+            border-color: var(--color-primario);
+            background: #fdf8f0;
+        }
+        .dir-item-info { flex: 1; min-width: 0; }
+        .dir-item-dir {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #222;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dir-item-meta {
+            font-size: 1.15rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .dir-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .btn-dir-pred {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: white;
+            color: #555;
+            transition: all .15s;
+        }
+        .btn-dir-pred.active {
+            background: var(--color-primario);
+            color: white;
+            border-color: var(--color-primario);
+        }
+        .btn-dir-del {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: 1px solid #fdd;
+            background: #fff5f5;
+            color: #e74c3c;
+            transition: all .15s;
+        }
+        .btn-dir-del:hover { background: #e74c3c; color: white; }
+
+        .dir-empty {
+            text-align: center;
+            color: #bbb;
+            font-size: 1.3rem;
+            padding: 16px 0;
+        }
+
+        /* Botones footer modal */
+        .modal-cli-footer {
+            display: flex;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+        .btn-guardar-cli {
+            flex: 1;
+            padding: 12px;
+            background: var(--color-primario);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background .2s;
+        }
+        .btn-guardar-cli:hover { background: var(--color-cuaternario); }
+        .btn-ver-historial {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            color: var(--color-primario);
+            border: 1.5px solid var(--color-primario);
+            border-radius: 10px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .2s;
+        }
+        .btn-ver-historial:hover {
+            background: var(--color-primario);
+            color: white;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .logout-text { display: none; }
+            .logout-icon { display: block; }
+            #btn-logout { padding: 4px 6px; font-size: 0; }
+            .header-controls { gap: 4px; }
+        }
+    </style>
+</head>
+<body data-skeleton="historial">
+
+<div id="skeleton" class="sk-page"></div>
+
+<div id="contenido-principal" style="display:none;">
+
+    <header class="main-header no-print">
+        <div class="header-left">
+            <img src="../Imagenes/logo.png" alt="DrivePizza">
+        </div>
+        <div class="header-name">
+            <button class="btn-home with-tooltip" data-tooltip="Regresar al Panel" id="btn-home">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" class="icon-home">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+            </button>
+            <div class="header-username" id="username">—</div>
+        </div>
+        <div class="header-controls">
+            <button id="btn-logout" class="header-link">
+                <span class="logout-text">Cerrar Sesión</span>
+                <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="historial__main">
+
+        <div class="clientes-topbar">
+            <div class="clientes-search-wrap">
+                <input type="text" id="buscar-cliente-input"
+                       placeholder="Buscar por teléfono o nombre..."
+                       autocomplete="off">
+                <button class="btn-buscar-cliente" id="btn-buscar-cliente">Buscar</button>
+            </div>
+            <span class="clientes-count" id="clientes-count"></span>
+        </div>
+
+        <section class="inventory-management">
+            <table class="inventory-management__table">
+                <thead class="inventory-management__thead">
+                    <tr class="inventory-management__row">
+                        <th class="inventory-management__heading">Teléfono</th>
+                        <th class="inventory-management__heading">Nombre</th>
+                        <th class="inventory-management__heading">Notas</th>
+                        <th class="inventory-management__heading">Tags</th>
+                        <th class="inventory-management__heading">Última actividad</th>
+                    </tr>
+                </thead>
+                <tbody id="clientes-tbody">
+                    <tr>
+                        <td class="inventory-management__cell" colspan="5"
+                            style="text-align:center; padding:30px;">
+                            Cargando clientes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div><!-- /contenido-principal -->
+
+<!-- Modal detalle / edición de cliente -->
+<div class="modal-overlay" id="modal-cliente-detalle">
+    <div class="modal-cliente-content">
+
+        <div class="modal-cli-header">
+            <span class="modal-cli-title" id="modal-cli-tel">—</span>
+            <button class="mpedido-close" id="cerrar-modal-cli">&times;</button>
+        </div>
+
+        <div class="modal-cli-body">
+
+            <div class="cli-field">
+                <label>Nombre</label>
+                <input type="text" id="cli-nombre" placeholder="Nombre del cliente">
+            </div>
+
+            <div class="cli-field">
+                <label>Notas</label>
+                <textarea id="cli-notas" placeholder="Observaciones internas..."></textarea>
+            </div>
+
+            <div class="cli-field">
+                <label>Tags</label>
+                <div class="tags-wrap" id="cli-tags">
+                    <span class="tag-chip" data-tag="frecuente">Frecuente</span>
+                    <span class="tag-chip" data-tag="vip">VIP</span>
+                    <span class="tag-chip" data-tag="problemas">Problemas</span>
+                    <span class="tag-chip" data-tag="corporativo">Corporativo</span>
+                </div>
+            </div>
+
+            <hr class="cli-sep">
+
+            <div class="cli-section-title">Direcciones</div>
+            <div class="dir-list" id="cli-dirs"></div>
+
+        </div>
+
+        <div class="modal-cli-footer">
+            <button class="btn-guardar-cli" id="btn-guardar-cli">Guardar</button>
+            <button class="btn-ver-historial" id="btn-ver-historial">Ver historial</button>
+        </div>
+
+    </div>
+</div>
+
+<script type="module" src="./clientesCallPage.js"></script>
+
+</body>
+</html>
