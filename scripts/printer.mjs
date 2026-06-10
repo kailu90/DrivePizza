@@ -138,6 +138,7 @@ function generarHTML(pedido) {
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>PAGO:</strong> ${pedido.pago}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${formatearFecha(pedido.fecha)}</p>
 
             <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** COMPROBANTE DE SEDE ***</p>
         </div>
@@ -182,6 +183,7 @@ function generarHTMLReserva(pedido) {
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${formatearFecha(pedido.fecha)}</p>
 
             <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** RESERVA DE MESA ***</p>
         </div>

@@ -561,6 +561,7 @@ export const domicilios = {
         "Abreto": 6000,
         "Albania": 6000,
         "Amaral": 5000,
+        "Balcones de Ruitoque": 13000,
         "Bariloche": 5000,
         "Barrio las Delicias": 5000,
         "Barro Blanco": 8000,
