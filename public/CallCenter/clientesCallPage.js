@@ -255,8 +255,14 @@ async function ejecutarBusqueda() {
     btnBuscar.disabled = false;
 }
 
+let debounceTimer = null;
+
 btnBuscar.addEventListener('click', ejecutarBusqueda);
 searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') ejecutarBusqueda(); });
+searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(ejecutarBusqueda, 300);
+});
 
 document.getElementById('cerrar-modal-cli').addEventListener('click', cerrarModal);
 document.getElementById('btn-guardar-cli').addEventListener('click', guardarCliente);
