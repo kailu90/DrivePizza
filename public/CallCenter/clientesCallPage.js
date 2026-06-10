@@ -17,7 +17,7 @@ async function buscarClientes(query = '') {
 
     let req = supabase
         .from('clientes')
-        .select('id, telefono, nombre, notas, tags, updated_at')
+        .select('id, telefono, nombre, notas, tags, updated_at, direcciones_cliente(direccion, barrio, predeterminada)')
         .order('updated_at', { ascending: false })
         .limit(100);
 
@@ -52,6 +52,11 @@ function renderTabla(clientes) {
     }
 
     tbody.innerHTML = clientes.map(c => {
+        const dirs = c.direcciones_cliente || [];
+        const dirPred = dirs.find(d => d.predeterminada) || dirs[0] || null;
+        const dirTexto = dirPred
+            ? (dirPred.barrio ? `${dirPred.direccion} · ${dirPred.barrio}` : dirPred.direccion)
+            : '—';
         const tags = (c.tags || []).map(t =>
             `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
         ).join(' ');
@@ -59,8 +64,8 @@ function renderTabla(clientes) {
                     style="cursor:pointer;" data-id="${c.id}">
             <td class="inventory-management__cell" style="font-weight:700;">${c.telefono}</td>
             <td class="inventory-management__cell">${c.nombre || '—'}</td>
-            <td class="inventory-management__cell" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                ${c.notas || '—'}</td>
+            <td class="inventory-management__cell" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                title="${dirTexto}">${dirTexto}</td>
             <td class="inventory-management__cell">${tags || '—'}</td>
             <td class="inventory-management__cell">${formatFecha(c.updated_at)}</td>
         </tr>`;
