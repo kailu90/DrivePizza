@@ -132,7 +132,7 @@ function renderDirecciones(dirs) {
             <div class="dir-item-info">
                 <div class="dir-item-dir">${d.direccion}</div>
                 <div class="dir-item-meta">
-                    ${d.barrio ? d.barrio + ' · ' : ''}${SEDE_LABELS[d.sede_id] || d.sede_id || ''}
+                    ${d.barrio || ''}
                 </div>
             </div>
             <div class="dir-item-actions">
