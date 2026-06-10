@@ -8,11 +8,52 @@
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="../Estilos/skeleton.css">
     <link rel="stylesheet" href="../Estilos/historialPedidos.css">
-    <link rel="stylesheet" href="pedidosCallCenter.css">
+    <style>
+        /* ── Main Header ─────────────────────────────────────────── */
+        .main-header { background:var(--color-primario); color:var(--color-secundario); padding:0 2rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,.1); border-radius:5px 0; }
+        .main-header img { height:100px; }
+        .header-left { display:flex; align-items:center; }
+        .header-name { display:flex; align-items:center; gap:8px; }
+        .header-username { padding:5px; font-size:3.2rem; font-weight:bold; }
+        .header-controls { display:flex; align-items:center; }
+        .header-controls .header-link { font-size:1.4rem; padding:4px 10px; border-radius:6px; transition:background-color .2s; }
+        .header-controls .header-link:hover { background-color:rgba(255,255,255,.15); }
+        .btn-home { display:inline-flex; align-items:center; height:50px; margin:auto; padding:4px 8px; background:var(--color-primario); border:1px solid transparent; border-radius:4px; color:var(--color-secundario); font-weight:bold; transition:all .2s; cursor:pointer; }
+        .btn-home:hover { background:var(--color-quinto); color:var(--color-primario); border-color:var(--color-primario); }
+        .btn-historial { display:inline-flex; align-items:center; justify-content:center; height:40px; width:40px; background:transparent; border:1px solid transparent; border-radius:6px; color:var(--color-secundario); cursor:pointer; transition:all .2s; }
+        .btn-historial:hover { background:var(--color-quinto); border-color:var(--color-primario); }
+        .logout-icon { display:none; }
+
+        /* ── SIP Indicator ───────────────────────────────────────── */
+        #sip-status { position:relative; flex-shrink:0; display:flex; }
+        #sip-dot-hdr { display:none; position:absolute; top:6px; right:4px; pointer-events:none; width:12px; height:12px; border-radius:50%; background:#6b7280; z-index:1; border:2px solid var(--color-primario); }
+        #sip-popover { display:none; position:absolute; top:calc(100% + 8px); left:0; background:#1e293b; color:#f1f5f9; border-radius:10px; padding:14px 16px; min-width:200px; box-shadow:0 6px 24px rgba(0,0,0,.4); z-index:9999; font-size:1.3rem; }
+        #sip-popover.visible { display:block; }
+        .sip-pop-row { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; }
+        .sip-pop-label { color:#94a3b8; }
+        #sip-dot-hdr.registered { background:#22c55e; }
+        #sip-dot-hdr.incall     { background:#3b82f6; }
+        #sip-dot-hdr.offline    { background:#ef4444; }
+        #sip-dot-hdr.ringing    { background:#f59e0b; animation:sip-pulse-hdr .7s infinite; }
+        @keyframes sip-pulse-hdr { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(1.4)} }
+
+        /* ── Responsive ──────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .main-header { padding:0 1rem; }
+            .main-header img { height:54px; }
+            .header-username { font-size:1.6rem; }
+            .btn-home { height:36px; }
+            .icon-home { width:20px !important; height:20px !important; }
+            .btn-historial { width:32px; height:32px; }
+            .btn-historial svg { width:18px !important; height:18px !important; }
+            .logout-text { display:none; }
+            .logout-icon { display:block; }
+            #btn-logout { padding:4px 6px; font-size:0; }
+            .header-controls { gap:4px; }
+        }
+    </style>
 </head>
 <body data-skeleton="historial">
-
-<div id="skeleton" class="sk-page"></div>
 
 <header class="main-header no-print">
     <div class="header-left">
@@ -62,6 +103,8 @@
         </button>
     </div>
 </header>
+
+<div id="skeleton" class="sk-page"></div>
 
 <div id="contenido-principal" style="display:none;">
     <main class="historial__main">

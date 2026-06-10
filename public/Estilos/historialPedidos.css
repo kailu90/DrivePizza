@@ -7,11 +7,9 @@ html, body {
 
 /* ── LAYOUT PRINCIPAL ─────────────────────────────────────────── */
 .historial__main {
-    margin-top: 90px;
-    padding: 2rem;
+    padding: 1rem 2rem;
     padding-bottom: 0;
-    height: calc(100vh - 90px);
-    height: calc(100dvh - 90px);
+    height: 100%;
     font-size: 1.4rem;
     display: flex;
     flex-direction: column;
@@ -882,7 +880,7 @@ html, body {
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .historial__main {
-        margin-top: 58px;
+        margin-top: 0;
         padding: 0.8rem;
         padding-right: max(0.8rem, env(safe-area-inset-right, 0.8rem));
         padding-left: max(0.8rem, env(safe-area-inset-left, 0.8rem));
@@ -1220,7 +1218,7 @@ html, body {
     .ra-table td.ra-horario { display: none; }
 
     /* Topbar: apilado, controles en fila con input flexible */
-    .ra-topbar { margin-top: 50px; flex-direction: column; align-items: stretch; margin-bottom: 1.6rem; gap: 0.8rem; }
+    .ra-topbar { margin-top: 0; flex-direction: column; align-items: stretch; margin-bottom: 1.6rem; gap: 0.8rem; }
     .ra-title { font-size: 1.8rem; }
     .ra-controls { margin-left: 0; }
     .ra-controls input[type="date"] { flex: 1; min-width: 0; }

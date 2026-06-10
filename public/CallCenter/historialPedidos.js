@@ -1,6 +1,9 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
 import { colFechaToUTC } from "../Shared/semanas.js";
+import { initPanel }    from "../Shared/panelToggle.js";
+import { initPbxPanel } from "./pbxPanel.js";
+import { PBX_URL, WS_URL } from "../Api/config.js";
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
@@ -966,23 +969,102 @@ async function obtenerUsuarioCC() {
     }
 })();
 
-// ── Popover SIP ──────────────────────────────────────────────────────────────
-document.getElementById('btn-sip-btn')?.addEventListener('click', e => {
+// ── Paneles laterales ─────────────────────────────────────────────────────────
+const panelWA  = initPanel('panel-wa',  'strip-wa',  'dp_panel_wa_h');
+const panelPBX = initPanel('panel-pbx', 'strip-pbx', 'dp_panel_pbx_h');
+const pbxPanel = initPbxPanel('pbx-body');
+
+document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
+document.getElementById('btn-open-pbx')?.addEventListener('click', () => panelPBX?.toggle());
+
+document.getElementById('btn-sip-reconectar')?.addEventListener('click', e => {
     e.stopPropagation();
-    document.getElementById('sip-popover').classList.toggle('visible');
+    if (window.parent !== window) window.parent.postMessage({ type: 'sip-reconnect' }, '*');
 });
-document.addEventListener('click', () => document.getElementById('sip-popover')?.classList.remove('visible'));
+
+// ── Asesores en línea ─────────────────────────────────────────────────────────
+let panelAgentsExpanded = false;
+document.getElementById('panel-agents-toggle')?.addEventListener('click', () => {
+    panelAgentsExpanded = !panelAgentsExpanded;
+    document.getElementById('panel-agents-list').style.display = panelAgentsExpanded ? '' : 'none';
+    document.querySelector('.panel-agents-arrow')?.classList.toggle('expanded', panelAgentsExpanded);
+});
+
+function chipInitials(name) {
+    if (!name) return '?';
+    return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function buildChipsHTML(visibles) {
+    return visibles.map(a => {
+        const name = a.username || ('Ext. ' + a.extension);
+        let cls, label;
+        if (a.in_call)              { cls = 'chip-incall'; label = 'En llamada'; }
+        else if (a.queue_connected) { cls = 'chip-queue';  label = 'Disponible'; }
+        else if (a.sip_registered)  { cls = 'chip-paused'; label = 'Pausado'; }
+        else                        { cls = 'chip-offline'; label = 'Desconectado'; }
+        return `<div class="agent-chip ${cls}">
+            <div class="chip-avatar">${chipInitials(a.username)}</div>
+            <div class="chip-info">
+                <span class="chip-name">${name}</span>
+                <span class="chip-status">${label}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function loadAgentStrip() {
+    try {
+        const r = await fetch(`${PBX_URL}/pbx/agents/status`);
+        if (!r.ok) return;
+        const agents   = await r.json();
+        const visibles = agents.filter(a => a.queue_connected || a.in_call);
+
+        const badge = document.getElementById('agents-badge-mobile');
+        if (badge) { badge.textContent = visibles.length; badge.style.display = visibles.length > 0 ? 'flex' : 'none'; }
+
+        const panelAgents = document.getElementById('panel-agents');
+        const panelList   = document.getElementById('panel-agents-list');
+        const panelCount  = document.getElementById('panel-agents-count');
+        if (panelAgents) {
+            panelAgents.style.display = visibles.length ? '' : 'none';
+            if (panelCount) panelCount.textContent = visibles.length;
+            if (panelList)  panelList.innerHTML    = buildChipsHTML(visibles);
+        }
+    } catch { /* sin red */ }
+}
+
+loadAgentStrip();
+setInterval(loadAgentStrip, 10000);
+
+(function initStripWs() {
+    const ws = new WebSocket(WS_URL);
+    ws.onopen = () => loadAgentStrip();
+    ws.onmessage = e => {
+        try {
+            const { tipo } = JSON.parse(e.data);
+            if (tipo === 'pbx:llamada' || tipo === 'pbx:sesion') loadAgentStrip();
+        } catch {}
+    };
+    ws.onclose = () => setTimeout(initStripWs, 5000);
+})();
 
 // ── Estado SIP desde el shell padre ─────────────────────────────────────────
-const SIP_LABELS_H = { registered: 'Registrado', ringing: 'Llamando...', incall: 'En llamada', offline: 'Desconectado' };
+const SIP_LABELS_H = { registered: 'Registrado', ringing: 'Llamada entrante', incall: 'En llamada', offline: 'Desconectado' };
 window.addEventListener('message', e => {
-    if (e.data?.type !== 'sip-state') return;
-    const s   = e.data.state || 'offline';
-    const dot = document.getElementById('sip-dot-hdr');
-    if (dot) { dot.style.display = 'block'; dot.className = s; }
-    const est = document.getElementById('sip-pop-estado');
-    const ext = document.getElementById('sip-pop-ext');
-    if (est) est.textContent = SIP_LABELS_H[s] || s;
-    if (ext) ext.textContent = e.data.extension ? 'Ext. ' + e.data.extension : '—';
+    if (!e.data || e.data.type !== 'sip-state') return;
+    const { state, extension, username, callerNumber, remoteUser } = e.data;
+    const dotEl   = document.getElementById('sip-dot-hdr');
+    const stripEl = document.getElementById('strip-pbx');
+    if (!dotEl) return;
+    dotEl.style.display = 'block';
+    if (state === 'ringing' || state === 'incall') dotEl.className = state;
+    stripEl?.classList.remove('sip-ringing', 'sip-incall');
+    if (state === 'ringing') stripEl?.classList.add('sip-ringing');
+    if (state === 'incall')  stripEl?.classList.add('sip-incall');
+    document.getElementById('sip-pop-estado').textContent = SIP_LABELS_H[state] || state;
+    document.getElementById('sip-pop-ext').textContent    = extension || '—';
+    pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
 });
+
 if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
