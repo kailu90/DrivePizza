@@ -1018,6 +1018,8 @@ function limpiarFormularioCheckout() {
     document.querySelectorAll('.pago-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('direccion-section').style.display = 'none';
     document.getElementById('domicilio-precio').textContent = '';
+    const _dc = document.getElementById('dir-chips');
+    if (_dc) { _dc.innerHTML = ''; _dc.style.display = 'none'; }
 
     _restaurarModoNormal();
 }

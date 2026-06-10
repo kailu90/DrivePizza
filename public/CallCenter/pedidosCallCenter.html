@@ -224,6 +224,9 @@
             </div>
             <input type="text" id="clienteNombre" placeholder="Nombre Cliente">
 
+            <!-- Chips de dirección: aparecen cuando el cliente tiene direcciones guardadas -->
+            <div id="dir-chips" class="dir-chips full-width" style="display:none;"></div>
+
             <!-- Dirección y barrio: solo visible en domicilio — oculto en modo reserva -->
             <div id="direccion-section" class="full-width" style="display:none;">
                 <input type="text" id="clienteDireccion" placeholder="Dirección Completa/Torre/Apto" class="full-width">
@@ -357,6 +360,30 @@
         }, 300);
     });
 
+    let _clienteDirs = [];
+
+    function _aplicarDireccion(d) {
+        const sedeBtn = document.querySelector(`.sede-btn[data-sede="${d.sede_id}"]`);
+        sedeBtn?.click();
+        document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
+        document.getElementById('clienteDireccion').value = d.direccion || '';
+        if (d.barrio) {
+            setTimeout(() => {
+                document.getElementById('barrioInput').value = d.barrio;
+                window.actualizarPrecioDomicilio?.();
+            }, 50);
+        }
+    }
+
+    document.getElementById('dir-chips').addEventListener('click', e => {
+        const chip = e.target.closest('.dir-chip');
+        if (!chip) return;
+        document.querySelectorAll('#dir-chips .dir-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const d = _clienteDirs[parseInt(chip.dataset.idx)];
+        if (d) _aplicarDireccion(d);
+    });
+
     telDropdown.addEventListener('click', async e => {
         const item = e.target.closest('.tel-dropdown-item');
         if (!item) return;
@@ -369,25 +396,21 @@
 
         document.getElementById('clienteNombre').value = cliente.nombre || '';
 
-        const dirs = cliente.direcciones_cliente || [];
-        const dir  = dirs[0]; // predeterminada primero (ya ordenadas en cargarCliente)
-        if (dir) {
-            // Activar sede
-            const sedeBtn = document.querySelector(`.sede-btn[data-sede="${dir.sede_id}"]`);
-            sedeBtn?.click();
+        _clienteDirs = cliente.direcciones_cliente || [];
+        const chipsEl = document.getElementById('dir-chips');
 
-            // Activar domicilio
-            document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
-
-            document.getElementById('clienteDireccion').value = dir.direccion || '';
-
-            if (dir.barrio) {
-                setTimeout(() => {
-                    document.getElementById('barrioInput').value = dir.barrio;
-                    window.actualizarPrecioDomicilio?.();
-                }, 50);
-            }
+        if (!_clienteDirs.length) {
+            chipsEl.style.display = 'none';
+            chipsEl.innerHTML = '';
+            return;
         }
+
+        chipsEl.innerHTML = _clienteDirs.map((d, i) =>
+            `<button type="button" class="dir-chip${i === 0 ? ' active' : ''}" data-idx="${i}">${d.predeterminada ? '★ ' : ''}${d.direccion}${d.barrio ? ' · ' + d.barrio : ''}</button>`
+        ).join('');
+        chipsEl.style.display = 'flex';
+
+        _aplicarDireccion(_clienteDirs[0]);
     });
 
     document.addEventListener('click', e => {
