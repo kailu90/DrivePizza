@@ -2,7 +2,8 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
 import { colFechaToUTC } from "../Shared/semanas.js";
 import { initPanel }    from "../Shared/panelToggle.js";
-import { initPbxPanel } from "./pbxPanel.js";
+import { initPbxPanel }  from "./pbxPanel.js";
+import { initNavButtons } from "./navCallCenter.js";
 import { PBX_URL, WS_URL } from "../Api/config.js";
 
 let pedidosCargados = [];
@@ -1077,4 +1078,5 @@ window.addEventListener('message', e => {
     pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
 });
 
+initNavButtons('historial');
 if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');

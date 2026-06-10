@@ -62,16 +62,6 @@
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
             </button>
-            <button class="btn-historial with-tooltip" data-tooltip="Historial de Pedidos" onclick="window.location.href='./historialPedidos.html'">
-                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-            </button>
             <button id="btn-logout" class="header-link">
                 <span class="logout-text">Cerrar Sesión</span>
                 <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -330,7 +320,8 @@
     import { domicilios } from "./domicilios.js";
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
     import { initPanel }    from "../Shared/panelToggle.js";
-    import { initPbxPanel } from "./pbxPanel.js";
+    import { initPbxPanel }  from "./pbxPanel.js";
+    import { initNavButtons } from "./navCallCenter.js";
     import { PBX_URL, WS_URL } from "../Api/config.js";
     import { buscarClientes, cargarCliente, upsertCliente } from "./clientesCall.js";
 
@@ -539,6 +530,7 @@
     });
 
     // Avisar al shell que el frame está listo para recibir el estado actual
+    initNavButtons('pedidos');
     if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
 
     // ── Asesores conectados ───────────────────────────────────────────────────
