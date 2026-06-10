@@ -715,6 +715,7 @@ function eliminarItem(id) {
         });
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoId !== itemTarget.promoId);
+            if (!carrito.some(i => i.esPromo3x2)) localStorage.removeItem('dp_promo3x2_obs');
             actualizarComanda();
         }, 300);
         return;
@@ -730,6 +731,7 @@ function eliminarItem(id) {
         });
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoId65k !== itemTarget.promoId65k);
+            if (!carrito.some(i => i.esPromo65k)) localStorage.removeItem('dp_promo65k_obs');
             _limpiarFiltroSedes();
             actualizarComanda();
         }, 300);
@@ -746,6 +748,7 @@ function eliminarItem(id) {
         });
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoIdLasEsp !== itemTarget.promoIdLasEsp);
+            if (!carrito.some(i => i.esPromoLasEsp)) localStorage.removeItem('dp_promoLasEsp_obs');
             actualizarComanda();
         }, 300);
         return;
