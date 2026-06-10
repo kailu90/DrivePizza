@@ -11,7 +11,8 @@ let rolUsuario      = null;
 let filtrosActuales = {};
 let pedidoPendienteCancelar = null;
 
-const MODO_RESERVAS = new URLSearchParams(window.location.search).get('tipo') === 'reserva';
+const MODO_RESERVAS   = new URLSearchParams(window.location.search).get('tipo')     === 'reserva';
+const FILTRO_TELEFONO = new URLSearchParams(window.location.search).get('telefono') || null;
 if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
 
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
@@ -161,8 +162,9 @@ async function cargaCompleta(filtros) {
             .lte('fecha', colFechaToUTC(hasta, 'fin'))
             .order('fecha', { ascending: false });
 
-        if (filtros.sede)   q = q.eq('sede',   filtros.sede);
-        if (filtros.estado) q = q.eq('estado', filtros.estado);
+        if (filtros.sede)     q = q.eq('sede',     filtros.sede);
+        if (filtros.estado)   q = q.eq('estado',   filtros.estado);
+        if (filtros.telefono) q = q.eq('telefono', filtros.telefono);
 
         const { data, error } = await q;
         if (error) throw error;
@@ -954,13 +956,21 @@ async function obtenerUsuarioCC() {
         if (MODO_RESERVAS) {
             const d = new Date();
             desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+        } else if (FILTRO_TELEFONO) {
+            const d = new Date();
+            d.setFullYear(d.getFullYear() - 1);
+            desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         }
         document.getElementById("filtro-desde").value = desde;
         document.getElementById("filtro-hasta").value = hasta;
         if (sedeUsuario) document.getElementById("filtro-sede").value = sedeUsuario;
 
         document.body.classList.add('loaded');
-        await cargarPedidos({ desde, hasta, ...(sedeUsuario && { sede: sedeUsuario }) });
+        await cargarPedidos({
+            desde, hasta,
+            ...(FILTRO_TELEFONO && { telefono: FILTRO_TELEFONO }),
+            ...(sedeUsuario && { sede: sedeUsuario }),
+        });
 
         ocultarSkeleton("contenido-principal");
     } catch (error) {

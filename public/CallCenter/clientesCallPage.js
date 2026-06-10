@@ -8,18 +8,22 @@ const SEDE_LABELS = {
 
 let clienteActual = null; // cliente abierto en modal
 
+const POR_PAGINA  = 20;
+let   paginaActual = 1;
+
 // ── BÚSQUEDA ──────────────────────────────────────────────────────────────────
-async function buscarClientes(query = '') {
-    const q = query.trim();
+async function buscarClientes(query = '', pagina = 1) {
+    const q      = query.trim();
+    const offset = (pagina - 1) * POR_PAGINA;
 
     const digitos = q.replace(/\D/g, '');
     const esNumero = digitos.length >= 2;
 
     let req = supabase
         .from('clientes')
-        .select('id, telefono, nombre, notas, tags, updated_at, direcciones_cliente(direccion, barrio, predeterminada)')
+        .select('id, telefono, nombre, notas, tags, updated_at, direcciones_cliente(direccion, barrio, predeterminada)', { count: 'exact' })
         .order('updated_at', { ascending: false })
-        .limit(100);
+        .range(offset, offset + POR_PAGINA - 1);
 
     if (q && esNumero) {
         req = req.ilike('telefono', `%${digitos}%`);
@@ -27,9 +31,9 @@ async function buscarClientes(query = '') {
         req = req.ilike('nombre', `%${q}%`);
     }
 
-    const { data, error } = await req;
+    const { data, error, count } = await req;
     if (error) console.error('Error búsqueda clientes:', error);
-    return data || [];
+    return { data: data || [], count: count || 0 };
 }
 
 function formatFecha(iso) {
@@ -39,13 +43,25 @@ function formatFecha(iso) {
     }).format(new Date(iso));
 }
 
-function renderTabla(clientes) {
+function renderPaginacion(total, pagina) {
+    const totalPags = Math.ceil(total / POR_PAGINA);
+    const el = document.getElementById('clientes-paginacion');
+    if (totalPags <= 1) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+        <button class="pag-btn" id="pag-prev" ${pagina <= 1 ? 'disabled' : ''}>← Anterior</button>
+        <span class="pag-info">Página ${pagina} de ${totalPags}</span>
+        <button class="pag-btn" id="pag-next" ${pagina >= totalPags ? 'disabled' : ''}>Siguiente →</button>`;
+    el.querySelector('#pag-prev')?.addEventListener('click', () => ejecutarBusqueda(pagina - 1));
+    el.querySelector('#pag-next')?.addEventListener('click', () => ejecutarBusqueda(pagina + 1));
+}
+
+function renderTabla(clientes, total) {
     const tbody = document.getElementById('clientes-tbody');
     const count = document.getElementById('clientes-count');
-    count.textContent = clientes.length ? `${clientes.length} resultado${clientes.length !== 1 ? 's' : ''}` : '';
+    count.textContent = total ? `${total} cliente${total !== 1 ? 's' : ''}` : '';
 
     if (!clientes.length) {
-        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="5"
+        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="6"
             style="text-align:center;padding:30px;color:#aaa;">
             No se encontraron clientes.</td></tr>`;
         return;
@@ -66,14 +82,36 @@ function renderTabla(clientes) {
                 title="${dirTexto}">${dirTexto}</td>
             <td class="inventory-management__cell">${tags || '—'}</td>
             <td class="inventory-management__cell">${formatFecha(c.updated_at)}</td>
+            <td class="inventory-management__cell" style="text-align:center;width:40px;">
+                <button class="btn-eliminar-cli" data-id="${c.id}" data-nombre="${c.nombre || c.telefono}" title="Eliminar cliente">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                </button>
+            </td>
         </tr>`;
     }).join('');
 
     tbody.querySelectorAll('.fila-cliente').forEach(tr => {
-        tr.addEventListener('click', () => {
+        tr.addEventListener('click', e => {
+            if (e.target.closest('.btn-eliminar-cli')) return; // no abrir modal al eliminar
             const id = tr.dataset.id;
             const cli = clientes.find(c => c.id === id);
             if (cli) abrirModal(cli);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-eliminar-cli').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            e.stopPropagation();
+            if (!confirm(`¿Eliminar a "${btn.dataset.nombre}"? Se borrarán también sus direcciones.`)) return;
+            await supabase.from('direcciones_cliente').delete().eq('cliente_id', btn.dataset.id);
+            await supabase.from('clientes').delete().eq('id', btn.dataset.id);
+            ejecutarBusqueda(paginaActual);
         });
     });
 }
@@ -177,6 +215,97 @@ function renderDirecciones(dirs) {
     });
 }
 
+// ── AGREGAR DIRECCIÓN ─────────────────────────────────────────────────────────
+async function guardarNuevaDireccion() {
+    const direccion = document.getElementById('nueva-dir-direccion').value.trim();
+    if (!direccion) { alert('La dirección es obligatoria.'); return; }
+
+    const barrio  = document.getElementById('nueva-dir-barrio').value.trim() || null;
+    const sede_id = document.getElementById('nueva-dir-sede').value || null;
+
+    const btn = document.getElementById('btn-guardar-dir');
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+
+    const esPrimera = !clienteActual.direcciones_cliente?.length;
+
+    const { error } = await supabase.from('direcciones_cliente').insert({
+        cliente_id:    clienteActual.id,
+        direccion,
+        barrio,
+        sede_id,
+        predeterminada: esPrimera,
+    });
+
+    btn.textContent = 'Agregar';
+    btn.disabled = false;
+
+    if (error) { alert('Error al guardar: ' + error.message); return; }
+
+    // Recargar datos del cliente
+    const { data } = await supabase
+        .from('clientes')
+        .select('*, direcciones_cliente(*)')
+        .eq('id', clienteActual.id)
+        .single();
+    if (data) {
+        clienteActual = data;
+        data.direcciones_cliente?.sort((a, b) =>
+            (b.predeterminada ? 1 : 0) - (a.predeterminada ? 1 : 0) ||
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+        renderDirecciones(data.direcciones_cliente || []);
+    }
+
+    document.getElementById('nueva-dir-form').style.display = 'none';
+    document.getElementById('btn-add-dir').style.display = '';
+    document.getElementById('nueva-dir-direccion').value = '';
+    document.getElementById('nueva-dir-barrio').value    = '';
+    document.getElementById('nueva-dir-sede').value      = '';
+}
+
+// ── NUEVO CLIENTE ─────────────────────────────────────────────────────────────
+function abrirModalNuevo() {
+    document.getElementById('nuevo-telefono').value = '';
+    document.getElementById('nuevo-nombre').value   = '';
+    document.getElementById('nuevo-notas').value    = '';
+    document.querySelectorAll('.nuevo-tag').forEach(c => c.classList.remove('active'));
+    document.getElementById('modal-nuevo-cliente').style.display = 'flex';
+    document.getElementById('nuevo-telefono').focus();
+}
+
+function cerrarModalNuevo() {
+    document.getElementById('modal-nuevo-cliente').style.display = 'none';
+}
+
+async function crearCliente() {
+    const telefono = document.getElementById('nuevo-telefono').value.replace(/\D/g, '');
+    if (!telefono) { alert('El teléfono es obligatorio.'); return; }
+
+    const nombre = document.getElementById('nuevo-nombre').value.trim();
+    const notas  = document.getElementById('nuevo-notas').value.trim();
+    const tags   = [...document.querySelectorAll('.nuevo-tag.active')].map(c => c.dataset.tag);
+
+    const btn = document.getElementById('btn-crear-cliente');
+    btn.textContent = 'Creando...';
+    btn.disabled = true;
+
+    const { error } = await supabase.from('clientes').insert({
+        telefono, nombre, notas, tags, updated_at: new Date().toISOString()
+    });
+
+    btn.textContent = 'Crear cliente';
+    btn.disabled = false;
+
+    if (error) {
+        if (error.code === '23505') alert('Ya existe un cliente con ese teléfono.');
+        else alert('Error al crear: ' + error.message);
+        return;
+    }
+    cerrarModalNuevo();
+    ejecutarBusqueda(1);
+}
+
 // ── GUARDAR ───────────────────────────────────────────────────────────────────
 async function guardarCliente() {
     if (!clienteActual) return;
@@ -243,12 +372,14 @@ async function obtenerUsuarioCC() {
 const searchInput = document.getElementById('buscar-cliente-input');
 const btnBuscar   = document.getElementById('btn-buscar-cliente');
 
-async function ejecutarBusqueda() {
+async function ejecutarBusqueda(pagina = 1) {
+    paginaActual = pagina;
     const q = searchInput.value.trim();
     btnBuscar.textContent = 'Buscando...';
     btnBuscar.disabled = true;
-    const resultados = await buscarClientes(q);
-    renderTabla(resultados);
+    const { data, count } = await buscarClientes(q, pagina);
+    renderTabla(data, count);
+    renderPaginacion(count, pagina);
     btnBuscar.textContent = 'Buscar';
     btnBuscar.disabled = false;
 }
@@ -259,13 +390,34 @@ btnBuscar.addEventListener('click', ejecutarBusqueda);
 searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') ejecutarBusqueda(); });
 searchInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(ejecutarBusqueda, 300);
+    debounceTimer = setTimeout(() => ejecutarBusqueda(1), 300);
 });
 
 document.getElementById('cerrar-modal-cli').addEventListener('click', cerrarModal);
 document.getElementById('btn-guardar-cli').addEventListener('click', guardarCliente);
 document.getElementById('modal-cliente-detalle').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-cliente-detalle')) cerrarModal();
+});
+
+document.getElementById('btn-add-dir').addEventListener('click', () => {
+    document.getElementById('nueva-dir-form').style.display = 'block';
+    document.getElementById('btn-add-dir').style.display = 'none';
+    document.getElementById('nueva-dir-direccion').focus();
+});
+document.getElementById('btn-cancelar-dir').addEventListener('click', () => {
+    document.getElementById('nueva-dir-form').style.display = 'none';
+    document.getElementById('btn-add-dir').style.display = '';
+});
+document.getElementById('btn-guardar-dir').addEventListener('click', guardarNuevaDireccion);
+
+document.getElementById('btn-nuevo-cliente').addEventListener('click', abrirModalNuevo);
+document.getElementById('cerrar-modal-nuevo').addEventListener('click', cerrarModalNuevo);
+document.getElementById('btn-crear-cliente').addEventListener('click', crearCliente);
+document.getElementById('modal-nuevo-cliente').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-nuevo-cliente')) cerrarModalNuevo();
+});
+document.querySelectorAll('.nuevo-tag').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 
 document.querySelectorAll('.tag-chip').forEach(chip => {

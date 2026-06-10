@@ -12,6 +12,14 @@
     <style>
         .modal-overlay { display: none; }
 
+        /* ── Botones header ── */
+        .btn-historial { display:inline-flex; align-items:center; justify-content:center; height:40px; width:40px; background:transparent; border:1px solid transparent; border-radius:6px; color:var(--color-secundario); cursor:pointer; transition:all .2s; }
+        .btn-historial:hover { background:var(--color-quinto); border-color:var(--color-primario); }
+        @media (max-width: 768px) {
+            .btn-historial { width:32px; height:32px; }
+            .btn-historial svg { width:18px !important; height:18px !important; }
+        }
+
         /* ── Barra de búsqueda ── */
         .clientes-topbar {
             display: flex;
@@ -255,6 +263,88 @@
             color: white;
         }
 
+        /* Agregar dirección */
+        .btn-add-dir {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: none;
+            border: 1.5px dashed #ccc;
+            border-radius: 8px;
+            font-size: 1.3rem;
+            color: #888;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .15s;
+        }
+        .btn-add-dir:hover { border-color: var(--color-primario); color: var(--color-primario); background: #f9f9f9; }
+
+        /* Nuevo cliente */
+        .btn-nuevo-cliente {
+            padding: 9px 18px;
+            background: var(--color-primario);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: background .2s;
+        }
+        .btn-nuevo-cliente:hover { background: var(--color-cuaternario); }
+
+        /* Eliminar cliente */
+        .btn-eliminar-cli {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ccc;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color .15s, background .15s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-eliminar-cli:hover { color: #e74c3c; background: #fff0f0; }
+
+        /* Paginación */
+        .clientes-paginacion {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px 0 8px;
+        }
+        .pag-btn {
+            padding: 7px 18px;
+            border: 1.5px solid var(--color-primario);
+            border-radius: 8px;
+            background: white;
+            color: var(--color-primario);
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .15s;
+        }
+        .pag-btn:hover:not(:disabled) {
+            background: var(--color-primario);
+            color: white;
+        }
+        .pag-btn:disabled {
+            opacity: .35;
+            cursor: default;
+            border-color: #ccc;
+            color: #aaa;
+        }
+        .pag-info {
+            font-size: 1.3rem;
+            color: #666;
+            white-space: nowrap;
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
             .logout-text { display: none; }
@@ -326,6 +416,7 @@
                 <button class="btn-buscar-cliente" id="btn-buscar-cliente">Buscar</button>
             </div>
             <span class="clientes-count" id="clientes-count"></span>
+            <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
         </div>
 
         <section class="inventory-management">
@@ -337,6 +428,7 @@
                         <th class="inventory-management__heading">Dirección</th>
                         <th class="inventory-management__heading">Tags</th>
                         <th class="inventory-management__heading">Última actividad</th>
+                        <th class="inventory-management__heading" style="width:44px;"></th>
                     </tr>
                 </thead>
                 <tbody id="clientes-tbody">
@@ -349,6 +441,8 @@
                 </tbody>
             </table>
         </section>
+
+        <div id="clientes-paginacion" class="clientes-paginacion"></div>
 
     </main>
 
@@ -390,11 +484,75 @@
             <div class="cli-section-title">Direcciones</div>
             <div class="dir-list" id="cli-dirs"></div>
 
+            <div class="nueva-dir-form" id="nueva-dir-form" style="display:none;">
+                <hr class="cli-sep">
+                <div class="cli-field">
+                    <label>Dirección <span style="color:#e74c3c;">*</span></label>
+                    <input type="text" id="nueva-dir-direccion" placeholder="Ej: Calle 45 # 20-15">
+                </div>
+                <div class="cli-field">
+                    <label>Barrio</label>
+                    <input type="text" id="nueva-dir-barrio" placeholder="Ej: Entre Parques">
+                </div>
+                <input type="hidden" id="nueva-dir-sede" value="">
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                    <button class="btn-guardar-cli" id="btn-guardar-dir" style="flex:1;">Agregar</button>
+                    <button class="btn-ver-historial" id="btn-cancelar-dir" style="flex:0 0 auto;padding:12px 16px;">Cancelar</button>
+                </div>
+            </div>
+
+            <button class="btn-add-dir" id="btn-add-dir">+ Agregar dirección</button>
+
         </div>
 
         <div class="modal-cli-footer">
             <button class="btn-guardar-cli" id="btn-guardar-cli">Guardar</button>
             <button class="btn-ver-historial" id="btn-ver-historial">Ver historial</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal nuevo cliente -->
+<div class="modal-overlay" id="modal-nuevo-cliente">
+    <div class="modal-cliente-content">
+
+        <div class="modal-cli-header">
+            <span class="modal-cli-title">Nuevo cliente</span>
+            <button class="mpedido-close" id="cerrar-modal-nuevo">&times;</button>
+        </div>
+
+        <div class="modal-cli-body">
+
+            <div class="cli-field">
+                <label>Teléfono <span style="color:#e74c3c;">*</span></label>
+                <input type="tel" id="nuevo-telefono" placeholder="Ej: 3174567890" autocomplete="off">
+            </div>
+
+            <div class="cli-field">
+                <label>Nombre</label>
+                <input type="text" id="nuevo-nombre" placeholder="Nombre del cliente">
+            </div>
+
+            <div class="cli-field">
+                <label>Notas</label>
+                <textarea id="nuevo-notas" placeholder="Observaciones internas..."></textarea>
+            </div>
+
+            <div class="cli-field">
+                <label>Tags</label>
+                <div class="tags-wrap">
+                    <span class="tag-chip nuevo-tag" data-tag="frecuente">Frecuente</span>
+                    <span class="tag-chip nuevo-tag" data-tag="vip">VIP</span>
+                    <span class="tag-chip nuevo-tag" data-tag="problemas">Problemas</span>
+                    <span class="tag-chip nuevo-tag" data-tag="corporativo">Corporativo</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-cli-footer">
+            <button class="btn-guardar-cli" id="btn-crear-cliente">Crear cliente</button>
         </div>
 
     </div>
