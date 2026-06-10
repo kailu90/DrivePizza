@@ -54,9 +54,7 @@ function renderTabla(clientes) {
     tbody.innerHTML = clientes.map(c => {
         const dirs = c.direcciones_cliente || [];
         const dirPred = dirs.find(d => d.predeterminada) || dirs[0] || null;
-        const dirTexto = dirPred
-            ? (dirPred.barrio ? `${dirPred.direccion} · ${dirPred.barrio}` : dirPred.direccion)
-            : '—';
+        const dirTexto = dirPred ? dirPred.direccion : '—';
         const tags = (c.tags || []).map(t =>
             `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
         ).join(' ');
