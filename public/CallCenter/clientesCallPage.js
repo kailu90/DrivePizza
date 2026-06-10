@@ -386,8 +386,8 @@ async function ejecutarBusqueda(pagina = 1) {
 
 let debounceTimer = null;
 
-btnBuscar.addEventListener('click', ejecutarBusqueda);
-searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') ejecutarBusqueda(); });
+btnBuscar.addEventListener('click', () => ejecutarBusqueda(1));
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') ejecutarBusqueda(1); });
 searchInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => ejecutarBusqueda(1), 300);
