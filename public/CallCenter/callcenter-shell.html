@@ -68,7 +68,7 @@
 
 <script type="module">
     import { supabase } from '../Api/supabaseConfig.js';
-    import { PBX_URL } from '../Api/config.js';
+    import { PBX_URL, WS_URL } from '../Api/config.js';
 
     const ICE = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -209,6 +209,29 @@
 
         ua.start();
     }
+
+    // ── WS: re-anunciar al backend si se reinicia ─────────────────────────────
+    // ua.on('registered') solo dispara en el primer registro SIP.
+    // Si el backend se reinicia con SIP ya registrado, el WS se reconecta
+    // y llamamos /pbx/queue/connect para restaurar el estado en el nuevo proceso.
+    let _wsShellFirst = true;
+    function initShellWs() {
+        const ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            if (_wsShellFirst) { _wsShellFirst = false; return; }
+            // Reconexión = backend reiniciado → re-anunciar si SIP registrado
+            const u = window._usuarioCC;
+            if (window._sipUA?.isRegistered() && u?.extension) {
+                fetch(`${PBX_URL}/pbx/queue/connect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ extension: u.extension, username: u.username || '' })
+                }).catch(() => {});
+            }
+        };
+        ws.onclose = () => setTimeout(initShellWs, 5000);
+    }
+    initShellWs();
 
     // ── Estados del panel ─────────────────────────────────────────────────────
     function showRinging(caller) {
