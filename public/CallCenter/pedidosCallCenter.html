@@ -570,6 +570,12 @@
         return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
     }
 
+    function fmtChipDur(secs) {
+        const m = Math.floor(secs / 60);
+        const s = String(secs % 60).padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
     function buildChipsHTML(visibles) {
         return visibles.map(a => {
             const name = a.username || ('Ext. ' + a.extension);
@@ -578,15 +584,25 @@
             else if (a.queue_connected) { cls = 'chip-queue';  label = 'Disponible'; }
             else if (a.sip_registered)  { cls = 'chip-paused'; label = 'Pausado'; }
             else                        { cls = 'chip-offline'; label = 'Desconectado'; }
+            const timerSpan = a.in_call && a.hora_inicio
+                ? `<span class="chip-timer" data-chip-inicio="${new Date(a.hora_inicio).getTime()}">${fmtChipDur(Math.floor((Date.now() - new Date(a.hora_inicio).getTime()) / 1000))}</span>`
+                : '';
             return `<div class="agent-chip ${cls}">
                 <div class="chip-avatar">${chipInitials(a.username)}</div>
                 <div class="chip-info">
                     <span class="chip-name">${name}</span>
-                    <span class="chip-status">${label}</span>
+                    <span class="chip-status">${label}${timerSpan}</span>
                 </div>
             </div>`;
         }).join('');
     }
+
+    setInterval(() => {
+        document.querySelectorAll('[data-chip-inicio]').forEach(el => {
+            const t = parseInt(el.dataset.chipInicio, 10);
+            if (!isNaN(t)) el.textContent = fmtChipDur(Math.floor((Date.now() - t) / 1000));
+        });
+    }, 1000);
 
     function setAgentsBadge(count) {
         const el = document.getElementById('agents-badge-mobile');
