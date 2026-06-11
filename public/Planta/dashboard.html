@@ -26,8 +26,6 @@
                     <h2 class="inventory-management__title">
                         Gestión de Pedidos
                         <button id="btn-devoluciones" class="ap-btn ap-btn--primary" style="margin-left:auto;">↩ Devoluciones</button>
-                        <button id="btn-sync-pedidos" class="ap-btn ap-btn--secondary" style="display:none;" title="Sincronizar pedidos faltantes de Firestore al caché">🔄 Sincronizar caché</button>
-                        <button id="btn-exportar-detalle" class="ap-btn ap-btn--secondary" style="display:none;" title="Exportar detalle de productos por pedido">⬇ Detalle Productos</button>
                         <button id="btn-nuevo-pedido" class="ap-btn ap-btn--primary">+ Nuevo Pedido</button>
                     </h2>
 
@@ -120,7 +118,6 @@
                     <button id="btn-delete-modal" class="btn-modal btn-modal--danger" title="Eliminar pedido" style="font-size:17px;">🗑️</button>
                     <button id="btn-save-modal" class="btn-modal btn-save-modal" title="Guardar cambios" style="display:none; font-size:17px;">✅</button>
                     <button id="btn-cancel-edit" class="btn-modal" title="Cancelar edición" style="display:none; font-size:17px;">✖️</button>
-                    <button id="btn-sync-modal" class="btn-modal" title="Sincronizar con BD" style="display:none; font-size:17px;">🔄</button>
                 </div>
             </div>
             <p><strong>Sede:</strong> <span id="modal-sede"></span></p>
@@ -222,7 +219,6 @@
         </div>
     </dialog>
 
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script type="module" src="dashboard.js"></script>
 
 </body>

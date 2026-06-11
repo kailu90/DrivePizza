@@ -1282,7 +1282,8 @@ li.product.is-selected label {
     text-align: right;
     font-size: 1.2rem;
     border-top: 2px solid var(--color-primario);
-    padding-top: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 .btn-modal {

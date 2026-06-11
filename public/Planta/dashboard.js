@@ -247,7 +247,6 @@ function renderRows(querySnapshot, ordersContainer, sortOrder) {
       <td class="inventory-management__cell">${formatter.format(pedido.total || 0)}</td>
       <td class="inventory-management__cell">
         <a class="inventory-management__link btn-print" title="Imprimir Comanda">🖨️</a>
-        ${['planta-admin', 'planta', 'admin'].includes(rolUsuario) ? `<a class="inventory-management__link btn-sync" title="Sincronizar con BD" style="cursor:pointer; margin-left:4px;">🔄</a>` : ''}
       </td>`;
     ordersContainer.appendChild(row);
     totalPedidos++;
@@ -452,7 +451,6 @@ ordersContainer.addEventListener('click', async (e) => {
     if (!row) return;
 
     const printBtn = e.target.closest('.btn-print');
-    const syncBtn  = e.target.closest('.btn-sync');
 
     const docId = row.dataset.docId;
     const idPedidoVisual = row.cells[0].innerText;
@@ -460,28 +458,6 @@ ordersContainer.addEventListener('click', async (e) => {
     if (printBtn) {
         e.stopPropagation();
         imprimirDirecto(docId);
-        return;
-    }
-
-    if (syncBtn) {
-        e.stopPropagation();
-        try {
-            const { data: pedidoSup, error } = await supabase
-                .from('pedidos_planta')
-                .select('status')
-                .eq('id', docId)
-                .single();
-            if (!error && pedidoSup) {
-                actualizarBadgeFila(docId, pedidoSup.status);
-                await supabase.from('pedidos_planta')
-                    .update({ updated_at: new Date().toISOString() })
-                    .eq('id', docId);
-            }
-            syncBtn.textContent = '✅';
-            setTimeout(() => syncBtn.textContent = '🔄', 2000);
-        } catch (err) {
-            console.error('Error al sincronizar:', err);
-        }
         return;
     }
 
@@ -595,9 +571,6 @@ async function abrirModalPedido(docId, esEdicion = false) {
 
     cerrarModalAgregarProducto(true);
     if (esEdicion) cargarProductosDisponibles();
-
-    const btnSyncModal = document.getElementById('btn-sync-modal');
-    if (btnSyncModal) btnSyncModal.style.display = ['planta-admin', 'planta', 'admin'].includes(rolUsuario) ? '' : 'none';
 
     if (modalDetalle) {
         modalDetalle.style.display = 'flex';
@@ -1052,30 +1025,6 @@ document.getElementById('btn-delete-modal')?.addEventListener('click', async () 
     await confirmarEliminacion(docId, pedido.idPedido, null);
 });
 
-// ── Botón "Sync" del modal ─────────────────────────────────────────────
-document.getElementById('btn-sync-modal')?.addEventListener('click', async () => {
-    if (!pedidoEnEdicion) return;
-    const btn = document.getElementById('btn-sync-modal');
-    try {
-        const { data: pedidoSup, error } = await supabase
-            .from('pedidos_planta')
-            .select('status, delivery_date')
-            .eq('id', pedidoEnEdicion.docId)
-            .single();
-        if (!error && pedidoSup) {
-            pedidoEnEdicion.data.status = pedidoSup.status;
-            actualizarBadgeFila(pedidoEnEdicion.docId, pedidoSup.status);
-            renderStepperModal(pedidoSup.status);
-            await supabase.from('pedidos_planta')
-                .update({ updated_at: new Date().toISOString() })
-                .eq('id', pedidoEnEdicion.docId);
-        }
-        if (btn) { btn.textContent = '✅'; setTimeout(() => btn.textContent = '🔄', 2000); }
-    } catch (err) {
-        console.error('Error al sincronizar:', err);
-    }
-});
-
 // ── Modos vista / edición ──────────────────────────────────────────────
 function setModoVistaDashboard(editable = false) {
     document.getElementById('btn-print-modal').style.display  = 'inline-block';
@@ -1480,19 +1429,9 @@ verificarAccesoPlanta(({ username, sede, rol }) => {
     rolUsuario = rol;
     CargarHeader(sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta');
     if (['admin', 'planta-admin'].includes(rol)) {
-        document.getElementById('btn-sync-pedidos').style.display = '';
-        document.getElementById('btn-exportar-detalle').style.display = '';
     }
 });
 
-document.getElementById('btn-sync-pedidos')?.addEventListener('click', () => {
-    const btn = document.getElementById('btn-sync-pedidos');
-    btn.disabled = true;
-    btn.textContent = 'Recargando...';
-    todosPedidosSup = [];
-    listenForOrders(sortOrderActual);
-    setTimeout(() => { btn.textContent = '🔄 Recargar'; btn.disabled = false; }, 1500);
-});
 
 const linkLogout = document.getElementById("link_logout");
 
@@ -1623,69 +1562,3 @@ document.getElementById('dev-confirmar')?.addEventListener('click', async () => 
 });
 
 
-// ── Exportar detalle de productos por pedido ─────────────────────────────────
-function exportarDetallePedidos() {
-    const pedidos = [...pedidosMap.values()].filter(p => !p.eliminado);
-    if (pedidos.length === 0) {
-        alert('No hay pedidos cargados para exportar.\nSelecciona un rango de fechas primero.');
-        return;
-    }
-
-    const filas = [];
-    pedidos
-        .sort((a, b) => (a.idPedido ?? 0) - (b.idPedido ?? 0))
-        .forEach(pedido => {
-            const productos = pedido.products || [];
-            if (productos.length === 0) {
-                filas.push({
-                    'ID Pedido':      pedido.idPedido ?? '',
-                    'Fecha Entrega':  pedido.deliveryDate ?? '',
-                    'Sede':           (pedido.user || '').toLowerCase(),
-                    'Estado':         pedido.status ?? '',
-                    'Producto':       '(sin productos)',
-                    'Cantidad':       '',
-                    'Precio Unitario':'',
-                    'Total Producto': '',
-                    'Total Pedido':   pedido.netCost ?? 0,
-                });
-            } else {
-                productos.forEach(prod => {
-                    filas.push({
-                        'ID Pedido':       pedido.idPedido ?? '',
-                        'Fecha Entrega':   pedido.deliveryDate ?? '',
-                        'Sede':            (pedido.user || '').toLowerCase(),
-                        'Estado':          pedido.status ?? '',
-                        'Producto':        prod.name ?? '',
-                        'Cantidad':        prod.quantity ?? 0,
-                        'Precio Unitario': prod.unitPrice ?? 0,
-                        'Total Producto':  prod.totalPrice ?? 0,
-                        'Total Pedido':    pedido.netCost ?? 0,
-                    });
-                });
-            }
-        });
-
-    const ws = window.XLSX.utils.json_to_sheet(filas);
-
-    // Ancho de columnas
-    ws['!cols'] = [
-        { wch: 10 }, // ID Pedido
-        { wch: 14 }, // Fecha Entrega
-        { wch: 14 }, // Sede
-        { wch: 12 }, // Estado
-        { wch: 36 }, // Producto
-        { wch: 10 }, // Cantidad
-        { wch: 16 }, // Precio Unitario
-        { wch: 16 }, // Total Producto
-        { wch: 14 }, // Total Pedido
-    ];
-
-    const wb = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(wb, ws, 'Detalle Pedidos');
-
-    const { desde, hasta } = getFechas();
-    const sufijo = desde && hasta ? `${desde}_${hasta}` : desde || hasta || 'recientes';
-    window.XLSX.writeFile(wb, `detalle_pedidos_${sufijo}.xlsx`);
-}
-
-document.getElementById('btn-exportar-detalle')?.addEventListener('click', exportarDetallePedidos);
