@@ -709,11 +709,11 @@
             try {
                 const { tipo } = JSON.parse(e.data);
                 if (tipo === 'pbx:llamada') {
-                    if (activeSection === 'asesores')  loadAgents();
+                    if (activeSection === 'asesores')  { loadAgents(); setTimeout(loadAgents, 1000); }
                     if (activeSection === 'historial') loadCalls();
                 }
                 if (tipo === 'pbx:sesion') {
-                    if (activeSection === 'asesores') loadAgents();
+                    if (activeSection === 'asesores') { loadAgents(); setTimeout(loadAgents, 1000); }
                     if (activeSection === 'monitor')  loadSessions();
                 }
             } catch {}
@@ -741,6 +741,10 @@
 
         loadAgents();
         setInterval(() => { if (activeSection === 'asesores') loadAgents(); }, 10000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && activeSection === 'asesores') loadAgents();
+        });
 
         initWs();
     })();

@@ -466,7 +466,10 @@ export function initPbxPanel(containerId = 'pbx-body') {
         ws.onmessage = (e) => {
             try {
                 const { tipo } = JSON.parse(e.data);
-                if (tipo === 'pbx:llamada') loadCallsFromServer(currentExt);
+                if (tipo === 'pbx:llamada') {
+                    loadCallsFromServer(currentExt);
+                    setTimeout(() => loadCallsFromServer(currentExt), 1000);
+                }
             } catch {}
         };
         ws.onclose = () => setTimeout(conectarWs, 5000);
