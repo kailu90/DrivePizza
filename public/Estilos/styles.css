@@ -1243,9 +1243,6 @@ li.product.is-selected label {
   width: 50px;
 }
 
-.modal-content .info-pedido {
-  font-size: 1.6rem;
-}
 
 .close-detalle {
     position: absolute; 
@@ -1277,7 +1274,7 @@ li.product.is-selected label {
 
 .info-pedido {
     margin-bottom: 20px;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: var(--color-terciario);
 }
 
