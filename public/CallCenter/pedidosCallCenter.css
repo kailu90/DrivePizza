@@ -2290,6 +2290,7 @@ body {
 .agent-chip.chip-incall { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.2); }
 .agent-chip.chip-incall .chip-avatar  { background: #3b82f6; animation: chip-pulse 1.2s ease-in-out infinite; }
 .agent-chip.chip-incall .chip-status  { color: #2563eb; }
+.chip-timer { font-family: monospace; font-size: 1rem; margin-left: 5px; opacity: 0.85; }
 .agent-chip.chip-paused { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
 .agent-chip.chip-paused .chip-avatar  { background: #f59e0b; }
 .agent-chip.chip-paused .chip-status  { color: #92400e; }
