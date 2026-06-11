@@ -1255,16 +1255,17 @@ li.product.is-selected label {
 }
 
 .table-detalle {
-    width: 100%; 
+    width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
-    font-size: 1.2rem;
 }
 
 .table-detalle th, .table-detalle td {
-    border-bottom: 1px solid #ddd; 
-    padding: 2px; 
+    border-bottom: 1px solid #ddd;
+    padding: 2px 0px;
     text-align: left;
+    font-size: 1.2rem;
+    font-family: 'Inter', Arial, sans-serif;
 }
 
 .table-detalle th:nth-child(2) ,.table-detalle td:nth-child(2),
@@ -1274,13 +1275,14 @@ li.product.is-selected label {
 
 .info-pedido {
     margin-bottom: 20px;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    font-family: 'Inter', Arial, sans-serif;
     color: var(--color-terciario);
 }
 
 .totales-detalle {
     text-align: right;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     border-top: 2px solid var(--color-primario);
     padding-top: 5px;
     padding-bottom: 5px;

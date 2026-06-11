@@ -143,7 +143,7 @@ CargarSidebar(() => {
 /****************TRAE TODOS LOS PEDIDOS DE LA BASE DE DATOS************/
 
 // ── Paginación ──────────────────────────────────────────────────────────────
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 20;
 let paginaActual = 1;
 let cursorActual = null;          // (mantenido por compatibilidad con UI)
 let paginaCursorHistory = [];
