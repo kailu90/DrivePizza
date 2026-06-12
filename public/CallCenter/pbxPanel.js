@@ -398,12 +398,18 @@ export function initPbxPanel(containerId = 'pbx-body') {
     }
 
     // ── WebSocket — actualizar historial en tiempo real ──────────────
+    let _wsFirstOpen = true;
     function conectarWs() {
         const ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            if (_wsFirstOpen) { _wsFirstOpen = false; return; }
+            // Reconexión: recargar por si se perdió algún evento
+            loadCallsFromServer(currentExt);
+        };
         ws.onmessage = (e) => {
             try {
                 const { tipo } = JSON.parse(e.data);
-                if (tipo === 'pbx:llamada') {
+                if (tipo === 'pbx:llamada' || tipo === 'pbx:sesion') {
                     loadCallsFromServer(currentExt);
                     setTimeout(() => loadCallsFromServer(currentExt), 1000);
                 }
