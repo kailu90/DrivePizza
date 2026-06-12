@@ -483,6 +483,9 @@ export function initPbxPanel(containerId = 'pbx-body') {
     }
     conectarWs();
 
+    // Cargar historial del servidor al arrancar (sin esperar al registro SIP)
+    loadCallsFromServer(null);
+
     renderHistory();
     return { update };
 }
