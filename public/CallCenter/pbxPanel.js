@@ -34,22 +34,13 @@ export function initPbxPanel(containerId = 'pbx-body') {
 
     container.innerHTML = `
         <div class="pbx-screen">
-
-            <!-- Llamada activa del propio asesor (controles SIP) -->
-            <div id="pbx-live"></div>
-
-            <!-- Llamadas en curso de todos los asesores -->
-            <div class="pbx-active-section" id="pbx-active-calls" style="display:none;"></div>
-
             <!-- Historial de llamadas -->
             <div class="pbx-history-list" id="pbx-history">
                 <p class="pbx-history-empty">Sin llamadas recientes</p>
             </div>
-
         </div>`;
 
     // ── Estado interno ──────────────────────────────────────────────
-    let _liveStartMs   = null;   // ms de inicio de llamada activa (hora_inicio del servidor)
     let currentCall    = null;   // { number, sede, direction, time }
     const LS_LOG       = 'pbx_calls_log';
     const callHistory  = (() => { try { return JSON.parse(localStorage.getItem(LS_LOG) || '[]'); } catch { return []; } })();
@@ -132,19 +123,6 @@ export function initPbxPanel(containerId = 'pbx-body') {
         <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6M23 1 1 23"/>
     </svg>`;
 
-    // ── Timer — usa data-hora-inicio igual que strip y historial ────
-    function startTimer(inicioMs) {
-        _liveStartMs = inicioMs || Date.now();
-        const el = document.getElementById('pbx-live-dur');
-        if (el) el.dataset.horaInicio = _liveStartMs;
-    }
-
-    function stopTimer() {
-        const elapsed = _liveStartMs ? Math.floor((Date.now() - _liveStartMs) / 1000) : 0;
-        _liveStartMs = null;
-        return elapsed;
-    }
-
     // ── Dot del header ───────────────────────────────────────────────
     function updateDot(cls) {
         const dot = document.getElementById('sip-dot-hdr');
@@ -175,16 +153,6 @@ export function initPbxPanel(containerId = 'pbx-body') {
             });
             callHistory.sort((a, b) => b.time - a.time);
             try { localStorage.removeItem(LS_LOG); } catch {}
-
-            // Sincronizar timer del panel con hora_inicio del servidor
-            if (currentExt) {
-                const enCurso = callHistory.find(e => e.estado === 'en_curso' && e.extension === currentExt);
-                if (enCurso) {
-                    _liveStartMs = enCurso.time;
-                    const liveDur = document.getElementById('pbx-live-dur');
-                    if (liveDur) liveDur.dataset.horaInicio = enCurso.time;
-                }
-            }
 
             renderActiveCalls();
             renderHistory();
@@ -408,17 +376,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
         sipRegistered = (state === 'registered' || state === 'ringing' || state === 'incall');
         updateStatusBar(state, data);
 
-        if (state === 'ringing') {
-            stopTimer();
-            currentCall = {
-                number:    data.callerNumber || data.remoteUser || '—',
-                sede:      data.sede   || '',
-                direction: data.direction || 'incoming',
-                time:      Date.now(),
-            };
-            renderLive(currentCall, 'ringing');
-
-        } else if (state === 'incall') {
+        if (state === 'ringing' || state === 'incall') {
             if (!currentCall) {
                 currentCall = {
                     number:    data.callerNumber || data.remoteUser || '—',
@@ -427,22 +385,12 @@ export function initPbxPanel(containerId = 'pbx-body') {
                     time:      Date.now(),
                 };
             }
-            renderLive(currentCall, 'incall');
-            startTimer(currentCall.time);
-
         } else {
-            // registered / offline — llamada terminó externamente
-            const secs = stopTimer();
+            // registered / offline — llamada terminó
             const hadCall = !!currentCall;
-            if (currentCall) {
-                addToHistory({ ...currentCall, duration: secs });
-                currentCall = null;
-            }
-            document.getElementById('pbx-live').innerHTML = '';
-            // Limpiar sección "En llamada ahora" inmediatamente y refrescar desde servidor
+            currentCall = null;
             if (hadCall) {
                 callHistory.forEach(e => { if (e.estado === 'en_curso') e.estado = 'contestada'; });
-                renderActiveCalls();
                 renderHistory();
                 setTimeout(() => loadCallsFromServer(currentExt), 1500);
             }
