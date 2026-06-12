@@ -163,26 +163,22 @@ export function initPbxPanel(containerId = 'pbx-body') {
             const r = await fetch(`${API_BASE}/pbx/calls/recent`);
             if (!r.ok) return;
             const rows = await r.json();
+            // Reemplazar historial completamente con datos del servidor (fuente de verdad)
+            callHistory.length = 0;
             rows.forEach(c => {
-                const time     = new Date(c.hora_inicio).getTime();
-                const existing = callHistory.findIndex(h => Math.abs(h.time - time) < 2000);
-                const entry    = {
+                callHistory.push({
+                    serverId:  c.id,
                     number:    c.numero_cliente || '—',
                     direction: c.direccion === 'entrante' ? 'incoming' : 'outgoing',
                     duration:  c.duracion_seg || 0,
                     missed:    c.estado === 'perdida',
                     estado:    c.estado,
                     username:  c.username || null,
-                    time,
-                };
-                if (existing !== -1) {
-                    callHistory[existing] = entry; // actualizar con datos reales del servidor
-                } else {
-                    callHistory.push(entry);
-                }
+                    time:      new Date(c.hora_inicio).getTime(),
+                });
             });
             callHistory.sort((a, b) => b.time - a.time);
-            try { localStorage.setItem(LS_LOG, JSON.stringify(callHistory.slice(0, 50))); } catch {}
+            try { localStorage.removeItem(LS_LOG); } catch {}
             renderActiveCalls();
             renderHistory();
         } catch { /* sin red */ }
@@ -345,9 +341,12 @@ export function initPbxPanel(containerId = 'pbx-body') {
 
     // ── Historial ────────────────────────────────────────────────────
     function addToHistory(entry) {
-        callHistory.unshift(entry);
-        if (callHistory.length > 50) callHistory.pop();
-        try { localStorage.setItem(LS_LOG, JSON.stringify(callHistory)); } catch {}
+        // Solo agregar si no hay ya una entrada para esta llamada (el servidor la actualizará pronto vía WS)
+        const exists = callHistory.some(h => Math.abs(h.time - entry.time) < 5000 && h.number === entry.number);
+        if (!exists) {
+            callHistory.unshift(entry);
+            if (callHistory.length > 50) callHistory.pop();
+        }
         renderHistory();
     }
 
@@ -452,11 +451,19 @@ export function initPbxPanel(containerId = 'pbx-body') {
         } else {
             // registered / offline — llamada terminó externamente
             const secs = stopTimer();
+            const hadCall = !!currentCall;
             if (currentCall) {
                 addToHistory({ ...currentCall, duration: secs });
                 currentCall = null;
             }
             document.getElementById('pbx-live').innerHTML = '';
+            // Limpiar sección "En llamada ahora" inmediatamente y refrescar desde servidor
+            if (hadCall) {
+                callHistory.forEach(e => { if (e.estado === 'en_curso') e.estado = 'contestada'; });
+                renderActiveCalls();
+                renderHistory();
+                setTimeout(() => loadCallsFromServer(currentExt), 1500);
+            }
         }
     }
 
