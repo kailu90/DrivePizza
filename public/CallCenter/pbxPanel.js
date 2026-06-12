@@ -309,33 +309,12 @@ export function initPbxPanel(containerId = 'pbx-body') {
         return new Date(ts).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Bogota' });
     }
 
-    // ── Llamadas en curso (todos los asesores) ───────────────────────
+    // ── Llamadas en curso — solo para pbx.html (en pedidosCallCenter el strip ya las muestra)
     function renderActiveCalls() {
         const section = document.getElementById('pbx-active-calls');
         if (!section) return;
-        const activas = callHistory.filter(e => e.estado === 'en_curso');
-        if (!activas.length) { section.style.display = 'none'; section.innerHTML = ''; return; }
-        section.style.display = 'block';
-        section.innerHTML = `
-            <div class="pbx-active-title">En llamada ahora</div>
-            ${activas.map(e => {
-                const elapsed = Math.floor((Date.now() - e.time) / 1000);
-                return `
-                <div class="pbx-ccard pbx-ccard--active">
-                    ${avatarHtml(e.username || e.number)}
-                    <div class="pbx-ccard__body">
-                        <span class="pbx-ccard__name">${e.number || '—'}</span>
-                        <span class="pbx-ccard__sub">
-                            <span class="pbx-status-dot pbx-status-dot--en_curso"></span>
-                            ${e.username || 'Asesor'}
-                        </span>
-                    </div>
-                    <div class="pbx-ccard__meta">
-                        <span class="pbx-status-badge pbx-status-badge--en_curso">En curso</span>
-                        <span class="pbx-ccard__dur" data-hora-inicio="${e.time}">${fmtDuration(elapsed)}</span>
-                    </div>
-                </div>`;
-            }).join('')}`;
+        section.style.display = 'none';
+        section.innerHTML = '';
     }
 
     // ── Timer global para llamadas en curso ──────────────────────────
