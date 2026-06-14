@@ -80,8 +80,8 @@ const preciosBebidas = {
     gaseosa400ml:       { "Pepsi": 6000, "Colombiana": 6000, "Manzana": 6000, "Piña": 6000, "Kola": 6000, "Uva": 6000 , "7 up": 6000 , "naranja": 6000 },
     gaseosa1500ml:      { "Pepsi": 9000, "Colombiana": 9000, "Manzana": 9000, "Piña": 9000, "Kola": 9000, "Uva": 9000 , "7 up": 9000 , "naranja": 9000 },
     jugoHit500ml:       { "Tropical": 6000, "Mora": 6000, "Naranja/Piña": 6000, "Mango": 6000 },
-    agua:               { "Unidad": 6000 },
-    bretaña300ml:       { "Unidad": 4000 },
+    agua:               { "Sin gas": 6000 , "Con gas": 6000 },
+    bretaña:            { "300 ml": 4000 , "1.5 lts": 9000 },
 
     // Jugos Naturales
     jugoEnAgua:         { "Mango": 9000 , "Fresa": 9000 , "Mora": 9000 , "Mandarina": 9000 , "naranja": 9000 , "lulo": 9000 , "Guanabana": 9000 , "Maracuyá": 9000 },
@@ -297,8 +297,9 @@ const menuData = {
         { nombre: "Jugo Hit 500 ml", opciones: preciosBebidas.jugoHit500ml , descripcion: "Jugo hit 500 ml plástica."},
         { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml , descripcion: "Sabores postobón."},
         { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml , descripcion: "Sabores postobón."},
-        { nombre: "Agua", opciones: preciosBebidas.agua }
-    ],    
+        { nombre: "Agua", opciones: preciosBebidas.agua },
+        { nombre: "Bretaña", opciones: preciosBebidas.bretaña }
+    ],       
     "Jugos Naturales": [
         { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua },
         { nombre: "Jugo en Leche", opciones: preciosBebidas.jugoEnLeche },

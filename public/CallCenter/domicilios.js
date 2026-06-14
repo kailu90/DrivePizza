@@ -602,6 +602,7 @@ export const domicilios = {
         "Hospital Internacional": 12000,
         "Hoyo": 6000,
         "Junín": 5000,
+        "La Argentina": 5000,
         "La Colina": 5500,
         "La Españolita": 10000,
         "La Macarena": 5000,
