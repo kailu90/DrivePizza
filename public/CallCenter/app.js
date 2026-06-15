@@ -171,7 +171,7 @@ function renderProducts(categoria) {
     let productos = [];
 
     if (categoria === "Promociones") {
-        const esMartes = true; // new Date().getDay() === 2; // TODO: descomentar en producción
+        const esMartes = new Date().getDay() === 2;
         grid.innerHTML = `
             <div class="card card-promo ${esMartes ? '' : 'card-promo--inactiva'}" onclick="${esMartes ? 'abrirPromo3x2()' : ''}">
                 <div class="promo-badge">MARTES</div>
@@ -199,6 +199,11 @@ function renderProducts(categoria) {
                 <div class="promo-badge">PROMO</div>
                 <h4>25K</h4>
                 <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
+            </div>
+            <div class="card card-promo" onclick="abrirPromoCombola10()">
+                <div class="promo-badge">PROMO</div>
+                <h4>99K</h4>
+                <p class="product-desc">Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken</p>
             </div>
         `;
         return;
@@ -2100,6 +2105,17 @@ window._promoKitSelSabor = function (sabor) {
     });
     localStorage.setItem('dp_promoKit_obs', 'KIT PIZZERITOS 25K');
     cerrarModal();
+    actualizarComanda();
+};
+
+window.abrirPromoCombola10 = function () {
+    carrito.push({
+        id: Date.now(),
+        nombre: 'Combo La 10 - Pizza Grande Criolla + 6 Cervezas Heineken',
+        precio: 99000,
+        qty: 1,
+        esPromoCombola10: true,
+    });
     actualizarComanda();
 };
 
