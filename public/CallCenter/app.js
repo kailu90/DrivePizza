@@ -103,9 +103,16 @@ let _mezclaState = null;
 
 // Inicializar interfaz y llama funciones necesarias.
 function init() {
+    // El carrito siempre empieza vacío al cargar — limpiar residuos de sesión anterior
+    localStorage.removeItem('dp_promo65k_obs');
+    localStorage.removeItem('dp_promo3x2_obs');
+    localStorage.removeItem('dp_promoLasEsp_obs');
+    localStorage.removeItem('dp_promoPepperoni_obs');
+    localStorage.removeItem('dp_promoKit_obs');
+
     renderCategories();
     crearBuscador();
-    seleccionarCategoria("Pizzas");    
+    seleccionarCategoria("Pizzas");
 }
 
 // Inyeccción de barra buscadora por nombre de productos
@@ -770,6 +777,8 @@ function eliminarItem(id) {
 
     setTimeout(() => {
         carrito = carrito.filter(item => item.id !== id && item.pizzaId !== id);
+        if (!carrito.some(i => i.esPromoPepperoni)) localStorage.removeItem('dp_promoPepperoni_obs');
+        if (!carrito.some(i => i.esPromoKit))       localStorage.removeItem('dp_promoKit_obs');
         actualizarComanda();
     }, 300);
 }
