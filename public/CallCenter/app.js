@@ -103,9 +103,16 @@ let _mezclaState = null;
 
 // Inicializar interfaz y llama funciones necesarias.
 function init() {
+    // El carrito siempre empieza vacío al cargar — limpiar residuos de sesión anterior
+    localStorage.removeItem('dp_promo65k_obs');
+    localStorage.removeItem('dp_promo3x2_obs');
+    localStorage.removeItem('dp_promoLasEsp_obs');
+    localStorage.removeItem('dp_promoPepperoni_obs');
+    localStorage.removeItem('dp_promoKit_obs');
+
     renderCategories();
     crearBuscador();
-    seleccionarCategoria("Pizzas");    
+    seleccionarCategoria("Pizzas");
 }
 
 // Inyeccción de barra buscadora por nombre de productos
@@ -171,7 +178,7 @@ function renderProducts(categoria) {
     let productos = [];
 
     if (categoria === "Promociones") {
-        const esMartes = true; // new Date().getDay() === 2; // TODO: descomentar en producción
+        const esMartes = new Date().getDay() === 2;
         grid.innerHTML = `
             <div class="card card-promo ${esMartes ? '' : 'card-promo--inactiva'}" onclick="${esMartes ? 'abrirPromo3x2()' : ''}">
                 <div class="promo-badge">MARTES</div>
@@ -199,6 +206,11 @@ function renderProducts(categoria) {
                 <div class="promo-badge">PROMO</div>
                 <h4>25K</h4>
                 <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
+            </div>
+            <div class="card card-promo" onclick="abrirPromoCombola10()">
+                <div class="promo-badge">PROMO</div>
+                <h4>99K</h4>
+                <p class="product-desc">Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken</p>
             </div>
         `;
         return;
@@ -765,6 +777,8 @@ function eliminarItem(id) {
 
     setTimeout(() => {
         carrito = carrito.filter(item => item.id !== id && item.pizzaId !== id);
+        if (!carrito.some(i => i.esPromoPepperoni)) localStorage.removeItem('dp_promoPepperoni_obs');
+        if (!carrito.some(i => i.esPromoKit))       localStorage.removeItem('dp_promoKit_obs');
         actualizarComanda();
     }, 300);
 }
@@ -2100,6 +2114,17 @@ window._promoKitSelSabor = function (sabor) {
     });
     localStorage.setItem('dp_promoKit_obs', 'KIT PIZZERITOS 25K');
     cerrarModal();
+    actualizarComanda();
+};
+
+window.abrirPromoCombola10 = function () {
+    carrito.push({
+        id: Date.now(),
+        nombre: 'Combo La 10 - Pizza Grande Criolla + 6 Cervezas Heineken',
+        precio: 99000,
+        qty: 1,
+        esPromoCombola10: true,
+    });
     actualizarComanda();
 };
 
