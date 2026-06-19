@@ -967,7 +967,6 @@ export const domicilios = {
         "San Bernardo": 11000,
         "Campo Hermoso": 11000,
         "Florida Centro": 11000,
-        "Calle 200": 11000,
         "Girardot": 11000,
         "San Alonso": 11000,
         "Versalles(floridablanca)": 11000,
