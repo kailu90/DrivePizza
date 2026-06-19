@@ -915,6 +915,7 @@ export const domicilios = {
         // 10000
         "Altoviento 1": 10000,
         "Dorado": 10000,
+        "El bosque(floridablanca)": 10000,
         "Niza": 10000,
         "Paralela": 10000,
         "Cabecera Baja": 10000,
@@ -963,11 +964,13 @@ export const domicilios = {
         "Calle 200": 11000,
         "Girardot": 11000,
         "San Alonso": 11000,
+        "Versalles(floridablanca)": 11000,
 
         // 12000
         "La Universidad": 12000,
-        "Casco Antiguo Floridablanca": 12000,
+        "Casco Antiguo(Floridablanca)": 12000,
         "Abadias": 12000,
+        "Calle 200(Floridablanca)": 12000,
 
         // 14000
         "Zona Franca anillo vial": 14000,
