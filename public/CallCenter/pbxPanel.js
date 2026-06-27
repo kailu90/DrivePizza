@@ -47,6 +47,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
 
     // ── Estado interno ──────────────────────────────────────────────
     let currentCall    = null;   // { number, sede, direction, time }
+    let _pendingSede   = null;   // { numero, sede } recibido por WS antes de que suene
     const LS_LOG       = 'pbx_calls_log';
     const callHistory  = (() => { try { return JSON.parse(localStorage.getItem(LS_LOG) || '[]'); } catch { return []; } })();
     let currentExt      = null;   // extensión SIP del agente
@@ -214,7 +215,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
         const isRinging = state === 'ringing';
         const dir       = call.direction || 'incoming';
         const dirCls    = dir === 'outgoing' ? 'pbx-arrow--out' : 'pbx-arrow--in';
-        const sedeLabel = call.sede ? (SEDE_LABELS[call.sede] || call.sede) : (isRinging ? (dir === 'outgoing' ? 'Saliente' : 'Entrante') : 'En llamada');
+        const sedeLabel = call.sede ? (IVR_SEDE[call.sede] || call.sede) : (isRinging ? (dir === 'outgoing' ? 'Saliente' : 'Entrante') : 'En llamada');
 
         live.innerHTML = `
             <div class="pbx-ccard pbx-ccard--${isRinging ? 'ringing' : 'active'}">
@@ -385,9 +386,11 @@ export function initPbxPanel(containerId = 'pbx-body') {
 
         if (state === 'ringing' || state === 'incall') {
             if (!currentCall) {
+                const num = data.callerNumber || data.remoteUser || '—';
+                const sedeFromPending = (_pendingSede?.numero === num) ? _pendingSede.sede : '';
                 currentCall = {
-                    number:    data.callerNumber || data.remoteUser || '—',
-                    sede:      data.sede   || '',
+                    number:    num,
+                    sede:      data.sede || sedeFromPending || '',
                     direction: data.direction || 'incoming',
                     time:      Date.now(),
                 };
@@ -415,10 +418,19 @@ export function initPbxPanel(containerId = 'pbx-body') {
         };
         ws.onmessage = (e) => {
             try {
-                const { tipo } = JSON.parse(e.data);
+                const msg = JSON.parse(e.data);
+                const { tipo } = msg;
                 if (tipo === 'pbx:llamada' || tipo === 'pbx:sesion') {
                     loadCallsFromServer(currentExt);
                     setTimeout(() => loadCallsFromServer(currentExt), 1000);
+                }
+                if (tipo === 'pbx:sede' && msg.numero && msg.sede) {
+                    _pendingSede = { numero: msg.numero, sede: msg.sede };
+                    // Si ya hay llamada activa con ese número → aplicar sede inmediatamente
+                    if (currentCall && currentCall.number === msg.numero) {
+                        currentCall.sede = msg.sede;
+                        renderLive(currentCall, _lastState);
+                    }
                 }
             } catch {}
         };
