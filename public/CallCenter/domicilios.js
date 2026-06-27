@@ -154,6 +154,7 @@ export const domicilios = {
         "Valventus Condominio Resort": 8000,
         "Ventus": 5000,
         "Ventura": 7000,
+        "Vereda Caciano": 20000,
         "Versalles": 7000,
         "Villa Cañaveral": 5000,
         "Villa Helena del sur": 9000,
