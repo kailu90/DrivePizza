@@ -159,35 +159,41 @@
         if (!_ringCtx) _ringCtx = new AudioContext();
         if (_ringCtx.state === 'suspended') _ringCtx.resume();
 
-        // Timbre clásico: brring (0.4s) · pausa (0.2s) · brring (0.4s) · pausa larga (1.4s)
-        function bip(offset, dur) {
-            const t = _ringCtx.currentTime;
-            [480, 620].forEach(freq => {
-                const osc  = _ringCtx.createOscillator();
-                const gain = _ringCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                osc.connect(gain);
-                gain.connect(_ringCtx.destination);
-                gain.gain.setValueAtTime(0, t + offset);
-                gain.gain.linearRampToValueAtTime(0.4, t + offset + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + offset + dur - 0.02);
-                osc.start(t + offset);
-                osc.stop(t + offset + dur);
-            });
-        }
+        // Tremolo: triangle 700Hz con LFO que oscila el gain ~20Hz — timbre antiguo
+        const osc  = _ringCtx.createOscillator();
+        const lfo  = _ringCtx.createOscillator();
+        const gain = _ringCtx.createGain();
+        const lfoGain = _ringCtx.createGain();
 
-        function pattern() {
-            bip(0,    0.4);   // primer ring
-            bip(0.6,  0.4);   // segundo ring
-        }
+        osc.type = 'triangle';
+        osc.frequency.value = 700;
 
-        pattern();
-        _ringInterval = setInterval(pattern, 2000);
+        lfo.type = 'sine';
+        lfo.frequency.value = 20;   // velocidad del tremolo
+        lfoGain.gain.value = 0.4;   // profundidad del tremolo
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(gain.gain);
+        gain.gain.value = 0.4;
+
+        osc.connect(gain);
+        gain.connect(_ringCtx.destination);
+
+        osc.start();
+        lfo.start();
+
+        // Guardar referencias para poder parar
+        _ringInterval = { _osc: osc, _lfo: lfo };
     }
 
     function stopRing() {
-        clearInterval(_ringInterval);
+        if (!_ringInterval) return;
+        if (typeof _ringInterval === 'object') {
+            try { _ringInterval._osc.stop(); } catch(e) {}
+            try { _ringInterval._lfo.stop(); } catch(e) {}
+        } else {
+            clearInterval(_ringInterval);
+        }
         _ringInterval = null;
     }
 
