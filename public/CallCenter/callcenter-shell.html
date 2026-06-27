@@ -31,6 +31,13 @@
         #sip-panel .sip-timer {
             font-size: 13px; color: #94a3b8; margin-bottom: 12px;
         }
+        #sip-sede {
+            display: none;
+            font-size: 11px; font-weight: 600;
+            background: rgba(34,197,94,0.18); color: #22c55e;
+            padding: 3px 10px; border-radius: 20px;
+            margin-bottom: 10px; width: fit-content;
+        }
         #sip-panel .sip-btns { display: flex; gap: 8px; }
         #sip-panel .sip-btns button {
             flex: 1; padding: 10px 0; border: none; border-radius: 8px;
@@ -51,6 +58,7 @@
 <!-- Panel llamada entrante / en curso -->
 <div id="sip-panel">
     <div class="sip-label"  id="sip-panel-label">Llamada entrante</div>
+    <div id="sip-sede"></div>
     <div class="sip-caller" id="sip-caller-num"></div>
     <div class="sip-timer"  id="sip-timer" style="display:none"></div>
 
@@ -205,6 +213,19 @@
     const btnsIn     = document.getElementById('sip-btns-incoming');
     const btnsCall   = document.getElementById('sip-btns-incall');
 
+    const IVR_SEDE = {
+        '801': 'Cabecera', '802': 'Cañaveral', '803': 'Acrópolis',
+        '804': 'Piedecuesta', '805': 'Megamall', '806': 'Único',
+    };
+    let _pendingSedeSIP = null;   // { numero, sede } recibido por WS antes de que suene
+    const sedeEl        = document.getElementById('sip-sede');
+
+    function _mostrarSede(callerNumber) {
+        const nombre = (_pendingSedeSIP?.numero === callerNumber) ? IVR_SEDE[_pendingSedeSIP.sede] : null;
+        if (nombre) { sedeEl.textContent = nombre; sedeEl.style.display = 'block'; }
+        else        { sedeEl.style.display = 'none'; }
+    }
+
     let _session       = null;
     let _timerInterval = null;
 
@@ -282,6 +303,18 @@
                 }).catch(() => {});
             }
         };
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.tipo === 'pbx:sede' && msg.numero && msg.sede) {
+                    _pendingSedeSIP = { numero: msg.numero, sede: msg.sede };
+                    // Si el panel ya está mostrando ese número → actualizar badge
+                    if (panel.style.display !== 'none' && callerNum.textContent === msg.numero) {
+                        _mostrarSede(msg.numero);
+                    }
+                }
+            } catch {}
+        };
         ws.onclose = () => setTimeout(initShellWs, 5000);
     }
     initShellWs();
@@ -292,6 +325,7 @@
         panelLabel.textContent = 'Llamada entrante';
         postToFrame('ringing', { callerNumber: caller });
         callerNum.textContent  = caller;
+        _mostrarSede(caller);
         timerEl.style.display  = 'none';
         btnsIn.style.display   = 'flex';
         btnsCall.style.display = 'none';
@@ -320,6 +354,7 @@
 
     function hidePanel() {
         stopRing();
+        sedeEl.style.display = 'none';
         panel.style.display = 'none';
         const isReg = window._sipUA?.isRegistered();
         postToFrame(isReg ? 'registered' : 'offline');
