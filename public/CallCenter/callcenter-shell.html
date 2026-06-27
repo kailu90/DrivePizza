@@ -145,8 +145,8 @@
     });
 
     // ── Ringtone (Web Audio API) ──────────────────────────────────────────────
-    let _ringCtx      = null;
-    let _ringInterval = null;
+    let _ringCtx  = null;
+    let _ringOscs = [];
 
     // Desbloquear AudioContext en el primer click (política autoplay del browser)
     document.addEventListener('click', () => {
@@ -154,37 +154,26 @@
         else if (_ringCtx.state === 'suspended') _ringCtx.resume();
     }, { once: true });
 
-    function _beep(freq, startTime, dur) {
-        if (!_ringCtx) return;
-        const osc  = _ringCtx.createOscillator();
-        const gain = _ringCtx.createGain();
-        osc.connect(gain);
-        gain.connect(_ringCtx.destination);
-        osc.type = 'square';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.4, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur - 0.02);
-        osc.start(startTime);
-        osc.stop(startTime + dur);
-    }
-
     function startRing() {
-        if (_ringInterval) return;
+        if (_ringOscs.length) return;
         if (!_ringCtx) _ringCtx = new AudioContext();
         if (_ringCtx.state === 'suspended') _ringCtx.resume();
-        function pattern() {
-            const t = _ringCtx.currentTime;
-            // Dos frecuencias simultáneas (440 + 480 Hz) — tono de teléfono clásico
-            _beep(440, t, 0.9);
-            _beep(480, t, 0.9);
-        }
-        pattern();
-        _ringInterval = setInterval(pattern, 1400);
+        const gain = _ringCtx.createGain();
+        gain.gain.value = 0.4;
+        gain.connect(_ringCtx.destination);
+        [440, 480].forEach(freq => {
+            const osc = _ringCtx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            osc.start();
+            _ringOscs.push(osc);
+        });
     }
 
     function stopRing() {
-        clearInterval(_ringInterval);
-        _ringInterval = null;
+        _ringOscs.forEach(o => { try { o.stop(); } catch(e) {} });
+        _ringOscs = [];
     }
 
     // ── Referencias UI ────────────────────────────────────────────────────────
