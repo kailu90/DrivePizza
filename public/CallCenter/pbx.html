@@ -592,6 +592,7 @@
             document.getElementById('sc-queue').textContent  = queue;
             document.getElementById('sc-incall').textContent = incall;
 
+            agents.sort((a, b) => (a.in_call ? 0 : a.sip_registered ? 1 : 2) - (b.in_call ? 0 : b.sip_registered ? 1 : 2));
             const grid = document.getElementById('agents-grid');
             grid.innerHTML = agents.map(a => {
                 const name    = a.username || ('Ext. ' + a.extension);

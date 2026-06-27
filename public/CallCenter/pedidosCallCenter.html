@@ -651,7 +651,9 @@
             const r = await fetch(`${PBX_URL}/pbx/agents/status`);
             if (!r.ok) return;
             const agents   = await r.json();
-            const visibles = agents.filter(a => a.queue_connected || a.in_call);
+            const visibles = agents
+                .filter(a => a.queue_connected || a.in_call)
+                .sort((a, b) => (a.in_call ? 0 : 1) - (b.in_call ? 0 : 1));
             setAgentsBadge(visibles.length);
             // Actualizar botón IVR según estado del asesor actual
             if (_sipExtension) {
