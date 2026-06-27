@@ -258,8 +258,10 @@
         .badge-contestada { background: rgba(40,76,34,0.1);   color: var(--color-primario); }
         .badge-perdida    { background: rgba(220,38,38,0.1);  color: #dc2626; }
         .badge-en_curso   { background: rgba(59,130,246,0.12); color: #2563eb; animation: badge-pulse 1.4s ease-in-out infinite; }
-        .badge-connect    { background: rgba(34,197,94,0.12);  color: #16a34a; }
-        .badge-disconnect { background: rgba(220,38,38,0.1);  color: #dc2626; }
+        .badge-connect        { background: rgba(34,197,94,0.12);   color: #16a34a; }
+        .badge-disconnect     { background: rgba(220,38,38,0.1);   color: #dc2626; }
+        .badge-ivr_connect    { background: rgba(59,130,246,0.12);  color: #2563eb; }
+        .badge-ivr_disconnect { background: rgba(100,116,139,0.12); color: #475569; }
 
         /* ── SIP dot header ── */
         .sip-dot-badge {
@@ -693,9 +695,13 @@
             empty.style.display = 'none';
             table.style.display = '';
             body.innerHTML = rows.map(s => {
-                const badge = s.evento === 'connect'
-                    ? '<span class="badge badge-connect">Conectado</span>'
-                    : '<span class="badge badge-disconnect">Desconectado</span>';
+                const EVENTO_LABEL = {
+                    connect:        '<span class="badge badge-connect">Conectado</span>',
+                    disconnect:     '<span class="badge badge-disconnect">Desconectado</span>',
+                    ivr_connect:    '<span class="badge badge-ivr_connect">IVR Conectado</span>',
+                    ivr_disconnect: '<span class="badge badge-ivr_disconnect">IVR Desconectado</span>',
+                };
+                const badge = EVENTO_LABEL[s.evento] || `<span class="badge">${s.evento}</span>`;
                 return `<tr>
                     <td class="num-cell">${s.username || '—'}</td>
                     <td>${s.extension}</td>
