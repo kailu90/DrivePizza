@@ -159,25 +159,31 @@
         if (!_ringCtx) _ringCtx = new AudioContext();
         if (_ringCtx.state === 'suspended') _ringCtx.resume();
 
-        function bip() {
+        // Timbre clásico: brring (0.4s) · pausa (0.2s) · brring (0.4s) · pausa larga (1.4s)
+        function bip(offset, dur) {
             const t = _ringCtx.currentTime;
-            [0, 0.15, 0.30].forEach(offset => {
+            [480, 620].forEach(freq => {
                 const osc  = _ringCtx.createOscillator();
                 const gain = _ringCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.value = 1000;
+                osc.frequency.value = freq;
                 osc.connect(gain);
                 gain.connect(_ringCtx.destination);
                 gain.gain.setValueAtTime(0, t + offset);
-                gain.gain.linearRampToValueAtTime(0.5, t + offset + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.13);
+                gain.gain.linearRampToValueAtTime(0.4, t + offset + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + offset + dur - 0.02);
                 osc.start(t + offset);
-                osc.stop(t + offset + 0.14);
+                osc.stop(t + offset + dur);
             });
         }
 
-        bip();
-        _ringInterval = setInterval(bip, 1200);
+        function pattern() {
+            bip(0,    0.4);   // primer ring
+            bip(0.6,  0.4);   // segundo ring
+        }
+
+        pattern();
+        _ringInterval = setInterval(pattern, 2000);
     }
 
     function stopRing() {
