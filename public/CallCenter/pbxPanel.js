@@ -21,6 +21,11 @@ const SEDE_LABELS = {
     unico:       'Único',
 };
 
+const IVR_SEDE = {
+    '801': 'Cabecera', '802': 'Cañaveral', '803': 'Acrópolis',
+    '804': 'Piedecuesta', '805': 'Megamall', '806': 'Único',
+};
+
 const STATUS_MAP = {
     registered: { label: 'Disponible',   dot: '#22c55e' },
     ringing:    { label: 'Entrante',     dot: '#f59e0b' },
@@ -148,6 +153,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
                     estado:    c.estado,
                     username:  c.username || null,
                     extension: c.extension || null,
+                    sede:      c.sede || null,
                     time:      new Date(c.hora_inicio).getTime(),
                 });
             });
@@ -339,6 +345,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
             const dir        = entry.direction || 'incoming';
             const dirCls     = dir === 'outgoing' ? 'pbx-arrow--out' : 'pbx-arrow--in';
             const asesLabel  = entry.username || (dir === 'outgoing' ? 'Saliente' : 'Entrante');
+            const sedeLabel  = entry.sede ? (IVR_SEDE[entry.sede] || null) : null;
             const estado     = entry.estado || (entry.missed ? 'perdida' : 'contestada');
             const isEnCurso  = estado === 'en_curso';
             const elapsed    = isEnCurso ? Math.floor((Date.now() - entry.time) / 1000) : entry.duration;
@@ -348,7 +355,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
                 <div class="pbx-ccard">
                     ${avatarHtml(entry.number)}
                     <div class="pbx-ccard__body">
-                        <span class="pbx-ccard__name">${entry.number || '—'}</span>
+                        <span class="pbx-ccard__name">${entry.number || '—'}${sedeLabel ? `<span style="font-size:10px;background:rgba(40,76,34,0.1);color:var(--color-primario);padding:2px 6px;border-radius:10px;margin-left:6px;font-weight:500;vertical-align:middle;">${sedeLabel}</span>` : ''}</span>
                         <span class="pbx-ccard__sub">
                             <span class="pbx-ccard__arrow ${dirCls}">${arrowSvg(dir)}</span>
                             ${asesLabel}

@@ -252,6 +252,7 @@
         .hist-table td { padding: 10px; border-bottom: 1px solid rgba(40,76,34,0.07); vertical-align: middle; }
         .hist-table tr:hover td { background: rgba(40,76,34,0.03); }
         .num-cell   { font-weight: 600; color: var(--color-terciario); }
+        .sede-tag   { font-size: 10px; background: rgba(40,76,34,0.1); color: var(--color-primario); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
         .time-cell  { color: #999; font-size: 12px; }
         .dur-cell   { font-family: monospace; color: #888; font-size: 12px; }
         .badge-contestada { background: rgba(40,76,34,0.1);   color: var(--color-primario); }
@@ -534,6 +535,11 @@
         });
     });
 
+    const IVR_SEDE = {
+        '801': 'Cabecera', '802': 'Cañaveral', '803': 'Acrópolis',
+        '804': 'Piedecuesta', '805': 'Megamall', '806': 'Único',
+    };
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     function fmtDuration(secs) {
         if (!secs) return '0:00';
@@ -655,8 +661,10 @@
                 if (c.estado === 'en_curso')    badge = '<span class="badge badge-en_curso">En curso</span>';
                 else if (c.estado === 'perdida') badge = '<span class="badge badge-perdida">Perdida</span>';
                 else                            badge = '<span class="badge badge-contestada">Contestada</span>';
+                const sedeTag = c.sede && IVR_SEDE[c.sede]
+                    ? `<span class="sede-tag">${IVR_SEDE[c.sede]}</span>` : '';
                 return `<tr>
-                    <td class="num-cell">${c.numero_cliente || '—'}</td>
+                    <td class="num-cell">${c.numero_cliente || '—'}${sedeTag}</td>
                     <td>${c.username || c.extension || '—'}</td>
                     <td class="time-cell">${fmtFecha(c.hora_inicio)}</td>
                     <td class="time-cell">${fmtHora(c.hora_inicio)}</td>

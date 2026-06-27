@@ -96,7 +96,7 @@ const preciosBebidas = {
     sodas:    { "Frutos Rojos": 12000 , "Frutos Amarillos": 12000 , "Lychee": 12000 , "Tamarindo": 12000 },   
     
     // Cervezas
-    cervezaNacional:    { "Club Colombia": 9000 , "Heineken": 8000 },
+    cervezaNacional:    { "Club Colombia": 8000 , "Heineken": 8000 , "Sol": 8000 },
     cerveza3Cordilleras:{ "unidad": 10000 },
     vasoMichelado:      { "Unidad": 2200 },   
 
