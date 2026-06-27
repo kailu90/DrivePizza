@@ -144,6 +144,48 @@
         navigator.sendBeacon(`${PBX_URL}/pbx/queue/disconnect`, new Blob([body], { type: 'application/json' }));
     });
 
+    // ── Ringtone (Web Audio API) ──────────────────────────────────────────────
+    let _ringCtx      = null;
+    let _ringInterval = null;
+
+    // Desbloquear AudioContext en el primer click (política autoplay del browser)
+    document.addEventListener('click', () => {
+        if (!_ringCtx) _ringCtx = new AudioContext();
+        else if (_ringCtx.state === 'suspended') _ringCtx.resume();
+    }, { once: true });
+
+    function _beep(freq, startTime, dur) {
+        if (!_ringCtx) return;
+        const osc  = _ringCtx.createOscillator();
+        const gain = _ringCtx.createGain();
+        osc.connect(gain);
+        gain.connect(_ringCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.35, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur - 0.01);
+        osc.start(startTime);
+        osc.stop(startTime + dur);
+    }
+
+    function startRing() {
+        if (_ringInterval) return;
+        if (!_ringCtx) _ringCtx = new AudioContext();
+        if (_ringCtx.state === 'suspended') _ringCtx.resume();
+        function pattern() {
+            const t = _ringCtx.currentTime;
+            _beep(440, t,        0.4);
+            _beep(440, t + 0.55, 0.4);
+        }
+        pattern();
+        _ringInterval = setInterval(pattern, 3200);
+    }
+
+    function stopRing() {
+        clearInterval(_ringInterval);
+        _ringInterval = null;
+    }
+
     // ── Referencias UI ────────────────────────────────────────────────────────
     const panel      = document.getElementById('sip-panel');
     const panelLabel = document.getElementById('sip-panel-label');
@@ -235,6 +277,7 @@
 
     // ── Estados del panel ─────────────────────────────────────────────────────
     function showRinging(caller) {
+        startRing();
         panelLabel.textContent = 'Llamada entrante';
         postToFrame('ringing', { callerNumber: caller });
         callerNum.textContent  = caller;
@@ -245,6 +288,7 @@
     }
 
     function showInCall(caller) {
+        stopRing();
         panelLabel.textContent = 'En llamada';
         postToFrame('incall');
         callerNum.textContent  = caller;
@@ -264,6 +308,7 @@
     }
 
     function hidePanel() {
+        stopRing();
         panel.style.display = 'none';
         const isReg = window._sipUA?.isRegistered();
         postToFrame(isReg ? 'registered' : 'offline');
