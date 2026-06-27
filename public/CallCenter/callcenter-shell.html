@@ -160,10 +160,10 @@
         const gain = _ringCtx.createGain();
         osc.connect(gain);
         gain.connect(_ringCtx.destination);
-        osc.type = 'sine';
+        osc.type = 'square';
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.35, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur - 0.01);
+        gain.gain.setValueAtTime(0.4, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur - 0.02);
         osc.start(startTime);
         osc.stop(startTime + dur);
     }
@@ -174,11 +174,12 @@
         if (_ringCtx.state === 'suspended') _ringCtx.resume();
         function pattern() {
             const t = _ringCtx.currentTime;
-            _beep(440, t,        0.4);
-            _beep(440, t + 0.55, 0.4);
+            // Dos frecuencias simultáneas (440 + 480 Hz) — tono de teléfono clásico
+            _beep(440, t, 0.9);
+            _beep(480, t, 0.9);
         }
         pattern();
-        _ringInterval = setInterval(pattern, 3200);
+        _ringInterval = setInterval(pattern, 1400);
     }
 
     function stopRing() {
