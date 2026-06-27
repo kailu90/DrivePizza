@@ -145,8 +145,8 @@
     });
 
     // ── Ringtone (Web Audio API) ──────────────────────────────────────────────
-    let _ringCtx  = null;
-    let _ringOscs = [];
+    let _ringCtx      = null;
+    let _ringInterval = null;
 
     // Desbloquear AudioContext en el primer click (política autoplay del browser)
     document.addEventListener('click', () => {
@@ -155,25 +155,34 @@
     }, { once: true });
 
     function startRing() {
-        if (_ringOscs.length) return;
+        if (_ringInterval) return;
         if (!_ringCtx) _ringCtx = new AudioContext();
         if (_ringCtx.state === 'suspended') _ringCtx.resume();
-        const gain = _ringCtx.createGain();
-        gain.gain.value = 0.4;
-        gain.connect(_ringCtx.destination);
-        [440, 480].forEach(freq => {
-            const osc = _ringCtx.createOscillator();
-            osc.type = 'square';
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            osc.start();
-            _ringOscs.push(osc);
-        });
+
+        function bip() {
+            const t = _ringCtx.currentTime;
+            [0, 0.15, 0.30].forEach(offset => {
+                const osc  = _ringCtx.createOscillator();
+                const gain = _ringCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 1000;
+                osc.connect(gain);
+                gain.connect(_ringCtx.destination);
+                gain.gain.setValueAtTime(0, t + offset);
+                gain.gain.linearRampToValueAtTime(0.5, t + offset + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.13);
+                osc.start(t + offset);
+                osc.stop(t + offset + 0.14);
+            });
+        }
+
+        bip();
+        _ringInterval = setInterval(bip, 1200);
     }
 
     function stopRing() {
-        _ringOscs.forEach(o => { try { o.stop(); } catch(e) {} });
-        _ringOscs = [];
+        clearInterval(_ringInterval);
+        _ringInterval = null;
     }
 
     // ── Referencias UI ────────────────────────────────────────────────────────
