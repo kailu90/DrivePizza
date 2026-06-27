@@ -150,6 +150,7 @@
                             <span id="sip-pop-ext">—</span>
                         </div>
                         <button id="btn-sip-reconectar">Reconectar</button>
+                        <button id="btn-ivr-connect" style="display:none">Conectarse al IVR</button>
                     </div>
                 </div>
                 <div class="panel-header__title pbx-hdr-info">
@@ -526,9 +527,39 @@
     // ── Estado SIP desde el shell padre ──────────────────────────────────────
     const SIP_LABELS = { registered: 'Registrado', incall: 'En llamada', ringing: 'Llamada entrante', offline: 'Desconectado' };
 
+    // ── IVR público (queues 801-806) ─────────────────────────────────────────
+    let _sipExtension = null;
+
+    function _setIvrBtn(connected) {
+        const btn = document.getElementById('btn-ivr-connect');
+        if (!btn) return;
+        btn.textContent = connected ? 'Desconectarse del IVR' : 'Conectarse al IVR';
+        btn.style.background = connected ? '#ef4444' : '#22c55e';
+        btn.style.color = '#fff';
+        btn.dataset.ivrConnected = connected ? '1' : '0';
+    }
+
+    document.getElementById('btn-ivr-connect').addEventListener('click', async () => {
+        if (!_sipExtension) return;
+        const btn = document.getElementById('btn-ivr-connect');
+        const isConnected = btn.dataset.ivrConnected === '1';
+        const endpoint = isConnected ? '/pbx/queue/disconnect-ivr' : '/pbx/queue/connect-ivr';
+        btn.disabled = true;
+        try {
+            await fetch(`${PBX_URL}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ extension: _sipExtension })
+            });
+            _setIvrBtn(!isConnected);
+        } catch(e) { console.error('[IVR]', e); }
+        btn.disabled = false;
+    });
+
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.type !== 'sip-state') return;
         const { state, extension, username, callerNumber, remoteUser } = e.data;
+        if (extension) _sipExtension = extension;
         const dotEl   = document.getElementById('sip-dot-hdr');
         const stripEl = document.getElementById('strip-pbx');
         if (!dotEl) return;
@@ -542,6 +573,9 @@
         // Popover
         document.getElementById('sip-pop-estado').textContent = SIP_LABELS[state] || state;
         document.getElementById('sip-pop-ext').textContent    = extension || '—';
+        // Mostrar botón IVR solo cuando el SIP está registrado
+        const ivrBtn = document.getElementById('btn-ivr-connect');
+        if (ivrBtn) ivrBtn.style.display = (state === 'registered' || state === 'incall') ? 'block' : 'none';
         // PBX Panel UI
         pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
     });
@@ -618,6 +652,11 @@
             const agents   = await r.json();
             const visibles = agents.filter(a => a.queue_connected || a.in_call);
             setAgentsBadge(visibles.length);
+            // Actualizar botón IVR según estado del asesor actual
+            if (_sipExtension) {
+                const me = agents.find(a => a.extension === _sipExtension);
+                if (me) _setIvrBtn(!!me.ivr_connected);
+            }
 
             // Strip en columna de categorías (desktop)
             const agentsStrip = document.getElementById('agents-strip');
