@@ -96,9 +96,8 @@ const preciosBebidas = {
     sodas:    { "Frutos Rojos": 12000 , "Frutos Amarillos": 12000 , "Lychee": 12000 , "Tamarindo": 12000 },   
     
     // Cervezas
-    cervezaNacional:    { "Poker": 9000 , "Costeña": 9000 },
+    cervezaNacional:    { "Club Colombia": 9000 , "Heineken": 8000 },
     cerveza3Cordilleras:{ "unidad": 10000 },
-    cervezaCorona:      { "Unidad": 10500 },
     vasoMichelado:      { "Unidad": 2200 },   
 
     // Otros
@@ -315,7 +314,6 @@ const menuData = {
     "Cervezas": [
         { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional },
         { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras },
-        { nombre: "Cerveza Corona", opciones: preciosBebidas.cervezaCorona },
         { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado }
     ],
      "Otros": [
