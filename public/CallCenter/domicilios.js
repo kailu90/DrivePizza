@@ -96,6 +96,7 @@ export const domicilios = {
         "La Paz": 8000,
         "Laureles (alto/bajo)": 9000,
         "La Riviera": 6000,
+        "limoncito": 9000,
         "Los Andes" : 8000,
         "Los Principes": 7000,
         "Macpollo": 8000,
