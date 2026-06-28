@@ -1027,12 +1027,16 @@ function buildChipsHTML(visibles) {
         const timerSpan = a.in_call && a.hora_inicio
             ? `<span class="chip-timer" ${timerAttr}>${fmtChipDur(Math.floor((Date.now() - new Date(a.hora_inicio).getTime()) / 1000))}</span>`
             : '';
+        const ivrBadge = a.ivr_connected
+            ? `<span class="chip-ivr-badge">📞 IVR</span>`
+            : '';
 
         return `<div class="agent-chip ${cls}">
             <div class="chip-avatar">${chipInitials(a.username)}</div>
             <div class="chip-info">
                 <span class="chip-name">${name}</span>
                 <span class="chip-status">${label}${timerSpan}</span>
+                ${ivrBadge}
             </div>
         </div>`;
     }).join('');
@@ -1050,7 +1054,7 @@ async function loadAgentStrip() {
         const r = await fetch(`${PBX_URL}/pbx/agents/status`);
         if (!r.ok) return;
         const agents   = await r.json();
-        const visibles = agents.filter(a => a.queue_connected || a.in_call);
+        const visibles = agents.filter(a => a.queue_connected || a.in_call || a.ivr_connected);
 
         const badge = document.getElementById('agents-badge-mobile');
         if (badge) { badge.textContent = visibles.length; badge.style.display = visibles.length > 0 ? 'flex' : 'none'; }

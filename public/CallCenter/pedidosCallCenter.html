@@ -622,11 +622,15 @@
             const timerSpan = a.in_call && a.hora_inicio
                 ? `<span class="chip-timer" data-chip-inicio="${new Date(a.hora_inicio).getTime()}">${fmtChipDur(Math.floor((Date.now() - new Date(a.hora_inicio).getTime()) / 1000))}</span>`
                 : '';
+            const ivrBadge = a.ivr_connected
+                ? `<span class="chip-ivr-badge">📞 IVR</span>`
+                : '';
             return `<div class="agent-chip ${cls}">
                 <div class="chip-avatar">${chipInitials(a.username)}</div>
                 <div class="chip-info">
                     <span class="chip-name">${name}</span>
                     <span class="chip-status">${label}${timerSpan}</span>
+                    ${ivrBadge}
                 </div>
             </div>`;
         }).join('');
@@ -652,7 +656,7 @@
             if (!r.ok) return;
             const agents   = await r.json();
             const visibles = agents
-                .filter(a => a.queue_connected || a.in_call)
+                .filter(a => a.queue_connected || a.in_call || a.ivr_connected)
                 .sort((a, b) => (a.in_call ? 0 : 1) - (b.in_call ? 0 : 1));
             setAgentsBadge(visibles.length);
             // Actualizar botón IVR según estado del asesor actual
