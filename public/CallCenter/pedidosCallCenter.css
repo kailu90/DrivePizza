@@ -2251,6 +2251,7 @@ body {
     background: #f9fafb;
     user-select: none;
     flex-shrink: 0;
+    position: relative;
 }
 .chip-avatar {
     width: 32px; height: 32px;
@@ -2292,19 +2293,22 @@ body {
 .agent-chip.chip-incall .chip-status  { color: #2563eb; }
 .chip-timer { font-family: monospace; font-size: 1rem; margin-left: 5px; opacity: 0.85; }
 .chip-ivr-badge {
+    position: absolute;
+    top: -7px;
+    right: -4px;
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    margin-top: 3px;
     padding: 1px 6px;
     border-radius: 20px;
-    background: rgba(139,92,246,0.12);
-    border: 1px solid rgba(139,92,246,0.3);
-    color: #7c3aed;
-    font-size: 0.9rem;
-    font-weight: 600;
+    background: #7c3aed;
+    border: 1.5px solid #fff;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
     letter-spacing: 0.3px;
-    width: fit-content;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(124,58,237,0.3);
 }
 .agent-chip.chip-paused { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
 .agent-chip.chip-paused .chip-avatar  { background: #f59e0b; }

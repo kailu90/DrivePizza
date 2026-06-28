@@ -1032,11 +1032,11 @@ function buildChipsHTML(visibles) {
             : '';
 
         return `<div class="agent-chip ${cls}">
+            ${ivrBadge}
             <div class="chip-avatar">${chipInitials(a.username)}</div>
             <div class="chip-info">
                 <span class="chip-name">${name}</span>
                 <span class="chip-status">${label}${timerSpan}</span>
-                ${ivrBadge}
             </div>
         </div>`;
     }).join('');
