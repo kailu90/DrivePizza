@@ -625,7 +625,7 @@
             const ivrBadge = a.ivr_connected
                 ? `<span class="chip-ivr-badge">📞 IVR</span>`
                 : '';
-            return `<div class="agent-chip ${cls}">
+            return `<div class="agent-chip ${cls}${a.ivr_connected ? ' has-ivr' : ''}">
                 ${ivrBadge}
                 <div class="chip-avatar">${chipInitials(a.username)}</div>
                 <div class="chip-info">
