@@ -121,9 +121,11 @@
 
 /* Ocultar contenido bajo el header cuando el panel está colapsado (no aplica en mobile-open) */
 #panel-pbx.collapsed:not(.mobile-open) #panel-agents,
-#panel-pbx.collapsed:not(.mobile-open) #ivr-connect-bar,
 #panel-pbx.collapsed:not(.mobile-open) .panel-body {
     display: none;
+}
+#panel-pbx.collapsed:not(.mobile-open) #ivr-connect-bar {
+    display: none !important;
 }
 
 
