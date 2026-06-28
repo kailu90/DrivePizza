@@ -1031,13 +1031,13 @@ function buildChipsHTML(visibles) {
             ? `<span class="chip-ivr-badge">📞 IVR</span>`
             : '';
 
-        return `<div class="agent-chip ${cls}${a.ivr_connected ? ' has-ivr' : ''}">
-            ${ivrBadge}
+        return `<div class="agent-chip ${cls}">
             <div class="chip-avatar">${chipInitials(a.username)}</div>
             <div class="chip-info">
                 <span class="chip-name">${name}</span>
                 <span class="chip-status">${label}${timerSpan}</span>
             </div>
+            ${ivrBadge}
         </div>`;
     }).join('');
 }
