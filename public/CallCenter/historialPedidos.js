@@ -156,21 +156,32 @@ async function cargaCompleta(filtros) {
         const desde = filtros.desde || hoy;
         const hasta = filtros.hasta || hoy;
 
-        let q = supabase
-            .from('pedidos_callcenter')
-            .select('*')
-            .gte('fecha', colFechaToUTC(desde, 'inicio'))
-            .lte('fecha', colFechaToUTC(hasta, 'fin'))
-            .order('fecha', { ascending: false });
+        const PAGE_SIZE = 1000;
+        let allData = [], offset = 0, page;
+        do {
+            let q = supabase
+                .from('pedidos_callcenter')
+                .select('*')
+                .gte('fecha', colFechaToUTC(desde, 'inicio'))
+                .lte('fecha', colFechaToUTC(hasta, 'fin'))
+                .order('fecha', { ascending: false })
+                .range(offset, offset + PAGE_SIZE - 1);
 
-        if (filtros.sede)     q = q.eq('sede',     filtros.sede);
-        if (filtros.estado)   q = q.eq('estado',   filtros.estado);
-        if (filtros.telefono) q = q.eq('telefono', filtros.telefono);
+            if (filtros.sede)     q = q.eq('sede',     filtros.sede);
+            if (filtros.estado)   q = q.eq('estado',   filtros.estado);
+            if (filtros.telefono) q = q.eq('telefono', filtros.telefono);
 
-        const { data, error } = await q;
-        if (error) throw error;
+            const { data, error } = await q;
+            if (error) throw error;
+            page = data || [];
+            allData = allData.concat(page);
+            offset += PAGE_SIZE;
+            if (page.length === PAGE_SIZE) {
+                tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="9" style="text-align:center;padding:30px;">Cargando... (${allData.length} registros)</td></tr>`;
+            }
+        } while (page.length === PAGE_SIZE);
 
-        pedidosCargados = (data || []).map(normalizarPedido);
+        pedidosCargados = allData.map(normalizarPedido);
         guardarCache(filtros, pedidosCargados);
         poblarSelectAsesores();
         filtrarColumnas();
