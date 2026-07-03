@@ -654,15 +654,25 @@ async function exportarLiquidacion() {
         const hasta      = document.getElementById("filtro-hasta").value;
         const sedeFilter = document.getElementById("filtro-sede").value;
 
-        let q = supabase
-            .from('pedidos_callcenter')
-            .select('*')
-            .gte('fecha', colFechaToUTC(desde, 'inicio'))
-            .lte('fecha', colFechaToUTC(hasta, 'fin'))
-            .order('fecha', { ascending: false });
-        if (sedeFilter) q = q.eq('sede', sedeFilter);
-        const { data: rawPedidos, error: liqErr } = await q;
-        if (liqErr) throw liqErr;
+        // Paginación para superar el límite de 1000 filas de PostgREST
+        const PAGE_SIZE = 1000;
+        let rawPedidos = [], offset = 0, page;
+        do {
+            let q = supabase
+                .from('pedidos_callcenter')
+                .select('*')
+                .gte('fecha', colFechaToUTC(desde, 'inicio'))
+                .lte('fecha', colFechaToUTC(hasta, 'fin'))
+                .order('fecha', { ascending: false })
+                .range(offset, offset + PAGE_SIZE - 1);
+            if (sedeFilter) q = q.eq('sede', sedeFilter);
+            const { data, error: liqErr } = await q;
+            if (liqErr) throw liqErr;
+            page = data || [];
+            rawPedidos = rawPedidos.concat(page);
+            offset += PAGE_SIZE;
+            btn.textContent = `⏳ Cargando... (${rawPedidos.length})`;
+        } while (page.length === PAGE_SIZE);
         const pedidos = rawPedidos.map(normalizarPedido);
 
         const TARIFA_PERSONA   = 10000;
