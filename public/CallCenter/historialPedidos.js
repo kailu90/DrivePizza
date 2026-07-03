@@ -660,7 +660,7 @@ async function exportarLiquidacion() {
         do {
             let q = supabase
                 .from('pedidos_callcenter')
-                .select('*')
+                .select('id,n_pedido,nombre,telefono,direccion,sede,pago,total,fecha,estado,canal,domicilio,tipo,cantidad_personas,fecha_reserva,hora_reserva')
                 .gte('fecha', colFechaToUTC(desde, 'inicio'))
                 .lte('fecha', colFechaToUTC(hasta, 'fin'))
                 .order('fecha', { ascending: false })
