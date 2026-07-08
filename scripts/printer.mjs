@@ -89,7 +89,7 @@ function generarHTML(pedido) {
         </div>`;
     }).join('');
 
-    const barrio = pedido.domicilio?.barrio ? `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>BARRIO:</strong> ${pedido.domicilio.barrio}</p>` : '';
+    const barrio = '';
 
     return `<!DOCTYPE html>
 <html>
@@ -131,6 +131,7 @@ function generarHTML(pedido) {
 
             <div style="border-top:2px dashed black; margin:10px 0;"></div>
 
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${formatearFecha(pedido.fecha)}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CLIENTE:</strong> ${pedido.nombre}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
             ${pedido.domicilio?.tipo !== 'recoger' ? `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>DIR:</strong> ${pedido.direccion}</p>` : `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ENTREGA:</strong> Recoge en tienda</p>`}
@@ -138,7 +139,6 @@ function generarHTML(pedido) {
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
             <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>PAGO:</strong> ${pedido.pago}</p>
-            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${formatearFecha(pedido.fecha)}</p>
 
             <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** COMPROBANTE DE SEDE ***</p>
         </div>
