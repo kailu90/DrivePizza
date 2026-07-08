@@ -366,8 +366,10 @@
     let _clienteDirs = [];
 
     function _aplicarDireccion(d) {
-        const sedeBtn = document.querySelector(`.sede-btn[data-sede="${d.sede_id}"]`);
-        sedeBtn?.click();
+        if (!document.querySelector('.sede-btn.active')) {
+            const sedeBtn = document.querySelector(`.sede-btn[data-sede="${d.sede_id}"]`);
+            sedeBtn?.click();
+        }
         document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
         document.getElementById('clienteDireccion').value = d.direccion || '';
         if (d.barrio) {
