@@ -1,8 +1,10 @@
 import { supabase } from '../Api/supabaseConfig.js';
 
-/** Normaliza teléfono: solo dígitos */
+/** Normaliza teléfono: extrae número colombiano de 10 dígitos (ej: 573127410992 → 3127410992) */
 function normTel(t) {
-    return (t || '').replace(/\D/g, '');
+    const digits = (t || '').replace(/\D/g, '');
+    const match = digits.match(/3\d{9}/);
+    return match ? match[0] : digits;
 }
 
 /**
