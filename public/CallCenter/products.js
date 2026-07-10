@@ -135,10 +135,10 @@ const menuData = {
     ],
 //*******Variedades Pastas***********/    
     "Pastas": [
-        { nombre: "Pasta Carbonara", opciones: preciosPastas.carbonara, descripcion: "Spaguetti en slsa carbonara con tocineta."},
+        { nombre: "Pasta Carbonara", opciones: preciosPastas.carbonara, descripcion: "Spaguetti en salsa carbonara con tocineta."},
         { nombre: "Pasta Alfredo", opciones: preciosPastas.alfredo , descripcion: "Salsa alfredo y pollo." },
         { nombre: "Pasta Pesto Camaron", opciones: preciosPastas.pestoCamaron , descripcion: "Salsa pesto, camarones, tomates cherry y queso parmesano."  },
-        { nombre: "Pasta Matriziana", opciones: preciosPastas.matriziana, descripcion: "Salsa napolitna, tocineta, tomate en julianas, pimienta roja y queso parmesano." },
+        { nombre: "Pasta Matriziana", opciones: preciosPastas.matriziana, descripcion: "Salsa napolitana, tocineta, tomate en julianas, pimienta roja y queso parmesano." },
         { nombre: "Pasta Marinera", opciones: preciosPastas.marinera, descripcion: "Pulpo, anillos de calamar y camarones en salsa aurora o salsa blanca y queso parmesano." },
         { nombre: "Pasta Spaguetti Sencillo", opciones: preciosPastas.spaguettiSencillo , descripcion: "1 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado." },
         { nombre: "Pasta Spaguetti Mixto", opciones: preciosPastas.spaguettiMixto , descripcion: "2 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado."  },
@@ -160,8 +160,8 @@ const menuData = {
     ],
 //*****Variedades de los sabores de las pizzas********/
     "Pizzas Super Estofadas": [
-        { nombre: "Super Estofada de Carnes", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Jamón, salchicha, salami, pollo, champiñon, queso crema, extra queso y salsa napolitana." },
-        { nombre: "Super Estofada Hawaiana", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Jamón, piña, queso crema, extra queso y salsa napolitana." },
+        { nombre: "Super Estofada de Carnes", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón, cabano, salami y pollo." },
+        { nombre: "Super Estofada Hawaiana", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón y piña." },
     ],
     "Pizzas Estofadas": [
         { nombre: "Estofada de Carnes", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Jamón, salchicha, salami, pollo, champiñon, queso y salsa napolitana." },
@@ -173,7 +173,7 @@ const menuData = {
         { nombre: "Drive", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, pollo, champiñones, maíz tierno y maduro."},
         { nombre: "Criolla", opciones: preciosPizzas.especial , descripcion: "Carne deshilachada, tocineta y maiz tierno."},
         { nombre: "Mexicana", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa, jamón, tomate, cilantro, jalapeño y tostacos." },
-        { nombre: "Hawaiana Chic", opciones: preciosPizzas.especial , descripcion: "Piña, tocineta y BBQ."},
+        { nombre: "Hawaiana Chic", opciones: preciosPizzas.especial , descripcion: "Queso mozarella, piña, tocineta, jamón y salsa BBQ."},
         { nombre: "Suprema Pepperoni", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, ranchera, pepperoni, pimentón, cebolla y oregano"},
         { nombre: "Especial de carnes", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, cabano, salami, pollo y champiñones."},
         { nombre: "Carnivora", opciones: preciosPizzas.especial , descripcion: "Jamón, salchicha, salami, chorizo de ternera y tocineta." },
@@ -271,11 +271,11 @@ const menuData = {
     ],
     //**Variedades de Hamburguesas**/
       "Hamburguesas": [
-        { nombre: "hamburguesa Clasica", opciones: preciosHamburguesas.hamburguesaClasica , descripcion: "Carne de res 140 gr, o filete de pollo de 150 gr, queso fundido, tocineta asada, pan artesanal, salsa de tocineta, lechuga, tomate y cebolla."},
-        { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "Carne de res 140 gr, o filete de pollo de 150 gr, queso fundido, tocineta asada, pan artesanal, salsa de tocineta, piña, pepperoni, lechuga, tomate y cebolla."},
-        { nombre: "Hamburguesa Mixta", opciones: preciosHamburguesas.hamburguesaMixta , descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso fundido, tocineta asada, pan artesanal, salsa de tocineta, piña, pepperoni, lechuga, tomate y cebolla."},
-        { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res 140 gr, o doble filete de pollo de 150 gr, queso fundido, tocineta asada, pan artesanal, salsa de tocineta, lechuga, tomate y cebolla."},
-        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Carne de res 140 gr, o filete de pollo de 150 gr, pan pizza, jamón, queso fundido, lechuga, tomate, cebolla, salsas y nuestra salsa MOLLE."}
+        { nombre: "hamburguesa Clasica", opciones: preciosHamburguesas.hamburguesaClasica , descripcion: "Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
+        { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "filete de pollo, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
+        { nombre: "Hamburguesa Mixta", opciones: preciosHamburguesas.hamburguesaMixta , descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
+        { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
+        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa."},
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [

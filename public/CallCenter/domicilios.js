@@ -683,6 +683,7 @@ export const domicilios = {
         "Torres de Campo Verde": 6000,
         "Torres de la Cuesta": 6000,
         "Valle de Barro Blanco": 10000,
+        "Vereda las amarillas": 8000,
         "Vega de San Roque": 12000,
         "Vía Catay": 10000,
         "Villa Adela": 12000,
@@ -910,8 +911,8 @@ export const domicilios = {
         "Porvenir": 7000,
         "Viveros de Provenza": 7000,
         "Villa Real Alta": 7000,
-        "Nueva Foresta": 7000,
-        "Ciudadela Verde": 7000,
+        "San Luis": 7000,
+        
         "Terminal": 7000,
         "Marinela": 7000,
 
@@ -921,6 +922,8 @@ export const domicilios = {
 
         // 9000
         "Ladrillera Porvenir": 9000,
+        "Nueva Foresta": 9000,
+        "Ciudadela Verde": 9000,
 
         // 10000
         "Altoviento 1": 10000,
@@ -929,6 +932,7 @@ export const domicilios = {
         "Niza": 10000,
         "Paralela": 10000,
         "Cabecera Baja": 10000,
+        "Condominio la florida": 10000,
         "Conucos": 10000,
         "Floresta": 10000,
         "Terrazas": 10000,
