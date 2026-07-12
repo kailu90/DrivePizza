@@ -1,0 +1,30 @@
+/* ============================================================
+   Drive Pizza — Variables de marca
+   Manual de marca SEP 2024 · Realizado por SRC
+   ============================================================ */
+
+/* Fuentes Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ── Paleta principal ─────────────────────────────────────── */
+  --dp-green:   #314B27;   /* Central Park Green  — color principal    */
+  --dp-sand:    #F4ECDF;   /* Soho Sand           — fondo principal    */
+
+  /* ── Colores de acento ────────────────────────────────────── */
+  --dp-dark:    #2D2D2D;   /* Concrete Jungle     — texto              */
+  --dp-leaf:    #75892A;   /* Brooklyn Leaf       — acento verde       */
+  --dp-orange:  #E67318;   /* Sunset on 5th       — CTA / destacados   */
+  --dp-mist:    #F8F8F8;   /* Metropolitan Mist   — superficies        */
+
+  /* ── Tipografía ───────────────────────────────────────────── */
+  --dp-font-brand: 'Playfair Display', Georgia, serif;  /* Logo, títulos, categorías */
+  --dp-font-ui:    'Poppins', system-ui, sans-serif;    /* Precios, botones, forms   */
+
+  /* ── Tokens de UI ─────────────────────────────────────────── */
+  --dp-radius:     12px;
+  --dp-radius-lg:  20px;
+  --dp-shadow:     0 2px 16px rgba(49, 75, 39, .10);
+  --dp-shadow-lg:  0 8px 32px rgba(49, 75, 39, .16);
+  --dp-transition: 0.28s cubic-bezier(.4, 0, .2, 1);
+}

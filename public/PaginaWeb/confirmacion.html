@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drive Pizza — Pedido recibido</title>
+  <link rel="stylesheet" href="css/brand.css">
+  <link rel="stylesheet" href="css/pagWeb.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="pw-header">
+    <div style="width:44px"></div>
+    <div class="pw-header-brand">
+      <div class="pw-header-brand-name">DRIVE <span>PIZZA</span></div>
+    </div>
+    <div style="width:44px"></div>
+  </header>
+
+  <main class="pw-confirm-body">
+
+    <!-- ÍCONO -->
+    <div class="pw-confirm-icon" id="confirm-icon">&#x2713;</div>
+
+    <!-- NÚMERO DE PEDIDO -->
+    <div class="pw-confirm-n" id="confirm-n">Cargando...</div>
+    <div class="pw-confirm-sub" id="confirm-sub">
+      Tu pedido ha sido recibido.<br>
+      Te avisamos cuando esté en camino.
+    </div>
+
+    <!-- TRACKER DE ESTADO -->
+    <div class="pw-status-track" id="status-track">
+      <div class="pw-status-step" id="step-pendiente">
+        <div class="pw-status-dot">1</div>
+        <div class="pw-status-info">
+          <div class="pw-status-label">Pedido recibido</div>
+          <div class="pw-status-detail">Estamos procesando tu orden</div>
+        </div>
+      </div>
+      <div class="pw-status-step" id="step-recibido">
+        <div class="pw-status-dot">2</div>
+        <div class="pw-status-info">
+          <div class="pw-status-label">Confirmado en cocina</div>
+          <div class="pw-status-detail">La pizzería recibió tu pedido</div>
+        </div>
+      </div>
+      <div class="pw-status-step" id="step-preparacion">
+        <div class="pw-status-dot">3</div>
+        <div class="pw-status-info">
+          <div class="pw-status-label">En preparación</div>
+          <div class="pw-status-detail">Estamos haciendo tu pizza</div>
+        </div>
+      </div>
+      <div class="pw-status-step" id="step-despachado">
+        <div class="pw-status-dot">4</div>
+        <div class="pw-status-info">
+          <div class="pw-status-label">En camino</div>
+          <div class="pw-status-detail" id="step-despachado-detail">Tu domiciliero está en ruta</div>
+        </div>
+      </div>
+      <div class="pw-status-step" id="step-entregado">
+        <div class="pw-status-dot">&#x2713;</div>
+        <div class="pw-status-info">
+          <div class="pw-status-label">Entregado</div>
+          <div class="pw-status-detail">&#x1F355; ¡Buen provecho!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOLVER -->
+    <a href="index.html" class="pw-btn-primary pw-btn-volver" style="display:block;text-align:center;text-decoration:none;">
+      Hacer otro pedido
+    </a>
+
+  </main>
+
+  <script type="module" src="js/confirmacion.js"></script>
+</body>
+</html>

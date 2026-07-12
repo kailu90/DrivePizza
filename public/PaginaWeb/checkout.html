@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drive Pizza — Confirmar pedido</title>
+  <link rel="stylesheet" href="css/brand.css">
+  <link rel="stylesheet" href="css/pagWeb.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="pw-header">
+    <a href="menu.html" class="pw-header-back" aria-label="Volver al menú">&#8592;</a>
+    <div class="pw-header-brand">
+      <div class="pw-header-brand-name">DRIVE <span>PIZZA</span></div>
+      <div class="pw-header-sede" id="header-sede">Cargando...</div>
+    </div>
+    <div style="width:44px"></div>
+  </header>
+
+  <main class="pw-checkout-main">
+
+    <!-- RESUMEN DEL PEDIDO -->
+    <section class="pw-checkout-section">
+      <button class="pw-summary-toggle" id="summary-toggle" aria-expanded="false">
+        <span>Ver resumen del pedido</span>
+        <span id="summary-total-preview"></span>
+        <span class="pw-summary-chevron">&#8250;</span>
+      </button>
+      <div class="pw-summary-body" id="summary-body" hidden>
+        <div id="summary-items"></div>
+        <div class="pw-summary-subtotal" id="summary-subtotal"></div>
+      </div>
+    </section>
+
+    <!-- DATOS DEL CLIENTE -->
+    <section class="pw-checkout-section">
+      <h3 class="pw-checkout-section-title">Tus datos</h3>
+      <div class="pw-form-group">
+        <label class="pw-form-label" for="inp-nombre">Nombre *</label>
+        <input class="pw-form-input" id="inp-nombre" type="text"
+               placeholder="¿Cómo te llamamos?" autocomplete="name" required>
+      </div>
+      <div class="pw-form-group">
+        <label class="pw-form-label" for="inp-tel">Teléfono *</label>
+        <input class="pw-form-input" id="inp-tel" type="tel"
+               placeholder="Número de contacto" autocomplete="tel" inputmode="tel" required>
+      </div>
+    </section>
+
+    <!-- TIPO DE ENTREGA -->
+    <section class="pw-checkout-section">
+      <h3 class="pw-checkout-section-title">¿Cómo lo recibés?</h3>
+      <div class="pw-entrega-pills">
+        <button class="pw-entrega-pill active" data-tipo="domicilio">
+          <span class="pw-entrega-pill-icon">&#x1F6F5;</span>
+          Domicilio
+        </button>
+        <button class="pw-entrega-pill" data-tipo="recoger">
+          <span class="pw-entrega-pill-icon">&#x1F3EA;</span>
+          Recoger en tienda
+        </button>
+      </div>
+
+      <!-- Sección domicilio -->
+      <div id="seccion-domicilio">
+        <div class="pw-form-group">
+          <label class="pw-form-label" for="inp-dir">Dirección *</label>
+          <input class="pw-form-input" id="inp-dir" type="text"
+                 placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="street-address">
+        </div>
+        <div class="pw-form-group">
+          <label class="pw-form-label" for="sel-barrio">Barrio *</label>
+          <select class="pw-form-input pw-form-select" id="sel-barrio">
+            <option value="">Selecciona tu barrio</option>
+          </select>
+        </div>
+        <div class="pw-domicilio-fee" id="domicilio-fee" style="display:none">
+          <span>Domicilio</span>
+          <span id="domicilio-fee-val"></span>
+        </div>
+      </div>
+
+      <!-- Sección recoger -->
+      <div id="seccion-recoger" style="display:none">
+        <div class="pw-recoger-info" id="recoger-info"></div>
+      </div>
+    </section>
+
+    <!-- MÉTODO DE PAGO -->
+    <section class="pw-checkout-section">
+      <h3 class="pw-checkout-section-title">Método de pago</h3>
+      <div class="pw-pago-pills" id="pago-pills">
+        <button class="pw-pago-pill active" data-pago="Efectivo">
+          <span>&#x1F4B5;</span> Efectivo
+        </button>
+        <button class="pw-pago-pill" data-pago="Transferencia">
+          <span>&#x1F4F1;</span> Transferencia
+        </button>
+        <button class="pw-pago-pill" data-pago="Datáfono">
+          <span>&#x1F4B3;</span> Datáfono
+        </button>
+      </div>
+    </section>
+
+    <!-- OBSERVACIONES -->
+    <section class="pw-checkout-section">
+      <h3 class="pw-checkout-section-title">Observaciones del pedido <span style="font-weight:400;font-size:.8rem;color:var(--dp-mist-dark)">(opcional)</span></h3>
+      <textarea class="pw-obs-input" id="inp-obs" rows="2"
+        placeholder="Instrucciones especiales para el pedido..."></textarea>
+    </section>
+
+    <!-- TOTAL -->
+    <section class="pw-checkout-section pw-checkout-total-section">
+      <div class="pw-total-row">
+        <span>Subtotal</span>
+        <span id="total-subtotal"></span>
+      </div>
+      <div class="pw-total-row" id="row-domicilio" style="display:none">
+        <span>Domicilio</span>
+        <span id="total-domicilio"></span>
+      </div>
+      <div class="pw-total-row pw-total-final">
+        <span>Total</span>
+        <span id="total-final"></span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTÓN CONFIRMAR (fixed bottom) -->
+  <div class="pw-confirm-bar">
+    <button class="pw-btn-primary pw-btn-confirmar" id="btn-confirmar">
+      Confirmar pedido
+    </button>
+    <div class="pw-confirm-error" id="confirm-error" style="display:none"></div>
+  </div>
+
+  <script type="module" src="js/checkout.js"></script>
+</body>
+</html>

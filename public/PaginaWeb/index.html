@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Drive Pizza — Pide tu pizza favorita en línea. Domicilios y recogida en tienda.">
+  <title>Drive Pizza — Pide en línea</title>
+  <link rel="stylesheet" href="css/brand.css">
+  <link rel="stylesheet" href="css/pagWeb.css">
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="pw-hero">
+    <div class="pw-logo">DRIVE <span>PIZZA</span></div>
+    <p class="pw-tagline">La mejor pizza, directo a tu puerta</p>
+  </header>
+
+  <!-- SELECTOR DE SEDE -->
+  <section class="pw-selector-section">
+    <h2 class="pw-selector-title">¿Dónde quieres tu pizza?</h2>
+    <div id="sedes-grid" class="pw-sedes-grid">
+      <div style="grid-column:1/-1">
+        <div class="pw-loading">
+          <div class="pw-spinner"></div>
+          <span>Cargando sedes...</span>
+        </div>
+      </div>
+    </div>
+    <p id="error-sedes" style="display:none; text-align:center; color:#e74c3c; font-size:.88rem; margin-top:1rem;"></p>
+  </section>
+
+  <footer class="pw-footer">
+    © 2026 Drive Pizza &nbsp;·&nbsp; Bucaramanga, Colombia
+  </footer>
+
+  <script type="module">
+    import { cargarSedes, estaAbierta, formatHorario, setSedeActual, displayNombre } from './js/sede.js';
+    import { vaciarCarrito } from './js/carrito.js';
+
+    async function init() {
+      const grid  = document.getElementById('sedes-grid');
+      const error = document.getElementById('error-sedes');
+
+      try {
+        const sedes = await cargarSedes();
+
+        if (!sedes.length) {
+          grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;">No hay sedes disponibles en este momento.</p>';
+          return;
+        }
+
+        grid.innerHTML = sedes.map(sede => {
+          const abierta = estaAbierta(sede);
+          const nombre  = displayNombre(sede);
+          const horario = formatHorario(sede);
+
+          return `
+            <div class="pw-sede-card${abierta ? '' : ' pw-sede-card--cerrada'}"
+                 data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
+                 ${abierta ? 'tabindex="0" role="button" aria-label="Pedir en ' + nombre + '"' : 'aria-disabled="true"'}>
+              <div class="pw-sede-nombre">${nombre}</div>
+              ${sede.ciudad ? `<div class="pw-sede-ciudad">${sede.ciudad}</div>` : ''}
+              <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
+                ${abierta ? 'Abierta ahora' : 'Cerrada'}
+              </span>
+              ${!abierta ? `<span class="pw-sede-horario">Horario: ${horario}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        // Eventos de click en sedes abiertas
+        grid.querySelectorAll('.pw-sede-card:not(.pw-sede-card--cerrada)').forEach(card => {
+          const abrir = () => {
+            const sede = JSON.parse(card.dataset.sede);
+            setSedeActual(sede);
+            vaciarCarrito();
+            window.location.href = 'menu.html';
+          };
+          card.addEventListener('click', abrir);
+          card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
+          });
+        });
+
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '';
+        error.textContent = 'No pudimos cargar las sedes. Por favor recarga la página.';
+        error.style.display = 'block';
+      }
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

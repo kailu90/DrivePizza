@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drive Pizza — Menú</title>
+  <link rel="stylesheet" href="css/brand.css">
+  <link rel="stylesheet" href="css/pagWeb.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="pw-header">
+    <a href="index.html" class="pw-header-back" aria-label="Volver a sedes">&#8592;</a>
+    <div class="pw-header-brand">
+      <div class="pw-header-brand-name">DRIVE <span>PIZZA</span></div>
+      <div class="pw-header-sede" id="header-sede">Cargando...</div>
+    </div>
+    <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
+      🛒
+      <span class="pw-cart-badge" id="cart-badge"></span>
+    </button>
+  </header>
+
+  <!-- CATEGORÍAS NAV -->
+  <nav class="pw-cats" id="cats-nav" aria-label="Categorías del menú"></nav>
+
+  <!-- AVISO SEDE CERRADA -->
+  <div class="pw-closed-banner" id="closed-banner" style="display:none">
+    <h3>Sede cerrada</h3>
+    <p id="closed-msg"></p>
+  </div>
+
+  <!-- MENÚ -->
+  <main class="pw-menu-body" id="menu-body">
+    <div class="pw-loading">
+      <div class="pw-spinner"></div>
+      <span>Cargando menú...</span>
+    </div>
+  </main>
+
+  <!-- BARRA DEL CARRITO -->
+  <div class="pw-cart-bar" id="cart-bar">
+    <div class="pw-cart-bar-info">
+      <div class="pw-cart-bar-items" id="cart-bar-items"></div>
+      <div class="pw-cart-bar-total" id="cart-bar-total"></div>
+    </div>
+    <button class="pw-cart-bar-btn" id="btn-cart-bar">Ver carrito</button>
+  </div>
+
+  <!-- OVERLAY -->
+  <div class="pw-overlay" id="overlay"></div>
+
+  <!-- SHEET: PRODUCTO -->
+  <div class="pw-sheet" id="product-sheet" role="dialog" aria-modal="true" aria-label="Agregar producto">
+    <div class="pw-sheet-handle"></div>
+    <button class="pw-sheet-close" id="btn-cerrar-producto" aria-label="Cerrar">&#10005;</button>
+
+    <h3 class="pw-sheet-nombre" id="sheet-nombre"></h3>
+    <p class="pw-sheet-desc" id="sheet-desc"></p>
+
+    <div id="sheet-opciones-wrap">
+      <span class="pw-sheet-label">Tamaño / Opción</span>
+      <div class="pw-opciones" id="sheet-opciones"></div>
+    </div>
+
+    <span class="pw-sheet-label">Cantidad</span>
+    <div class="pw-cantidad-row">
+      <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
+      <span class="pw-cantidad-num" id="cant-num">1</span>
+      <button class="pw-cantidad-btn" id="btn-mas" aria-label="Aumentar cantidad">+</button>
+    </div>
+
+    <span class="pw-sheet-label">Observaciones (opcional)</span>
+    <textarea class="pw-obs-input" id="sheet-obs" rows="2"
+      placeholder="Ej: sin cebolla, extra salsa..."></textarea>
+
+    <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
+  </div>
+
+  <!-- SHEET: CARRITO -->
+  <div class="pw-sheet pw-cart-sheet" id="cart-sheet" role="dialog" aria-modal="true" aria-label="Tu carrito">
+    <div class="pw-sheet-handle"></div>
+    <div class="pw-cart-sheet-header">
+      <h3 class="pw-cart-sheet-title">Tu carrito</h3>
+      <button class="pw-sheet-close" id="btn-cerrar-carrito" aria-label="Cerrar">&#10005;</button>
+    </div>
+    <div id="cart-items-list"></div>
+    <div id="cart-footer"></div>
+  </div>
+
+  <script type="module" src="js/menu.js"></script>
+</body>
+</html>
