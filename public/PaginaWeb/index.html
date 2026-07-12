@@ -73,6 +73,7 @@
         tagline: 'Hecha para compartir',
         titulo: 'El equilibrio perfecto entre lo dulce y lo salado.',
         subtitulo: '🍍 Piña caramelizada, jamón premium y queso mozzarella gratinado.',
+        objectPosition: 'center bottom',
       },
       {
         src: '../Imagenes/banners/banner3.jpg',
@@ -92,7 +93,7 @@
       track.innerHTML = BANNERS.map(b => `
         <div class="pw-banner-slide">
           ${b.href ? `<a href="${b.href}">` : ''}
-          <img src="${b.src}" alt="${b.alt ?? ''}">
+          <img src="${b.src}" alt="${b.alt ?? ''}" ${b.objectPosition ? `style="object-position:${b.objectPosition}"` : ''}>
           <div class="pw-banner-overlay"></div>
           ${(b.tagline || b.titulo || b.subtitulo) ? `
           <div class="pw-banner-content">
