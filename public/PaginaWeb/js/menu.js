@@ -544,7 +544,10 @@ function renderCarrito() {
       : '';
     return `
     <div class="pw-cart-item">
-      <div class="pw-cart-item-nombre">${item.nombre}</div>
+      <div class="pw-cart-item-header">
+        <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
+        <span class="pw-cart-item-nombre">${item.nombre}</span>
+      </div>
       <div class="pw-cart-item-row">
         <span class="pw-cart-item-opcion">${item.opcion}</span>
         <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
@@ -562,7 +565,6 @@ function renderCarrito() {
           <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
         </div>
         <div class="pw-cart-item-precio">${formulaHtml}${formatPrecio(subtotal)}</div>
-        <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
       </div>
     </div>`;
   }).join('');

@@ -64,7 +64,10 @@ function renderResumen() {
       : '';
     return `
     <div class="pw-summary-item">
-      <div class="pw-summary-item-nombre">${item.cantidad}× ${item.nombre}</div>
+      <div class="pw-summary-item-header">
+        <button class="pw-summary-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
+        <span class="pw-summary-item-nombre">${item.cantidad}× ${item.nombre}</span>
+      </div>
       <div class="pw-summary-item-row">
         <span class="pw-summary-item-opcion">${item.opcion}</span>
         <span class="pw-summary-item-base-precio">${formatPrecio(item.precio)}</span>
@@ -77,7 +80,6 @@ function renderResumen() {
       ${item.obs ? `<div class="pw-summary-item-obs">"${item.obs}"</div>` : ''}
       <div class="pw-summary-item-footer">
         ${formulaHtml}<span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span>
-        <button class="pw-summary-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
       </div>
     </div>`;
   }).join('');
