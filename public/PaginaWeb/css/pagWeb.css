@@ -203,7 +203,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-align: center;
 }
 .pw-sede-card:hover:not(.pw-sede-card--cerrada) {
-  box-shadow: 0 0 0 2px var(--dp-orange), var(--dp-shadow-lg);
+  outline: 2px solid var(--dp-orange);
+  outline-offset: 0;
+  box-shadow: var(--dp-shadow-lg);
 }
 @media (min-width: 600px) {
   .pw-sede-card { min-width: 110px; flex-shrink: 0; }
