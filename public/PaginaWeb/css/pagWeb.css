@@ -1408,7 +1408,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    BANNER CARRUSEL
    ════════════════════════════════════════════════════════════ */
 .pw-banner {
-  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
   border-radius: var(--dp-radius);
   overflow: hidden;
   position: relative;
