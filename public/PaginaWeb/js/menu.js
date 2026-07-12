@@ -18,7 +18,7 @@ let bordeSeleccionado      = null;
 let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
-const headerSede        = document.getElementById('header-sede');
+const headerSede        = document.getElementById('header-sede'); // puede ser null
 const catsNav           = document.getElementById('cats-nav');
 const menuBody          = document.getElementById('menu-body');
 const closedBanner      = document.getElementById('closed-banner');
@@ -54,7 +54,7 @@ function init() {
   if (!sede) { window.location.href = 'index.html'; return; }
 
   const nombre = displayNombre(sede);
-  headerSede.textContent = nombre;
+  if (headerSede) headerSede.textContent = nombre;
   document.title = `Drive Pizza — ${nombre}`;
 
   if (!estaAbierta(sede)) {
