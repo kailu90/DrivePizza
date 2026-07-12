@@ -94,7 +94,8 @@ export function limpiarSede() {
 
 // ── UTILS ──────────────────────────────────────────────────────
 
-/** Capitaliza el nombre de display de la sede. */
+/** Devuelve el nombre de display de la sede con prefijo "Sede". */
 export function displayNombre(sede) {
-  return sede?.nombre_display || sede?.name || '';
+  const nombre = sede?.nombre_display || sede?.name || '';
+  return nombre ? `Sede ${nombre}` : '';
 }
