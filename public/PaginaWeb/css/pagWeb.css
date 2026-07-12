@@ -833,7 +833,18 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cart-item-info { flex: 1; min-width: 0; }
 .pw-cart-item-nombre { font-size: .88rem; font-weight: 600; }
 .pw-cart-item-opcion { font-size: .75rem; color: #888; }
-.pw-cart-item-adiciones { font-size: .72rem; color: var(--dp-orange); margin-top: .1rem; }
+.pw-cart-item-adicion {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .4rem;
+  font-size: .72rem;
+  color: var(--dp-orange);
+  padding-left: .5rem;
+  border-left: 2px solid rgba(201,95,17,.25);
+  margin-top: .1rem;
+}
+.pw-cart-adicion-precio { font-weight: 600; flex-shrink: 0; }
 .pw-cart-item-obs { font-size: .72rem; color: #aaa; font-style: italic; margin-top: .1rem; }
 .pw-cart-item-precio {
   font-size: .88rem;

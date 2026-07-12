@@ -543,7 +543,11 @@ function renderCarrito() {
       <div class="pw-cart-item-info">
         <div class="pw-cart-item-nombre">${item.nombre}</div>
         <div class="pw-cart-item-opcion">${item.opcion}</div>
-        ${item.adiciones?.length ? `<div class="pw-cart-item-adiciones">${item.adiciones.map(a => a.nombre.replace('Adición ', '')).join(', ')}</div>` : ''}
+        ${item.adiciones?.length ? item.adiciones.map(a => `
+        <div class="pw-cart-item-adicion">
+          <span>${a.nombre}</span>
+          <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
+        </div>`).join('') : ''}
         ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
       </div>
       <div class="pw-cart-item-qty">
