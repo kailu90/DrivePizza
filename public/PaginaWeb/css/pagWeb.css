@@ -175,7 +175,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sedes-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .75rem;
+  gap: .5rem;
   padding: 4px;
 }
 @media (min-width: 600px) {
@@ -183,7 +183,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     display: flex;
     overflow-x: auto;
     grid-template-columns: unset;
-    padding: 4px 4px 8px;
+    gap: .5rem;
+    padding: 4px 6px 8px;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
