@@ -191,8 +191,8 @@ function renderProductos() {
 
     if (colapsable) {
       return `
-        <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="true">
-          <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="true">
+        <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="false">
+          <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="false">
             ${CAT_SHORT[cat] || cat}
             <span class="pw-cat-chevron" aria-hidden="true">▾</span>
           </button>
