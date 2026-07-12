@@ -129,6 +129,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: #284c22;
   padding: 0 1.5rem;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .pw-hero-logo {
   max-width: 100px;
