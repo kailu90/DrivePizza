@@ -136,7 +136,24 @@ function activarGrupo(grupoLabel, scroll) {
   });
 
   if (!scroll) return;
+
   const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
+
+  // Cerrar todos los acordeones abiertos
+  menuBody.querySelectorAll('.pw-cat-collapsible[data-open="true"]').forEach(sec => {
+    sec.dataset.open = 'false';
+    sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'false');
+  });
+
+  // Abrir las secciones del grupo seleccionado
+  (grupo?.cats || []).forEach(cat => {
+    const sec = document.getElementById('sec-' + cat.replace(/\s+/g, '-'));
+    if (sec) {
+      sec.dataset.open = 'true';
+      sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'true');
+    }
+  });
+
   const id = grupo?.cats[0]
     ? 'sec-' + grupo.cats[0].replace(/\s+/g, '-')
     : 'sec-Promociones';
