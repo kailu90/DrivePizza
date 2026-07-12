@@ -215,7 +215,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-nombre {
   font-family: var(--dp-font-brand);
-  font-size: 1.05rem;
+  font-size: .82rem;
   font-weight: 600;
   color: var(--dp-green);
   margin-bottom: .2rem;
