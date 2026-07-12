@@ -1427,15 +1427,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-banner-slide {
   min-width: 100%;
-  aspect-ratio: 16 / 5;
+  aspect-ratio: 16 / 4;
+  background: #284c22;
   overflow: hidden;
   border-radius: var(--dp-radius);
 }
 .pw-banner-slide img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: bottom;
+  object-fit: contain;
+  object-position: center;
   display: block;
   border-radius: var(--dp-radius);
 }
