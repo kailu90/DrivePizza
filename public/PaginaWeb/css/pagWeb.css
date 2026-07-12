@@ -1047,7 +1047,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-cats-page {
-  padding: 1.75rem 1rem 2.5rem;
+  padding: 1rem .75rem 1.5rem;
   max-width: 860px;
   margin: 0 auto;
   flex: 1;
@@ -1056,37 +1056,37 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cats-title {
   text-align: center;
   font-family: var(--dp-font-brand);
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--dp-dark);
-  margin-bottom: .35rem;
+  margin-bottom: .2rem;
 }
 
 .pw-cats-subtitle {
   text-align: center;
   color: #888;
-  font-size: .92rem;
-  margin-bottom: 1.75rem;
+  font-size: .8rem;
+  margin-bottom: 1rem;
 }
 
 .pw-cats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .6rem;
 }
 
 @media (min-width: 580px) {
-  .pw-cats-grid { grid-template-columns: repeat(3, 1fr); }
+  .pw-cats-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .pw-cat-card {
   background: #fff;
-  border-radius: var(--dp-radius-lg);
-  padding: 1.75rem 1rem 1.25rem;
+  border-radius: var(--dp-radius);
+  padding: .9rem .5rem .7rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .85rem;
+  gap: .5rem;
   box-shadow: var(--dp-shadow);
   cursor: pointer;
   border: 2px solid transparent;
@@ -1097,18 +1097,18 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cat-card:hover {
   border-color: var(--dp-orange);
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--dp-shadow-lg);
 }
 
 .pw-cat-img {
-  width: 100px;
-  height: 100px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.6rem;
+  font-size: 1.7rem;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -1121,11 +1121,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cat-name {
   font-family: var(--dp-font-ui);
-  font-size: .8rem;
+  font-size: .68rem;
   font-weight: 700;
   color: var(--dp-dark);
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .03em;
   text-align: center;
   line-height: 1.3;
 }
