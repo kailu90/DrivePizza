@@ -151,7 +151,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-selector-section {
-  padding: 0 1.25rem 1.5rem;
+  padding: 0 .5rem 1.5rem;
   max-width: 720px;
   margin: 0 auto;
   flex: 1;
@@ -182,7 +182,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: var(--dp-radius);
   padding: .85rem 1rem;
   border: 2px solid transparent;
-  min-width: 148px;
+  min-width: 110px;
   flex-shrink: 0;
   scroll-snap-align: start;
   cursor: pointer;
