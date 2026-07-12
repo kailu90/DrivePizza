@@ -29,7 +29,6 @@ const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
-const subcatsNav        = document.getElementById('subcats-nav');
 const cartBar           = document.getElementById('cart-bar');
 const cartBadge         = document.getElementById('cart-badge');
 const cartBarItems      = document.getElementById('cart-bar-items');
@@ -81,8 +80,6 @@ function init() {
   // Scroll a la categoría elegida en la página anterior
   const catParam = new URLSearchParams(location.search).get('cat');
   if (catParam && catParam !== 'null') {
-    const grupoLabel = CAT_TO_GRUPO[catParam] || catParam;
-    activarGrupo(grupoLabel, false);
     setTimeout(() => scrollToSection('sec-' + catParam.replace(/\s+/g, '-')), 80);
   }
 }
@@ -123,31 +120,12 @@ const CATS_COLAPSABLES = new Set(
 function scrollToSection(id) {
   const sec = document.getElementById(id);
   if (!sec) return;
-  // Auto-expandir si está colapsado
   if (sec.dataset.open === 'false') {
     sec.dataset.open = 'true';
     sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'true');
   }
-  const subcatsH = (subcatsNav.style.display !== 'none' && subcatsNav.innerHTML)
-    ? subcatsNav.offsetHeight : 0;
-  const offset = 70 + catsNav.offsetHeight + subcatsH + 4;
+  const offset = 70 + catsNav.offsetHeight + 4;
   window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
-}
-
-function _renderSubcats(grupo, grupoLabel) {
-  subcatsNav.innerHTML = grupo.cats.map((cat, i) =>
-    `<button class="pw-cat-pill${i === 0 ? ' active' : ''}" data-cat="${cat}">${CAT_SHORT[cat] || cat}</button>`
-  ).join('');
-  subcatsNav.style.display = 'flex';
-  subcatsNav.dataset.grupo = grupoLabel;
-
-  subcatsNav.querySelectorAll('.pw-cat-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      subcatsNav.querySelectorAll('.pw-cat-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      scrollToSection('sec-' + pill.dataset.cat.replace(/\s+/g, '-'));
-    });
-  });
 }
 
 function activarGrupo(grupoLabel, scroll) {
@@ -157,23 +135,12 @@ function activarGrupo(grupoLabel, scroll) {
     if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   });
 
+  if (!scroll) return;
   const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
-
-  if (!grupo || grupo.cats.length <= 1) {
-    subcatsNav.innerHTML = '';
-    subcatsNav.style.display = 'none';
-    subcatsNav.dataset.grupo = '';
-    if (scroll) {
-      const id = grupo?.cats[0]
-        ? 'sec-' + grupo.cats[0].replace(/\s+/g, '-')
-        : 'sec-Promociones';
-      scrollToSection(id);
-    }
-    return;
-  }
-
-  _renderSubcats(grupo, grupoLabel);
-  if (scroll) scrollToSection('sec-' + grupo.cats[0].replace(/\s+/g, '-'));
+  const id = grupo?.cats[0]
+    ? 'sec-' + grupo.cats[0].replace(/\s+/g, '-')
+    : 'sec-Promociones';
+  scrollToSection(id);
 }
 
 function renderCategorias() {
@@ -271,19 +238,6 @@ function renderProductos() {
         if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       });
 
-      const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
-      if (grupo && grupo.cats.length > 1) {
-        if (subcatsNav.dataset.grupo !== grupoLabel) _renderSubcats(grupo, grupoLabel);
-        subcatsNav.querySelectorAll('.pw-cat-pill').forEach(p => {
-          const activo = p.dataset.cat === catKey;
-          p.classList.toggle('active', activo);
-          if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        });
-      } else if (subcatsNav.innerHTML) {
-        subcatsNav.innerHTML = '';
-        subcatsNav.style.display = 'none';
-        subcatsNav.dataset.grupo = '';
-      }
     });
   }, { rootMargin: '-45% 0px -55% 0px' });
 
