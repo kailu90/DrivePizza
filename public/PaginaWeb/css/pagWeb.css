@@ -1407,8 +1407,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ════════════════════════════════════════════════════════════
    BANNER CARRUSEL
    ════════════════════════════════════════════════════════════ */
+.pw-banner-wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 .75rem 1.25rem;
+}
 .pw-banner {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0;
   border-radius: var(--dp-radius);
   overflow: hidden;
   position: relative;

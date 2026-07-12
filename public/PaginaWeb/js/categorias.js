@@ -4,67 +4,6 @@
 
 import { getSedeActual, displayNombre } from './sede.js';
 
-// ── BANNER ────────────────────────────────────────────────────
-// Para agregar piezas publicitarias: añade objetos { src, alt, href? } a este array.
-// src: ruta relativa desde PaginaWeb/ → '../Imagenes/banners/pieza1.jpg'
-// href: (opcional) enlace al hacer clic en el banner
-const BANNERS = [
-  { src: '../Imagenes/banners/banner1.png', alt: 'Drive Pizza' },
-];
-
-function initBanner() {
-  if (!BANNERS.length) return;
-
-  const wrapper = document.getElementById('pw-banner');
-  const track   = document.getElementById('pw-banner-track');
-  const dotsEl  = document.getElementById('pw-banner-dots');
-
-  // Renderizar slides
-  track.innerHTML = BANNERS.map(b => `
-    <div class="pw-banner-slide">
-      ${b.href
-        ? `<a href="${b.href}"><img src="${b.src}" alt="${b.alt ?? ''}"></a>`
-        : `<img src="${b.src}" alt="${b.alt ?? ''}">`}
-    </div>`).join('');
-
-  // Renderizar dots
-  dotsEl.innerHTML = BANNERS.map((_, i) =>
-    `<button class="pw-banner-dot${i === 0 ? ' active' : ''}" data-i="${i}" aria-label="Ir a banner ${i + 1}"></button>`
-  ).join('');
-
-  wrapper.style.display = '';
-
-  let current  = 0;
-  let timer    = null;
-  const dots   = dotsEl.querySelectorAll('.pw-banner-dot');
-
-  function goTo(idx) {
-    current = (idx + BANNERS.length) % BANNERS.length;
-    track.style.transform = `translateX(-${current * 100}%)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
-  }
-
-  function startAuto() {
-    timer = setInterval(() => goTo(current + 1), 4500);
-  }
-
-  function resetAuto() {
-    clearInterval(timer);
-    startAuto();
-  }
-
-  dots.forEach(d => d.addEventListener('click', () => { goTo(Number(d.dataset.i)); resetAuto(); }));
-
-  // Swipe táctil
-  let touchX = 0;
-  track.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
-  track.addEventListener('touchend', e => {
-    const delta = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(delta) > 40) { goTo(current + (delta < 0 ? 1 : -1)); resetAuto(); }
-  }, { passive: true });
-
-  if (BANNERS.length > 1) startAuto();
-}
 
 // nombre: texto visible | cat: sección del menú a la que scrollea
 // cat: null → abre menu.html desde el inicio
@@ -101,8 +40,6 @@ function init() {
         <div class="pw-cat-name">${nombre}</div>
       </a>`;
   }).join('');
-
-  initBanner();
 }
 
 init();
