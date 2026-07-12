@@ -137,6 +137,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
   margin: 0 auto;
 }
+@media (max-width: 599px) {
+  .pw-hero .pw-hero-logo { max-width: 70px; }
+}
 .pw-hero--sm {
   padding: 0 1.5rem;
 }
