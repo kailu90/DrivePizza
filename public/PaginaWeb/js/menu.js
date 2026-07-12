@@ -66,6 +66,19 @@ function init() {
   renderProductos();
   renderCarrito();
   setupListeners();
+
+  // Scroll a la categoría elegida en la página anterior
+  const catParam = new URLSearchParams(location.search).get('cat');
+  if (catParam) {
+    const id  = 'sec-' + catParam.replace(/\s+/g, '-');
+    const sec = document.getElementById(id);
+    if (sec) {
+      setTimeout(() => {
+        const offsetTop = sec.getBoundingClientRect().top + window.scrollY - 112;
+        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+      }, 80);
+    }
+  }
 }
 
 // ── RENDER CATEGORÍAS ─────────────────────────────────────────
