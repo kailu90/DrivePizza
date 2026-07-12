@@ -316,9 +316,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    MENU — CATEGORÍAS NAV
    ════════════════════════════════════════════════════════════ */
 
-.pw-cats {
+.pw-sede-strip {
   position: sticky;
   top: 70px;
+  z-index: 91;
+  background: #1e3a18;
+  color: rgba(244, 236, 223, .85);
+  font-size: .72rem;
+  font-family: var(--dp-font-ui);
+  text-align: center;
+  padding: .3rem 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.pw-cats {
+  position: sticky;
+  top: 96px; /* 70px header + 26px sede-strip */
   z-index: 90;
   background: var(--dp-mist);
   border-bottom: 1px solid rgba(0, 0, 0, .07);
