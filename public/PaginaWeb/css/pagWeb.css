@@ -1337,8 +1337,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .6rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+}
+
+@media (min-width: 420px) {
+  .pw-cats-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (min-width: 580px) {
@@ -1368,15 +1372,19 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-cat-img {
-  width: 62px;
-  height: 62px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.7rem;
+  font-size: 2rem;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+@media (min-width: 420px) {
+  .pw-cat-img { width: 62px; height: 62px; font-size: 1.7rem; }
 }
 
 .pw-cat-img img {
