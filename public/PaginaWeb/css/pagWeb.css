@@ -1408,9 +1408,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    BANNER CARRUSEL
    ════════════════════════════════════════════════════════════ */
 .pw-banner-wrapper {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 1rem .75rem 1.25rem;
+  padding: 1rem 0 1.25rem;
 }
 .pw-banner {
   margin-bottom: 0;
@@ -1424,7 +1422,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-banner-slide {
   min-width: 100%;
-  aspect-ratio: 16 / 8;
+  aspect-ratio: 16 / 6;
   overflow: hidden;
   border-radius: var(--dp-radius);
 }
