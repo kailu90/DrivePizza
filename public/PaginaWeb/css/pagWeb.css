@@ -125,16 +125,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-hero {
   background: var(--dp-green);
-  padding: 2.5rem 1.5rem 2.25rem;
+  padding: 1.5rem 1.5rem 1.25rem;
   text-align: center;
 }
 .pw-hero-logo {
-  height: 72px;
-  width: auto;
-  margin-bottom: .5rem;
+  height: 80px;
+  width: 80px;
+  border-radius: 18px;
   display: block;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto .5rem;
+  object-fit: cover;
 }
 .pw-tagline {
   font-size: .9rem;
@@ -143,16 +143,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-selector-section {
-  padding: 2rem 1.25rem 3rem;
+  padding: 1.25rem 1.25rem 1.5rem;
   max-width: 720px;
   margin: 0 auto;
 }
 .pw-selector-title {
   font-family: var(--dp-font-brand);
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--dp-dark);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: center;
 }
 
@@ -169,7 +169,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-card {
   background: var(--dp-mist);
   border-radius: var(--dp-radius);
-  padding: 1.25rem 1rem;
+  padding: .85rem 1rem;
   border: 2px solid transparent;
   cursor: pointer;
   transition: var(--dp-transition);
@@ -259,10 +259,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   min-width: 0;
 }
 .pw-header-logo {
-  height: 32px;
-  width: auto;
+  height: 36px;
+  width: 36px;
+  border-radius: 8px;
   display: block;
-  margin-bottom: .1rem;
+  object-fit: cover;
 }
 .pw-header-sede {
   font-size: .72rem;
@@ -1041,11 +1042,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── FOOTER ───────────────────────────────────────────────── */
 .pw-footer {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .25rem;
+  gap: .2rem;
 }
 .pw-footer-brand {
   font-family: var(--dp-font-brand);
