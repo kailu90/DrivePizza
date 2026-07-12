@@ -543,6 +543,7 @@ function renderCarrito() {
       <div class="pw-cart-item-info">
         <div class="pw-cart-item-nombre">${item.nombre}</div>
         <div class="pw-cart-item-opcion">${item.opcion}</div>
+        <div class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</div>
         ${item.adiciones?.length ? item.adiciones.map(a => `
         <div class="pw-cart-item-adicion">
           <span>${a.nombre}</span>

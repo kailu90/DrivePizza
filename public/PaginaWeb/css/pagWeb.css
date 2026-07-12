@@ -833,6 +833,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cart-item-info { flex: 1; min-width: 0; }
 .pw-cart-item-nombre { font-size: .88rem; font-weight: 600; }
 .pw-cart-item-opcion { font-size: .75rem; color: #888; }
+.pw-cart-item-base-precio { font-size: .78rem; color: #555; font-weight: 600; margin-top: .15rem; }
 .pw-cart-item-adicion {
   display: flex;
   justify-content: space-between;
