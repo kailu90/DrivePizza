@@ -128,15 +128,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: 2.5rem 1.5rem 2.25rem;
   text-align: center;
 }
-.pw-logo {
-  font-family: var(--dp-font-brand);
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--dp-sand);
-  letter-spacing: .06em;
-  margin-bottom: .35rem;
+.pw-hero-logo {
+  height: 72px;
+  width: auto;
+  margin-bottom: .5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
-.pw-logo span { color: var(--dp-orange); }
 .pw-tagline {
   font-size: .9rem;
   color: rgba(244, 236, 223, .7);
@@ -259,15 +258,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex: 1;
   min-width: 0;
 }
-.pw-header-brand-name {
-  font-family: var(--dp-font-brand);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--dp-sand);
-  letter-spacing: .04em;
-  line-height: 1.1;
+.pw-header-logo {
+  height: 32px;
+  width: auto;
+  display: block;
+  margin-bottom: .1rem;
 }
-.pw-header-brand-name span { color: var(--dp-orange); }
 .pw-header-sede {
   font-size: .72rem;
   color: rgba(244, 236, 223, .7);
@@ -1045,8 +1041,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── FOOTER ───────────────────────────────────────────────── */
 .pw-footer {
   text-align: center;
-  padding: 1.5rem;
-  font-size: .74rem;
-  color: #bbb;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .25rem;
 }
-.pw-footer a { color: var(--dp-leaf); }
+.pw-footer-brand {
+  font-family: var(--dp-font-brand);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dp-green);
+  letter-spacing: .04em;
+}
+.pw-footer-slogan {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--dp-orange);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
