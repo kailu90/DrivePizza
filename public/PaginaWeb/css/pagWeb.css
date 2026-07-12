@@ -146,6 +146,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-banner-wrapper { padding: .5rem .75rem .5rem; }
   .pw-selector-section { overflow-y: auto; padding-bottom: .5rem; -webkit-overflow-scrolling: touch; }
   .pw-selector-title { margin-bottom: .5rem; }
+  .pw-footer { padding: .5rem 1rem; }
 }
 .pw-hero--sm {
   padding: 0 1.5rem;
