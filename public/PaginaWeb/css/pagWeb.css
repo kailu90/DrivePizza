@@ -195,6 +195,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   transform: translateY(-2px);
   box-shadow: var(--dp-shadow-lg);
 }
+@media (min-width: 600px) {
+  .pw-sede-card { flex: 1; min-width: 0; }
+}
 .pw-sede-card--cerrada {
   opacity: .5;
   cursor: not-allowed;
