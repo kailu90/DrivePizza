@@ -540,23 +540,25 @@ function renderCarrito() {
     const subtotal = (item.precio + getTotalAdiciones(item)) * item.cantidad;
     return `
     <div class="pw-cart-item">
-      <div class="pw-cart-item-info">
-        <div class="pw-cart-item-nombre">${item.nombre}</div>
-        <div class="pw-cart-item-opcion">${item.opcion}</div>
-        <div class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</div>
-        ${item.adiciones?.length ? item.adiciones.map(a => `
-        <div class="pw-cart-item-adicion">
-          <span>${a.nombre}</span>
-          <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
-        </div>`).join('') : ''}
-        ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
+      <div class="pw-cart-item-nombre">${item.nombre}</div>
+      <div class="pw-cart-item-row">
+        <span class="pw-cart-item-opcion">${item.opcion}</span>
+        <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
       </div>
-      <div class="pw-cart-item-qty">
-        <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
-        <span class="pw-cart-qty-num">${item.cantidad}</span>
-        <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+      ${item.adiciones?.length ? item.adiciones.map(a => `
+      <div class="pw-cart-item-adicion">
+        <span>${a.nombre}</span>
+        <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
+      </div>`).join('') : ''}
+      ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
+      <div class="pw-cart-item-footer">
+        <div class="pw-cart-item-qty">
+          <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
+          <span class="pw-cart-qty-num">${item.cantidad}</span>
+          <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+        </div>
+        <div class="pw-cart-item-precio">${formatPrecio(subtotal)}</div>
       </div>
-      <div class="pw-cart-item-precio">${formatPrecio(subtotal)}</div>
     </div>`;
   }).join('');
 
