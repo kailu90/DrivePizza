@@ -323,16 +323,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: rgba(255, 255, 255, .1);
   border: 1px solid rgba(255, 255, 255, .2);
   border-radius: 99px;
-  color: rgba(244, 236, 223, .65);
-  font-size: .52rem;
+  color: rgba(244, 236, 223, .7);
+  font-size: .55rem;
   font-family: var(--dp-font-ui);
   font-weight: 500;
   letter-spacing: .04em;
   text-transform: uppercase;
   padding: .12rem .5rem;
   white-space: nowrap;
-  align-self: flex-end;
-  margin-bottom: .35rem;
 }
 
 .pw-cats {
