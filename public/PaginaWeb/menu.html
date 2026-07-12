@@ -64,6 +64,11 @@
       <div class="pw-opciones" id="sheet-opciones"></div>
     </div>
 
+    <!-- ½+½ MEZCLAR SABORES (solo pizzas con tamaño mixable) -->
+    <div id="sheet-mezcla-wrap" style="display:none">
+      <button class="pw-btn-mezcla" id="btn-mezcla">½+½ &nbsp; Mezclar con otro sabor</button>
+    </div>
+
     <!-- ADICIONES Y BORDES (solo productos adicionables) -->
     <div id="sheet-adiciones-wrap" style="display:none">
       <span class="pw-sheet-label">Adiciones <span class="pw-label-opt">(opcional)</span></span>
@@ -97,6 +102,16 @@
     </div>
     <div id="cart-items-list"></div>
     <div id="cart-footer"></div>
+  </div>
+
+  <!-- SHEET: SEGUNDO SABOR -->
+  <div class="pw-sheet pw-sabor2-sheet" id="sabor2-sheet" role="dialog" aria-modal="true" aria-label="Elegir 2° sabor">
+    <div class="pw-sheet-handle"></div>
+    <button class="pw-sheet-close" id="btn-cerrar-sabor2" aria-label="Cerrar">&#10005;</button>
+    <h3 class="pw-sheet-nombre" id="sabor2-titulo"></h3>
+    <p class="pw-sheet-desc" id="sabor2-subtitulo"></p>
+    <input type="text" class="pw-sabor2-buscar" id="sabor2-buscar" placeholder="Buscar sabor..." autocomplete="off">
+    <div id="sabor2-grid" class="pw-sabor2-grid"></div>
   </div>
 
   <script type="module" src="js/menu.js"></script>

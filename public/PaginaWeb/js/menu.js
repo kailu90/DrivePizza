@@ -6,12 +6,16 @@ import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede
 import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
 
+// Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
+const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
+
 // ── ESTADO ────────────────────────────────────────────────────
 let productoActivo         = null;
 let cantActual             = 1;
 let opcionActiva           = null;
 let adicionesSeleccionadas = [];
 let bordeSeleccionado      = null;
+let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede        = document.getElementById('header-sede');
@@ -22,6 +26,7 @@ const closedMsg         = document.getElementById('closed-msg');
 const overlay           = document.getElementById('overlay');
 const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
+const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const cartBar           = document.getElementById('cart-bar');
 const cartBadge         = document.getElementById('cart-badge');
 const cartBarItems      = document.getElementById('cart-bar-items');
@@ -30,6 +35,7 @@ const sheetNombre       = document.getElementById('sheet-nombre');
 const sheetDesc         = document.getElementById('sheet-desc');
 const sheetOpcionesWrap = document.getElementById('sheet-opciones-wrap');
 const sheetOpciones     = document.getElementById('sheet-opciones');
+const sheetMezclaWrap   = document.getElementById('sheet-mezcla-wrap');
 const sheetAdicionesWrap= document.getElementById('sheet-adiciones-wrap');
 const sheetAdicionesEl  = document.getElementById('sheet-adiciones');
 const sheetBordesWrap   = document.getElementById('sheet-bordes-wrap');
@@ -37,6 +43,10 @@ const sheetBordesEl     = document.getElementById('sheet-bordes');
 const cantNum           = document.getElementById('cant-num');
 const sheetObs          = document.getElementById('sheet-obs');
 const btnAgregar        = document.getElementById('btn-agregar');
+const sabor2Titulo      = document.getElementById('sabor2-titulo');
+const sabor2Subtitulo   = document.getElementById('sabor2-subtitulo');
+const sabor2Buscar      = document.getElementById('sabor2-buscar');
+const sabor2Grid        = document.getElementById('sabor2-grid');
 
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
@@ -142,6 +152,7 @@ function abrirProductSheet(producto) {
   opcionActiva           = null;
   adicionesSeleccionadas = [];
   bordeSeleccionado      = null;
+  mezclaState            = null;
   sheetObs.value         = '';
 
   sheetNombre.textContent = producto.nombre;
@@ -172,7 +183,9 @@ function abrirProductSheet(producto) {
         cantActual             = 1;
         adicionesSeleccionadas = [];
         bordeSeleccionado      = null;
+        mezclaState            = null;
         cantNum.textContent    = cantActual;
+        actualizarMezclaBtn();
         renderAdicionesSection();
         actualizarBtnAgregar();
       });
@@ -180,9 +193,103 @@ function abrirProductSheet(producto) {
   }
 
   cantNum.textContent = cantActual;
+  actualizarMezclaBtn();
   renderAdicionesSection();
   actualizarBtnAgregar();
   abrirSheet(productSheet);
+}
+
+// ── BOTÓN ½+½ ─────────────────────────────────────────────────
+function actualizarMezclaBtn() {
+  const esPizza = productoActivo && CATS_PIZZAS.includes(productoActivo.categoria);
+  const mixable = esPizza && opcionActiva && TAMANOS_MIXABLES.has(opcionActiva.nombre);
+  sheetMezclaWrap.style.display = mixable ? '' : 'none';
+}
+
+function abrirSegundoSabor() {
+  if (!opcionActiva || !productoActivo) return;
+
+  const sabor1  = productoActivo;
+  const tamano  = opcionActiva.nombre;
+  const precio1 = opcionActiva.precio;
+
+  // Reúne todos los sabores de pizza (excluye Pizzetas) que tengan ese tamaño
+  const llavesPizzas = CATS_PIZZAS.filter(k => k !== 'Pizzetas Premium');
+  let todosSabores = [];
+  llavesPizzas.forEach(key => {
+    if (menuData[key]) {
+      todosSabores = [...todosSabores, ...menuData[key].map(p => ({ ...p, categoria: key }))];
+    }
+  });
+
+  const saboresDisponibles = todosSabores.filter(s =>
+    s.nombre !== sabor1.nombre && s.opciones[tamano] !== undefined
+  );
+
+  mezclaState = { saboresDisponibles, sabor1, tamano, precio1 };
+
+  sabor2Titulo.textContent    = `½ ${sabor1.nombre}`;
+  sabor2Subtitulo.textContent = `${tamano} · Elige el 2° sabor`;
+  sabor2Buscar.value          = '';
+  renderSabores2('');
+
+  abrirSheet(sabor2Sheet);
+  setTimeout(() => sabor2Buscar.focus(), 150);
+}
+
+function renderSabores2(filtro) {
+  if (!mezclaState) return;
+  const { saboresDisponibles, sabor1, tamano, precio1 } = mezclaState;
+
+  const filtrados = filtro
+    ? saboresDisponibles.filter(s => s.nombre.toLowerCase().includes(filtro.toLowerCase()))
+    : saboresDisponibles;
+
+  if (!filtrados.length) {
+    sabor2Grid.innerHTML = '<p class="pw-sabor2-vacio">No se encontraron sabores.</p>';
+    return;
+  }
+
+  sabor2Grid.innerHTML = filtrados.map(s => {
+    const precio2     = s.opciones[tamano];
+    const precioFinal = Math.max(precio1, precio2);
+    return `<button class="pw-sabor2-btn"
+                    data-nombre="${s.nombre}"
+                    data-precio2="${precio2}"
+                    data-estofada="${!!s.esEstofada}">
+               <span class="pw-sabor2-nombre">${s.nombre}</span>
+               <span class="pw-sabor2-precio">${formatPrecio(precioFinal)}</span>
+             </button>`;
+  }).join('');
+
+  sabor2Grid.querySelectorAll('.pw-sabor2-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { sabor1, tamano, precio1 } = mezclaState;
+      const precio2     = Number(btn.dataset.precio2);
+      const precioFinal = Math.max(precio1, precio2);
+      const esEstofada2 = btn.dataset.estofada === 'true';
+      const esEstofadaFinal = !!(sabor1.esEstofada || esEstofada2);
+
+      // Adiciones seleccionadas; borde solo si ninguno de los 2 sabores es estofado
+      const todasAdiciones = [...adicionesSeleccionadas];
+      if (bordeSeleccionado && !esEstofadaFinal) todasAdiciones.push(bordeSeleccionado);
+
+      agregarItem({
+        nombre:       `${sabor1.nombre} y mitad ${btn.dataset.nombre}`,
+        categoria:    sabor1.categoria,
+        opcion:       tamano,
+        precio:       precioFinal,
+        obs:          sheetObs.value.trim(),
+        adiciones:    todasAdiciones,
+        esAdicionable: true,
+        esEstofada:   esEstofadaFinal,
+      });
+
+      mezclaState = null;
+      cerrarTodo();
+      renderCarrito();
+    });
+  });
 }
 
 // ── ADICIONES Y BORDES ────────────────────────────────────────
@@ -201,8 +308,7 @@ function renderAdicionesSection() {
 
   sheetAdicionesWrap.style.display = '';
 
-  // Adiciones disponibles para este tamaño/categoría
-  const adicionesData       = menuData['Adiciones'] || [];
+  const adicionesData        = menuData['Adiciones'] || [];
   const adicionesDisponibles = adicionesData
     .map(a => {
       const precio = a.opciones[tamanoRaw];
@@ -354,7 +460,9 @@ function abrirSheet(sheet) {
 
 function cerrarSheet(sheet) {
   sheet.classList.remove('open');
-  if (!productSheet.classList.contains('open') && !cartSheet.classList.contains('open')) {
+  if (!productSheet.classList.contains('open') &&
+      !cartSheet.classList.contains('open') &&
+      !sabor2Sheet.classList.contains('open')) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -363,6 +471,7 @@ function cerrarSheet(sheet) {
 function cerrarTodo() {
   productSheet.classList.remove('open');
   cartSheet.classList.remove('open');
+  sabor2Sheet.classList.remove('open');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -376,6 +485,7 @@ function setupListeners() {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
   });
 
+  // Agregar normal al carrito
   btnAgregar.addEventListener('click', () => {
     if (!opcionActiva) return;
     const todasAdiciones = [...adicionesSeleccionadas];
@@ -394,13 +504,24 @@ function setupListeners() {
     renderCarrito();
   });
 
+  // ½+½ mezcla
+  document.getElementById('btn-mezcla').addEventListener('click', abrirSegundoSabor);
+  document.getElementById('btn-cerrar-sabor2').addEventListener('click', () => cerrarSheet(sabor2Sheet));
+  sabor2Buscar.addEventListener('input', () => renderSabores2(sabor2Buscar.value));
+
+  // Cerrar sheets
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
   document.getElementById('btn-cerrar-carrito').addEventListener('click', () => cerrarSheet(cartSheet));
+
+  // Abrir carrito
   document.getElementById('btn-abrir-carrito').addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('btn-cart-bar').addEventListener('click', () => abrirSheet(cartSheet));
+
+  // Overlay cierra todo
   overlay.addEventListener('click', cerrarTodo);
 
-  [productSheet, cartSheet].forEach(sheet => {
+  // Swipe hacia abajo cierra sheet (UX móvil)
+  [productSheet, cartSheet, sabor2Sheet].forEach(sheet => {
     let startY = 0;
     sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
     sheet.addEventListener('touchend', e => {

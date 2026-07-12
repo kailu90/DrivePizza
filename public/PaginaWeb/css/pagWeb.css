@@ -495,6 +495,65 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   margin-left: .15rem;
 }
 
+/* Botón ½+½ mezcla de sabores */
+.pw-btn-mezcla {
+  width: 100%;
+  padding: .65rem 1rem;
+  border: 2px dashed var(--dp-green);
+  border-radius: var(--dp-radius);
+  color: var(--dp-green);
+  font-size: .88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  margin-bottom: 1.1rem;
+  background: rgba(49, 75, 39, .04);
+  transition: var(--dp-transition);
+  font-family: var(--dp-font-ui);
+  cursor: pointer;
+}
+.pw-btn-mezcla:hover { background: rgba(49, 75, 39, .1); }
+
+/* Sheet segundo sabor */
+.pw-sabor2-sheet { max-height: 92dvh; }
+
+.pw-sabor2-buscar {
+  width: 100%;
+  padding: .65rem .9rem;
+  border: 1.5px solid rgba(0, 0, 0, .14);
+  border-radius: var(--dp-radius);
+  font-size: .9rem;
+  background: var(--dp-mist);
+  color: var(--dp-dark);
+  margin-bottom: .85rem;
+  font-family: var(--dp-font-ui);
+  transition: border-color var(--dp-transition);
+}
+.pw-sabor2-buscar:focus { outline: none; border-color: var(--dp-green); }
+
+.pw-sabor2-grid { display: flex; flex-direction: column; gap: .4rem; }
+
+.pw-sabor2-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .7rem 1rem;
+  border: 1.5px solid rgba(0, 0, 0, .1);
+  border-radius: var(--dp-radius);
+  background: var(--dp-mist);
+  cursor: pointer;
+  font-family: var(--dp-font-ui);
+  transition: var(--dp-transition);
+  text-align: left;
+  width: 100%;
+}
+.pw-sabor2-btn:hover { border-color: var(--dp-orange); background: rgba(230, 115, 24, .04); }
+.pw-sabor2-nombre { font-size: .88rem; font-weight: 600; color: var(--dp-dark); }
+.pw-sabor2-precio { font-size: .82rem; font-weight: 700; color: var(--dp-green); flex-shrink: 0; padding-left: .5rem; }
+.pw-sabor2-vacio { text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
+
 /* Adiciones y Bordes */
 .pw-adiciones-grid {
   display: flex;
