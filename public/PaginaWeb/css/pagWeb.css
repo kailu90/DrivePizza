@@ -820,10 +820,39 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-checkout-main {
-  max-width: 540px;
-  margin: 0 auto;
-  padding: .5rem .75rem 6rem;
+  height: calc(100vh - 70px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pw-checkout-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  padding: .5rem .75rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pw-checkout-col {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: .15rem;
+}
+
+.pw-checkout-col--right {
+  overflow-y: hidden;
+}
+
+.pw-checkout-items-section {
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
 }
 
 /* Secciones */
@@ -1001,16 +1030,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 
-/* Barra de confirmación fija */
-.pw-confirm-bar {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #fff;
-  padding: .9rem 1.25rem calc(.9rem + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -2px 12px rgba(0,0,0,.1);
-  z-index: 100;
-}
-.pw-btn-confirmar { border-radius: var(--dp-radius); font-size: 1rem; font-weight: 700; }
+.pw-btn-confirmar { border-radius: var(--dp-radius); font-size: .9rem; font-weight: 700; }
 .pw-confirm-error {
   color: #e74c3c;
   font-size: .8rem;
