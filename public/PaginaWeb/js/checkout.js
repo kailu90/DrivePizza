@@ -215,8 +215,7 @@ async function confirmarPedido() {
 
     // Armar productos en formato compatible con pedidos_callcenter
     const productos = carrito.map(item => ({
-      nombre: item.nombre,
-      opcion: item.opcion,
+      nombre: item.opcion ? `${item.nombre} (${item.opcion})` : item.nombre,
       precio: item.precio,
       qty:    item.cantidad,
       obs:    item.obs || '',
