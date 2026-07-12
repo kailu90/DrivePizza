@@ -3,8 +3,9 @@
    ============================================================ */
 
 import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
-import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio } from './carrito.js';
+import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
+import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
@@ -27,6 +28,7 @@ const overlay           = document.getElementById('overlay');
 const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
+const promoSheet        = document.getElementById('promo-sheet');
 const cartBar           = document.getElementById('cart-bar');
 const cartBadge         = document.getElementById('cart-badge');
 const cartBarItems      = document.getElementById('cart-bar-items');
@@ -62,6 +64,14 @@ function init() {
     closedBanner.style.display = '';
   }
 
+  initPromos({
+    pushItem,
+    renderCarrito,
+    abrirSheet,
+    cerrarSheet: () => cerrarSheet(promoSheet),
+    promoSheet,
+  });
+
   renderCategorias();
   renderProductos();
   renderCarrito();
@@ -82,8 +92,10 @@ function init() {
 }
 
 // ── RENDER CATEGORÍAS ─────────────────────────────────────────
+const CATS_OCULTAS = new Set(['Adiciones', 'Bordes']);
+
 function renderCategorias() {
-  const cats = Object.keys(menuData);
+  const cats = ['Promociones', ...Object.keys(menuData).filter(c => !CATS_OCULTAS.has(c))];
   catsNav.innerHTML = cats.map(cat =>
     `<button class="pw-cat-pill" data-cat="${cat}">${cat}</button>`
   ).join('');
@@ -103,7 +115,13 @@ function renderCategorias() {
 
 // ── RENDER PRODUCTOS ──────────────────────────────────────────
 function renderProductos() {
-  menuBody.innerHTML = Object.entries(menuData).map(([cat, productos]) => {
+  const promoSection = `
+    <section class="pw-cat-section" id="sec-Promociones">
+      <h3 class="pw-cat-section-title">Promociones</h3>
+      <div class="pw-promo-list" id="promo-list">${getPromosHTML()}</div>
+    </section>`;
+
+  menuBody.innerHTML = promoSection + Object.entries(menuData).filter(([cat]) => !CATS_OCULTAS.has(cat)).map(([cat, productos]) => {
     const secId = 'sec-' + cat.replace(/\s+/g, '-');
     return `
       <section class="pw-cat-section" id="${secId}">
@@ -156,6 +174,8 @@ function renderProductos() {
   }, { rootMargin: '-45% 0px -55% 0px' });
 
   menuBody.querySelectorAll('.pw-cat-section').forEach(sec => observer.observe(sec));
+
+  setupPromoListeners(document.getElementById('promo-list'));
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
@@ -475,7 +495,8 @@ function cerrarSheet(sheet) {
   sheet.classList.remove('open');
   if (!productSheet.classList.contains('open') &&
       !cartSheet.classList.contains('open') &&
-      !sabor2Sheet.classList.contains('open')) {
+      !sabor2Sheet.classList.contains('open') &&
+      !promoSheet.classList.contains('open')) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -485,6 +506,7 @@ function cerrarTodo() {
   productSheet.classList.remove('open');
   cartSheet.classList.remove('open');
   sabor2Sheet.classList.remove('open');
+  promoSheet.classList.remove('open');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -525,6 +547,7 @@ function setupListeners() {
   // Cerrar sheets
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
   document.getElementById('btn-cerrar-carrito').addEventListener('click', () => cerrarSheet(cartSheet));
+  document.getElementById('btn-cerrar-promo').addEventListener('click', () => cerrarSheet(promoSheet));
 
   // Abrir carrito
   document.getElementById('btn-abrir-carrito').addEventListener('click', () => abrirSheet(cartSheet));
@@ -534,7 +557,7 @@ function setupListeners() {
   overlay.addEventListener('click', cerrarTodo);
 
   // Swipe hacia abajo cierra sheet (UX móvil)
-  [productSheet, cartSheet, sabor2Sheet].forEach(sheet => {
+  [productSheet, cartSheet, sabor2Sheet, promoSheet].forEach(sheet => {
     let startY = 0;
     sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
     sheet.addEventListener('touchend', e => {

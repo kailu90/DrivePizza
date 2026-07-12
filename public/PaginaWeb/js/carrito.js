@@ -72,6 +72,16 @@ export function vaciarCarrito() {
   localStorage.removeItem(KEY);
 }
 
+/**
+ * Push directo sin lógica de merge — para ítems de promo.
+ */
+export function pushItem(item) {
+  const carrito = getCarrito();
+  carrito.push({ cantidad: 1, opcion: '', obs: '', adiciones: [], ...item });
+  setCarrito(carrito);
+  return carrito;
+}
+
 // ── CÁLCULOS ───────────────────────────────────────────────────
 
 /** Precio total de las adiciones de un ítem. */
