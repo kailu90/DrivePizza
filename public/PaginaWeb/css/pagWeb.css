@@ -855,6 +855,53 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   scrollbar-width: thin;
 }
 
+/* ── CHECKOUT MOBILE ──────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .pw-checkout-main {
+    height: auto;
+    overflow: visible;
+  }
+  .pw-checkout-cols {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+    padding-bottom: 5rem; /* espacio para botón fijo */
+  }
+  .pw-checkout-col,
+  .pw-checkout-col--right {
+    overflow-y: visible;
+  }
+  .pw-checkout-col--right {
+    order: -1; /* resumen arriba en mobile */
+  }
+  .pw-checkout-items-section {
+    flex: none;
+    overflow-y: visible;
+    min-height: 0;
+  }
+  /* Botón confirmar fijo al fondo */
+  .pw-btn-confirmar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    padding: .85rem 1.25rem calc(.85rem + env(safe-area-inset-bottom, 0px));
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.12);
+  }
+  .pw-confirm-error {
+    position: fixed;
+    bottom: 3.2rem;
+    left: 0;
+    right: 0;
+    z-index: 201;
+    background: rgba(255,255,255,.95);
+    text-align: center;
+    padding: .3rem .75rem;
+  }
+}
+
 /* Secciones */
 .pw-checkout-section {
   background: #fff;
