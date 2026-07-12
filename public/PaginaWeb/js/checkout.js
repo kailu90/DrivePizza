@@ -4,7 +4,7 @@
 
 import { supabase } from '../../Api/supabaseConfig.js';
 import { getSedeActual, displayNombre } from './sede.js';
-import { getCarrito, getTotal, vaciarCarrito, formatPrecio } from './carrito.js';
+import { getCarrito, getTotal, getTotalAdiciones, vaciarCarrito, formatPrecio } from './carrito.js';
 import { domicilios } from '../../CallCenter/domicilios.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
@@ -56,15 +56,19 @@ function init() {
 // ── RESUMEN ───────────────────────────────────────────────────
 function renderResumen() {
   const carrito = getCarrito();
-  summaryItems.innerHTML = carrito.map(item => `
+  summaryItems.innerHTML = carrito.map(item => {
+    const subtotal = (item.precio + getTotalAdiciones(item)) * item.cantidad;
+    return `
     <div class="pw-summary-item">
       <div class="pw-summary-item-info">
         <span class="pw-summary-item-nombre">${item.cantidad}× ${item.nombre}</span>
         <span class="pw-summary-item-opcion">${item.opcion}</span>
+        ${item.adiciones?.length ? `<span class="pw-summary-item-opcion" style="color:var(--dp-orange)">${item.adiciones.map(a => a.nombre.replace('Adición ', '')).join(', ')}</span>` : ''}
         ${item.obs ? `<span class="pw-summary-item-obs">"${item.obs}"</span>` : ''}
       </div>
-      <span class="pw-summary-item-precio">${formatPrecio(item.precio * item.cantidad)}</span>
-    </div>`).join('');
+      <span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span>
+    </div>`;
+  }).join('');
   summarySubtotal.innerHTML = `<span>Subtotal</span><span>${formatPrecio(getTotal())}</span>`;
   summaryTotalPrev.textContent = formatPrecio(getTotal());
 }
@@ -214,12 +218,18 @@ async function confirmarPedido() {
     if (rpcError) throw new Error('Error obteniendo número de pedido: ' + rpcError.message);
 
     // Armar productos en formato compatible con pedidos_callcenter
-    const productos = carrito.map(item => ({
-      nombre: item.opcion ? `${item.nombre} (${item.opcion})` : item.nombre,
-      precio: item.precio,
-      qty:    item.cantidad,
-      obs:    item.obs || '',
-    }));
+    const productos = carrito.map(item => {
+      const prod = {
+        nombre: item.opcion ? `${item.nombre} (${item.opcion})` : item.nombre,
+        precio: item.precio,
+        qty:    item.cantidad,
+        obs:    item.obs || '',
+      };
+      if (item.adiciones?.length) {
+        prod.adiciones = item.adiciones.map(a => ({ nombre: a.nombre, precio: a.precio, qty: 1 }));
+      }
+      return prod;
+    });
 
     // Armar domicilio
     let domicilioObj;

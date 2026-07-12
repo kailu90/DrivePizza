@@ -19,17 +19,25 @@ function setCarrito(items) {
 
 /**
  * Agrega un ítem al carrito.
- * Si ya existe el mismo producto + opción, incrementa la cantidad.
- * @param {{ nombre, categoria, opcion, precio, obs }} item
+ * Solo fusiona con existente si mismo nombre+opcion Y sin adiciones en ambos.
+ * @param {{ nombre, categoria, opcion, precio, obs, adiciones, esAdicionable, esEstofada }} item
  */
-export function agregarItem({ nombre, categoria, opcion, precio, obs = '' }) {
+export function agregarItem({ nombre, categoria, opcion, precio, obs = '', adiciones = [], esAdicionable = false, esEstofada = false }) {
   const carrito = getCarrito();
-  const idx = carrito.findIndex(i => i.nombre === nombre && i.opcion === opcion);
-  if (idx >= 0) {
-    carrito[idx].cantidad++;
-  } else {
-    carrito.push({ nombre, categoria, opcion, precio, cantidad: 1, obs });
+
+  // Fusionar solo si no hay adiciones (ni en el nuevo ni en el existente)
+  if (adiciones.length === 0) {
+    const idx = carrito.findIndex(i =>
+      i.nombre === nombre && i.opcion === opcion && (!i.adiciones || i.adiciones.length === 0)
+    );
+    if (idx >= 0) {
+      carrito[idx].cantidad++;
+      setCarrito(carrito);
+      return carrito;
+    }
   }
+
+  carrito.push({ nombre, categoria, opcion, precio, cantidad: 1, obs, adiciones, esAdicionable, esEstofada });
   setCarrito(carrito);
   return carrito;
 }
@@ -37,8 +45,6 @@ export function agregarItem({ nombre, categoria, opcion, precio, obs = '' }) {
 /**
  * Actualiza la cantidad de un ítem por índice.
  * Si la cantidad llega a 0, elimina el ítem.
- * @param {number} idx
- * @param {number} delta  +1 o -1
  */
 export function actualizarCantidad(idx, delta) {
   const carrito = getCarrito();
@@ -68,9 +74,15 @@ export function vaciarCarrito() {
 
 // ── CÁLCULOS ───────────────────────────────────────────────────
 
-/** Suma total del carrito en pesos. */
+/** Precio total de las adiciones de un ítem. */
+export function getTotalAdiciones(item) {
+  return (item.adiciones || []).reduce((s, a) => s + a.precio, 0);
+}
+
+/** Suma total del carrito incluyendo adiciones. */
 export function getTotal() {
-  return getCarrito().reduce((sum, i) => sum + i.precio * i.cantidad, 0);
+  return getCarrito().reduce((sum, item) =>
+    sum + (item.precio + getTotalAdiciones(item)) * item.cantidad, 0);
 }
 
 /** Número total de unidades en el carrito. */

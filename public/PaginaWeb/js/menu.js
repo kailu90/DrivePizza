@@ -3,46 +3,50 @@
    ============================================================ */
 
 import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
-import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, formatPrecio } from './carrito.js';
-import { menuData } from './menuData.js';
+import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio } from './carrito.js';
+import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
-let productoActivo = null;
-let cantActual     = 1;
-let opcionActiva   = null;
+let productoActivo         = null;
+let cantActual             = 1;
+let opcionActiva           = null;
+let adicionesSeleccionadas = [];
+let bordeSeleccionado      = null;
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
-const headerSede       = document.getElementById('header-sede');
-const catsNav          = document.getElementById('cats-nav');
-const menuBody         = document.getElementById('menu-body');
-const closedBanner     = document.getElementById('closed-banner');
-const closedMsg        = document.getElementById('closed-msg');
-const overlay          = document.getElementById('overlay');
-const productSheet     = document.getElementById('product-sheet');
-const cartSheet        = document.getElementById('cart-sheet');
-const cartBar          = document.getElementById('cart-bar');
-const cartBadge        = document.getElementById('cart-badge');
-const cartBarItems     = document.getElementById('cart-bar-items');
-const cartBarTotal     = document.getElementById('cart-bar-total');
-const sheetNombre      = document.getElementById('sheet-nombre');
-const sheetDesc        = document.getElementById('sheet-desc');
-const sheetOpcionesWrap= document.getElementById('sheet-opciones-wrap');
-const sheetOpciones    = document.getElementById('sheet-opciones');
-const cantNum          = document.getElementById('cant-num');
-const sheetObs         = document.getElementById('sheet-obs');
-const btnAgregar       = document.getElementById('btn-agregar');
+const headerSede        = document.getElementById('header-sede');
+const catsNav           = document.getElementById('cats-nav');
+const menuBody          = document.getElementById('menu-body');
+const closedBanner      = document.getElementById('closed-banner');
+const closedMsg         = document.getElementById('closed-msg');
+const overlay           = document.getElementById('overlay');
+const productSheet      = document.getElementById('product-sheet');
+const cartSheet         = document.getElementById('cart-sheet');
+const cartBar           = document.getElementById('cart-bar');
+const cartBadge         = document.getElementById('cart-badge');
+const cartBarItems      = document.getElementById('cart-bar-items');
+const cartBarTotal      = document.getElementById('cart-bar-total');
+const sheetNombre       = document.getElementById('sheet-nombre');
+const sheetDesc         = document.getElementById('sheet-desc');
+const sheetOpcionesWrap = document.getElementById('sheet-opciones-wrap');
+const sheetOpciones     = document.getElementById('sheet-opciones');
+const sheetAdicionesWrap= document.getElementById('sheet-adiciones-wrap');
+const sheetAdicionesEl  = document.getElementById('sheet-adiciones');
+const sheetBordesWrap   = document.getElementById('sheet-bordes-wrap');
+const sheetBordesEl     = document.getElementById('sheet-bordes');
+const cantNum           = document.getElementById('cant-num');
+const sheetObs          = document.getElementById('sheet-obs');
+const btnAgregar        = document.getElementById('btn-agregar');
 
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
   const sede = getSedeActual();
   if (!sede) { window.location.href = 'index.html'; return; }
 
-  // Header
   const nombre = displayNombre(sede);
   headerSede.textContent = nombre;
   document.title = `Drive Pizza — ${nombre}`;
 
-  // Aviso si cerrada (igual permite ver el menú)
   if (!estaAbierta(sede)) {
     closedMsg.textContent = `Esta sede está cerrada ahora. Horario: ${formatHorario(sede)}.`;
     closedBanner.style.display = '';
@@ -71,7 +75,6 @@ function renderCategorias() {
     });
   });
 
-  // Primer pill activo por defecto
   catsNav.querySelector('.pw-cat-pill')?.classList.add('active');
 }
 
@@ -84,10 +87,10 @@ function renderProductos() {
         <h3 class="pw-cat-section-title">${cat}</h3>
         <div class="pw-product-list">
           ${productos.map(p => {
-            const precios      = Object.values(p.opciones);
-            const minPrecio    = Math.min(...precios);
+            const precios        = Object.values(p.opciones);
+            const minPrecio      = Math.min(...precios);
             const tieneVariantes = Object.keys(p.opciones).length > 1;
-            const dataP        = encodeURIComponent(JSON.stringify({ ...p, categoria: cat }));
+            const dataP          = encodeURIComponent(JSON.stringify({ ...p, categoria: cat }));
             return `
               <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
                    aria-label="Agregar ${p.nombre}">
@@ -106,7 +109,6 @@ function renderProductos() {
       </section>`;
   }).join('');
 
-  // Click en card de producto
   menuBody.querySelectorAll('.pw-product-card').forEach(card => {
     const abrir = () => {
       const producto = JSON.parse(decodeURIComponent(card.dataset.p));
@@ -118,7 +120,6 @@ function renderProductos() {
     });
   });
 
-  // IntersectionObserver para pill activo al hacer scroll
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -136,10 +137,12 @@ function renderProductos() {
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
 function abrirProductSheet(producto) {
-  productoActivo = producto;
-  cantActual     = 1;
-  opcionActiva   = null;
-  sheetObs.value = '';
+  productoActivo         = producto;
+  cantActual             = 1;
+  opcionActiva           = null;
+  adicionesSeleccionadas = [];
+  bordeSeleccionado      = null;
+  sheetObs.value         = '';
 
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
@@ -147,7 +150,6 @@ function abrirProductSheet(producto) {
   const opciones = Object.entries(producto.opciones);
 
   if (opciones.length === 1) {
-    // Única opción: auto-seleccionar y ocultar el selector
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
     sheetOpcionesWrap.style.display = 'none';
   } else {
@@ -160,24 +162,115 @@ function abrirProductSheet(producto) {
        </button>`
     ).join('');
 
-    // Auto-seleccionar primera opción
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
 
     sheetOpciones.querySelectorAll('.pw-opcion-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         sheetOpciones.querySelectorAll('.pw-opcion-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        opcionActiva = { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio) };
-        cantActual   = 1;
-        cantNum.textContent = cantActual;
+        opcionActiva           = { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio) };
+        cantActual             = 1;
+        adicionesSeleccionadas = [];
+        bordeSeleccionado      = null;
+        cantNum.textContent    = cantActual;
+        renderAdicionesSection();
         actualizarBtnAgregar();
       });
     });
   }
 
   cantNum.textContent = cantActual;
+  renderAdicionesSection();
   actualizarBtnAgregar();
   abrirSheet(productSheet);
+}
+
+// ── ADICIONES Y BORDES ────────────────────────────────────────
+function renderAdicionesSection() {
+  if (!productoActivo || !opcionActiva) return;
+
+  const cat        = productoActivo.categoria;
+  const esPizza    = CATS_PIZZAS.includes(cat);
+  const tamanoRaw  = esPizza ? opcionActiva.nombre : CATEGORIAS_ADICIONABLES[cat];
+  const esAdicionable = esPizza || tamanoRaw !== undefined;
+
+  if (!esAdicionable) {
+    sheetAdicionesWrap.style.display = 'none';
+    return;
+  }
+
+  sheetAdicionesWrap.style.display = '';
+
+  // Adiciones disponibles para este tamaño/categoría
+  const adicionesData       = menuData['Adiciones'] || [];
+  const adicionesDisponibles = adicionesData
+    .map(a => {
+      const precio = a.opciones[tamanoRaw];
+      return typeof precio === 'number' ? { nombre: a.nombre, precio } : null;
+    })
+    .filter(Boolean);
+
+  sheetAdicionesEl.innerHTML = adicionesDisponibles.map(a => {
+    const activa = adicionesSeleccionadas.some(s => s.nombre === a.nombre);
+    return `<button class="pw-adicion-btn${activa ? ' active' : ''}"
+                    data-nombre="${a.nombre}" data-precio="${a.precio}">
+               ${a.nombre.replace('Adición ', '')}
+               <span class="pw-adicion-precio">+${formatPrecio(a.precio)}</span>
+             </button>`;
+  }).join('');
+
+  sheetAdicionesEl.querySelectorAll('.pw-adicion-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nombre = btn.dataset.nombre;
+      const precio = Number(btn.dataset.precio);
+      const idx = adicionesSeleccionadas.findIndex(s => s.nombre === nombre);
+      if (idx >= 0) {
+        adicionesSeleccionadas.splice(idx, 1);
+        btn.classList.remove('active');
+      } else {
+        adicionesSeleccionadas.push({ nombre, precio });
+        btn.classList.add('active');
+      }
+      actualizarBtnAgregar();
+    });
+  });
+
+  // Bordes: solo pizzas no estofadas en tamaños válidos
+  const esBordeable = esPizza && !productoActivo.esEstofada && TAMANOS_CON_BORDE.has(opcionActiva.nombre);
+
+  if (esBordeable) {
+    sheetBordesWrap.style.display = '';
+    const bordePrecio = preciosBordes[opcionActiva.nombre];
+    const bordesData  = menuData['Bordes'] || [];
+
+    sheetBordesEl.innerHTML = bordesData.map(b => {
+      const activo = bordeSeleccionado?.nombre === b.nombre;
+      return `<button class="pw-adicion-btn${activo ? ' active' : ''}"
+                      data-nombre="${b.nombre}" data-precio="${bordePrecio}">
+                 ${b.nombre}
+                 <span class="pw-adicion-precio">+${formatPrecio(bordePrecio)}</span>
+               </button>`;
+    }).join('');
+
+    sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nombre = btn.dataset.nombre;
+        const precio = Number(btn.dataset.precio);
+        if (bordeSeleccionado?.nombre === nombre) {
+          bordeSeleccionado = null;
+          btn.classList.remove('active');
+        } else {
+          bordeSeleccionado = { nombre, precio };
+          sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        }
+        actualizarBtnAgregar();
+      });
+    });
+  } else {
+    sheetBordesWrap.style.display = 'none';
+    bordeSeleccionado = null;
+  }
 }
 
 function actualizarBtnAgregar() {
@@ -185,7 +278,9 @@ function actualizarBtnAgregar() {
     btnAgregar.textContent = 'Selecciona una opción';
     return;
   }
-  const total = opcionActiva.precio * cantActual;
+  const adicionesTotal = adicionesSeleccionadas.reduce((s, a) => s + a.precio, 0)
+                       + (bordeSeleccionado ? bordeSeleccionado.precio : 0);
+  const total = (opcionActiva.precio + adicionesTotal) * cantActual;
   btnAgregar.textContent = `Agregar · ${formatPrecio(total)}`;
 }
 
@@ -195,18 +290,14 @@ function renderCarrito() {
   const conteo  = getConteo();
   const total   = getTotal();
 
-  // Badge en header
   cartBadge.textContent = conteo;
   cartBadge.classList.toggle('visible', conteo > 0);
-
-  // Barra inferior
   cartBar.classList.toggle('visible', conteo > 0);
   if (conteo > 0) {
     cartBarItems.textContent = `${conteo} ${conteo === 1 ? 'producto' : 'productos'}`;
     cartBarTotal.textContent  = formatPrecio(total);
   }
 
-  // Contenido del sheet de carrito
   const list   = document.getElementById('cart-items-list');
   const footer = document.getElementById('cart-footer');
 
@@ -216,11 +307,14 @@ function renderCarrito() {
     return;
   }
 
-  list.innerHTML = carrito.map((item, idx) => `
+  list.innerHTML = carrito.map((item, idx) => {
+    const subtotal = (item.precio + getTotalAdiciones(item)) * item.cantidad;
+    return `
     <div class="pw-cart-item">
       <div class="pw-cart-item-info">
         <div class="pw-cart-item-nombre">${item.nombre}</div>
         <div class="pw-cart-item-opcion">${item.opcion}</div>
+        ${item.adiciones?.length ? `<div class="pw-cart-item-adiciones">${item.adiciones.map(a => a.nombre.replace('Adición ', '')).join(', ')}</div>` : ''}
         ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
       </div>
       <div class="pw-cart-item-qty">
@@ -228,9 +322,9 @@ function renderCarrito() {
         <span class="pw-cart-qty-num">${item.cantidad}</span>
         <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
       </div>
-      <div class="pw-cart-item-precio">${formatPrecio(item.precio * item.cantidad)}</div>
-    </div>`
-  ).join('');
+      <div class="pw-cart-item-precio">${formatPrecio(subtotal)}</div>
+    </div>`;
+  }).join('');
 
   footer.innerHTML = `
     <div class="pw-cart-total-row">
@@ -239,7 +333,6 @@ function renderCarrito() {
     </div>
     <button class="pw-btn-primary" id="btn-checkout">Proceder al pago</button>`;
 
-  // Botones de cantidad en el carrito
   list.querySelectorAll('.pw-cart-qty-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       actualizarCantidad(Number(btn.dataset.idx), Number(btn.dataset.delta));
@@ -261,7 +354,6 @@ function abrirSheet(sheet) {
 
 function cerrarSheet(sheet) {
   sheet.classList.remove('open');
-  // Solo quitar overlay si ningún otro sheet está abierto
   if (!productSheet.classList.contains('open') && !cartSheet.classList.contains('open')) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
@@ -277,7 +369,6 @@ function cerrarTodo() {
 
 // ── LISTENERS ─────────────────────────────────────────────────
 function setupListeners() {
-  // Cantidad en product sheet
   document.getElementById('btn-menos').addEventListener('click', () => {
     if (cantActual > 1) { cantActual--; cantNum.textContent = cantActual; actualizarBtnAgregar(); }
   });
@@ -285,32 +376,30 @@ function setupListeners() {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
   });
 
-  // Agregar al carrito
   btnAgregar.addEventListener('click', () => {
     if (!opcionActiva) return;
+    const todasAdiciones = [...adicionesSeleccionadas];
+    if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
     agregarItem({
-      nombre:    productoActivo.nombre,
-      categoria: productoActivo.categoria,
-      opcion:    opcionActiva.nombre,
-      precio:    opcionActiva.precio,
-      obs:       sheetObs.value.trim(),
+      nombre:       productoActivo.nombre,
+      categoria:    productoActivo.categoria,
+      opcion:       opcionActiva.nombre,
+      precio:       opcionActiva.precio,
+      obs:          sheetObs.value.trim(),
+      adiciones:    todasAdiciones,
+      esAdicionable: CATS_PIZZAS.includes(productoActivo.categoria) || !!CATEGORIAS_ADICIONABLES[productoActivo.categoria],
+      esEstofada:   !!productoActivo.esEstofada,
     });
     cerrarSheet(productSheet);
     renderCarrito();
   });
 
-  // Cerrar sheets
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
   document.getElementById('btn-cerrar-carrito').addEventListener('click', () => cerrarSheet(cartSheet));
-
-  // Abrir carrito
   document.getElementById('btn-abrir-carrito').addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('btn-cart-bar').addEventListener('click', () => abrirSheet(cartSheet));
-
-  // Overlay cierra todo
   overlay.addEventListener('click', cerrarTodo);
 
-  // Swipe hacia abajo cierra sheet (UX móvil)
   [productSheet, cartSheet].forEach(sheet => {
     let startY = 0;
     sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
