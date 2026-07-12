@@ -215,11 +215,11 @@ async function confirmarPedido() {
 
     // Armar productos en formato compatible con pedidos_callcenter
     const productos = carrito.map(item => ({
-      nombre:   item.nombre,
-      opcion:   item.opcion,
-      precio:   item.precio,
-      cantidad: item.cantidad,
-      obs:      item.obs || '',
+      nombre: item.nombre,
+      opcion: item.opcion,
+      precio: item.precio,
+      qty:    item.cantidad,
+      obs:    item.obs || '',
     }));
 
     // Armar domicilio
