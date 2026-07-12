@@ -634,6 +634,41 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sabor2-precio { font-size: .82rem; font-weight: 700; color: var(--dp-green); flex-shrink: 0; padding-left: .5rem; }
 .pw-sabor2-vacio { text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
 
+/* Adiciones toggle mobile */
+.pw-adiciones-toggle { display: none; }
+.pw-adiciones-label-desk { display: block; }
+.pw-adiciones-collapsible { display: block; }
+
+@media (max-width: 639px) {
+  .pw-adiciones-label-desk { display: none; }
+  .pw-adiciones-toggle {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border: none;
+    border-bottom: 1.5px solid rgba(0,0,0,.08);
+    padding: .4rem 0 .35rem;
+    margin-bottom: .1rem;
+    cursor: pointer;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--dp-dark);
+    font-family: var(--dp-font-ui);
+  }
+  .pw-adiciones-chevron {
+    font-size: .85rem;
+    color: var(--dp-orange);
+    transition: transform .2s;
+  }
+  .pw-adiciones-toggle[aria-expanded="true"] .pw-adiciones-chevron {
+    transform: rotate(180deg);
+  }
+  .pw-adiciones-collapsible { display: none; }
+  .pw-adiciones-collapsible.open { display: block; }
+}
+
 /* Adiciones y Bordes */
 .pw-adiciones-grid {
   display: flex;

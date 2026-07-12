@@ -72,11 +72,19 @@
 
     <!-- ADICIONES Y BORDES (solo productos adicionables) -->
     <div id="sheet-adiciones-wrap" style="display:none">
-      <span class="pw-sheet-label">Adiciones <span class="pw-label-opt">(opcional)</span></span>
-      <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
-      <div id="sheet-bordes-wrap" style="display:none">
-        <span class="pw-sheet-label" style="margin-top:.6rem">Bordes <span class="pw-label-opt">(opcional)</span></span>
-        <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+      <!-- Label desktop (siempre visible) -->
+      <span class="pw-sheet-label pw-adiciones-label-desk">Adiciones <span class="pw-label-opt">(opcional)</span></span>
+      <!-- Toggle mobile (colapsable) -->
+      <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
+        Adiciones <span class="pw-label-opt">(opcional)</span>
+        <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
+        <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+        <div id="sheet-bordes-wrap" style="display:none">
+          <span class="pw-sheet-label" style="margin-top:.6rem">Bordes <span class="pw-label-opt">(opcional)</span></span>
+          <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+        </div>
       </div>
     </div>
 

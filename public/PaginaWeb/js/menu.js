@@ -266,6 +266,10 @@ function abrirProductSheet(producto) {
   mezclaState            = null;
   sheetObs.value         = '';
 
+  // Cerrar adiciones en mobile al abrir nuevo producto
+  document.getElementById('sheet-adiciones-body')?.classList.remove('open');
+  document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
+
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
@@ -623,6 +627,13 @@ function setupListeners() {
   sabor2Buscar.addEventListener('input', () => renderSabores2(sabor2Buscar.value));
 
   // Cerrar sheets
+  document.getElementById('btn-adiciones-toggle')?.addEventListener('click', () => {
+    const body = document.getElementById('sheet-adiciones-body');
+    const btn  = document.getElementById('btn-adiciones-toggle');
+    const open = body.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
   document.getElementById('btn-cerrar-carrito').addEventListener('click', () => cerrarSheet(cartSheet));
   document.getElementById('btn-cerrar-promo').addEventListener('click', () => cerrarSheet(promoSheet));
