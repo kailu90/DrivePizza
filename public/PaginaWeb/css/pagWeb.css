@@ -208,7 +208,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: var(--dp-shadow-lg);
 }
 @media (min-width: 600px) {
-  .pw-sede-card { flex: 0 0 110px; }
+  .pw-sede-card { min-width: 135px; flex-shrink: 0; }
 }
 .pw-sede-card--cerrada {
   opacity: .5;
@@ -230,7 +230,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: inline-flex;
   align-items: center;
   gap: .3rem;
-  font-size: .72rem;
+  font-size: .5rem;
   font-weight: 600;
   padding: .22rem .65rem;
   border-radius: 99px;
