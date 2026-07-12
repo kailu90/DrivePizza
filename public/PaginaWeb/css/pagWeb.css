@@ -1091,6 +1091,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   cursor: pointer;
   border: 2px solid transparent;
   transition: var(--dp-transition);
+  text-decoration: none;
+  color: inherit;
 }
 
 .pw-cat-card:hover {
