@@ -9,7 +9,7 @@ import { getSedeActual, displayNombre } from './sede.js';
 // src: ruta relativa desde PaginaWeb/ → '../Imagenes/banners/pieza1.jpg'
 // href: (opcional) enlace al hacer clic en el banner
 const BANNERS = [
-  // { src: '../Imagenes/banners/pieza1.jpg', alt: 'Promoción pizza familiar', href: 'menu.html?cat=Pizzas Estofadas' },
+  { src: '../Imagenes/banners/banner1.png', alt: 'Drive Pizza' },
 ];
 
 function initBanner() {
