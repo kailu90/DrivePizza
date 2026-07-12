@@ -1432,11 +1432,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-banner {
   margin-bottom: 0;
   border-radius: var(--dp-radius);
-  overflow: hidden;
   position: relative;
 }
 .pw-banner-track {
   display: flex;
+  overflow: hidden;
+  border-radius: var(--dp-radius);
   transition: transform .45s cubic-bezier(.4,0,.2,1);
 }
 .pw-banner-slide {
