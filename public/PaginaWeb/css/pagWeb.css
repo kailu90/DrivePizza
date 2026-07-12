@@ -131,7 +131,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   justify-content: space-between;
   padding: .6rem 1rem;
-  background: #fff;
+  background: var(--dp-sand);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -146,7 +146,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border: none;
   cursor: pointer;
   padding: .4rem;
-  color: var(--dp-dark);
+  color: var(--dp-green);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1466,44 +1466,82 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    BANNER CARRUSEL
    ════════════════════════════════════════════════════════════ */
 .pw-banner-wrapper {
-  padding: 1rem 1rem 1.25rem;
+  padding: .75rem .75rem 0;
 }
 .pw-banner {
-  margin-bottom: 0;
-  border-radius: var(--dp-radius);
+  border-radius: var(--dp-radius-lg);
   position: relative;
+  overflow: hidden;
 }
 .pw-banner-track {
   display: flex;
-  overflow: hidden;
-  border-radius: var(--dp-radius);
   transition: transform .45s cubic-bezier(.4,0,.2,1);
 }
 .pw-banner-slide {
   min-width: 100%;
-  aspect-ratio: 16 / 4;
+  aspect-ratio: 4 / 3;
+  position: relative;
   overflow: hidden;
-  border-radius: var(--dp-radius);
+  border-radius: var(--dp-radius-lg);
+}
+@media (min-width: 600px) {
+  .pw-banner-slide { aspect-ratio: 16 / 5; }
 }
 .pw-banner-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top;
+  object-position: center;
   display: block;
-  border-radius: var(--dp-radius);
+}
+.pw-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(40,76,34,.72) 0%, rgba(40,76,34,.45) 100%);
+  border-radius: var(--dp-radius-lg);
+}
+.pw-banner-content {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  color: #fff;
+}
+.pw-banner-tagline {
+  display: block;
+  font-family: var(--dp-font-brand);
+  font-size: .8rem;
+  color: var(--dp-orange);
+  font-style: italic;
+  margin-bottom: .4rem;
+}
+.pw-banner-titulo {
+  font-family: var(--dp-font-brand);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 .5rem;
+  color: #fff;
+}
+.pw-banner-subtitulo {
+  font-size: .75rem;
+  color: rgba(255,255,255,.85);
+  margin: 0;
 }
 .pw-banner-dots {
+  position: absolute;
+  bottom: .85rem;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
   gap: .4rem;
-  padding: .55rem 0 0;
 }
 .pw-banner-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(0,0,0,.18);
+  background: rgba(255,255,255,.4);
   border: none;
   padding: 0;
   cursor: pointer;

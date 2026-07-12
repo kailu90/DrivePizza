@@ -58,9 +58,15 @@
     import { vaciarCarrito } from './js/carrito.js';
 
     // ── BANNER ──────────────────────────────────────────────────
-    // Para agregar piezas: { src, alt, href? }
+    // Para agregar piezas: { src, alt, tagline?, titulo?, subtitulo?, href? }
     const BANNERS = [
-      { src: '../Imagenes/banners/banner1.png', alt: 'Drive Pizza' },
+      {
+        src: '../Imagenes/banners/banner1.png',
+        alt: 'Drive Pizza',
+        tagline: 'Hecha para compartir',
+        titulo: 'La mejor pizza de Bucaramanga, entregada en minutos.',
+        subtitulo: '🌿 Masa fresca. Ingredientes de calidad.',
+      },
     ];
 
     function initBanner() {
@@ -71,9 +77,16 @@
 
       track.innerHTML = BANNERS.map(b => `
         <div class="pw-banner-slide">
-          ${b.href
-            ? `<a href="${b.href}"><img src="${b.src}" alt="${b.alt ?? ''}"></a>`
-            : `<img src="${b.src}" alt="${b.alt ?? ''}">`}
+          ${b.href ? `<a href="${b.href}">` : ''}
+          <img src="${b.src}" alt="${b.alt ?? ''}">
+          <div class="pw-banner-overlay"></div>
+          ${(b.tagline || b.titulo || b.subtitulo) ? `
+          <div class="pw-banner-content">
+            ${b.tagline ? `<span class="pw-banner-tagline">${b.tagline}</span>` : ''}
+            ${b.titulo  ? `<h2 class="pw-banner-titulo">${b.titulo}</h2>` : ''}
+            ${b.subtitulo ? `<p class="pw-banner-subtitulo">${b.subtitulo}</p>` : ''}
+          </div>` : ''}
+          ${b.href ? `</a>` : ''}
         </div>`).join('');
 
       dotsEl.innerHTML = BANNERS.map((_, i) =>
