@@ -125,6 +125,36 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    INDEX — SELECTOR DE SEDE
    ════════════════════════════════════════════════════════════ */
 
+/* ── HEADER NAV (index.html) ───────────────────────────────── */
+.pw-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .6rem 1rem;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.pw-header-logo {
+  height: 36px;
+  width: auto;
+}
+.pw-header-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: .4rem;
+  color: var(--dp-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background .15s;
+}
+.pw-header-btn:hover { background: rgba(0,0,0,.06); }
+
 .pw-hero {
   background: #284c22;
   padding: 0 1.5rem;
