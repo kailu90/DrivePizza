@@ -268,8 +268,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-header-brand {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: .5rem;
   min-width: 0;
 }
 .pw-header-logo {
@@ -328,7 +330,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   letter-spacing: .05em;
   text-transform: uppercase;
   padding: .18rem .7rem;
-  margin-top: .25rem;
   white-space: nowrap;
 }
 
