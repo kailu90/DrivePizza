@@ -27,6 +27,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 function log(mensaje) {
     const ahora = new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
         hour12: false,
@@ -51,6 +52,7 @@ function formatearHora12(hora24) {
 function formatearFecha(fecha) {
     const d = new Date(fecha);
     return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(d);
