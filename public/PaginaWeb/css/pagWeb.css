@@ -318,7 +318,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cats {
   position: sticky;
-  top: 68px;
+  top: 70px;
   z-index: 90;
   background: var(--dp-mist);
   border-bottom: 1px solid rgba(0, 0, 0, .07);
@@ -330,6 +330,24 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   gap: .45rem;
 }
 .pw-cats::-webkit-scrollbar { display: none; }
+
+.pw-subcats {
+  position: sticky;
+  top: 113px; /* 70px header + ~43px cats-nav */
+  z-index: 89;
+  background: #e9e3d9;
+  border-bottom: 1px solid rgba(0, 0, 0, .1);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  padding: .4rem .75rem;
+  gap: .35rem;
+}
+.pw-subcats::-webkit-scrollbar { display: none; }
+.pw-subcats .pw-cat-pill {
+  font-size: .72rem;
+  padding: .25rem .8rem;
+}
 
 .pw-cat-pill {
   display: inline-flex;

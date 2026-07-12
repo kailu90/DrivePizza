@@ -29,6 +29,7 @@ const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
+const subcatsNav        = document.getElementById('subcats-nav');
 const cartBar           = document.getElementById('cart-bar');
 const cartBadge         = document.getElementById('cart-badge');
 const cartBarItems      = document.getElementById('cart-bar-items');
@@ -79,38 +80,102 @@ function init() {
 
   // Scroll a la categoría elegida en la página anterior
   const catParam = new URLSearchParams(location.search).get('cat');
-  if (catParam) {
-    const id  = 'sec-' + catParam.replace(/\s+/g, '-');
-    const sec = document.getElementById(id);
-    if (sec) {
-      setTimeout(() => {
-        const offsetTop = sec.getBoundingClientRect().top + window.scrollY - 112;
-        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-      }, 80);
-    }
+  if (catParam && catParam !== 'null') {
+    const grupoLabel = CAT_TO_GRUPO[catParam] || catParam;
+    activarGrupo(grupoLabel, false);
+    setTimeout(() => scrollToSection('sec-' + catParam.replace(/\s+/g, '-')), 80);
   }
 }
 
-// ── RENDER CATEGORÍAS ─────────────────────────────────────────
-const CATS_OCULTAS = new Set(['Adiciones', 'Bordes']);
+// ── NAVEGACIÓN AGRUPADA ────────────────────────────────────────
+const GRUPOS_NAV = [
+  { label: 'Promociones',  cats: [] },
+  { label: 'Pizzas',       cats: ['Pizzas Estofadas', 'Pizzas Super Estofadas', 'Pizzas Especiales', 'Pizzas Clásicas', 'Pizzas Típicas', 'Pizzetas Premium'] },
+  { label: 'Bebidas',      cats: ['Jugos Naturales', 'Refrescos', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'] },
+  { label: 'Calzones',     cats: ['Calzones'] },
+  { label: 'Stromboli',    cats: ['Stromboli'] },
+  { label: 'Hamburguesas', cats: ['Hamburguesas'] },
+  { label: 'Sandwiches',   cats: ['Sandwiches'] },
+  { label: 'Ensaladas',    cats: ['Ensaladas'] },
+  { label: 'Lasañas',      cats: ['Lasañas'] },
+  { label: 'Pastas',       cats: ['Pastas'] },
+  { label: 'Maicitos',     cats: ['Maicitos'] },
+  { label: 'Entradas',     cats: ['Entradas/Adición'] },
+];
+
+const CAT_SHORT = {
+  'Pizzas Estofadas':       'Estofadas',
+  'Pizzas Super Estofadas': 'Super Estofadas',
+  'Pizzas Especiales':      'Especiales',
+  'Pizzas Clásicas':        'Clásicas',
+  'Pizzas Típicas':         'Típicas',
+  'Pizzetas Premium':       'Premium',
+};
+
+const CAT_TO_GRUPO = {};
+GRUPOS_NAV.forEach(g => g.cats.forEach(c => { CAT_TO_GRUPO[c] = g.label; }));
+
+function scrollToSection(id) {
+  const sec = document.getElementById(id);
+  if (!sec) return;
+  const subcatsH = (subcatsNav.style.display !== 'none' && subcatsNav.innerHTML)
+    ? subcatsNav.offsetHeight : 0;
+  const offset = 70 + catsNav.offsetHeight + subcatsH + 4;
+  window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+}
+
+function _renderSubcats(grupo, grupoLabel) {
+  subcatsNav.innerHTML = grupo.cats.map((cat, i) =>
+    `<button class="pw-cat-pill${i === 0 ? ' active' : ''}" data-cat="${cat}">${CAT_SHORT[cat] || cat}</button>`
+  ).join('');
+  subcatsNav.style.display = 'flex';
+  subcatsNav.dataset.grupo = grupoLabel;
+
+  subcatsNav.querySelectorAll('.pw-cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      subcatsNav.querySelectorAll('.pw-cat-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      scrollToSection('sec-' + pill.dataset.cat.replace(/\s+/g, '-'));
+    });
+  });
+}
+
+function activarGrupo(grupoLabel, scroll) {
+  catsNav.querySelectorAll('.pw-cat-pill').forEach(p => {
+    const activo = p.dataset.grupo === grupoLabel;
+    p.classList.toggle('active', activo);
+    if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+
+  const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
+
+  if (!grupo || grupo.cats.length <= 1) {
+    subcatsNav.innerHTML = '';
+    subcatsNav.style.display = 'none';
+    subcatsNav.dataset.grupo = '';
+    if (scroll) {
+      const id = grupo?.cats[0]
+        ? 'sec-' + grupo.cats[0].replace(/\s+/g, '-')
+        : 'sec-Promociones';
+      scrollToSection(id);
+    }
+    return;
+  }
+
+  _renderSubcats(grupo, grupoLabel);
+  if (scroll) scrollToSection('sec-' + grupo.cats[0].replace(/\s+/g, '-'));
+}
 
 function renderCategorias() {
-  const cats = ['Promociones', ...Object.keys(menuData).filter(c => !CATS_OCULTAS.has(c))];
-  catsNav.innerHTML = cats.map(cat =>
-    `<button class="pw-cat-pill" data-cat="${cat}">${cat}</button>`
+  catsNav.innerHTML = GRUPOS_NAV.map(g =>
+    `<button class="pw-cat-pill" data-grupo="${g.label}">${g.label}</button>`
   ).join('');
 
   catsNav.querySelectorAll('.pw-cat-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const id  = 'sec-' + pill.dataset.cat.replace(/\s+/g, '-');
-      const sec = document.getElementById(id);
-      if (!sec) return;
-      const offsetTop = sec.getBoundingClientRect().top + window.scrollY - 112;
-      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-    });
+    pill.addEventListener('click', () => activarGrupo(pill.dataset.grupo, true));
   });
 
-  catsNav.querySelector('.pw-cat-pill')?.classList.add('active');
+  activarGrupo('Promociones', false);
 }
 
 // ── RENDER PRODUCTOS ──────────────────────────────────────────
@@ -121,7 +186,9 @@ function renderProductos() {
       <div class="pw-promo-list" id="promo-list">${getPromosHTML()}</div>
     </section>`;
 
-  menuBody.innerHTML = promoSection + Object.entries(menuData).filter(([cat]) => !CATS_OCULTAS.has(cat)).map(([cat, productos]) => {
+  menuBody.innerHTML = promoSection + GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
+    const productos = menuData[cat];
+    if (!productos) return '';
     const secId = 'sec-' + cat.replace(/\s+/g, '-');
     return `
       <section class="pw-cat-section" id="${secId}">
@@ -164,12 +231,28 @@ function renderProductos() {
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const catId = entry.target.id.replace('sec-', '').replace(/-/g, ' ');
+      const catKey     = entry.target.id.replace('sec-', '').replace(/-/g, ' ');
+      const grupoLabel = catKey === 'Promociones' ? 'Promociones' : (CAT_TO_GRUPO[catKey] || catKey);
+
       catsNav.querySelectorAll('.pw-cat-pill').forEach(p => {
-        const activo = p.dataset.cat === catId;
+        const activo = p.dataset.grupo === grupoLabel;
         p.classList.toggle('active', activo);
         if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       });
+
+      const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
+      if (grupo && grupo.cats.length > 1) {
+        if (subcatsNav.dataset.grupo !== grupoLabel) _renderSubcats(grupo, grupoLabel);
+        subcatsNav.querySelectorAll('.pw-cat-pill').forEach(p => {
+          const activo = p.dataset.cat === catKey;
+          p.classList.toggle('active', activo);
+          if (activo) p.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        });
+      } else if (subcatsNav.innerHTML) {
+        subcatsNav.innerHTML = '';
+        subcatsNav.style.display = 'none';
+        subcatsNav.dataset.grupo = '';
+      }
     });
   }, { rootMargin: '-45% 0px -55% 0px' });
 
