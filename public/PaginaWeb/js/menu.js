@@ -537,7 +537,11 @@ function renderCarrito() {
   }
 
   list.innerHTML = carrito.map((item, idx) => {
-    const subtotal = (item.precio + getTotalAdiciones(item)) * item.cantidad;
+    const precioUnitario = item.precio + getTotalAdiciones(item);
+    const subtotal = precioUnitario * item.cantidad;
+    const formulaHtml = item.cantidad > 1
+      ? `<span class="pw-cart-formula">${item.cantidad} × ${formatPrecio(precioUnitario)} = </span>`
+      : '';
     return `
     <div class="pw-cart-item">
       <div class="pw-cart-item-nombre">${item.nombre}</div>
@@ -557,7 +561,7 @@ function renderCarrito() {
           <span class="pw-cart-qty-num">${item.cantidad}</span>
           <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
         </div>
-        <div class="pw-cart-item-precio">${formatPrecio(subtotal)}</div>
+        <div class="pw-cart-item-precio">${formulaHtml}${formatPrecio(subtotal)}</div>
       </div>
     </div>`;
   }).join('');

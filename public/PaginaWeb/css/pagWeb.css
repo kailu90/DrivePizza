@@ -860,7 +860,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding-top: .35rem;
   border-top: 1px solid rgba(0,0,0,.06);
 }
-.pw-cart-item-precio { font-size: .9rem; font-weight: 700; color: var(--dp-green); }
+.pw-cart-item-precio { font-size: .9rem; font-weight: 700; color: var(--dp-green); display: flex; align-items: baseline; gap: .2rem; }
+.pw-cart-formula { font-size: .7rem; font-weight: 400; color: #999; }
 
 .pw-cart-item-qty { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
 .pw-cart-qty-btn {
