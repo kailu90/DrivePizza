@@ -327,6 +327,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   scrollbar-width: none;
   padding: .6rem .75rem;
   display: flex;
+  justify-content: center;
   gap: .45rem;
 }
 .pw-cats::-webkit-scrollbar { display: none; }
