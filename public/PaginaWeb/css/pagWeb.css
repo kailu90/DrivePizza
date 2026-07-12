@@ -219,6 +219,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .82rem;
   font-weight: 600;
   color: var(--dp-green);
+  margin-top: .5rem;
   margin-bottom: .2rem;
 }
 .pw-sede-ciudad {
