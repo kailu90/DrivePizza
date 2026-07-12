@@ -257,10 +257,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-horario {
   display: block;
-  font-size: .7rem;
+  font-size: .55rem;
   color: #aaa;
   margin-top: .4rem;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 
