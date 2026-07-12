@@ -1422,7 +1422,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-banner-slide {
   min-width: 100%;
-  aspect-ratio: 16 / 5;
+  aspect-ratio: 16 / 4;
   overflow: hidden;
   border-radius: var(--dp-radius);
 }
