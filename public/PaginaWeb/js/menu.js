@@ -189,20 +189,13 @@ function renderProductos() {
         </div>`;
     }).join('');
 
-    if (colapsable) {
-      return `
-        <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="false">
-          <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="false">
-            ${CAT_SHORT[cat] || cat}
-            <span class="pw-cat-chevron" aria-hidden="true">▾</span>
-          </button>
-          <div class="pw-product-list pw-collapsible-body">${cardsHTML}</div>
-        </section>`;
-    }
     return `
-      <section class="pw-cat-section" id="${secId}">
-        <h3 class="pw-cat-section-title">${cat}</h3>
-        <div class="pw-product-list">${cardsHTML}</div>
+      <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="false">
+        <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="false">
+          ${CAT_SHORT[cat] || cat}
+          <span class="pw-cat-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="pw-product-list pw-collapsible-body">${cardsHTML}</div>
       </section>`;
   }).join('');
 
