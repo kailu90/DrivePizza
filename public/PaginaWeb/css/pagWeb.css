@@ -236,12 +236,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 99px;
 }
 .pw-sede-status--abierta {
-  background: rgba(117, 137, 42, .15);
-  color: var(--dp-leaf);
+  background: rgba(34, 139, 34, .15);
+  color: #1a7a1a;
 }
 .pw-sede-status--cerrada {
-  background: rgba(0, 0, 0, .08);
-  color: #999;
+  background: rgba(200, 30, 30, .12);
+  color: #c01e1e;
 }
 .pw-sede-status::before {
   content: '';
