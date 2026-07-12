@@ -57,20 +57,25 @@ function init() {
 function renderResumen() {
   const carrito = getCarrito();
   summaryItems.innerHTML = carrito.map(item => {
-    const subtotal = (item.precio + getTotalAdiciones(item)) * item.cantidad;
+    const precioUnitario = item.precio + getTotalAdiciones(item);
+    const subtotal = precioUnitario * item.cantidad;
+    const formulaHtml = item.cantidad > 1
+      ? `<span class="pw-summary-formula">${item.cantidad} × ${formatPrecio(precioUnitario)} = </span>`
+      : '';
     return `
     <div class="pw-summary-item">
-      <div class="pw-summary-item-info">
-        <span class="pw-summary-item-nombre">${item.cantidad}× ${item.nombre}</span>
+      <div class="pw-summary-item-nombre">${item.cantidad}× ${item.nombre}</div>
+      <div class="pw-summary-item-row">
         <span class="pw-summary-item-opcion">${item.opcion}</span>
-        ${item.adiciones?.length ? item.adiciones.map(a => `
-        <span class="pw-summary-item-adicion">
-          <span>${a.nombre}</span>
-          <span class="pw-summary-adicion-precio">+${formatPrecio(a.precio)}</span>
-        </span>`).join('') : ''}
-        ${item.obs ? `<span class="pw-summary-item-obs">"${item.obs}"</span>` : ''}
+        <span class="pw-summary-item-base-precio">${formatPrecio(item.precio)}</span>
       </div>
-      <span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span>
+      ${item.adiciones?.length ? item.adiciones.map(a => `
+      <div class="pw-summary-item-adicion">
+        <span>${a.nombre}</span>
+        <span class="pw-summary-adicion-precio">+${formatPrecio(a.precio)}</span>
+      </div>`).join('') : ''}
+      ${item.obs ? `<div class="pw-summary-item-obs">"${item.obs}"</div>` : ''}
+      <div class="pw-summary-item-footer">${formulaHtml}<span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span></div>
     </div>`;
   }).join('');
   summarySubtotal.innerHTML = `<span>Subtotal</span><span>${formatPrecio(getTotal())}</span>`;
