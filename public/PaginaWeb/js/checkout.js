@@ -65,7 +65,7 @@ function renderResumen() {
         <span class="pw-summary-item-opcion">${item.opcion}</span>
         ${item.adiciones?.length ? item.adiciones.map(a => `
         <span class="pw-summary-item-adicion">
-          + ${a.nombre.replace('Adición ', '')}
+          <span>+ ${a.nombre.replace('Adición ', '')}</span>
           <span class="pw-summary-adicion-precio">+${formatPrecio(a.precio)}</span>
         </span>`).join('') : ''}
         ${item.obs ? `<span class="pw-summary-item-obs">"${item.obs}"</span>` : ''}
