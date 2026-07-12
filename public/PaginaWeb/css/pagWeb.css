@@ -235,7 +235,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #2596be;
+  background: #274b21;
   padding: .75rem 1rem;
   display: flex;
   align-items: center;
