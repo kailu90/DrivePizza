@@ -165,25 +165,30 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-align: center;
 }
 
-/* Grid de sedes — scroll horizontal */
+/* Grid de sedes — 2 columnas en mobile, scroll horizontal en desktop */
 .pw-sedes-grid {
-  display: flex;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: .75rem;
-  padding-bottom: .5rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
-.pw-sedes-grid::-webkit-scrollbar { display: none; }
+@media (min-width: 600px) {
+  .pw-sedes-grid {
+    display: flex;
+    overflow-x: auto;
+    grid-template-columns: unset;
+    padding-bottom: .5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pw-sedes-grid::-webkit-scrollbar { display: none; }
+}
 
 .pw-sede-card {
   background: var(--dp-mist);
   border-radius: var(--dp-radius);
   padding: .85rem 1rem;
   border: 2px solid transparent;
-  min-width: 110px;
-  flex-shrink: 0;
   scroll-snap-align: start;
   cursor: pointer;
   transition: var(--dp-transition);
@@ -194,6 +199,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-color: var(--dp-orange);
   transform: translateY(-2px);
   box-shadow: var(--dp-shadow-lg);
+}
+@media (min-width: 600px) {
+  .pw-sede-card { min-width: 110px; flex-shrink: 0; }
 }
 .pw-sede-card--cerrada {
   opacity: .5;
