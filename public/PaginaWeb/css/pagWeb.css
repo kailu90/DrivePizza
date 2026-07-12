@@ -137,6 +137,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
   margin: 0 auto;
 }
+.pw-hero--sm {
+  padding: .9rem 1.5rem;
+}
+.pw-hero--sm .pw-hero-logo {
+  max-width: 70px;
+}
+
 .pw-tagline {
   font-size: .9rem;
   color: rgba(244, 236, 223, .7);

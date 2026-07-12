@@ -25,8 +25,6 @@ function init() {
   const sede = getSedeActual();
   if (!sede) { window.location.href = 'index.html'; return; }
 
-  document.getElementById('header-sede').textContent = displayNombre(sede);
-
   const grid = document.getElementById('cats-grid');
 
   grid.innerHTML = CATEGORIAS.map(({ nombre, emoji, bg, cat }) => {
