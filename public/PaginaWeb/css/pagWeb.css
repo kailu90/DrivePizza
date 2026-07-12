@@ -165,21 +165,26 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-align: center;
 }
 
-/* Grid de sedes */
+/* Grid de sedes — scroll horizontal */
 .pw-sedes-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: flex;
+  overflow-x: auto;
+  gap: .75rem;
+  padding-bottom: .5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-@media (min-width: 540px) {
-  .pw-sedes-grid { grid-template-columns: repeat(3, 1fr); }
-}
+.pw-sedes-grid::-webkit-scrollbar { display: none; }
 
 .pw-sede-card {
   background: var(--dp-mist);
   border-radius: var(--dp-radius);
   padding: .85rem 1rem;
   border: 2px solid transparent;
+  min-width: 148px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
   cursor: pointer;
   transition: var(--dp-transition);
   box-shadow: var(--dp-shadow);
