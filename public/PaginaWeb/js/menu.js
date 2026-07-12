@@ -115,9 +115,19 @@ const CAT_SHORT = {
 const CAT_TO_GRUPO = {};
 GRUPOS_NAV.forEach(g => g.cats.forEach(c => { CAT_TO_GRUPO[c] = g.label; }));
 
+// Categorías que pertenecen a grupos con múltiples subcats → llevan acordeón
+const CATS_COLAPSABLES = new Set(
+  GRUPOS_NAV.filter(g => g.cats.length > 1).flatMap(g => g.cats)
+);
+
 function scrollToSection(id) {
   const sec = document.getElementById(id);
   if (!sec) return;
+  // Auto-expandir si está colapsado
+  if (sec.dataset.open === 'false') {
+    sec.dataset.open = 'true';
+    sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'true');
+  }
   const subcatsH = (subcatsNav.style.display !== 'none' && subcatsNav.innerHTML)
     ? subcatsNav.offsetHeight : 0;
   const offset = 70 + catsNav.offsetHeight + subcatsH + 4;
@@ -189,33 +199,54 @@ function renderProductos() {
   menuBody.innerHTML = promoSection + GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
     const productos = menuData[cat];
     if (!productos) return '';
-    const secId = 'sec-' + cat.replace(/\s+/g, '-');
+    const secId      = 'sec-' + cat.replace(/\s+/g, '-');
+    const colapsable = CATS_COLAPSABLES.has(cat);
+
+    const cardsHTML = productos.map(p => {
+      const precios        = Object.values(p.opciones);
+      const minPrecio      = Math.min(...precios);
+      const tieneVariantes = Object.keys(p.opciones).length > 1;
+      const dataP          = encodeURIComponent(JSON.stringify({ ...p, categoria: cat }));
+      return `
+        <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
+             aria-label="Agregar ${p.nombre}">
+          <div class="pw-product-info">
+            <div class="pw-product-nombre">${p.nombre}</div>
+            ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
+          </div>
+          <div class="pw-product-price">
+            ${tieneVariantes ? '<span style="font-size:.7rem;font-weight:400">Desde </span>' : ''}
+            ${formatPrecio(minPrecio)}
+          </div>
+          <div class="pw-product-add" aria-hidden="true">+</div>
+        </div>`;
+    }).join('');
+
+    if (colapsable) {
+      return `
+        <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="true">
+          <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="true">
+            ${CAT_SHORT[cat] || cat}
+            <span class="pw-cat-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="pw-product-list pw-collapsible-body">${cardsHTML}</div>
+        </section>`;
+    }
     return `
       <section class="pw-cat-section" id="${secId}">
         <h3 class="pw-cat-section-title">${cat}</h3>
-        <div class="pw-product-list">
-          ${productos.map(p => {
-            const precios        = Object.values(p.opciones);
-            const minPrecio      = Math.min(...precios);
-            const tieneVariantes = Object.keys(p.opciones).length > 1;
-            const dataP          = encodeURIComponent(JSON.stringify({ ...p, categoria: cat }));
-            return `
-              <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
-                   aria-label="Agregar ${p.nombre}">
-                <div class="pw-product-info">
-                  <div class="pw-product-nombre">${p.nombre}</div>
-                  ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
-                </div>
-                <div class="pw-product-price">
-                  ${tieneVariantes ? '<span style="font-size:.7rem;font-weight:400">Desde </span>' : ''}
-                  ${formatPrecio(minPrecio)}
-                </div>
-                <div class="pw-product-add" aria-hidden="true">+</div>
-              </div>`;
-          }).join('')}
-        </div>
+        <div class="pw-product-list">${cardsHTML}</div>
       </section>`;
   }).join('');
+
+  menuBody.querySelectorAll('.pw-cat-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sec  = btn.closest('.pw-cat-collapsible');
+      const open = sec.dataset.open === 'true';
+      sec.dataset.open = open ? 'false' : 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+    });
+  });
 
   menuBody.querySelectorAll('.pw-product-card').forEach(card => {
     const abrir = () => {
