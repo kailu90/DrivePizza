@@ -1015,6 +1015,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-summary-item-nombre { font-weight: 600; }
 .pw-summary-item-opcion { font-size: .72rem; color: #999; }
 .pw-summary-item-obs { font-size: .72rem; color: var(--dp-leaf); font-style: italic; }
+.pw-summary-item-adicion {
+  display: flex;
+  justify-content: space-between;
+  font-size: .72rem;
+  color: var(--dp-orange);
+}
+.pw-summary-adicion-precio { font-weight: 600; }
 .pw-summary-item-precio { flex-shrink: 0; font-weight: 700; color: var(--dp-green); }
 .pw-summary-subtotal {
   display: flex;
