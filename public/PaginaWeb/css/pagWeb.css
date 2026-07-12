@@ -1497,6 +1497,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-banner-overlay {
   position: absolute;
   inset: 0;
+  background: linear-gradient(160deg, rgba(40,76,34,.72) 0%, rgba(40,76,34,.45) 100%);
   border-radius: var(--dp-radius-lg);
 }
 .pw-banner-content {
