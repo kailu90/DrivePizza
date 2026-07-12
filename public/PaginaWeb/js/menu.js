@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
-import { agregarItem, actualizarCantidad, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
+import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 
@@ -562,6 +562,7 @@ function renderCarrito() {
           <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
         </div>
         <div class="pw-cart-item-precio">${formulaHtml}${formatPrecio(subtotal)}</div>
+        <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -576,6 +577,13 @@ function renderCarrito() {
   list.querySelectorAll('.pw-cart-qty-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       actualizarCantidad(Number(btn.dataset.idx), Number(btn.dataset.delta));
+      renderCarrito();
+    });
+  });
+
+  list.querySelectorAll('.pw-cart-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      quitarItem(Number(btn.dataset.idx));
       renderCarrito();
     });
   });

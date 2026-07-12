@@ -4,7 +4,7 @@
 
 import { supabase } from '../../Api/supabaseConfig.js';
 import { getSedeActual, displayNombre } from './sede.js';
-import { getCarrito, getTotal, getTotalAdiciones, vaciarCarrito, formatPrecio } from './carrito.js';
+import { getCarrito, getTotal, getTotalAdiciones, quitarItem, vaciarCarrito, formatPrecio } from './carrito.js';
 import { domicilios } from '../../CallCenter/domicilios.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ function init() {
 // ── RESUMEN ───────────────────────────────────────────────────
 function renderResumen() {
   const carrito = getCarrito();
-  summaryItems.innerHTML = carrito.map(item => {
+  summaryItems.innerHTML = carrito.map((item, idx) => {
     const precioUnitario = item.precio + getTotalAdiciones(item);
     const subtotal = precioUnitario * item.cantidad;
     const formulaHtml = item.cantidad > 1
@@ -75,11 +75,23 @@ function renderResumen() {
         <span class="pw-summary-adicion-precio">+${formatPrecio(a.precio)}</span>
       </div>`).join('') : ''}
       ${item.obs ? `<div class="pw-summary-item-obs">"${item.obs}"</div>` : ''}
-      <div class="pw-summary-item-footer">${formulaHtml}<span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span></div>
+      <div class="pw-summary-item-footer">
+        ${formulaHtml}<span class="pw-summary-item-precio">${formatPrecio(subtotal)}</span>
+        <button class="pw-summary-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
+      </div>
     </div>`;
   }).join('');
   summarySubtotal.innerHTML = `<span>Subtotal</span><span>${formatPrecio(getTotal())}</span>`;
   summaryTotalPrev.textContent = formatPrecio(getTotal());
+
+  summaryItems.querySelectorAll('.pw-summary-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      quitarItem(Number(btn.dataset.idx));
+      if (!getCarrito().length) { window.location.href = 'menu.html'; return; }
+      renderResumen();
+      renderTotales();
+    });
+  });
 }
 
 // ── BARRIOS ───────────────────────────────────────────────────

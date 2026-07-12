@@ -1063,6 +1063,18 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-summary-formula { font-size: .7rem; font-weight: 400; color: #999; }
 .pw-summary-item-precio { font-weight: 700; color: var(--dp-green); }
+.pw-cart-delete-btn, .pw-summary-delete-btn {
+  background: none;
+  border: none;
+  font-size: .95rem;
+  cursor: pointer;
+  opacity: .45;
+  padding: 2px 4px;
+  margin-left: .4rem;
+  flex-shrink: 0;
+  transition: opacity .15s;
+}
+.pw-cart-delete-btn:hover, .pw-summary-delete-btn:hover { opacity: 1; }
 .pw-summary-subtotal {
   display: flex;
   justify-content: space-between;
