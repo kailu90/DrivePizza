@@ -634,6 +634,24 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sabor2-precio { font-size: .82rem; font-weight: 700; color: var(--dp-green); flex-shrink: 0; padding-left: .5rem; }
 .pw-sabor2-vacio { text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
 
+/* Adiciones hint + animación */
+@keyframes pw-hint-pulse {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  25%       { opacity: .7; transform: translateX(3px); }
+  75%       { opacity: .7; transform: translateX(-3px); }
+}
+.pw-adiciones-hint {
+  font-size: .72rem;
+  color: var(--dp-orange);
+  font-family: var(--dp-font-ui);
+  margin: .25rem 0 .4rem;
+  display: none;
+}
+.pw-adiciones-hint.pw-animate {
+  display: block;
+  animation: pw-hint-pulse 0.8s ease-in-out 0.4s 3;
+}
+
 /* Adiciones toggle mobile */
 .pw-adiciones-toggle { display: none; }
 .pw-adiciones-label-desk { display: block; }
@@ -667,6 +685,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   }
   .pw-adiciones-collapsible { display: none; }
   .pw-adiciones-collapsible.open { display: block; }
+  .pw-adiciones-hint { margin: .15rem 0 .3rem; }
 }
 
 /* Adiciones y Bordes */

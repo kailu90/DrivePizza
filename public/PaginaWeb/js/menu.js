@@ -423,6 +423,14 @@ function renderAdicionesSection() {
 
   sheetAdicionesWrap.style.display = '';
 
+  // Re-disparar animación del hint
+  const hint = document.getElementById('adiciones-hint');
+  if (hint) {
+    hint.classList.remove('pw-animate');
+    void hint.offsetWidth; // fuerza reflow
+    hint.classList.add('pw-animate');
+  }
+
   const adicionesData        = menuData['Adiciones'] || [];
   const adicionesDisponibles = adicionesData
     .map(a => {
