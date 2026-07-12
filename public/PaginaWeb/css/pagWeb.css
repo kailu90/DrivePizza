@@ -699,7 +699,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   width: 100%;
   border: 1.5px solid rgba(0, 0, 0, .12);
   border-radius: var(--dp-radius);
-  padding: .6rem .85rem;
+  padding: .38rem .7rem;
   font-size: .86rem;
   resize: none;
   background: #fff;
@@ -822,7 +822,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-checkout-main {
   max-width: 540px;
   margin: 0 auto;
-  padding: 1rem 1rem 8rem;
+  padding: .5rem .75rem 6rem;
   flex: 1;
 }
 
@@ -830,17 +830,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-checkout-section {
   background: #fff;
   border-radius: var(--dp-radius);
-  padding: 1.1rem;
-  margin-bottom: .75rem;
+  padding: .7rem;
+  margin-bottom: .4rem;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 .pw-checkout-section-title {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--dp-orange);
-  margin-bottom: .9rem;
+  margin-bottom: .55rem;
 }
 
 /* Acordeón resumen */
@@ -850,7 +850,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
-  font-size: .88rem;
+  font-size: .8rem;
   font-weight: 600;
   color: var(--dp-dark);
   background: none;
@@ -868,7 +868,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-weight: 700;
   color: var(--dp-green);
 }
-.pw-summary-body { margin-top: .9rem; }
+.pw-summary-body { margin-top: .5rem; }
 .pw-summary-item {
   display: flex;
   align-items: flex-start;
@@ -892,21 +892,21 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Campos de formulario */
-.pw-form-group { margin-bottom: .85rem; }
+.pw-form-group { margin-bottom: .5rem; }
 .pw-form-group:last-child { margin-bottom: 0; }
 .pw-form-label {
   display: block;
-  font-size: .76rem;
+  font-size: .68rem;
   font-weight: 600;
   color: var(--dp-dark);
-  margin-bottom: .3rem;
+  margin-bottom: .18rem;
 }
 .pw-form-input {
   width: 100%;
-  padding: .65rem .9rem;
+  padding: .38rem .7rem;
   border: 1.5px solid rgba(0,0,0,.14);
   border-radius: var(--dp-radius);
-  font-size: .9rem;
+  font-size: .82rem;
   background: var(--dp-mist);
   color: var(--dp-dark);
   transition: border-color var(--dp-transition);
@@ -915,17 +915,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23314B27' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .9rem center; padding-right: 2rem; }
 
 /* Tipo de entrega */
-.pw-entrega-pills { display: flex; gap: .6rem; margin-bottom: .9rem; }
+.pw-entrega-pills { display: flex; gap: .5rem; margin-bottom: .55rem; }
 .pw-entrega-pill {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .3rem;
-  padding: .75rem .5rem;
+  gap: .2rem;
+  padding: .45rem .5rem;
   border: 2px solid rgba(0,0,0,.12);
   border-radius: var(--dp-radius);
-  font-size: .82rem;
+  font-size: .75rem;
   font-weight: 600;
   color: #888;
   background: var(--dp-mist);
@@ -936,7 +936,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
   background: rgba(49,75,39,.06);
 }
-.pw-entrega-pill-icon { font-size: 1.4rem; }
+.pw-entrega-pill-icon { font-size: 1.1rem; }
 
 /* Fee de domicilio inline */
 .pw-domicilio-fee {
@@ -963,15 +963,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-recoger-info strong { font-weight: 700; }
 
 /* Pago pills */
-.pw-pago-pills { display: flex; gap: .5rem; flex-wrap: wrap; }
+.pw-pago-pills { display: flex; gap: .4rem; flex-wrap: wrap; }
 .pw-pago-pill {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  padding: .5rem 1rem;
+  gap: .3rem;
+  padding: .35rem .75rem;
   border: 1.5px solid rgba(0,0,0,.14);
   border-radius: 99px;
-  font-size: .82rem;
+  font-size: .76rem;
   font-weight: 600;
   color: #888;
   background: var(--dp-mist);
@@ -984,13 +984,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Totales */
-.pw-checkout-total-section { padding-top: .9rem; }
+.pw-checkout-total-section { padding-top: .5rem; }
 .pw-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: .35rem 0;
-  font-size: .88rem;
+  padding: .2rem 0;
+  font-size: .82rem;
 }
 .pw-total-final {
   font-weight: 700;
