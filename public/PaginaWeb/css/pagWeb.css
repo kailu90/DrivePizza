@@ -303,7 +303,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cats {
   position: sticky;
-  top: 57px;
+  top: 70px;
   z-index: 90;
   background: var(--dp-mist);
   border-bottom: 1px solid rgba(0, 0, 0, .07);
