@@ -158,15 +158,15 @@
               </div>
               <div class="pw-sede-card-info">
                 <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
-                  ${abierta ? 'Abierta ahora' : 'Cerrada'}
+                  ${abierta ? 'Abierto' : 'Cerrado'}
                 </span>
                 <div class="pw-sede-nombre">${nombre}</div>
-                ${sede.ciudad ? `<div class="pw-sede-ciudad">${sede.ciudad}</div>` : ''}
-                <div class="pw-sede-tiempo">🕐 45 - 60 min</div>
-                ${!abierta ? `<span class="pw-sede-horario">Abre: ${horario.split('–')[0].trim()}</span>` : ''}
-                <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}">
-                  ${abierta ? 'Ver menú →' : 'Ver horarios'}
-                </button>
+                <div class="pw-sede-card-footer">
+                  <span class="pw-sede-tiempo">${abierta ? '🕐 45 - 60 min' : `<span class="pw-sede-horario">Abre: ${horario.split('–')[0].trim()}</span>`}</span>
+                  <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}">
+                    ${abierta ? 'Ver menú →' : 'Ver horarios'}
+                  </button>
+                </div>
               </div>
             </div>`;
         }).join('');
