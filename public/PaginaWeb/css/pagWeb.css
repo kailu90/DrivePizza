@@ -1756,8 +1756,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-promo-section {
   margin-left: -.75rem;
   margin-right: -.75rem;
-  padding-left: 0;
-  padding-right: 0;
 }
 .pw-promo-section .pw-cat-section-title {
   padding-left: .75rem;
@@ -1765,8 +1763,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-promo-scroll-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .pw-promo-arrow {
@@ -1776,9 +1772,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 @media (min-width: 600px) {
   .pw-promo-arrow {
     display: flex;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-60%);
+    z-index: 3;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -1786,13 +1785,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     color: #fff;
     font-size: 1.5rem;
     line-height: 1;
-    z-index: 2;
-    box-shadow: var(--dp-shadow);
-    transition: var(--dp-transition);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    transition: background .15s;
   }
   .pw-promo-arrow:hover { background: #1e3a17; }
-  .pw-promo-arrow--prev { margin-right: .5rem; }
-  .pw-promo-arrow--next { margin-left: .5rem; }
+  .pw-promo-arrow--prev { left: .5rem; }
+  .pw-promo-arrow--next { right: .5rem; }
 }
 
 .pw-promo-list {

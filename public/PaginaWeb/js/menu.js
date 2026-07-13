@@ -294,12 +294,22 @@ function renderProductos() {
   setupPromoListeners(document.getElementById('promo-list'));
 
   const promoList = document.getElementById('promo-list');
-  document.getElementById('promo-prev')?.addEventListener('click', () => {
-    promoList.scrollBy({ left: -320, behavior: 'smooth' });
-  });
-  document.getElementById('promo-next')?.addEventListener('click', () => {
-    promoList.scrollBy({ left: 320, behavior: 'smooth' });
-  });
+  const promoPrev = document.getElementById('promo-prev');
+  const promoNext = document.getElementById('promo-next');
+
+  function updatePromoArrows() {
+    if (!promoPrev || !promoNext) return;
+    const atStart = promoList.scrollLeft <= 2;
+    const atEnd   = promoList.scrollLeft + promoList.clientWidth >= promoList.scrollWidth - 2;
+    promoPrev.style.display = atStart ? 'none' : '';
+    promoNext.style.display = atEnd   ? 'none' : '';
+  }
+
+  promoList.addEventListener('scroll', updatePromoArrows, { passive: true });
+  updatePromoArrows();
+
+  promoPrev?.addEventListener('click', () => promoList.scrollBy({ left: -320, behavior: 'smooth' }));
+  promoNext?.addEventListener('click', () => promoList.scrollBy({ left:  320, behavior: 'smooth' }));
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
