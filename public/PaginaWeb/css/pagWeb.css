@@ -438,7 +438,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 @media (min-width: 600px) {
   .pw-header-back--mobile { display: none; }
-  .pw-header-brand { flex: 0; margin-right: .5rem; }
+  .pw-header-brand { flex: none; margin-right: .5rem; }
   .pw-header-desknav {
     display: flex;
     align-items: center;
