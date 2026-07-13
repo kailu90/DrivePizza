@@ -251,17 +251,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-card-info {
   flex: 1;
-  padding: .4rem .7rem;
+  padding: .35rem .65rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-}
-.pw-sede-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .4rem;
-  margin-top: .15rem;
+  gap: .05rem;
 }
 .pw-sede-status {
   display: inline-flex;
@@ -299,15 +293,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #888;
 }
 .pw-sede-btn {
-  margin-top: .2rem;
-  padding: .28rem .7rem;
+  padding: .28rem .5rem;
   border-radius: 6px;
   font-size: .7rem;
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--dp-green);
   transition: var(--dp-transition);
-  align-self: flex-start;
+  width: 100%;
+  text-align: center;
 }
 .pw-sede-btn--abierta {
   background: var(--dp-green);
