@@ -130,7 +130,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .6rem 1rem;
+  padding: .3rem .75rem;
   background: var(--dp-sand);
   position: sticky;
   top: 0;
@@ -138,7 +138,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
 .pw-header-logo {
-  height: 36px;
+  height: 28px;
   width: auto;
 }
 .pw-header-btn {
