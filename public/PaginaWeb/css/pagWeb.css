@@ -445,6 +445,37 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     gap: .1rem;
     flex: 1;
   }
+
+  /* Sede chip desktop */
+  .pw-sede-chip {
+    font-size: .75rem;
+    padding: .35rem .85rem;
+    border-radius: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Cart button desktop → green pill with total */
+  .pw-cart-btn {
+    background: var(--dp-green);
+    color: #fff;
+    border-radius: 99px;
+    padding: .4rem .9rem;
+    font-size: 1rem;
+    width: auto;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    white-space: nowrap;
+  }
+  .pw-cart-btn:hover { background: #1e3a17; }
+  .pw-cart-btn-total {
+    display: inline;
+    font-size: .85rem;
+    font-weight: 700;
+    font-family: var(--dp-font-ui);
+  }
+  .pw-cart-badge { display: none !important; }
 }
 .pw-header-sede {
   font-size: .72rem;
@@ -462,6 +493,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex-shrink: 0;
   width: 44px;
   text-align: right;
+}
+.pw-cart-btn-total {
+  display: none; /* visible solo en desktop */
 }
 .pw-cart-badge {
   position: absolute;

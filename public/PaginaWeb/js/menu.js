@@ -72,6 +72,7 @@ const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
 const cartBar           = document.getElementById('cart-bar');
 const cartBadge         = document.getElementById('cart-badge');
+const cartBtnTotal      = document.getElementById('cart-btn-total');
 const cartBarItems      = document.getElementById('cart-bar-items');
 const cartBarTotal      = document.getElementById('cart-bar-total');
 const sheetNombre       = document.getElementById('sheet-nombre');
@@ -555,6 +556,7 @@ function renderCarrito() {
   cartBadge.textContent = conteo;
   cartBadge.classList.toggle('visible', conteo > 0);
   cartBar.classList.toggle('visible', conteo > 0);
+  if (cartBtnTotal) cartBtnTotal.textContent = conteo > 0 ? formatPrecio(total) : '';
   if (conteo > 0) {
     cartBarItems.textContent = `${conteo} ${conteo === 1 ? 'producto' : 'productos'}`;
     cartBarTotal.textContent  = formatPrecio(total);
