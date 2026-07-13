@@ -1774,23 +1774,22 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     display: flex;
     position: absolute;
     top: 50%;
-    transform: translateY(-60%);
     z-index: 3;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--dp-green);
-    color: #fff;
+    background: #fff;
+    color: var(--dp-green);
     font-size: 1.5rem;
     line-height: 1;
-    box-shadow: 0 2px 8px rgba(0,0,0,.3);
-    transition: background .15s;
+    box-shadow: 0 2px 10px rgba(0,0,0,.2);
+    transition: background .15s, box-shadow .15s;
   }
-  .pw-promo-arrow:hover { background: #1e3a17; }
-  .pw-promo-arrow--prev { left: .5rem; }
-  .pw-promo-arrow--next { right: .5rem; }
+  .pw-promo-arrow:hover { background: var(--dp-sand); box-shadow: 0 3px 14px rgba(0,0,0,.28); }
+  .pw-promo-arrow--prev { left: 10px;  transform: translate(-50%, -60%); }
+  .pw-promo-arrow--next { right: 10px; transform: translate(50%,  -60%); }
 }
 
 .pw-promo-list {
@@ -1800,8 +1799,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: .5rem;
-  padding-left: .75rem;
-  padding-right: .75rem;
+  padding-left: 10px;
+  padding-right: 10px;
   width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
