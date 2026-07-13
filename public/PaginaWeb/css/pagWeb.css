@@ -1767,18 +1767,38 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-promo-card {
   background: var(--dp-green);
   border-radius: var(--dp-radius);
-  padding: 1.1rem 1rem 1rem;
+  padding: 0;
   width: 300px;
   height: 150px;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: .3rem;
+  flex-direction: row;
+  gap: 0;
   cursor: pointer;
   border: 2px solid transparent;
   transition: var(--dp-transition);
   position: relative;
   overflow: hidden;
+}
+.pw-promo-img {
+  width: 110px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,.18);
+  overflow: hidden;
+}
+.pw-promo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pw-promo-info {
+  flex: 1;
+  padding: .85rem .85rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 0;
 }
 .pw-promo-card:hover { transform: translateY(-2px); box-shadow: var(--dp-shadow-lg); border-color: var(--dp-orange); }
 .pw-promo-card--inactiva { opacity: .45; cursor: not-allowed; }

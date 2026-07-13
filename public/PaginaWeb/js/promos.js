@@ -56,13 +56,18 @@ export function getPromosHTML() {
     { id: 'combo99k', badge: 'PROMO', titulo: '99K', desc: 'Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken' },
   ];
 
-  return promos.map(({ id, badge, titulo, desc, detalle, inactiva }) => `
+  return promos.map(({ id, badge, titulo, desc, detalle, inactiva, img }) => `
     <div class="pw-promo-card${inactiva ? ' pw-promo-card--inactiva' : ''}"
          data-promo="${inactiva ? '' : id}" role="button" tabindex="${inactiva ? '-1' : '0'}">
-      <span class="pw-promo-badge">${badge}</span>
-      <div class="pw-promo-titulo">${titulo}</div>
-      <div class="pw-promo-desc">${desc}</div>
-      ${detalle ? `<div class="pw-promo-detalle">${detalle}</div>` : ''}
+      <div class="pw-promo-img">
+        ${img ? `<img src="${img}" alt="${titulo}">` : ''}
+      </div>
+      <div class="pw-promo-info">
+        <span class="pw-promo-badge">${badge}</span>
+        <div class="pw-promo-titulo">${titulo}</div>
+        <div class="pw-promo-desc">${desc}</div>
+        ${detalle ? `<div class="pw-promo-detalle">${detalle}</div>` : ''}
+      </div>
     </div>`).join('');
 }
 
