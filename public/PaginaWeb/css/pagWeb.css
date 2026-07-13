@@ -207,6 +207,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-selector-gps-icon {
   height: 20px;
   width: auto;
+  mix-blend-mode: multiply;
 }
 .pw-selector-title {
   font-family: var(--dp-font-brand);
