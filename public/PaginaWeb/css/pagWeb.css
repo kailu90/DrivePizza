@@ -584,7 +584,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-menu-body {
-  padding: 1rem .75rem 140px;
+  padding: 1rem .4rem 140px;
   max-width: 1400px;
   margin: 0 auto;
   flex: 1;
@@ -1754,11 +1754,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-promo-section {
-  margin-left: -.75rem;
-  margin-right: -.75rem;
+  margin-left: -.4rem;
+  margin-right: -.4rem;
 }
 .pw-promo-section .pw-cat-section-title {
-  padding-left: .75rem;
+  padding-left: .4rem;
 }
 
 .pw-promo-scroll-wrap {
