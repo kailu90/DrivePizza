@@ -585,8 +585,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-menu-body {
   padding: 1rem .25rem 140px;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
   flex: 1;
 }
 
