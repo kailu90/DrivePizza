@@ -596,10 +596,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--dp-green);
-  margin-bottom: .85rem;
-  padding-bottom: .25rem;
-  border-bottom: 2px solid var(--dp-orange);
   display: block;
+  width: 100%;
+  margin-bottom: .85rem;
+  padding: 0 0 .25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--dp-orange);
+  text-align: left;
 }
 
 /* Acordeón — categorías colapsables (Pizzas, Bebidas) */
@@ -607,18 +611,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  background: none;
-  border: none;
-  border-bottom: 2px solid var(--dp-orange);
   cursor: pointer;
-  text-align: left;
-  font-family: var(--dp-font-brand);
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--dp-green);
-  padding: 0 0 .25rem;
-  margin-bottom: .85rem;
 }
 .pw-cat-chevron {
   font-size: 1rem;
@@ -1752,16 +1745,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    PROMOCIONES — CARDS
    ════════════════════════════════════════════════════════════ */
 
-.pw-promo-section {
-  margin-left: -.5rem;
-  margin-right: -.5rem;
-}
-.pw-promo-section .pw-cat-section-title {
-  padding-left: .5rem;
-}
-
 .pw-promo-scroll-wrap {
   position: relative;
+  margin-left: -.5rem;
+  margin-right: -.5rem;
 }
 
 .pw-promo-arrow {
