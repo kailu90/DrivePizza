@@ -193,7 +193,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-selector-section {
-  padding: 0 .5rem 1.5rem;
+  padding: 0 .75rem 1.5rem;
   max-width: 960px;
   margin: 0 auto;
   flex: 1;
@@ -225,7 +225,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border: 2px solid transparent;
   cursor: pointer;
   transition: var(--dp-transition);
-  height: 82px;
+  height: 100px;
 }
 .pw-sede-card:hover:not(.pw-sede-card--cerrada) {
   border-color: var(--dp-orange);
