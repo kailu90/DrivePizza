@@ -97,6 +97,7 @@
         alt: 'Drive Pizza',
         tagline: 'Hecha para compartir',
         titulo: 'Mucho más que pizza.',
+        tituloLg: true,
       },
     ];
 
@@ -114,7 +115,7 @@
           ${(b.tagline || b.titulo || b.subtitulo) ? `
           <div class="pw-banner-content">
             ${b.tagline ? `<span class="pw-banner-tagline">${b.tagline}</span>` : ''}
-            ${b.titulo  ? `<h2 class="pw-banner-titulo">${b.titulo}</h2>` : ''}
+            ${b.titulo  ? `<h2 class="pw-banner-titulo${b.tituloLg ? ' pw-banner-titulo--lg' : ''}">${b.titulo}</h2>` : ''}
             ${b.subtitulo ? `<p class="pw-banner-subtitulo">${b.subtitulo}</p>` : ''}
           </div>` : ''}
           ${b.href ? `</a>` : ''}

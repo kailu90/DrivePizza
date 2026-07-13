@@ -1598,11 +1598,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-banner-titulo {
   font-family: var(--dp-font-brand);
-  font-size: 1.9rem;
+  font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.2;
   margin: 0 0 .5rem;
   color: #fff;
+}
+.pw-banner-titulo--lg {
+  font-size: 1.9rem;
 }
 .pw-banner-subtitulo {
   font-size: .95rem;
