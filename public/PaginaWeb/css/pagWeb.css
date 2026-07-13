@@ -225,6 +225,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border: 2px solid transparent;
   cursor: pointer;
   transition: var(--dp-transition);
+  height: 82px;
 }
 .pw-sede-card:hover:not(.pw-sede-card--cerrada) {
   border-color: var(--dp-orange);
@@ -235,7 +236,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   cursor: not-allowed;
 }
 .pw-sede-card-img {
-  width: 85px;
+  width: 130px;
   flex-shrink: 0;
 }
 .pw-sede-card-img img {
@@ -246,18 +247,19 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-card-info {
   flex: 1;
-  padding: .5rem .7rem;
+  padding: .4rem .7rem;
   display: flex;
   flex-direction: column;
-  gap: .15rem;
+  gap: .1rem;
+  justify-content: center;
 }
 .pw-sede-status {
   display: inline-flex;
   align-items: center;
-  gap: .3rem;
-  font-size: .62rem;
+  gap: .25rem;
+  font-size: .58rem;
   font-weight: 600;
-  padding: .18rem .55rem;
+  padding: .14rem .45rem;
   border-radius: 99px;
   align-self: flex-start;
 }
@@ -271,26 +273,26 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-status::before {
   content: '';
-  width: 6px; height: 6px;
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: currentColor;
 }
 .pw-sede-nombre {
   font-family: var(--dp-font-brand);
-  font-size: 1rem;
+  font-size: .9rem;
   font-weight: 700;
   color: var(--dp-dark);
   line-height: 1.2;
 }
 .pw-sede-tiempo {
-  font-size: .75rem;
+  font-size: .68rem;
   color: #888;
 }
 .pw-sede-btn {
-  margin-top: .25rem;
-  padding: .42rem .85rem;
-  border-radius: 8px;
-  font-size: .78rem;
+  margin-top: .2rem;
+  padding: .28rem .7rem;
+  border-radius: 6px;
+  font-size: .7rem;
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--dp-green);
@@ -308,11 +310,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-horario {
   display: block;
-  font-size: .7rem;
+  font-size: .62rem;
   color: #aaa;
 }
 .pw-sede-ciudad {
-  font-size: .72rem;
+  font-size: .65rem;
   color: #aaa;
 }
 
