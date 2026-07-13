@@ -387,15 +387,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #284c22;
+  background: var(--dp-sand);
   padding: 0 1rem;
   display: flex;
   align-items: center;
   gap: .75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
 .pw-header-back {
-  color: var(--dp-sand);
+  color: var(--dp-green);
   font-size: 1.3rem;
   line-height: 1;
   padding: .2rem;
@@ -415,21 +415,22 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   min-width: 0;
 }
 .pw-header .pw-header-logo {
-  height: 70px;
+  height: 40px;
   width: auto;
   display: block;
+  mix-blend-mode: multiply;
 }
 .pw-header-sede {
   font-size: .72rem;
-  color: rgba(244, 236, 223, .7);
-  font-weight: 400;
+  color: var(--dp-green);
+  font-weight: 600;
   margin-top: .1rem;
   text-align: center;
 }
 
 .pw-cart-btn {
   position: relative;
-  color: var(--dp-sand);
+  color: var(--dp-green);
   font-size: 1.35rem;
   padding: .2rem;
   flex-shrink: 0;
@@ -460,10 +461,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-sede-chip {
   display: inline-block;
-  background: rgba(255, 255, 255, .12);
-  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(49, 75, 39, .1);
+  border: 1px solid rgba(49, 75, 39, .2);
   border-radius: 99px;
-  color: rgba(244, 236, 223, .85);
+  color: var(--dp-green);
   font-size: .58rem;
   font-family: var(--dp-font-ui);
   font-weight: 600;
