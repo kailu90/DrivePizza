@@ -211,8 +211,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sedes-grid {
   display: flex;
   flex-direction: column;
-  gap: .65rem;
-  padding: 0 .25rem;
+  gap: .5rem;
+  padding: 0;
 }
 
 .pw-sede-card {
@@ -235,7 +235,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   cursor: not-allowed;
 }
 .pw-sede-card-img {
-  width: 110px;
+  width: 85px;
   flex-shrink: 0;
 }
 .pw-sede-card-img img {
@@ -246,10 +246,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-card-info {
   flex: 1;
-  padding: .7rem .85rem;
+  padding: .5rem .7rem;
   display: flex;
   flex-direction: column;
-  gap: .2rem;
+  gap: .15rem;
 }
 .pw-sede-status {
   display: inline-flex;
@@ -287,7 +287,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #888;
 }
 .pw-sede-btn {
-  margin-top: .4rem;
+  margin-top: .25rem;
   padding: .42rem .85rem;
   border-radius: 8px;
   font-size: .78rem;
