@@ -1753,6 +1753,38 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    PROMOCIONES — CARDS
    ════════════════════════════════════════════════════════════ */
 
+.pw-promo-scroll-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pw-promo-arrow {
+  display: none; /* oculto en mobile */
+}
+
+@media (min-width: 600px) {
+  .pw-promo-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--dp-green);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    z-index: 2;
+    box-shadow: var(--dp-shadow);
+    transition: var(--dp-transition);
+  }
+  .pw-promo-arrow:hover { background: #1e3a17; }
+  .pw-promo-arrow--prev { margin-right: .5rem; }
+  .pw-promo-arrow--next { margin-left: .5rem; }
+}
+
 .pw-promo-list {
   display: flex;
   flex-wrap: nowrap;

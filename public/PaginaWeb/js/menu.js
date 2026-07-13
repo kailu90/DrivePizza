@@ -203,7 +203,11 @@ function renderProductos() {
   const promoSection = `
     <section class="pw-cat-section" id="sec-Promociones">
       <h3 class="pw-cat-section-title">Promociones</h3>
-      <div class="pw-promo-list" id="promo-list">${getPromosHTML()}</div>
+      <div class="pw-promo-scroll-wrap">
+        <button class="pw-promo-arrow pw-promo-arrow--prev" id="promo-prev" aria-label="Anterior">&#8249;</button>
+        <div class="pw-promo-list" id="promo-list">${getPromosHTML()}</div>
+        <button class="pw-promo-arrow pw-promo-arrow--next" id="promo-next" aria-label="Siguiente">&#8250;</button>
+      </div>
     </section>`;
 
   menuBody.innerHTML = promoSection + GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
@@ -288,6 +292,14 @@ function renderProductos() {
   menuBody.querySelectorAll('.pw-cat-section').forEach(sec => observer.observe(sec));
 
   setupPromoListeners(document.getElementById('promo-list'));
+
+  const promoList = document.getElementById('promo-list');
+  document.getElementById('promo-prev')?.addEventListener('click', () => {
+    promoList.scrollBy({ left: -320, behavior: 'smooth' });
+  });
+  document.getElementById('promo-next')?.addEventListener('click', () => {
+    promoList.scrollBy({ left: 320, behavior: 'smooth' });
+  });
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
