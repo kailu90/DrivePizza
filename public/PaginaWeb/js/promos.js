@@ -48,12 +48,13 @@ export function getPromosHTML() {
       desc: 'Lleva 3 del mismo tamaño, paga solo 2.',
       detalle: esMartes ? 'Pizzas · Lasañas · Ensaladas · Calzones' : 'Disponible solo los martes',
       inactiva: !esMartes,
+      img: '../Imagenes/productos/pizza-genova.jpg',
     },
-    { id: 'p65k',     badge: 'PROMO', titulo: '65K', desc: 'Pizza Grande + Gaseosa 1.5 lts',                         detalle: 'Clásica · Típica' },
-    { id: 'p48k',     badge: 'PROMO', titulo: '48K', desc: '2 Lasañas o 2 Espaguettis<br>+ 2 Gaseosas 250 ml' },
-    { id: 'p28k',     badge: 'PROMO', titulo: '28K', desc: 'Pizza Pepperoni<br>6 porciones · 30 cm' },
-    { id: 'kit25k',   badge: 'PROMO', titulo: '25K', desc: 'Kit Pizzeritos<br>5 sabores disponibles' },
-    { id: 'combo99k', badge: 'PROMO', titulo: '99K', desc: 'Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken' },
+    { id: 'p65k',     badge: 'PROMO', titulo: '65K', desc: 'Pizza Grande + Gaseosa 1.5 lts',        detalle: 'Clásica · Típica',            img: '../Imagenes/productos/pizza-mexicana.jpg' },
+    { id: 'p48k',     badge: 'PROMO', titulo: '48K', desc: '2 Lasañas o 2 Espaguettis<br>+ 2 Gaseosas 250 ml',                              img: '../Imagenes/productos/lasana.jpg' },
+    { id: 'p28k',     badge: 'PROMO', titulo: '28K', desc: 'Pizza Pepperoni<br>6 porciones · 30 cm',                                         img: '../Imagenes/productos/pizza-pepperoni.jpg' },
+    { id: 'kit25k',   badge: 'PROMO', titulo: '25K', desc: 'Kit Pizzeritos<br>5 sabores disponibles',                                        img: '../Imagenes/productos/pizza-suprema-pepperoni.jpg' },
+    { id: 'combo99k', badge: 'PROMO', titulo: '99K', desc: 'Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken',                      img: '../Imagenes/productos/bebidas.jpg' },
   ];
 
   return promos.map(({ id, badge, titulo, desc, detalle, inactiva, img }) => `
