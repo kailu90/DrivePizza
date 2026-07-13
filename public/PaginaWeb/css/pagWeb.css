@@ -1569,7 +1569,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: var(--dp-radius-lg);
 }
 @media (min-width: 600px) {
-  .pw-banner-slide { aspect-ratio: 16 / 5; }
+  .pw-banner-slide { aspect-ratio: 16 / 4; }
 }
 .pw-banner-slide img {
   width: 100%;
