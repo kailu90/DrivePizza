@@ -599,7 +599,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   margin-bottom: .85rem;
   padding-bottom: .25rem;
   border-bottom: 2px solid var(--dp-orange);
-  display: inline-block;
+  display: block;
 }
 
 /* Acordeón — categorías colapsables (Pizzas, Bebidas) */
