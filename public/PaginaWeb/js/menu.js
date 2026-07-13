@@ -201,7 +201,7 @@ function renderCategorias() {
 // ── RENDER PRODUCTOS ──────────────────────────────────────────
 function renderProductos() {
   const promoSection = `
-    <section class="pw-cat-section" id="sec-Promociones">
+    <section class="pw-cat-section pw-promo-section" id="sec-Promociones">
       <h3 class="pw-cat-section-title">Promociones</h3>
       <div class="pw-promo-scroll-wrap">
         <button class="pw-promo-arrow pw-promo-arrow--prev" id="promo-prev" aria-label="Anterior">&#8249;</button>

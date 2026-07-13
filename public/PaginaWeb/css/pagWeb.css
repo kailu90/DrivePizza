@@ -1753,12 +1753,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    PROMOCIONES — CARDS
    ════════════════════════════════════════════════════════════ */
 
+.pw-promo-section {
+  margin-left: -.75rem;
+  margin-right: -.75rem;
+  padding-left: 0;
+  padding-right: 0;
+}
+.pw-promo-section .pw-cat-section-title {
+  padding-left: .75rem;
+}
+
 .pw-promo-scroll-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  margin-left: -.75rem;
-  margin-right: -.75rem;
 }
 
 .pw-promo-arrow {
