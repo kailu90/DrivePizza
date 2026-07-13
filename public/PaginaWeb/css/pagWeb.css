@@ -1781,7 +1781,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   overflow: hidden;
 }
 .pw-promo-img {
-  width: 110px;
+  width: 50%;
   flex-shrink: 0;
   background: rgba(0,0,0,.18);
   overflow: hidden;
