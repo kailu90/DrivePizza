@@ -1754,24 +1754,26 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-promo-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: .6rem;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .75rem;
+  overflow-x: auto;
+  padding-bottom: .25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-@media (min-width: 480px) {
-  .pw-promo-list { grid-template-columns: repeat(3, 1fr); }
-}
-@media (min-width: 700px) {
-  .pw-promo-list { grid-template-columns: repeat(4, 1fr); }
-}
+.pw-promo-list::-webkit-scrollbar { display: none; }
 
 .pw-promo-card {
   background: var(--dp-green);
   border-radius: var(--dp-radius);
-  padding: .9rem .75rem .75rem;
+  padding: 1.1rem 1rem 1rem;
+  min-width: 175px;
+  min-height: 155px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: .25rem;
+  gap: .3rem;
   cursor: pointer;
   border: 2px solid transparent;
   transition: var(--dp-transition);
