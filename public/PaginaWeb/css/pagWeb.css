@@ -1967,6 +1967,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     border-top: 1px solid rgba(0,0,0,.06);
     border-bottom: 1px solid rgba(0,0,0,.08);
   }
+
+  .pw-sedes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
