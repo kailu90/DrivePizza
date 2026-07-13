@@ -195,7 +195,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-selector-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   padding: .5rem .75rem .25rem;
   gap: .2rem;
 }
@@ -215,12 +215,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-weight: 600;
   color: var(--dp-dark);
   margin-bottom: 0;
-  text-align: center;
+  text-align: left;
 }
 .pw-selector-subtitle {
   font-size: .78rem;
   color: #888;
-  text-align: center;
+  text-align: left;
   margin: 0;
 }
 
