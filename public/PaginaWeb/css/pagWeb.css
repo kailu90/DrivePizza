@@ -207,73 +207,62 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-align: center;
 }
 
-/* Grid de sedes — 2 columnas en mobile, scroll horizontal en desktop */
+/* Lista de sedes */
 .pw-sedes-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .5rem;
-  padding: 4px;
-}
-@media (min-width: 600px) {
-  .pw-sedes-grid {
-    display: flex;
-    overflow-x: auto;
-    grid-template-columns: unset;
-    gap: .5rem;
-    padding: 4px 6px 8px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .pw-sedes-grid::-webkit-scrollbar { display: none; }
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  padding: 0 .25rem;
 }
 
 .pw-sede-card {
-  background: var(--dp-mist);
+  display: flex;
+  flex-direction: row;
+  background: #fff;
   border-radius: var(--dp-radius);
-  padding: .85rem 1rem;
+  overflow: hidden;
+  box-shadow: var(--dp-shadow);
   border: 2px solid transparent;
-  scroll-snap-align: start;
   cursor: pointer;
   transition: var(--dp-transition);
-  box-shadow: var(--dp-shadow);
-  text-align: center;
 }
 .pw-sede-card:hover:not(.pw-sede-card--cerrada) {
   border-color: var(--dp-orange);
   box-shadow: var(--dp-shadow-lg);
 }
-@media (min-width: 600px) {
-  .pw-sede-card { min-width: 135px; flex-shrink: 0; }
-}
 .pw-sede-card--cerrada {
-  opacity: .5;
+  opacity: .6;
   cursor: not-allowed;
 }
-.pw-sede-nombre {
-  font-family: var(--dp-font-brand);
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--dp-green);
-  margin-top: .5rem;
-  margin-bottom: .2rem;
+.pw-sede-card-img {
+  width: 110px;
+  flex-shrink: 0;
 }
-.pw-sede-ciudad {
-  font-size: .78rem;
-  color: #888;
-  margin-bottom: .65rem;
+.pw-sede-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pw-sede-card-info {
+  flex: 1;
+  padding: .7rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
 }
 .pw-sede-status {
   display: inline-flex;
   align-items: center;
   gap: .3rem;
-  font-size: .5rem;
+  font-size: .62rem;
   font-weight: 600;
-  padding: .22rem .65rem;
+  padding: .18rem .55rem;
   border-radius: 99px;
+  align-self: flex-start;
 }
 .pw-sede-status--abierta {
-  background: rgba(34, 139, 34, .15);
+  background: rgba(34, 139, 34, .12);
   color: #1a7a1a;
 }
 .pw-sede-status--cerrada {
@@ -286,12 +275,45 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 50%;
   background: currentColor;
 }
+.pw-sede-nombre {
+  font-family: var(--dp-font-brand);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dp-dark);
+  line-height: 1.2;
+}
+.pw-sede-tiempo {
+  font-size: .75rem;
+  color: #888;
+}
+.pw-sede-btn {
+  margin-top: .4rem;
+  padding: .42rem .85rem;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--dp-green);
+  transition: var(--dp-transition);
+  align-self: flex-start;
+}
+.pw-sede-btn--abierta {
+  background: var(--dp-green);
+  color: #fff;
+}
+.pw-sede-btn--abierta:hover { background: #1e3519; }
+.pw-sede-btn--cerrada {
+  background: transparent;
+  color: var(--dp-green);
+}
 .pw-sede-horario {
   display: block;
-  font-size: .55rem;
+  font-size: .7rem;
   color: #aaa;
-  margin-top: .4rem;
-  white-space: nowrap;
+}
+.pw-sede-ciudad {
+  font-size: .72rem;
+  color: #aaa;
 }
 
 

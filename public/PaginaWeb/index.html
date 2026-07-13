@@ -153,12 +153,21 @@
             <div class="pw-sede-card${abierta ? '' : ' pw-sede-card--cerrada'}"
                  data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
                  ${abierta ? 'tabindex="0" role="button" aria-label="Pedir en ' + nombre + '"' : 'aria-disabled="true"'}>
-              <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
-                ${abierta ? 'Abierta ahora' : 'Cerrada'}
-              </span>
-              <div class="pw-sede-nombre">${nombre}</div>
-              ${sede.ciudad ? `<div class="pw-sede-ciudad">${sede.ciudad}</div>` : ''}
-              ${!abierta ? `<span class="pw-sede-horario">Horario: ${horario}</span>` : ''}
+              <div class="pw-sede-card-img">
+                <img src="../Imagenes/banners/banner1.jpg" alt="${nombre}">
+              </div>
+              <div class="pw-sede-card-info">
+                <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
+                  ${abierta ? 'Abierta ahora' : 'Cerrada'}
+                </span>
+                <div class="pw-sede-nombre">${nombre}</div>
+                ${sede.ciudad ? `<div class="pw-sede-ciudad">${sede.ciudad}</div>` : ''}
+                <div class="pw-sede-tiempo">🕐 45 - 60 min</div>
+                ${!abierta ? `<span class="pw-sede-horario">Abre: ${horario.split('–')[0].trim()}</span>` : ''}
+                <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}">
+                  ${abierta ? 'Ver menú →' : 'Ver horarios'}
+                </button>
+              </div>
             </div>`;
         }).join('');
 
