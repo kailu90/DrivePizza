@@ -1591,21 +1591,21 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-banner-tagline {
   display: block;
   font-family: var(--dp-font-brand);
-  font-size: .8rem;
+  font-size: 1rem;
   color: var(--dp-orange);
   font-style: italic;
   margin-bottom: .4rem;
 }
 .pw-banner-titulo {
   font-family: var(--dp-font-brand);
-  font-size: 1.45rem;
+  font-size: 1.9rem;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
   margin: 0 0 .5rem;
   color: #fff;
 }
 .pw-banner-subtitulo {
-  font-size: .75rem;
+  font-size: .95rem;
   color: rgba(255,255,255,.85);
   margin: 0;
 }
