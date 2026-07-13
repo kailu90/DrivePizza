@@ -1768,8 +1768,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-green);
   border-radius: var(--dp-radius);
   padding: 1.1rem 1rem 1rem;
-  min-width: 175px;
-  min-height: 155px;
+  width: 200px;
+  height: 150px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
