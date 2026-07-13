@@ -1727,6 +1727,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 @media (min-width: 480px) {
   .pw-promo-list { grid-template-columns: repeat(3, 1fr); }
 }
+@media (min-width: 700px) {
+  .pw-promo-list { grid-template-columns: repeat(4, 1fr); }
+}
 
 .pw-promo-card {
   background: var(--dp-green);
