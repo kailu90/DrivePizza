@@ -1892,8 +1892,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 .pw-bottom-nav-emoji {
-  font-size: 2rem;
+  font-size: 1.5rem;
   line-height: 1;
+}
+.pw-bottom-nav-svg {
+  width: 22px;
+  height: 22px;
 }
 .pw-bottom-nav-btn--center {
   color: #fff;
