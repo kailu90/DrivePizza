@@ -503,21 +503,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: .35rem 1rem;
   border-radius: 99px;
   font-size: .78rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--dp-dark);
-  background: transparent;
-  border: 1.5px solid rgba(0, 0, 0, .12);
+  background: #fff;
+  border: 1.5px solid rgba(0, 0, 0, .10);
   cursor: pointer;
   transition: var(--dp-transition);
   white-space: nowrap;
   flex-shrink: 0;
   font-family: var(--dp-font-ui);
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
 .pw-cat-pill.active,
 .pw-cat-pill:hover {
   background: var(--dp-green);
-  color: var(--dp-sand);
+  color: #fff;
   border-color: var(--dp-green);
+  box-shadow: 0 2px 6px rgba(49,75,39,.25);
 }
 
 
