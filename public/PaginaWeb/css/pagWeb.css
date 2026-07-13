@@ -1757,6 +1757,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: relative;
   display: flex;
   align-items: center;
+  margin-left: -.75rem;
+  margin-right: -.75rem;
 }
 
 .pw-promo-arrow {
@@ -1794,9 +1796,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding-bottom: .5rem;
   padding-left: .75rem;
   padding-right: .75rem;
-  margin-left: -.75rem;
-  margin-right: -.75rem;
-  width: calc(100% + 1.5rem);
+  width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
