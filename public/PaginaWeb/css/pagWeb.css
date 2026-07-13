@@ -397,7 +397,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   justify-content: center;
   min-width: 0;
 }
-.pw-header-logo {
+.pw-header .pw-header-logo {
   height: 70px;
   width: auto;
   display: block;
