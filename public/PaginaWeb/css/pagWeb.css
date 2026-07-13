@@ -584,7 +584,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-menu-body {
-  padding: 1rem .25rem 140px;
+  padding: 1rem .5rem 140px;
   width: 100%;
   flex: 1;
 }
@@ -598,7 +598,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
   margin-bottom: .85rem;
   padding-bottom: .25rem;
-  padding-left: .35rem;
   border-bottom: 2px solid var(--dp-orange);
   display: inline-block;
 }
@@ -618,7 +617,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--dp-green);
-  padding: 0 0 .25rem 0;
+  padding: 0 0 .25rem;
   margin-bottom: .85rem;
 }
 .pw-cat-chevron {
@@ -1754,11 +1753,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-promo-section {
-  margin-left: -.25rem;
-  margin-right: -.25rem;
+  margin-left: -.5rem;
+  margin-right: -.5rem;
 }
 .pw-promo-section .pw-cat-section-title {
-  padding-left: .35rem;
+  padding-left: .5rem;
 }
 
 .pw-promo-scroll-wrap {
@@ -1788,8 +1787,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     transition: background .15s, box-shadow .15s;
   }
   .pw-promo-arrow:hover { background: var(--dp-sand); box-shadow: 0 3px 14px rgba(0,0,0,.28); }
-  .pw-promo-arrow--prev { left: 10px;  transform: translate(-50%, -60%); }
-  .pw-promo-arrow--next { right: 10px; transform: translate(50%,  -60%); }
+  .pw-promo-arrow--prev { left: .5rem;  transform: translate(-50%, -60%); }
+  .pw-promo-arrow--next { right: .5rem; transform: translate(50%,  -60%); }
 }
 
 .pw-promo-list {
@@ -1799,8 +1798,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: .5rem;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: .5rem;
+  padding-right: .5rem;
   width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
