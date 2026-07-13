@@ -210,6 +210,45 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: 0 .75rem;
 }
 
+/* Input dirección */
+.pw-direccion-wrapper {
+  padding: 0 .75rem .6rem;
+}
+.pw-direccion-input {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: #fff;
+  border: 1.5px solid #e0d8cc;
+  border-radius: 10px;
+  padding: .5rem .75rem;
+  box-shadow: var(--dp-shadow);
+}
+.pw-direccion-icon {
+  color: var(--dp-green);
+  flex-shrink: 0;
+}
+.pw-direccion-field {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: .82rem;
+  color: var(--dp-dark);
+  background: transparent;
+  font-family: var(--dp-font-ui);
+}
+.pw-direccion-field::placeholder { color: #aaa; }
+.pw-direccion-gps {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dp-green);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
 /* Lista de sedes */
 .pw-sedes-grid {
   display: flex;
