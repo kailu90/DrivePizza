@@ -125,20 +125,23 @@
     // Para agregar piezas: { src, alt, tagline?, titulo?, subtitulo?, href? }
     const BANNERS = [
       {
-        src: '../Imagenes/banners/banner1.jpg',
+        src: '../Imagenes/banners/banner1-desk.jpg',
+        srcMobile: '../Imagenes/banners/banner1-mobile.jpg',
         alt: 'Drive Pizza',
         tagline: 'Hecha para compartir',
         titulo: 'La mejor pizza al estilo neoyorquino.',
       },
       {
-        src: '../Imagenes/banners/banner2.jpg',
+        src: '../Imagenes/banners/banner2-desk.jpg',
+        srcMobile: '../Imagenes/banners/banner2-mobile.jpg',
         alt: 'Drive Pizza',
         tagline: 'Hecha para compartir',
         titulo: 'El equilibrio perfecto entre lo dulce y lo salado.',
         objectPosition: 'center bottom',
       },
       {
-        src: '../Imagenes/banners/banner3.jpg',
+        src: '../Imagenes/banners/banner3-desk.jpg',
+        srcMobile: '../Imagenes/banners/banner3-mobile.jpg',
         alt: 'Drive Pizza',
         tagline: 'Hecha para compartir',
         titulo: 'Mucho más que pizza.',
@@ -155,7 +158,10 @@
       track.innerHTML = BANNERS.map(b => `
         <div class="pw-banner-slide">
           ${b.href ? `<a href="${b.href}">` : ''}
-          <img src="${b.src}" alt="${b.alt ?? ''}" ${b.objectPosition ? `style="object-position:${b.objectPosition}"` : ''}>
+          <picture>
+            ${b.srcMobile ? `<source media="(max-width:599px)" srcset="${b.srcMobile}">` : ''}
+            <img src="${b.src}" alt="${b.alt ?? ''}" ${b.objectPosition ? `style="object-position:${b.objectPosition}"` : ''}>
+          </picture>
           <div class="pw-banner-overlay"></div>
           ${(b.tagline || b.titulo || b.subtitulo) ? `
           <div class="pw-banner-content">
