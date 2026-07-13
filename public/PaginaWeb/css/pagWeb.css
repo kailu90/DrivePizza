@@ -424,6 +424,28 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
   mix-blend-mode: multiply;
 }
+
+/* Nav desktop dentro del header (menu.html) */
+.pw-header-desknav {
+  display: none; /* oculta en mobile */
+}
+.pw-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .pw-header-back--mobile { display: none; }
+  .pw-header-brand { flex: 0; margin-right: .5rem; }
+  .pw-header-desknav {
+    display: flex;
+    align-items: center;
+    gap: .1rem;
+    flex: 1;
+  }
+}
 .pw-header-sede {
   font-size: .72rem;
   color: var(--dp-green);

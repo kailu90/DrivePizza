@@ -15,15 +15,43 @@
 
     <!-- HEADER -->
     <header class="pw-header">
-      <a href="index.html" class="pw-header-back" aria-label="Volver al inicio">&#8592;</a>
+
+      <!-- Mobile: flecha volver | Desktop: oculto -->
+      <a href="index.html" class="pw-header-back pw-header-back--mobile" aria-label="Volver al inicio">&#8592;</a>
+
+      <!-- Logo: centrado mobile | izquierda desktop -->
       <div class="pw-header-brand">
         <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
       </div>
-      <span class="pw-sede-chip" id="header-sede"></span>
-      <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
-        🛒
-        <span class="pw-cart-badge" id="cart-badge"></span>
-      </button>
+
+      <!-- Nav desktop (oculta en mobile) -->
+      <nav class="pw-header-desknav" aria-label="Navegación">
+        <a href="index.html" class="pw-top-nav-btn">
+          <span class="pw-top-nav-emoji">🏠</span><span>Inicio</span>
+        </a>
+        <button class="pw-top-nav-btn pw-top-nav-btn--active">
+          <span class="pw-top-nav-emoji">🍕</span><span>Menú</span>
+        </button>
+        <button class="pw-top-nav-btn pw-top-nav-btn--cta" id="btn-pedir-ahora">
+          <span class="pw-top-nav-emoji">🛒</span><span>Pedir ahora</span>
+        </button>
+        <button class="pw-top-nav-btn">
+          <span class="pw-top-nav-emoji">❤️</span><span>Favoritos</span>
+        </button>
+        <button class="pw-top-nav-btn">
+          <span class="pw-top-nav-emoji">👤</span><span>Mi cuenta</span>
+        </button>
+      </nav>
+
+      <!-- Acciones: sede + carrito -->
+      <div class="pw-header-actions">
+        <span class="pw-sede-chip" id="header-sede"></span>
+        <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
+          🛒
+          <span class="pw-cart-badge" id="cart-badge"></span>
+        </button>
+      </div>
+
     </header>
 
     <!-- CATEGORÍAS NAV -->
