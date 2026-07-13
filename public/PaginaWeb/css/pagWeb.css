@@ -140,6 +140,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-header-logo {
   height: 40px;
   width: auto;
+  mix-blend-mode: multiply;
 }
 .pw-header-btn {
   background: none;
