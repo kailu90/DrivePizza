@@ -1758,7 +1758,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex-wrap: nowrap;
   gap: .75rem;
   overflow-x: auto;
-  padding-bottom: .25rem;
+  overflow-y: visible;
+  padding-bottom: .5rem;
+  padding-left: .75rem;
+  padding-right: .75rem;
+  margin-left: -.75rem;
+  margin-right: -.75rem;
+  width: calc(100% + 1.5rem);
+  box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
