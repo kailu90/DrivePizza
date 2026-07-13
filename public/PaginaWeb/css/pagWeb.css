@@ -1856,6 +1856,57 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-transform: uppercase;
 }
 
+/* ── BOTTOM NAV ───────────────────────────────────────────── */
+.pw-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: #fff;
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pw-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  padding: .55rem .25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: .62rem;
+  font-weight: 600;
+  font-family: var(--dp-font-ui);
+  transition: color .15s;
+}
+.pw-bottom-nav-btn:hover,
+.pw-bottom-nav-btn--active {
+  color: var(--dp-green);
+}
+.pw-bottom-nav-btn--center {
+  color: #fff;
+  background: var(--dp-green);
+  border-radius: 16px;
+  margin: .35rem .15rem;
+  flex: 1.2;
+  box-shadow: 0 2px 8px rgba(49,75,39,.3);
+}
+.pw-bottom-nav-btn--center:hover {
+  background: #3d5e30;
+  color: #fff;
+}
+
+/* Espacio para que el contenido no quede tapado por el nav */
+.pw-selector-section { padding-bottom: 70px; }
+
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
 @media (max-width: 599px) {
   .pw-hero .pw-hero-logo { max-width: 70px; }
