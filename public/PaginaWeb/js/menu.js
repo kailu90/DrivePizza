@@ -10,6 +10,47 @@ import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
+// ── IMÁGENES DE PRODUCTOS (temporales) ────────────────────────
+const PRODUCT_IMAGES = {
+  'Pepperoni':         '../Imagenes/productos/pizza-pepperoni.jpg',
+  'Mexicana':          '../Imagenes/productos/pizza-mexicana.jpg',
+  'Suprema Pepperoni': '../Imagenes/productos/pizza-suprema-pepperoni.jpg',
+  'Carbonara':         '../Imagenes/productos/pizza-carbonara.jpg',
+  'Lasaña Sencilla':   '../Imagenes/productos/lasana.jpg',
+  'Lasaña Mixta':      '../Imagenes/productos/lasana.jpg',
+  'Lasaña Remix':      '../Imagenes/productos/lasana.jpg',
+  'Lasaña Vegetariana':'../Imagenes/productos/lasana.jpg',
+  'Lasaña Drive':      '../Imagenes/productos/lasana.jpg',
+  'Sandwiche Jamón':   '../Imagenes/productos/sanduche.jpg',
+  'Sandwiche Pollo':   '../Imagenes/productos/sanduche.jpg',
+  'Sandwiche Atún':    '../Imagenes/productos/sanduche.jpg',
+  'Sodas':             '../Imagenes/productos/bebidas.jpg',
+};
+
+const CAT_EMOJI = {
+  'Pizzas Especiales':      '🍕',
+  'Pizzas Clásicas':        '🍕',
+  'Pizzas Típicas':         '🍕',
+  'Pizzas Estofadas':       '🍕',
+  'Pizzas Super Estofadas': '🍕',
+  'Pizzetas Premium':       '🍕',
+  'Lasañas':                '🫕',
+  'Pastas':                 '🍝',
+  'Sandwiches':             '🥪',
+  'Hamburguesas':           '🍔',
+  'Ensaladas':              '🥗',
+  'Stromboli':              '🌯',
+  'Calzones':               '🫓',
+  'Jugos Naturales':        '🥤',
+  'Refrescos':              '🥤',
+  'Limonadas':              '🍋',
+  'Sodas':                  '🥤',
+  'Cervezas':               '🍺',
+  'Otros':                  '🥤',
+  'Maicitos':               '🌽',
+  'Entradas/Adición':       '🍞',
+};
+
 // ── ESTADO ────────────────────────────────────────────────────
 let productoActivo         = null;
 let cantActual             = 1;
@@ -191,18 +232,26 @@ function renderProductos() {
       const minPrecio      = Math.min(...precios);
       const tieneVariantes = Object.keys(p.opciones).length > 1;
       const dataP          = encodeURIComponent(JSON.stringify({ ...p, categoria: cat }));
+      const imgSrc         = PRODUCT_IMAGES[p.nombre];
+      const emoji          = CAT_EMOJI[cat] || '🍽️';
+      const imgHTML        = imgSrc
+        ? `<img src="${imgSrc}" alt="${p.nombre}" loading="lazy">`
+        : `<span class="pw-product-img-emoji">${emoji}</span>`;
       return `
         <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
              aria-label="Agregar ${p.nombre}">
+          <div class="pw-product-img${imgSrc ? '' : ' pw-product-img--placeholder'}">${imgHTML}</div>
           <div class="pw-product-info">
             <div class="pw-product-nombre">${p.nombre}</div>
             ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
+            <div class="pw-product-footer">
+              <div class="pw-product-price">
+                ${tieneVariantes ? '<span class="pw-product-desde">Desde </span>' : ''}
+                ${formatPrecio(minPrecio)}
+              </div>
+              <div class="pw-product-add" aria-hidden="true">+</div>
+            </div>
           </div>
-          <div class="pw-product-price">
-            ${tieneVariantes ? '<span style="font-size:.7rem;font-weight:400">Desde </span>' : ''}
-            ${formatPrecio(minPrecio)}
-          </div>
-          <div class="pw-product-add" aria-hidden="true">+</div>
         </div>`;
     }).join('');
 
