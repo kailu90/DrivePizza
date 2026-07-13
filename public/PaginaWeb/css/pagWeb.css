@@ -598,6 +598,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
   margin-bottom: .85rem;
   padding-bottom: .25rem;
+  padding-left: .35rem;
   border-bottom: 2px solid var(--dp-orange);
   display: inline-block;
 }
@@ -1757,7 +1758,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   margin-right: -.25rem;
 }
 .pw-promo-section .pw-cat-section-title {
-  padding-left: .25rem;
+  padding-left: .35rem;
 }
 
 .pw-promo-scroll-wrap {
