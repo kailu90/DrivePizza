@@ -192,14 +192,30 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex: 1;
   box-sizing: border-box;
 }
+.pw-selector-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .5rem .75rem .25rem;
+  gap: .2rem;
+}
+.pw-selector-gps-icon {
+  color: var(--dp-green);
+  margin-bottom: .1rem;
+}
 .pw-selector-title {
   font-family: var(--dp-font-brand);
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--dp-dark);
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   text-align: center;
-  padding: 0 .75rem;
+}
+.pw-selector-subtitle {
+  font-size: .78rem;
+  color: #888;
+  text-align: center;
+  margin: 0;
 }
 
 /* Input dirección */
@@ -1837,6 +1853,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-banner-wrapper { padding: .25rem .75rem .5rem; }
   .pw-selector-section { overflow-y: auto; padding-bottom: 0; width: 100%; box-sizing: border-box; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .pw-selector-section::-webkit-scrollbar { display: none; }
-  .pw-selector-title { margin-bottom: .5rem; }
+  .pw-selector-header { padding: .4rem .75rem .2rem; }
+  .pw-selector-title { margin-bottom: 0; }
   .pw-footer { padding: .5rem 1rem; }
 }
