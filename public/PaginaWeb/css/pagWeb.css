@@ -587,6 +587,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: 1rem .5rem 140px;
   width: 100%;
   flex: 1;
+  overflow-x: clip;
 }
 
 .pw-cat-section { margin-bottom: 2.25rem; }
