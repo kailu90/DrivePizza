@@ -293,9 +293,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #888;
 }
 .pw-sede-btn {
-  padding: .28rem .5rem;
+  padding: .18rem .5rem;
   border-radius: 6px;
-  font-size: .7rem;
+  font-size: .62rem;
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--dp-green);
