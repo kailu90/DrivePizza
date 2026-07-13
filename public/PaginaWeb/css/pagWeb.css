@@ -127,16 +127,19 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 /* ── HEADER NAV (index.html) ───────────────────────────────── */
+.pw-nav-shell {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
 .pw-header-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 .75rem;
   background: var(--dp-sand);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
 .pw-header-logo {
   height: 40px;
@@ -1914,6 +1917,57 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 /* Espacio para que el contenido no quede tapado por el nav */
 .pw-selector-section { padding-bottom: 70px; }
+
+/* ── TOP NAV (desktop) ────────────────────────────────────── */
+.pw-top-nav {
+  display: none; /* oculto en mobile */
+}
+
+.pw-top-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .45rem 1.1rem;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  font-family: var(--dp-font-ui);
+  white-space: nowrap;
+}
+.pw-top-nav-btn:hover { background: rgba(0,0,0,.05); color: var(--dp-dark); }
+.pw-top-nav-btn--active { color: var(--dp-green); }
+.pw-top-nav-emoji { font-size: 1rem; line-height: 1; }
+
+.pw-top-nav-btn--cta {
+  background: var(--dp-green);
+  color: #fff;
+  border-radius: 99px;
+  padding: .38rem 1.4rem;
+  box-shadow: 0 2px 6px rgba(49,75,39,.25);
+}
+.pw-top-nav-btn--cta:hover { background: #3d5e30; color: #fff; }
+
+/* ── DESKTOP (min-width: 600px) ──────────────────────────── */
+@media (min-width: 600px) {
+  .pw-bottom-nav { display: none; }
+  .pw-selector-section { padding-bottom: 1rem; }
+
+  .pw-top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    padding: .4rem 2rem;
+    background: var(--dp-sand);
+    border-top: 1px solid rgba(0,0,0,.06);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+  }
+}
 
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
 @media (max-width: 599px) {

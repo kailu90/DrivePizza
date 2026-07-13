@@ -11,20 +11,49 @@
 </head>
 <body>
 
-  <!-- HEADER NAV -->
-  <header class="pw-header-nav">
-    <button class="pw-header-btn" aria-label="Menú">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
-    <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
-    <button class="pw-header-btn" aria-label="Mi cuenta">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-      </svg>
-    </button>
-  </header>
+  <!-- NAV SHELL (sticky en desktop, agrupa header + top nav) -->
+  <div class="pw-nav-shell">
+
+    <!-- HEADER NAV -->
+    <header class="pw-header-nav">
+      <button class="pw-header-btn" aria-label="Menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
+      <button class="pw-header-btn" aria-label="Mi cuenta">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- TOP NAV (solo desktop) -->
+    <nav class="pw-top-nav" aria-label="Navegación principal">
+      <button class="pw-top-nav-btn pw-top-nav-btn--active" aria-label="Inicio">
+        <span class="pw-top-nav-emoji">🏠</span>
+        <span>Inicio</span>
+      </button>
+      <button class="pw-top-nav-btn" aria-label="Menú">
+        <span class="pw-top-nav-emoji">🍕</span>
+        <span>Menú</span>
+      </button>
+      <button class="pw-top-nav-btn pw-top-nav-btn--cta" aria-label="Ordenar ahora">
+        <span class="pw-top-nav-emoji">🛒</span>
+        <span>Ordenar ahora</span>
+      </button>
+      <button class="pw-top-nav-btn" aria-label="Favoritos">
+        <span class="pw-top-nav-emoji">❤️</span>
+        <span>Favoritos</span>
+      </button>
+      <button class="pw-top-nav-btn" aria-label="Mi cuenta">
+        <span class="pw-top-nav-emoji">👤</span>
+        <span>Mi cuenta</span>
+      </button>
+    </nav>
+
+  </div><!-- /pw-nav-shell -->
 
   <!-- BANNER CARRUSEL -->
   <div class="pw-banner-wrapper">
