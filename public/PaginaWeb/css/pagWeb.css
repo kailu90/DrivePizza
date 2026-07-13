@@ -10,6 +10,7 @@ html { font-size: 16px; scroll-behavior: smooth; }
 
 body {
   font-family: var(--dp-font-ui);
+  font-weight: 500;
   background: var(--dp-sand);
   color: var(--dp-dark);
   min-height: 100dvh;
@@ -212,7 +213,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-selector-title {
   font-family: var(--dp-font-brand);
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 800;
   color: var(--dp-dark);
   margin-bottom: 0;
   text-align: left;
@@ -336,7 +337,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-nombre {
   font-family: var(--dp-font-brand);
   font-size: .9rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--dp-dark);
   line-height: 1.2;
 }
@@ -1598,7 +1599,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-banner-titulo {
   font-family: var(--dp-font-brand);
   font-size: 1.45rem;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.25;
   margin: 0 0 .5rem;
   color: #fff;

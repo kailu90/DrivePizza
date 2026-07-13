@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* Fuentes Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
 
 :root {
   /* ── Paleta principal ─────────────────────────────────────── */
@@ -18,8 +18,8 @@
   --dp-mist:    #F8F8F8;   /* Metropolitan Mist   — superficies        */
 
   /* ── Tipografía ───────────────────────────────────────────── */
-  --dp-font-brand: 'Playfair Display', Georgia, serif;  /* Logo, títulos, categorías */
-  --dp-font-ui:    'Poppins', system-ui, sans-serif;    /* Precios, botones, forms   */
+  --dp-font-brand: 'Manrope', system-ui, sans-serif;    /* Títulos ExtraBold 800     */
+  --dp-font-ui:    'Manrope', system-ui, sans-serif;    /* Texto Medium 500          */
 
   /* ── Tokens de UI ─────────────────────────────────────────── */
   --dp-radius:     12px;
