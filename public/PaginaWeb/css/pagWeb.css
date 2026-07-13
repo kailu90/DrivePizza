@@ -383,16 +383,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    MENU — HEADER
    ════════════════════════════════════════════════════════════ */
 
-.pw-header {
+.pw-menu-shell {
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+}
+
+.pw-header {
+  position: relative;
   background: var(--dp-sand);
   padding: 0 1rem;
   display: flex;
   align-items: center;
   gap: .75rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
 .pw-header-back {
   color: var(--dp-green);
@@ -476,10 +480,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-cats {
-  position: sticky;
-  top: 70px;
-  z-index: 90;
   background: var(--dp-mist);
+  border-top: 1px solid rgba(0, 0, 0, .06);
   border-bottom: 1px solid rgba(0, 0, 0, .07);
   overflow-x: auto;
   white-space: nowrap;

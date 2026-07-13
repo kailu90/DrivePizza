@@ -10,21 +10,26 @@
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header class="pw-header">
-    <a href="index.html" class="pw-header-back" aria-label="Volver al inicio">&#8592;</a>
-    <div class="pw-header-brand">
-      <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
-    </div>
-    <span class="pw-sede-chip" id="header-sede"></span>
-    <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
-      🛒
-      <span class="pw-cart-badge" id="cart-badge"></span>
-    </button>
-  </header>
+  <!-- MENU SHELL (sticky: header + pills juntos) -->
+  <div class="pw-menu-shell">
 
-  <!-- CATEGORÍAS NAV -->
-  <nav class="pw-cats" id="cats-nav" aria-label="Categorías del menú"></nav>
+    <!-- HEADER -->
+    <header class="pw-header">
+      <a href="index.html" class="pw-header-back" aria-label="Volver al inicio">&#8592;</a>
+      <div class="pw-header-brand">
+        <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
+      </div>
+      <span class="pw-sede-chip" id="header-sede"></span>
+      <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
+        🛒
+        <span class="pw-cart-badge" id="cart-badge"></span>
+      </button>
+    </header>
+
+    <!-- CATEGORÍAS NAV -->
+    <nav class="pw-cats" id="cats-nav" aria-label="Categorías del menú"></nav>
+
+  </div><!-- /pw-menu-shell -->
 
   <!-- AVISO SEDE CERRADA -->
   <div class="pw-closed-banner" id="closed-banner" style="display:none">
