@@ -2021,7 +2021,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
 @media (max-width: 599px) {
   .pw-hero .pw-hero-logo { max-width: 70px; }
-  body { height: 100dvh; overflow: hidden; }
+  body.pw-page-index { height: 100dvh; overflow: hidden; }
   .pw-banner-wrapper { padding: .25rem .75rem .5rem; }
   .pw-selector-section { overflow-y: auto; padding-bottom: 0; width: 100%; box-sizing: border-box; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .pw-selector-section::-webkit-scrollbar { display: none; }
