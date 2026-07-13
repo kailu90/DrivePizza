@@ -1786,13 +1786,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   overflow-y: visible;
   padding-bottom: .5rem;
   padding-left: .5rem;
-  padding-right: .5rem;
   width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .pw-promo-list::-webkit-scrollbar { display: none; }
+.pw-promo-list::after {
+  content: '';
+  flex-shrink: 0;
+  width: .5rem;
+}
 
 .pw-promo-card {
   background: var(--dp-green);
