@@ -525,7 +525,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-menu-body {
   padding: 1rem .75rem 140px;
-  max-width: 720px;
+  max-width: 1400px;
   margin: 0 auto;
   flex: 1;
 }
@@ -586,6 +586,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 @media (min-width: 520px) {
   .pw-product-list { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .pw-product-list { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1200px) {
+  .pw-product-list { grid-template-columns: repeat(5, 1fr); }
 }
 
 .pw-product-card {
