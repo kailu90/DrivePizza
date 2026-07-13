@@ -175,7 +175,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-hero .pw-hero-logo { max-width: 70px; }
   body { height: 100dvh; overflow: hidden; }
   .pw-banner-wrapper { padding: .5rem .75rem .5rem; }
-  .pw-selector-section { overflow-y: auto; padding-bottom: .5rem; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .pw-selector-section { overflow-y: auto; padding-bottom: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .pw-selector-section::-webkit-scrollbar { display: none; }
   .pw-selector-title { margin-bottom: .5rem; }
   .pw-footer { padding: .5rem 1rem; }
@@ -194,10 +194,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-selector-section {
-  padding: 0 .75rem 1.5rem;
+  padding: 0;
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
   flex: 1;
+  box-sizing: border-box;
 }
 .pw-selector-title {
   font-family: var(--dp-font-brand);
@@ -206,6 +208,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-dark);
   margin-bottom: 1rem;
   text-align: center;
+  padding: 0 .75rem;
 }
 
 /* Lista de sedes */
@@ -213,7 +216,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  padding: 0;
+  padding: 0 .75rem;
 }
 
 .pw-sede-card {
