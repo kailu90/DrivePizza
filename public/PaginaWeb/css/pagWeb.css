@@ -2074,8 +2074,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-sand);
   display: flex;
   align-items: stretch;
-  border-top: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  border-top: none;
+  box-shadow: none;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .pw-bottom-nav-btn {
