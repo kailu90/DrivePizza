@@ -215,17 +215,27 @@
           return;
         }
 
+        const SEDE_IMGS = {
+          'acropolis':   '../Imagenes/sedes/acropolis.png',
+          'cabecera':    '../Imagenes/sedes/cabecera.png',
+          'cañaveral':   '../Imagenes/sedes/canaveral.png',
+          'canaveral':   '../Imagenes/sedes/canaveral.png',
+          'megamall':    '../Imagenes/sedes/megamall.png',
+          'piedecuesta': '../Imagenes/sedes/piedecuesta.png',
+        };
+
         grid.innerHTML = sedes.map(sede => {
-          const abierta = estaAbierta(sede);
-          const nombre  = displayNombre(sede);
-          const horario = formatHorario(sede);
+          const abierta  = estaAbierta(sede);
+          const nombre   = displayNombre(sede);
+          const horario  = formatHorario(sede);
+          const sedeImg  = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
 
           return `
             <div class="pw-sede-card${abierta ? '' : ' pw-sede-card--cerrada'}"
                  data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
                  ${abierta ? 'tabindex="0" role="button" aria-label="Pedir en ' + nombre + '"' : 'aria-disabled="true"'}>
               <div class="pw-sede-card-img">
-                <img src="../Imagenes/sede-placeholder.jpeg" alt="${nombre}">
+                <img src="${sedeImg}" alt="${nombre}">
               </div>
               <div class="pw-sede-card-info">
                 <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
