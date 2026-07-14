@@ -272,7 +272,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  padding: 0 .75rem calc(70px + env(safe-area-inset-bottom, 0px));
+  padding: 0 .75rem;
+}
+
+/* Spacer para que la última card no quede tapada por el bottom nav */
+.pw-sedes-grid::after {
+  content: '';
+  display: block;
+  height: calc(80px + env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
 }
 
 .pw-sede-card {
