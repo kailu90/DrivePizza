@@ -6,6 +6,7 @@ import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede
 import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
+import { initBottomNav } from './bottomNav.js';
 
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
@@ -207,6 +208,7 @@ function init() {
     promoSheet,
   });
 
+  initBottomNav('menu');
   renderCategorias();
   renderProductos();
   renderCarrito();
