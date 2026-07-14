@@ -2081,7 +2081,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Espacio para que el contenido no quede tapado por el nav */
-.pw-selector-section { padding-bottom: 70px; }
+.pw-selector-section { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 
 /* ── TOP NAV (desktop) ────────────────────────────────────── */
 .pw-top-nav {
