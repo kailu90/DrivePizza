@@ -2071,7 +2071,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   left: 0;
   right: 0;
   z-index: 200;
-  background: #fff;
+  background: var(--dp-sand);
   display: flex;
   align-items: stretch;
   border-top: 1px solid rgba(0,0,0,.08);
