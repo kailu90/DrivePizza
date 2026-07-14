@@ -428,7 +428,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-promo-section {
   padding: .75rem .5rem .25rem;
-  margin-bottom: 0;
 }
 
 .pw-header {
@@ -630,7 +629,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex: 1;
 }
 
-.pw-cat-section { margin-bottom: 2.25rem; }
+.pw-cat-section { margin-bottom: 0; }
 
 .pw-cat-section-title {
   font-family: var(--dp-font-brand);
