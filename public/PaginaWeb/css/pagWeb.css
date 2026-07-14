@@ -2159,7 +2159,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-selector-title { margin-bottom: 0; }
   .pw-footer { padding: .5rem 1rem; }
 
-  /* Promo cards: ancho de pantalla con padding lateral en mobile */
-  .pw-promo-list { scroll-snap-type: x mandatory; scroll-padding-left: 1rem; padding-left: 1rem; padding-right: 1rem; }
-  .pw-promo-card { min-width: calc(100vw - 2rem); width: calc(100vw - 2rem); scroll-snap-align: start; }
+  /* Promo cards: alineadas con product cards (mismo padding del pw-menu-body) */
+  .pw-promo-scroll-wrap { margin-left: 0; margin-right: 0; }
+  .pw-promo-list { scroll-snap-type: x mandatory; padding-left: 0; padding-right: 0; }
+  .pw-promo-card { min-width: 100%; width: 100%; scroll-snap-align: start; }
 }
