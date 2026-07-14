@@ -2160,6 +2160,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-footer { padding: .5rem 1rem; }
 
   /* Promo cards: ancho de pantalla con padding lateral en mobile */
-  .pw-promo-list { scroll-snap-type: x mandatory; padding-left: 1rem; padding-right: 1rem; }
+  .pw-promo-list { scroll-snap-type: x mandatory; scroll-padding-left: 1rem; padding-left: 1rem; padding-right: 1rem; }
   .pw-promo-card { min-width: calc(100vw - 2rem); width: calc(100vw - 2rem); scroll-snap-align: start; }
 }
