@@ -104,7 +104,7 @@ const PRODUCT_IMAGES = {
   'Maicitos Gratinados':        '../Imagenes/productos/MaicitosGratinados.jpg',
   // Bebidas
   'Agua':                       '../Imagenes/productos/Agua.jpg',
-  'Cerveza 3 Cordilleras':      '../Imagenes/productos/Cerveza.jpg',
+  'Cerveza 3 Cordilleras':      '../Imagenes/productos/Cerveza3Cordilleras.png',
   'Cerveza Nacional':           '../Imagenes/productos/Cerveza.jpg',
   'Gaseosa 1.5 lts':            '../Imagenes/productos/Gaseosa1.5Lts.jpg',
   'Gaseosa 400 ml':             '../Imagenes/productos/Gaseosa400ml.jpg',
