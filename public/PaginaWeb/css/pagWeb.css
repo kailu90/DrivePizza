@@ -1060,7 +1060,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cart-bar {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  z-index: 150;
+  z-index: 210;
   padding: .85rem 1.25rem calc(.85rem + env(safe-area-inset-bottom, 0px));
   background: var(--dp-green);
   display: none;

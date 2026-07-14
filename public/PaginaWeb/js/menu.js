@@ -688,6 +688,11 @@ function renderCarrito() {
   cartBadge.textContent = conteo;
   cartBadge.classList.toggle('visible', conteo > 0);
   cartBar.classList.toggle('visible', conteo > 0);
+  const bottomCartBadge = document.getElementById('bottom-cart-badge');
+  if (bottomCartBadge) {
+    bottomCartBadge.textContent = conteo;
+    bottomCartBadge.classList.toggle('visible', conteo > 0);
+  }
   if (cartBtnTotal) cartBtnTotal.textContent = conteo > 0 ? formatPrecio(total) : '';
   if (conteo > 0) {
     cartBarItems.textContent = `${conteo} ${conteo === 1 ? 'producto' : 'productos'}`;
@@ -837,6 +842,7 @@ function setupListeners() {
   // Abrir carrito
   document.getElementById('btn-abrir-carrito').addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('btn-cart-bar').addEventListener('click', () => abrirSheet(cartSheet));
+  document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));
 
   // Overlay cierra todo
   overlay.addEventListener('click', cerrarTodo);
