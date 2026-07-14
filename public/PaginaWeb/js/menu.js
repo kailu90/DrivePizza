@@ -212,6 +212,28 @@ function init() {
   renderCarrito();
   setupListeners();
 
+  // Altura del header para que pw-sub-shell sepa dónde pegarse
+  const menuShellEl = document.querySelector('.pw-menu-shell');
+  if (menuShellEl) {
+    document.documentElement.style.setProperty('--pw-header-h', menuShellEl.offsetHeight + 'px');
+  }
+
+  // Buscador de productos
+  const menuSearch = document.getElementById('menu-search');
+  menuSearch?.addEventListener('input', () => {
+    const q = menuSearch.value.trim().toLowerCase();
+    menuBody.querySelectorAll('.pw-cat-section').forEach(sec => {
+      let visible = 0;
+      sec.querySelectorAll('.pw-product-card').forEach(card => {
+        const p = JSON.parse(decodeURIComponent(card.dataset.p));
+        const match = !q || p.nombre.toLowerCase().includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      sec.style.display = visible === 0 ? 'none' : '';
+    });
+  });
+
   // Scroll a la categoría elegida en la página anterior
   const catParam = new URLSearchParams(location.search).get('cat');
   if (catParam && catParam !== 'null') {
@@ -221,7 +243,6 @@ function init() {
 
 // ── NAVEGACIÓN AGRUPADA ────────────────────────────────────────
 const GRUPOS_NAV = [
-  { label: 'Promociones',  cats: [] },
   { label: 'Pizzas',       cats: ['Pizzas Estofadas', 'Pizzas Super Estofadas', 'Pizzas Especiales', 'Pizzas Clásicas', 'Pizzas Típicas', 'Pizzetas Premium'] },
   { label: 'Bebidas',      cats: ['Jugos Naturales', 'Refrescos', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'] },
   { label: 'Calzones',     cats: ['Calzones'] },
@@ -259,7 +280,9 @@ function scrollToSection(id) {
     sec.dataset.open = 'true';
     sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'true');
   }
-  const offset = 70 + catsNav.offsetHeight + 4;
+  const shellH    = document.querySelector('.pw-menu-shell')?.offsetHeight ?? 0;
+  const subShellH = document.querySelector('.pw-sub-shell')?.offsetHeight ?? 0;
+  const offset    = shellH + subShellH + 4;
   window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
 }
 
@@ -275,8 +298,8 @@ function activarGrupo(grupoLabel, scroll) {
   const grupo = GRUPOS_NAV.find(g => g.label === grupoLabel);
   const id = grupo?.cats[0]
     ? 'sec-' + grupo.cats[0].replace(/\s+/g, '-')
-    : 'sec-Promociones';
-  scrollToSection(id);
+    : null;
+  if (id) scrollToSection(id);
 }
 
 function renderCategorias() {
@@ -288,21 +311,16 @@ function renderCategorias() {
     pill.addEventListener('click', () => activarGrupo(pill.dataset.grupo, true));
   });
 
-  activarGrupo('Promociones', false);
+  activarGrupo('Pizzas', false);
 }
 
 // ── RENDER PRODUCTOS ──────────────────────────────────────────
 function renderProductos() {
-  const promoSection = `
-    <section class="pw-cat-section pw-promo-section" id="sec-Promociones">
-      <div class="pw-promo-scroll-wrap">
-        <button class="pw-promo-arrow pw-promo-arrow--prev" id="promo-prev" aria-label="Anterior">&#8249;</button>
-        <div class="pw-promo-list" id="promo-list">${getPromosHTML()}</div>
-        <button class="pw-promo-arrow pw-promo-arrow--next" id="promo-next" aria-label="Siguiente">&#8250;</button>
-      </div>
-    </section>`;
+  // Poblar lista de promos en el HTML estático
+  const promoListEl = document.getElementById('promo-list');
+  if (promoListEl) promoListEl.innerHTML = getPromosHTML();
 
-  menuBody.innerHTML = promoSection + GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
+  menuBody.innerHTML = GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
     const productos = menuData[cat];
     if (!productos) return '';
     const secId      = 'sec-' + cat.replace(/\s+/g, '-');
@@ -370,7 +388,7 @@ function renderProductos() {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       const catKey     = entry.target.id.replace('sec-', '').replace(/-/g, ' ');
-      const grupoLabel = catKey === 'Promociones' ? 'Promociones' : (CAT_TO_GRUPO[catKey] || catKey);
+      const grupoLabel = CAT_TO_GRUPO[catKey] || catKey;
 
       catsNav.querySelectorAll('.pw-cat-pill').forEach(p => {
         const activo = p.dataset.grupo === grupoLabel;

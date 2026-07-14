@@ -55,10 +55,25 @@
 
     </header>
 
-    <!-- CATEGORÍAS NAV -->
-    <nav class="pw-cats" id="cats-nav" aria-label="Categorías del menú"></nav>
-
   </div><!-- /pw-menu-shell -->
+
+  <!-- PROMOS (se renderizan desde JS) -->
+  <section class="pw-promo-section pw-cat-section" id="sec-Promociones">
+    <div class="pw-promo-scroll-wrap">
+      <button class="pw-promo-arrow pw-promo-arrow--prev" id="promo-prev" aria-label="Anterior">&#8249;</button>
+      <div class="pw-promo-list" id="promo-list"></div>
+      <button class="pw-promo-arrow pw-promo-arrow--next" id="promo-next" aria-label="Siguiente">&#8250;</button>
+    </div>
+  </section>
+
+  <!-- SUB-SHELL (sticky: buscador + categorías) -->
+  <div class="pw-sub-shell">
+    <div class="pw-search-wrap">
+      <input type="search" class="pw-search-input" id="menu-search"
+             placeholder="Buscar producto..." autocomplete="off">
+    </div>
+    <nav class="pw-cats" id="cats-nav" aria-label="Categorías del menú"></nav>
+  </div>
 
   <!-- AVISO SEDE CERRADA -->
   <div class="pw-closed-banner" id="closed-banner" style="display:none">
