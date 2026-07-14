@@ -2158,4 +2158,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-selector-header { padding: .25rem .75rem .2rem; }
   .pw-selector-title { margin-bottom: 0; }
   .pw-footer { padding: .5rem 1rem; }
+
+  /* Promo cards: ancho completo en mobile */
+  .pw-promo-list { scroll-snap-type: x mandatory; }
+  .pw-promo-card { min-width: 100%; width: 100%; scroll-snap-align: start; }
 }
