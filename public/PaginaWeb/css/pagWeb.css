@@ -2062,7 +2062,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 8px;
   font-size: .88rem;
   font-weight: 600;
-  color: #999;
+  color: var(--dp-green);
   background: none;
   border: none;
   cursor: pointer;
