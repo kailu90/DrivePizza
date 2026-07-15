@@ -328,10 +328,6 @@ function renderCategorias() {
 
 // ── RENDER PRODUCTOS ──────────────────────────────────────────
 function renderProductos() {
-  // Poblar lista de promos en el HTML estático
-  const promoListEl = document.getElementById('promo-list');
-  if (promoListEl) promoListEl.innerHTML = getPromosHTML();
-
   menuBody.innerHTML = GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
     const productos = menuData[cat];
     if (!productos) return '';
@@ -413,25 +409,6 @@ function renderProductos() {
 
   menuBody.querySelectorAll('.pw-cat-section').forEach(sec => observer.observe(sec));
 
-  setupPromoListeners(document.getElementById('promo-list'));
-
-  const promoList = document.getElementById('promo-list');
-  const promoPrev = document.getElementById('promo-prev');
-  const promoNext = document.getElementById('promo-next');
-
-  function updatePromoArrows() {
-    if (!promoPrev || !promoNext) return;
-    const atStart = promoList.scrollLeft <= 2;
-    const atEnd   = promoList.scrollLeft + promoList.clientWidth >= promoList.scrollWidth - 2;
-    promoPrev.style.display = atStart ? 'none' : '';
-    promoNext.style.display = atEnd   ? 'none' : '';
-  }
-
-  promoList.addEventListener('scroll', updatePromoArrows, { passive: true });
-  updatePromoArrows();
-
-  promoPrev?.addEventListener('click', () => promoList.scrollBy({ left: -320, behavior: 'smooth' }));
-  promoNext?.addEventListener('click', () => promoList.scrollBy({ left:  320, behavior: 'smooth' }));
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
