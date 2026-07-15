@@ -93,11 +93,35 @@
     <p id="error-sedes" style="display:none; text-align:center; color:#e74c3c; font-size:.88rem; margin-top:1rem;"></p>
   </section>
 
+  <!-- BOTTOM NAV -->
+  <nav class="pw-bottom-nav">
+    <button class="pw-bottom-nav-btn pw-bottom-nav-btn--active" id="bottom-nav-inicio" aria-label="Inicio">
+      <span class="pw-bottom-nav-emoji">🏠</span>
+      <span>Inicio</span>
+    </button>
+    <button class="pw-bottom-nav-btn" id="bottom-nav-menu" aria-label="Menú">
+      <span class="pw-bottom-nav-emoji">🍕</span>
+      <span>Menú</span>
+    </button>
+    <button class="pw-bottom-nav-btn pw-bottom-nav-btn--center" aria-label="Pedido">
+      <span class="pw-bottom-nav-emoji">🛒</span>
+      <span>Pedido</span>
+    </button>
+    <button class="pw-bottom-nav-btn" aria-label="Favoritos">
+      <span class="pw-bottom-nav-emoji">❤️</span>
+      <span>Favoritos</span>
+    </button>
+    <button class="pw-bottom-nav-btn" aria-label="Cuenta">
+      <span class="pw-bottom-nav-emoji">👤</span>
+      <span>Cuenta</span>
+    </button>
+  </nav>
+
   <script type="module">
     import { cargarSedes, estaAbierta, formatHorario, setSedeActual, displayNombre } from './js/sede.js';
     import { vaciarCarrito } from './js/carrito.js';
     import { initBottomNav } from './js/bottomNav.js';
-    initBottomNav('inicio');
+    initBottomNav();
 
     // ── BANNER ──────────────────────────────────────────────────
     // Para agregar piezas: { src, alt, tagline?, titulo?, subtitulo?, href? }

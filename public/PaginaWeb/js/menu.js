@@ -8,8 +8,8 @@ import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CA
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 
-// Bottom nav carga inmediatamente (top-level, antes del init async)
-initBottomNav('menu');
+// Conectar listeners del bottom nav
+initBottomNav();
 
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
