@@ -268,6 +268,20 @@ const GRUPOS_NAV = [
   { label: 'Entradas',     cats: ['Entradas/Adición'] },
 ];
 
+const CAT_ICONS = {
+  'Pizzas':       `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 5) rotate(150 12 12)"><g transform="translate(12 12) scale(1.2) translate(-12 -12)"><path d="M9.44 9.44Q12 4 14.56 9.44L17.44 15.56Q20 21 14 21L10 21Q4 21 6.56 15.56Z"/><circle cx="12" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="9.5" cy="17" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="17" r="1" fill="currentColor" stroke="none"/></g></g></svg>`,
+  'Bebidas':      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l-1.5 16h-7L7 3z"/><line x1="6" y1="8" x2="18" y2="8"/></svg>`,
+  'Calzones':     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15 Q5 6 12 5 Q19 6 19 15 Q15 21 12 21 Q9 21 5 15z"/><path d="M5 15 Q12 12 19 15"/></svg>`,
+  'Stromboli':    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="4"/><line x1="8" y1="11" x2="8" y2="13"/><line x1="12" y1="11" x2="12" y2="13"/><line x1="16" y1="11" x2="16" y2="13"/></svg>`,
+  'Hamburguesas': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 Q12 4 20 8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="4" y1="19" x2="20" y2="19"/></svg>`,
+  'Sandwiches':   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 Q12 3 20 6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><path d="M4 18 Q12 21 20 18"/></svg>`,
+  'Ensaladas':    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 Q17 7 15 13"/><path d="M12 3 Q7 7 9 13"/><path d="M9 13 Q12 20 15 13"/><line x1="7" y1="13" x2="17" y2="13"/></svg>`,
+  'Lasañas':      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="15" width="18" height="4" rx="1"/></svg>`,
+  'Pastas':       `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><path d="M8 7 Q12 5 16 7"/><path d="M6 12 Q12 10 18 12"/><path d="M8 17 Q12 15 16 17"/></svg>`,
+  'Maicitos':     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 Q9 2 12 2 Q15 2 15 4 Q17 7 17 13 Q17 19 12 21 Q7 19 7 13 Q7 7 9 4z"/><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/></svg>`,
+  'Entradas':     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M5 3h6v9a3 3 0 01-6 0V3z"/><line x1="16" y1="3" x2="16" y2="21"/></svg>`,
+};
+
 const CAT_SHORT = {
   'Pizzas Estofadas':       'Estofadas',
   'Pizzas Super Estofadas': 'Super Estofadas',
@@ -316,7 +330,7 @@ function activarGrupo(grupoLabel, scroll) {
 
 function renderCategorias() {
   catsNav.innerHTML = GRUPOS_NAV.map(g =>
-    `<button class="pw-cat-pill" data-grupo="${g.label}">${g.label}</button>`
+    `<button class="pw-cat-pill" data-grupo="${g.label}">${CAT_ICONS[g.label] || ''}${g.label}</button>`
   ).join('');
 
   catsNav.querySelectorAll('.pw-cat-pill').forEach(pill => {

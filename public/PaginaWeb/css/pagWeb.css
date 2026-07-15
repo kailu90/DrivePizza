@@ -592,6 +592,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cat-pill {
   display: inline-flex;
   align-items: center;
+  gap: .35rem;
   padding: .35rem 1rem;
   border-radius: 99px;
   font-size: .78rem;
