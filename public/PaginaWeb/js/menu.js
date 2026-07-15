@@ -201,7 +201,7 @@ function init() {
     <div class="pw-sede-bar-info">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.25rem"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Preparando en<br><strong>${nombre}</strong>
     </div>
-    <a href="index.html" class="pw-sede-bar-cambiar">Cambiar<br><strong>sede</strong></a>`;
+    <a href="index.html" class="pw-sede-bar-cambiar">Cambiar sede</a>`;
   document.title = `Drive Pizza — ${nombre}`;
 
   if (!estaAbierta(sede)) {

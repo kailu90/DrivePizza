@@ -441,11 +441,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
 }
 .pw-sede-bar-cambiar {
-  text-align: right;
   color: var(--dp-green);
-  font-size: .72rem;
-  font-weight: 500;
-  line-height: 1.5;
+  font-size: .85rem;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
