@@ -159,7 +159,7 @@ let bordeSeleccionado      = null;
 let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
-const headerSede        = document.getElementById('header-sede'); // puede ser null
+const headerSede        = document.getElementById('sede-bar'); // franja debajo del header
 const catsNav           = document.getElementById('cats-nav');
 const menuBody          = document.getElementById('menu-body');
 const closedBanner      = document.getElementById('closed-banner');
@@ -170,8 +170,8 @@ const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
 const cartBar           = document.getElementById('cart-bar');
-const cartBadge         = document.getElementById('cart-badge');
-const cartBtnTotal      = document.getElementById('cart-btn-total');
+const cartBadge         = null; // badge movido al bottom nav (bottom-cart-badge)
+const cartBtnTotal      = null;
 const cartBarItems      = document.getElementById('cart-bar-items');
 const cartBarTotal      = document.getElementById('cart-bar-total');
 const sheetNombre       = document.getElementById('sheet-nombre');
@@ -691,8 +691,7 @@ function renderCarrito() {
   const conteo  = getConteo();
   const total   = getTotal();
 
-  cartBadge.textContent = conteo;
-  cartBadge.classList.toggle('visible', conteo > 0);
+  if (cartBadge) { cartBadge.textContent = conteo; cartBadge.classList.toggle('visible', conteo > 0); }
   cartBar.classList.toggle('visible', conteo > 0);
   const bottomCartBadge = document.getElementById('bottom-cart-badge');
   if (bottomCartBadge) {
@@ -846,7 +845,7 @@ function setupListeners() {
   document.getElementById('btn-cerrar-promo').addEventListener('click', () => cerrarSheet(promoSheet));
 
   // Abrir carrito
-  document.getElementById('btn-abrir-carrito').addEventListener('click', () => abrirSheet(cartSheet));
+  document.getElementById('btn-abrir-carrito')?.addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('btn-cart-bar').addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));
 

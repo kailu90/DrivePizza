@@ -15,8 +15,6 @@
 
     <!-- HEADER -->
     <header class="pw-header">
-
-      <!-- Izquierda: hamburger -->
       <div class="pw-header-left">
         <button class="pw-header-btn" id="btn-hamburger" aria-label="Menú">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -24,42 +22,20 @@
           </svg>
         </button>
       </div>
-
-      <!-- Centro: logo -->
       <div class="pw-header-logo-wrap">
         <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
       </div>
-
-      <!-- Nav desktop (oculta en mobile) -->
-      <nav class="pw-header-desknav" aria-label="Navegación">
-        <a href="index.html" class="pw-top-nav-btn">
-          <span class="pw-top-nav-emoji">🏠</span><span>Inicio</span>
-        </a>
-        <button class="pw-top-nav-btn pw-top-nav-btn--active">
-          <span class="pw-top-nav-emoji">🍕</span><span>Menú</span>
-        </button>
-        <button class="pw-top-nav-btn pw-top-nav-btn--cta" id="btn-pedir-ahora">
-          <span class="pw-top-nav-emoji">🛒</span><span>Pedir ahora</span>
-        </button>
-        <button class="pw-top-nav-btn">
-          <span class="pw-top-nav-emoji">❤️</span><span>Favoritos</span>
-        </button>
-        <button class="pw-top-nav-btn">
-          <span class="pw-top-nav-emoji">👤</span><span>Mi cuenta</span>
-        </button>
-      </nav>
-
-      <!-- Derecha: sede + carrito -->
-      <div class="pw-header-right pw-header-actions">
-        <span class="pw-sede-chip" id="header-sede"></span>
-        <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
-          🛒
-          <span class="pw-cart-badge" id="cart-badge"></span>
-          <span class="pw-cart-btn-total" id="cart-btn-total"></span>
+      <div class="pw-header-right">
+        <button class="pw-header-btn" id="btn-cuenta" aria-label="Mi cuenta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
         </button>
       </div>
-
     </header>
+
+    <!-- FRANJA SEDE -->
+    <div class="pw-sede-bar" id="sede-bar"></div>
 
   </div><!-- /pw-menu-shell -->
 

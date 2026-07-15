@@ -422,70 +422,18 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: .75rem .5rem .25rem;
 }
 
-/* Nav desktop dentro del header (menu.html) */
-.pw-header-desknav {
-  display: none;
-}
-.pw-header-actions {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-
-@media (min-width: 600px) {
-  /* En desktop el logo va a la izquierda; la desknav ocupa el espacio central */
-  .pw-header-logo-wrap { flex: none; margin-right: .5rem; }
-  .pw-header-right { flex: none; }
-  .pw-header-desknav {
-    display: flex;
-    align-items: center;
-    gap: .1rem;
-    flex: 1;
-  }
-
-  /* Sede chip desktop */
-  .pw-sede-chip {
-    font-size: .75rem;
-    padding: .35rem .85rem;
-    border-radius: 10px;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  /* Cart button desktop → green pill with total */
-  .pw-cart-btn {
-    background: var(--dp-green);
-    color: #fff;
-    border-radius: 99px;
-    padding: .25rem .9rem;
-    font-size: 1rem;
-    width: auto;
-    display: flex;
-    align-items: center;
-    gap: .25rem;
-    white-space: nowrap;
-  }
-  .pw-cart-btn:hover { background: #1e3a17; }
-  .pw-cart-btn-total {
-    display: inline;
-    font-size: .85rem;
-    font-weight: 700;
-    font-family: var(--dp-font-ui);
-  }
-  .pw-cart-badge { display: none !important; }
-}
-.pw-cart-btn {
-  position: relative;
+/* Franja de sede (debajo del header, antes de promos) */
+.pw-sede-bar {
+  background: var(--dp-sand);
+  text-align: center;
+  font-size: .75rem;
+  font-family: var(--dp-font-ui);
+  font-weight: 600;
   color: var(--dp-green);
-  font-size: 1.35rem;
-  padding: .2rem;
-  flex-shrink: 0;
-  width: 44px;
-  text-align: right;
+  padding: .1rem .75rem .4rem;
+  letter-spacing: .01em;
 }
-.pw-cart-btn-total {
-  display: none; /* visible solo en desktop */
-}
+
 .pw-cart-badge {
   position: absolute;
   top: -3px; right: -4px;
