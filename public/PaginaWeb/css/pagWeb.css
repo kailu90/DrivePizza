@@ -595,7 +595,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .78rem;
   font-weight: 600;
   color: var(--dp-dark);
-  background: #fff;
+  background: var(--dp-sand);
   border: 1.5px solid rgba(0, 0, 0, .10);
   cursor: pointer;
   transition: var(--dp-transition);
