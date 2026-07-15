@@ -328,6 +328,36 @@
     document.addEventListener('click', e => {
       if (!e.target.closest('.pw-direccion-wrapper')) hideSug();
     });
+
+    // ── GPS ─────────────────────────────────────────────────────
+    const gpsBtn = document.querySelector('.pw-direccion-gps');
+
+    gpsBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización.');
+        return;
+      }
+      gpsBtn.classList.add('pw-direccion-gps--loading');
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          try {
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`;
+            const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+            const data = await res.json();
+            dirField.value = data.display_name.split(',').slice(0, 3).join(',').trim();
+          } catch {
+            alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
+          } finally {
+            gpsBtn.classList.remove('pw-direccion-gps--loading');
+          }
+        },
+        () => {
+          alert('No se pudo acceder a tu ubicación. Verifica los permisos.');
+          gpsBtn.classList.remove('pw-direccion-gps--loading');
+        },
+        { timeout: 10000 }
+      );
+    });
   </script>
 
 </body>

@@ -286,7 +286,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   padding: 0;
   flex-shrink: 0;
+  transition: opacity .2s;
 }
+.pw-direccion-gps--loading {
+  opacity: .4;
+  pointer-events: none;
+  animation: pw-spin .8s linear infinite;
+}
+@keyframes pw-spin { to { transform: rotate(360deg); } }
 
 /* Lista de sedes */
 .pw-sedes-grid {
