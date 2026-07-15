@@ -506,7 +506,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-search-input:focus { border-color: var(--dp-green); }
 .pw-search-input:focus + .pw-search-icon,
 .pw-search-inner:focus-within .pw-search-icon { color: var(--dp-green); }
-.pw-search-input::placeholder { color: #aaa; }
+.pw-search-input::placeholder { color: #aaa; font-size: .75rem; }
 
 .pw-promo-section {
   padding: .75rem .5rem .25rem;
