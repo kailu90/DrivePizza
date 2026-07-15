@@ -1990,7 +1990,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   z-index: 200;
   background: var(--dp-sand);
   display: flex;
-  align-items: stretch;
+  align-items: flex-end;
+  overflow: visible;
   border-top: none;
   box-shadow: none;
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -2025,8 +2026,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   height: 22px;
 }
 .pw-bottom-nav-isotipo {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   object-fit: cover;
 }
@@ -2034,7 +2035,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #fff;
   background: var(--dp-green);
   border-radius: 16px;
-  margin: .35rem .15rem;
+  margin: 0 .15rem;
+  padding-top: 1rem;
+  padding-bottom: .55rem;
   flex: 1.2;
   box-shadow: 0 2px 8px rgba(49,75,39,.3);
 }
