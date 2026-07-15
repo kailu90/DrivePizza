@@ -153,7 +153,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding-left: .75rem;
   min-width: 0;
 }
 .pw-header-logo {
