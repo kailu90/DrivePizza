@@ -14,19 +14,25 @@
   <!-- NAV SHELL (sticky en desktop, agrupa header + top nav) -->
   <div class="pw-nav-shell">
 
-    <!-- HEADER NAV -->
-    <header class="pw-header-nav">
-      <button class="pw-header-btn" aria-label="Menú">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-      <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
-      <button class="pw-header-btn" aria-label="Mi cuenta">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-        </svg>
-      </button>
+    <!-- HEADER -->
+    <header class="pw-header">
+      <div class="pw-header-left">
+        <button class="pw-header-btn" id="btn-hamburger" aria-label="Menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="pw-header-logo-wrap">
+        <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
+      </div>
+      <div class="pw-header-right">
+        <button class="pw-header-btn" id="btn-cuenta" aria-label="Mi cuenta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <!-- TOP NAV (solo desktop) -->
@@ -121,6 +127,8 @@
     import { cargarSedes, estaAbierta, formatHorario, setSedeActual, displayNombre } from './js/sede.js';
     import { vaciarCarrito } from './js/carrito.js';
     import { initBottomNav } from './js/bottomNav.js';
+    import { initHeader } from './js/header.js';
+    initHeader();
     initBottomNav();
 
     // ── BANNER ──────────────────────────────────────────────────

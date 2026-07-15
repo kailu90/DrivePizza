@@ -7,8 +7,10 @@ import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getC
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
+import { initHeader } from './header.js';
 
-// Conectar listeners del bottom nav
+// Conectar listeners comunes
+initHeader();
 initBottomNav();
 
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)

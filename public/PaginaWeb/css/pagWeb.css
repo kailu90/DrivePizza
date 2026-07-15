@@ -135,17 +135,37 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
 
-.pw-header-nav {
+/* ── HEADER (compartido: index + menú) ─────────────────────── */
+.pw-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 .75rem;
   background: var(--dp-sand);
+  padding: 0 .5rem;
+  min-height: 56px;
+}
+.pw-header-left {
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+}
+.pw-header-logo-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 .pw-header-logo {
   height: 40px;
   width: auto;
+  display: block;
   mix-blend-mode: multiply;
+}
+.pw-header-right {
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 .pw-header-btn {
   background: none;
@@ -430,55 +450,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: .75rem .5rem .25rem;
 }
 
-.pw-header {
-  position: relative;
-  background: var(--dp-sand);
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-}
-.pw-header-back {
-  color: var(--dp-green);
-  font-size: 1.3rem;
-  line-height: 1;
-  padding: .2rem;
-  flex-shrink: 0;
-  opacity: .85;
-  transition: opacity var(--dp-transition);
-  width: 44px;
-  text-align: left;
-}
-.pw-header-back:hover { opacity: 1; }
-
-.pw-header-brand {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-}
-.pw-header .pw-header-logo {
-  height: 40px;
-  width: auto;
-  display: block;
-  mix-blend-mode: multiply;
-}
-
 /* Nav desktop dentro del header (menu.html) */
 .pw-header-desknav {
-  display: none; /* oculta en mobile */
+  display: none;
 }
 .pw-header-actions {
   display: flex;
   align-items: center;
   gap: .5rem;
-  flex-shrink: 0;
 }
 
 @media (min-width: 600px) {
-  .pw-header-back--mobile { display: none; }
-  .pw-header-brand { flex: none; margin-right: .5rem; }
+  /* En desktop el logo va a la izquierda; la desknav ocupa el espacio central */
+  .pw-header-logo-wrap { flex: none; margin-right: .5rem; }
+  .pw-header-right { flex: none; }
   .pw-header-desknav {
     display: flex;
     align-items: center;

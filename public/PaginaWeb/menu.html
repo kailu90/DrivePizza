@@ -16,11 +16,17 @@
     <!-- HEADER -->
     <header class="pw-header">
 
-      <!-- Mobile: flecha volver | Desktop: oculto -->
-      <a href="index.html" class="pw-header-back pw-header-back--mobile" aria-label="Volver al inicio">&#8592;</a>
+      <!-- Izquierda: hamburger -->
+      <div class="pw-header-left">
+        <button class="pw-header-btn" id="btn-hamburger" aria-label="Menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
 
-      <!-- Logo: centrado mobile | izquierda desktop -->
-      <div class="pw-header-brand">
+      <!-- Centro: logo -->
+      <div class="pw-header-logo-wrap">
         <img class="pw-header-logo" src="../Imagenes/recortelogosinfondo.png" alt="Drive Pizza">
       </div>
 
@@ -43,8 +49,8 @@
         </button>
       </nav>
 
-      <!-- Acciones: sede + carrito -->
-      <div class="pw-header-actions">
+      <!-- Derecha: sede + carrito -->
+      <div class="pw-header-right pw-header-actions">
         <span class="pw-sede-chip" id="header-sede"></span>
         <button class="pw-cart-btn" id="btn-abrir-carrito" aria-label="Ver carrito">
           🛒
