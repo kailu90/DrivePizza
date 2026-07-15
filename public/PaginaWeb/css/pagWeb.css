@@ -2087,7 +2087,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 @media (min-width: 600px) {
   .pw-bottom-nav { display: none; }
   .pw-selector-section { padding-bottom: 1rem; }
-  .pw-header { min-height: 46px; }
+  .pw-header { min-height: 40px; }
 
   .pw-top-nav {
     display: flex;
