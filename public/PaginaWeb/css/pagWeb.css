@@ -181,34 +181,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-header-btn:hover { background: rgba(0,0,0,.06); }
 
-.pw-hero {
-  background: #284c22;
-  padding: 0 1.5rem;
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.pw-hero-logo {
-  max-width: 100px;
-  width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-.pw-hero--sm {
-  padding: 0 1.5rem;
-}
-.pw-hero--sm .pw-hero-logo {
-  max-width: 70px;
-}
-
-.pw-tagline {
-  font-size: .9rem;
-  color: rgba(244, 236, 223, .7);
-  letter-spacing: .04em;
-}
-
 .pw-selector-section {
   padding: 0;
   width: 100%;
@@ -502,14 +474,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   }
   .pw-cart-badge { display: none !important; }
 }
-.pw-header-sede {
-  font-size: .72rem;
-  color: var(--dp-green);
-  font-weight: 600;
-  margin-top: .1rem;
-  text-align: center;
-}
-
 .pw-cart-btn {
   position: relative;
   color: var(--dp-green);
@@ -2166,7 +2130,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
 @media (max-width: 599px) {
-  .pw-hero .pw-hero-logo { max-width: 70px; }
   body.pw-page-index { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
   .pw-banner-wrapper { padding: .25rem .75rem .5rem; flex-shrink: 0; }
   .pw-nav-shell { flex-shrink: 0; }
