@@ -88,6 +88,10 @@
         </button>
       </div>
       <div class="pw-dir-suggestions" id="dir-suggestions" hidden></div>
+      <div class="pw-dir-complemento-wrap" id="dir-complemento-wrap" hidden>
+        <input type="text" id="dir-complemento" class="pw-dir-complemento"
+               placeholder="# Casa, apto, piso, torre, bloque..." autocomplete="off">
+      </div>
     </div>
     <div id="sedes-grid" class="pw-sedes-grid">
       <div style="grid-column:1/-1">
@@ -290,9 +294,16 @@
     init();
 
     // ── AUTOCOMPLETE DIRECCIÓN (Nominatim) ──────────────────────
-    const dirField = document.getElementById('dir-inicio');
-    const dirSug   = document.getElementById('dir-suggestions');
+    const dirField       = document.getElementById('dir-inicio');
+    const dirSug         = document.getElementById('dir-suggestions');
+    const dirCompWrap    = document.getElementById('dir-complemento-wrap');
+    const dirComp        = document.getElementById('dir-complemento');
     let   dirTimer;
+
+    function mostrarComplemento() {
+      dirCompWrap.hidden = false;
+      dirComp.focus();
+    }
 
     dirField.addEventListener('input', () => {
       clearTimeout(dirTimer);
@@ -318,7 +329,7 @@
         }).join('');
         dirSug.hidden = false;
         dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
-          btn.addEventListener('click', () => { dirField.value = btn.dataset.value; hideSug(); });
+          btn.addEventListener('click', () => { dirField.value = btn.dataset.value; hideSug(); mostrarComplemento(); });
         });
       } catch { hideSug(); }
     }
@@ -345,6 +356,7 @@
             const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
             const data = await res.json();
             dirField.value = data.display_name.split(',').slice(0, 3).join(',').trim();
+            mostrarComplemento();
           } catch {
             alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
           } finally {

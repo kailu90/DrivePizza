@@ -253,6 +253,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-dir-sug-item:last-child { border-bottom: none; }
 .pw-dir-sug-item:hover { background: var(--dp-sand); color: var(--dp-green); }
+.pw-dir-complemento-wrap {
+  margin-top: .5rem;
+}
+.pw-dir-complemento {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--dp-green);
+  border-radius: 10px;
+  padding: .55rem .75rem;
+  font-size: .82rem;
+  color: var(--dp-dark);
+  font-family: var(--dp-font-ui);
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: var(--dp-shadow);
+}
+.pw-dir-complemento::placeholder { color: #aaa; }
 .pw-direccion-input {
   display: flex;
   align-items: center;
