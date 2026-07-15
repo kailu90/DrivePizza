@@ -2003,7 +2003,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   justify-content: center;
   gap: .2rem;
-  padding: .55rem .25rem;
+  padding: .7rem .25rem .3rem;
   background: none;
   border: none;
   cursor: pointer;
