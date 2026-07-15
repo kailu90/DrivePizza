@@ -405,6 +405,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: rgba(200, 30, 30, .12);
   color: #c01e1e;
 }
+.pw-sede-status--fuera {
+  background: rgba(249, 115, 22, .12);
+  color: var(--dp-orange);
+}
 .pw-sede-status::before {
   content: '';
   width: 5px; height: 5px;

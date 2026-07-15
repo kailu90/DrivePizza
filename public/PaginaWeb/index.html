@@ -137,7 +137,6 @@
     initBottomNav();
 
     // ── BANNER ──────────────────────────────────────────────────
-    // Para agregar piezas: { src, alt, tagline?, titulo?, subtitulo?, href? }
     const BANNERS = [
       {
         src: '../Imagenes/banners/banner1-desk.jpg',
@@ -218,77 +217,122 @@
 
     initBanner();
 
+    // ── ESTADO GLOBAL ───────────────────────────────────────────
+    const SEDE_IMGS = {
+      'acropolis':   '../Imagenes/sedes/acropolis.png',
+      'cabecera':    '../Imagenes/sedes/cabecera.png',
+      'cañaveral':   '../Imagenes/sedes/canaveral.png',
+      'canaveral':   '../Imagenes/sedes/canaveral.png',
+      'megamall':    '../Imagenes/sedes/megamall.png',
+      'piedecuesta': '../Imagenes/sedes/piedecuesta.png',
+      'unico':       '../Imagenes/sedes/unico.jpeg',
+      'único':       '../Imagenes/sedes/unico.jpeg',
+    };
+
+    let sedesData = [];
+    let userLat   = null;
+    let userLng   = null;
+
+    // ── HAVERSINE ───────────────────────────────────────────────
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R    = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a    = Math.sin(dLat / 2) ** 2 +
+                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                   Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.asin(Math.sqrt(a));
+    }
+
+    // ── RENDER SEDES ────────────────────────────────────────────
+    function renderSedes() {
+      const grid           = document.getElementById('sedes-grid');
+      const tieneUbicacion = userLat !== null && userLng !== null;
+
+      const sedes = sedesData.map(sede => {
+        const dist = (tieneUbicacion && sede.lat && sede.lng)
+          ? haversine(userLat, userLng, sede.lat, sede.lng)
+          : null;
+        const fueraZona = tieneUbicacion && dist !== null && sede.radio_km
+          ? dist > sede.radio_km
+          : false;
+        return { ...sede, _dist: dist, _fueraZona: fueraZona };
+      });
+
+      sedes.sort((a, b) => {
+        const aDisp = estaAbierta(a) && !a._fueraZona;
+        const bDisp = estaAbierta(b) && !b._fueraZona;
+        if (aDisp !== bDisp) return Number(bDisp) - Number(aDisp);
+        if (a._dist !== null && b._dist !== null) return a._dist - b._dist;
+        return 0;
+      });
+
+      // Badge solo cuando el usuario proporcionó su ubicación
+      const iCercana = tieneUbicacion
+        ? sedes.findIndex(s => s._dist !== null && !s._fueraZona)
+        : -1;
+
+      grid.innerHTML = sedes.map((sede, idx) => {
+        const abierta      = estaAbierta(sede);
+        const fueraZona    = sede._fueraZona;
+        const disponible   = abierta && !fueraZona;
+        const nombre       = displayNombre(sede);
+        const sedeImg      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
+        const esMasCercana = idx === iCercana;
+        const distLabel    = sede._dist !== null
+          ? (sede._dist < 1 ? ` · ${Math.round(sede._dist * 1000)} m` : ` · ${sede._dist.toFixed(1)} km`)
+          : '';
+
+        return `
+          <div class="pw-sede-card${disponible ? '' : ' pw-sede-card--cerrada'}"
+               data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
+               ${disponible ? `tabindex="0" role="button" aria-label="Pedir en ${nombre}"` : 'aria-disabled="true"'}>
+            <div class="pw-sede-card-img">
+              <img src="${sedeImg}" alt="${nombre}">
+            </div>
+            <div class="pw-sede-card-info">
+              <div class="pw-sede-card-info-top">
+                <span class="pw-sede-status pw-sede-status--${fueraZona ? 'fuera' : (abierta ? 'abierta' : 'cerrada')}">
+                  ${fueraZona ? 'Fuera de zona' : (abierta ? 'Abierto' : 'Cerrado')}
+                </span>
+                ${esMasCercana ? `<span class="pw-sede-badge-cercana">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  Más cercana</span>` : ''}
+              </div>
+              <div class="pw-sede-nombre">${nombre}${distLabel}</div>
+              <div class="pw-sede-tiempo">🕐 45 - 60 min &nbsp;⭐ 4.8</div>
+              <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}">
+                ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios')}
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+
+      grid.querySelectorAll('.pw-sede-card:not(.pw-sede-card--cerrada)').forEach(card => {
+        const abrir = () => {
+          const sede = JSON.parse(card.dataset.sede);
+          setSedeActual(sede);
+          vaciarCarrito();
+          window.location.href = 'menu.html';
+        };
+        card.addEventListener('click', abrir);
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
+        });
+      });
+    }
+
+    // ── CARGA INICIAL ───────────────────────────────────────────
     async function init() {
       const grid  = document.getElementById('sedes-grid');
       const error = document.getElementById('error-sedes');
-
       try {
-        const sedes = await cargarSedes();
-
-        if (!sedes.length) {
+        sedesData = await cargarSedes();
+        if (!sedesData.length) {
           grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;">No hay sedes disponibles en este momento.</p>';
           return;
         }
-
-        const SEDE_IMGS = {
-          'acropolis':   '../Imagenes/sedes/acropolis.png',
-          'cabecera':    '../Imagenes/sedes/cabecera.png',
-          'cañaveral':   '../Imagenes/sedes/canaveral.png',
-          'canaveral':   '../Imagenes/sedes/canaveral.png',
-          'megamall':    '../Imagenes/sedes/megamall.png',
-          'piedecuesta': '../Imagenes/sedes/piedecuesta.png',
-          'unico':       '../Imagenes/sedes/unico.jpeg',
-          'único':       '../Imagenes/sedes/unico.jpeg',
-        };
-
-        sedes.sort((a, b) => Number(estaAbierta(b)) - Number(estaAbierta(a)));
-
-        grid.innerHTML = sedes.map((sede, idx) => {
-          const abierta      = estaAbierta(sede);
-          const nombre       = displayNombre(sede);
-          const horario      = formatHorario(sede);
-          const sedeImg      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
-          const esMasCercana = idx === 0; // temporal — se reemplaza con Haversine
-
-          return `
-            <div class="pw-sede-card${abierta ? '' : ' pw-sede-card--cerrada'}"
-                 data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
-                 ${abierta ? 'tabindex="0" role="button" aria-label="Pedir en ' + nombre + '"' : 'aria-disabled="true"'}>
-              <div class="pw-sede-card-img">
-                <img src="${sedeImg}" alt="${nombre}">
-              </div>
-              <div class="pw-sede-card-info">
-                <div class="pw-sede-card-info-top">
-                  <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
-                    ${abierta ? 'Abierto' : 'Cerrado'}
-                  </span>
-                  ${esMasCercana ? `<span class="pw-sede-badge-cercana">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    Más cercana</span>` : ''}
-                </div>
-                <div class="pw-sede-nombre">${nombre}</div>
-                <div class="pw-sede-tiempo">🕐 45 - 60 min &nbsp;⭐ 4.8</div>
-                <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}">
-                  ${abierta ? 'Ver menú →' : 'Ver horarios'}
-                </button>
-              </div>
-            </div>`;
-        }).join('');
-
-        // Eventos de click en sedes abiertas
-        grid.querySelectorAll('.pw-sede-card:not(.pw-sede-card--cerrada)').forEach(card => {
-          const abrir = () => {
-            const sede = JSON.parse(card.dataset.sede);
-            setSedeActual(sede);
-            vaciarCarrito();
-            window.location.href = 'menu.html';
-          };
-          card.addEventListener('click', abrir);
-          card.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
-          });
-        });
-
+        renderSedes();
       } catch (err) {
         console.error(err);
         grid.innerHTML = '';
@@ -300,10 +344,10 @@
     init();
 
     // ── AUTOCOMPLETE DIRECCIÓN (Nominatim) ──────────────────────
-    const dirField       = document.getElementById('dir-inicio');
-    const dirSug         = document.getElementById('dir-suggestions');
-    const dirCompWrap    = document.getElementById('dir-complemento-wrap');
-    const dirComp        = document.getElementById('dir-complemento');
+    const dirField    = document.getElementById('dir-inicio');
+    const dirSug      = document.getElementById('dir-suggestions');
+    const dirCompWrap = document.getElementById('dir-complemento-wrap');
+    const dirComp     = document.getElementById('dir-complemento');
     let   dirTimer;
 
     function mostrarComplemento() {
@@ -331,11 +375,18 @@
         if (!filtrados.length) { hideSug(); return; }
         dirSug.innerHTML = filtrados.map(r => {
           const label = r.display_name.split(',').slice(0, 3).join(',').trim();
-          return `<button class="pw-dir-sug-item" data-value="${label}">${label}</button>`;
+          return `<button class="pw-dir-sug-item" data-value="${label}" data-lat="${r.lat}" data-lon="${r.lon}">${label}</button>`;
         }).join('');
         dirSug.hidden = false;
         dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
-          btn.addEventListener('click', () => { dirField.value = btn.dataset.value; hideSug(); mostrarComplemento(); });
+          btn.addEventListener('click', () => {
+            dirField.value = btn.dataset.value;
+            userLat = parseFloat(btn.dataset.lat);
+            userLng = parseFloat(btn.dataset.lon);
+            hideSug();
+            mostrarComplemento();
+            renderSedes();
+          });
         });
       } catch { hideSug(); }
     }
@@ -358,11 +409,14 @@
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
           try {
+            userLat = coords.latitude;
+            userLng = coords.longitude;
             const url = `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`;
             const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
             const data = await res.json();
             dirField.value = data.display_name.split(',').slice(0, 3).join(',').trim();
             mostrarComplemento();
+            renderSedes();
           } catch {
             alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
           } finally {
