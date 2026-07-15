@@ -425,7 +425,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Franja de sede (debajo del header, antes de promos) */
 .pw-sede-bar {
   background: var(--dp-sand);
-  text-align: center;
+  text-align: left;
   font-size: .72rem;
   font-family: var(--dp-font-ui);
   font-weight: 500;
