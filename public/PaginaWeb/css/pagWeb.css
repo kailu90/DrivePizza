@@ -520,19 +520,28 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   gap: .5rem;
-  font-size: .78rem;
-  font-weight: 500;
 }
 .pw-sede-bar-pin {
   flex-shrink: 0;
 }
-.pw-sede-bar strong {
+.pw-sede-bar-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.pw-sede-bar-label {
+  font-size: .65rem;
+  font-weight: 500;
+  opacity: .7;
+}
+.pw-sede-bar-nombre {
+  font-size: .82rem;
   font-weight: 700;
 }
 .pw-sede-bar-cambiar {
   color: var(--dp-green);
-  font-size: .85rem;
-  font-weight: 700;
+  font-size: .72rem;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
