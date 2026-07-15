@@ -433,8 +433,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid rgba(49, 75, 39, .18);
-  background: rgba(49, 75, 39, .04);
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .10);
   padding: .45rem .7rem;
 }
 .pw-sede-bar-info {
