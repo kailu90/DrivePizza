@@ -371,6 +371,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   gap: 3px;
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  margin-left: auto;
 }
 .pw-sede-card-img img {
   width: 100%;
