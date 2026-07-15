@@ -80,13 +80,14 @@
         <svg class="pw-direccion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
         </svg>
-        <input type="text" placeholder="¿Dónde quieres recibir tu pedido?" class="pw-direccion-field" readonly>
+        <input type="text" placeholder="¿Dónde quieres recibir tu pedido?" class="pw-direccion-field" id="dir-inicio" autocomplete="off">
         <button class="pw-direccion-gps" aria-label="Usar mi ubicación">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
           </svg>
         </button>
       </div>
+      <div class="pw-dir-suggestions" id="dir-suggestions" hidden></div>
     </div>
     <div id="sedes-grid" class="pw-sedes-grid">
       <div style="grid-column:1/-1">
@@ -287,6 +288,41 @@
     }
 
     init();
+
+    // ── AUTOCOMPLETE DIRECCIÓN (Nominatim) ──────────────────────
+    const dirField = document.getElementById('dir-inicio');
+    const dirSug   = document.getElementById('dir-suggestions');
+    let   dirTimer;
+
+    dirField.addEventListener('input', () => {
+      clearTimeout(dirTimer);
+      const q = dirField.value.trim();
+      if (q.length < 3) { hideSug(); return; }
+      dirTimer = setTimeout(() => fetchSug(q), 350);
+    });
+
+    async function fetchSug(q) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=co&format=json&limit=5&addressdetails=1`;
+        const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+        const data = await res.json();
+        if (!data.length) { hideSug(); return; }
+        dirSug.innerHTML = data.map(r => {
+          const label = r.display_name.split(',').slice(0, 3).join(',').trim();
+          return `<button class="pw-dir-sug-item" data-value="${label}">${label}</button>`;
+        }).join('');
+        dirSug.hidden = false;
+        dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
+          btn.addEventListener('click', () => { dirField.value = btn.dataset.value; hideSug(); });
+        });
+      } catch { hideSug(); }
+    }
+
+    function hideSug() { dirSug.innerHTML = ''; dirSug.hidden = true; }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.pw-direccion-wrapper')) hideSug();
+    });
   </script>
 
 </body>
