@@ -243,11 +243,12 @@
 
         sedes.sort((a, b) => Number(estaAbierta(b)) - Number(estaAbierta(a)));
 
-        grid.innerHTML = sedes.map(sede => {
-          const abierta  = estaAbierta(sede);
-          const nombre   = displayNombre(sede);
-          const horario  = formatHorario(sede);
-          const sedeImg  = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
+        grid.innerHTML = sedes.map((sede, idx) => {
+          const abierta      = estaAbierta(sede);
+          const nombre       = displayNombre(sede);
+          const horario      = formatHorario(sede);
+          const sedeImg      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
+          const esMasCercana = idx === 0; // temporal — se reemplaza con Haversine
 
           return `
             <div class="pw-sede-card${abierta ? '' : ' pw-sede-card--cerrada'}"
@@ -255,6 +256,9 @@
                  ${abierta ? 'tabindex="0" role="button" aria-label="Pedir en ' + nombre + '"' : 'aria-disabled="true"'}>
               <div class="pw-sede-card-img">
                 <img src="${sedeImg}" alt="${nombre}">
+                ${esMasCercana ? `<span class="pw-sede-badge-cercana">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  Más cercana</span>` : ''}
               </div>
               <div class="pw-sede-card-info">
                 <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">

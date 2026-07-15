@@ -351,6 +351,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-card-img {
   width: 130px;
   flex-shrink: 0;
+  position: relative;
+}
+.pw-sede-badge-cercana {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--dp-green);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  font-family: var(--dp-font-ui);
+  padding: 3px 7px 3px 5px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
 }
 .pw-sede-card-img img {
   width: 100%;
