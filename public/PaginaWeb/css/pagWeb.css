@@ -425,7 +425,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Franja de sede (debajo del header, antes de promos) */
 .pw-sede-bar {
   background: var(--dp-sand);
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: .72rem;
   font-family: var(--dp-font-ui);
   font-weight: 500;
@@ -437,6 +439,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .85rem;
   font-weight: 700;
   display: block;
+}
+.pw-sede-bar-cambiar {
+  text-align: right;
+  color: var(--dp-green);
+  font-size: .72rem;
+  font-weight: 500;
+  line-height: 1.5;
+  flex-shrink: 0;
 }
 
 .pw-cart-badge {
