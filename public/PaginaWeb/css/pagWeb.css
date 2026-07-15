@@ -425,14 +425,21 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Franja de sede (debajo del header, antes de promos) */
 .pw-sede-bar {
   background: var(--dp-sand);
+  padding: .25rem .75rem .5rem;
+  font-family: var(--dp-font-ui);
+  color: var(--dp-green);
+}
+.pw-sede-bar-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border: 1px solid rgba(49, 75, 39, .18);
+  background: rgba(49, 75, 39, .04);
+  padding: .45rem .7rem;
+}
+.pw-sede-bar-info {
   font-size: .72rem;
-  font-family: var(--dp-font-ui);
   font-weight: 500;
-  color: var(--dp-green);
-  padding: .15rem .75rem .45rem;
   line-height: 1.5;
 }
 .pw-sede-bar strong {
