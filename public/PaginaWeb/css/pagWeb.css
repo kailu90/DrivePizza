@@ -517,14 +517,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-sizing: border-box;
 }
 .pw-sede-bar-info {
-  font-size: .72rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .78rem;
   font-weight: 500;
-  line-height: 1.5;
+}
+.pw-sede-bar-pin {
+  flex-shrink: 0;
 }
 .pw-sede-bar strong {
-  font-size: .85rem;
   font-weight: 700;
-  display: block;
 }
 .pw-sede-bar-cambiar {
   color: var(--dp-green);
