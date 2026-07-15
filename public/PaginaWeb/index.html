@@ -236,6 +236,8 @@
           'único':       '../Imagenes/sedes/unico.jpeg',
         };
 
+        sedes.sort((a, b) => Number(estaAbierta(b)) - Number(estaAbierta(a)));
+
         grid.innerHTML = sedes.map(sede => {
           const abierta  = estaAbierta(sede);
           const nombre   = displayNombre(sede);
