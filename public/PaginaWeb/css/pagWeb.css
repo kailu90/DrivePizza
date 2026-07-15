@@ -256,6 +256,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-dir-complemento-wrap {
   margin-top: .5rem;
 }
+.pw-dir-complemento-label {
+  display: block;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--dp-green);
+  margin-bottom: .3rem;
+  padding-left: .25rem;
+  font-family: var(--dp-font-ui);
+}
 .pw-dir-complemento {
   width: 100%;
   background: #fff;
