@@ -502,6 +502,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Franja de sede (debajo del header, antes de promos) */
 .pw-sede-bar {
   background: var(--dp-sand);
+  padding: 0 .5rem;
   font-family: var(--dp-font-ui);
   color: var(--dp-green);
 }
