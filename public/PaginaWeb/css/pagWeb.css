@@ -426,12 +426,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-bar {
   background: var(--dp-sand);
   text-align: center;
-  font-size: .75rem;
+  font-size: .72rem;
   font-family: var(--dp-font-ui);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--dp-green);
-  padding: .1rem .75rem .4rem;
-  letter-spacing: .01em;
+  padding: .15rem .75rem .45rem;
+  line-height: 1.5;
+}
+.pw-sede-bar strong {
+  font-size: .85rem;
+  font-weight: 700;
+  display: block;
 }
 
 .pw-cart-badge {
