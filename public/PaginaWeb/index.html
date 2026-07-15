@@ -301,13 +301,18 @@
       dirTimer = setTimeout(() => fetchSug(q), 350);
     });
 
+    const CIUDADES_AMB = ['bucaramanga', 'floridablanca', 'girón', 'giron', 'piedecuesta', 'santander'];
+
     async function fetchSug(q) {
       try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=co&format=json&limit=5&addressdetails=1`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=co&format=json&limit=8&addressdetails=1&viewbox=-73.25,7.20,-72.95,6.95&bounded=1`;
         const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
         const data = await res.json();
-        if (!data.length) { hideSug(); return; }
-        dirSug.innerHTML = data.map(r => {
+        const filtrados = data.filter(r =>
+          CIUDADES_AMB.some(c => r.display_name.toLowerCase().includes(c))
+        );
+        if (!filtrados.length) { hideSug(); return; }
+        dirSug.innerHTML = filtrados.map(r => {
           const label = r.display_name.split(',').slice(0, 3).join(',').trim();
           return `<button class="pw-dir-sug-item" data-value="${label}">${label}</button>`;
         }).join('');
