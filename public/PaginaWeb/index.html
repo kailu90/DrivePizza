@@ -78,6 +78,7 @@
         <label class="pw-dir-complemento-label" for="dir-complemento">Dirección completa</label>
         <input type="text" id="dir-complemento" class="pw-dir-complemento"
                placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="off">
+        <button class="pw-btn-confirmar-dir" id="btn-confirmar-dir">Confirmar dirección →</button>
       </div>
     </div>
     <div id="dir-selected-card" class="pw-dir-selected-card" hidden></div>
@@ -391,6 +392,16 @@
           <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar dirección →</button>
         </div>`;
 
+      // Guardar dirección en localStorage
+      localStorage.setItem('dp_direccion', JSON.stringify({
+        direccion: dirCompleta,
+        barrio,
+        lat: userLat,
+        lng: userLng,
+        sedeId: sedeEntrega?.id ?? null,
+        sedeNombre: nombreSede,
+      }));
+
       dirWrapper.hidden = true;
       dirSelectedCard.hidden = false;
       document.getElementById('sedes-title').textContent = 'Sedes cercanas';
@@ -409,7 +420,7 @@
     }
 
     dirComp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmarDireccion(); } });
-    dirComp.addEventListener('blur', () => confirmarDireccion());
+    document.getElementById('btn-confirmar-dir').addEventListener('click', confirmarDireccion);
 
     dirField.addEventListener('input', () => {
       clearTimeout(dirTimer);

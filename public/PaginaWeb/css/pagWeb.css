@@ -279,6 +279,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: var(--dp-shadow);
 }
 .pw-dir-complemento::placeholder { color: #aaa; }
+.pw-btn-confirmar-dir {
+  display: block;
+  width: 100%;
+  margin-top: .6rem;
+  padding: .6rem 1rem;
+  background: var(--dp-green);
+  color: #fff;
+  border: none;
+  border-radius: var(--dp-radius);
+  font-family: var(--dp-font-ui);
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--dp-transition);
+  box-sizing: border-box;
+}
+.pw-btn-confirmar-dir:hover { background: #1e3519; }
 .pw-direccion-input {
   display: flex;
   align-items: center;
