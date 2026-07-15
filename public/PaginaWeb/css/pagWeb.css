@@ -100,10 +100,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   max-height: 88dvh;
   overflow-y: auto;
   transform: translateY(100%);
-  transition: transform var(--dp-transition);
+  visibility: hidden;
+  transition: transform var(--dp-transition), visibility var(--dp-transition);
   box-shadow: 0 -4px 32px rgba(0, 0, 0, .15);
 }
-.pw-sheet.open { transform: translateY(0); }
+.pw-sheet.open { transform: translateY(0); visibility: visible; }
 
 .pw-sheet-handle {
   width: 40px; height: 4px;
