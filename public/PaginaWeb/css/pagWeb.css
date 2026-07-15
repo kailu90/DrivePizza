@@ -595,14 +595,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .78rem;
   font-weight: 600;
   color: var(--dp-dark);
-  background: var(--dp-sand);
-  border: 1.5px solid rgba(0, 0, 0, .10);
+  background: rgba(0,0,0,.07);
+  border: none;
   cursor: pointer;
   transition: var(--dp-transition);
   white-space: nowrap;
   flex-shrink: 0;
   font-family: var(--dp-font-ui);
-  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  box-shadow: none;
 }
 .pw-cat-pill.active,
 .pw-cat-pill:hover {
