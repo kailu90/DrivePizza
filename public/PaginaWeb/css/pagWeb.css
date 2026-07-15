@@ -2025,8 +2025,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   height: 22px;
 }
 .pw-bottom-nav-isotipo {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
   object-fit: cover;
 }
