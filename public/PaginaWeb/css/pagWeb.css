@@ -2007,7 +2007,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: none;
   border: none;
   cursor: pointer;
-  color: #aaa;
+  color: var(--dp-green);
   font-size: .62rem;
   font-weight: 600;
   font-family: var(--dp-font-ui);
