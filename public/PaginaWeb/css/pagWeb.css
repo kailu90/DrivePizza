@@ -513,6 +513,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 10px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, .10);
   padding: .45rem .7rem;
+  height: 60px;
+  box-sizing: border-box;
 }
 .pw-sede-bar-info {
   font-size: .72rem;
