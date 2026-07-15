@@ -2024,6 +2024,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   width: 22px;
   height: 22px;
 }
+.pw-bottom-nav-isotipo {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  object-fit: cover;
+}
 .pw-bottom-nav-btn--center {
   color: #fff;
   background: var(--dp-green);
