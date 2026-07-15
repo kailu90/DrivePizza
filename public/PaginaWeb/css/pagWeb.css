@@ -2036,7 +2036,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-green);
   border-radius: 16px;
   margin: .35rem .15rem;
-  flex: 1.2;
+  flex: 0.9;
   position: relative;
   top: -10px;
   box-shadow: 0 2px 8px rgba(49,75,39,.3);
