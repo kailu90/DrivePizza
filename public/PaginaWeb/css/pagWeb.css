@@ -356,8 +356,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-badge-cercana {
   position: absolute;
   top: 6px;
-  left: 6px;
-  background: var(--dp-green);
+  right: 6px;
+  background: var(--dp-orange);
   color: #fff;
   font-size: .68rem;
   font-weight: 700;
