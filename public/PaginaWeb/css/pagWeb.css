@@ -925,7 +925,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-product-add {
   width: 24px; height: 24px;
   border-radius: 50%;
-  background: var(--dp-orange);
+  background: var(--dp-green);
   color: #fff;
   font-size: 1rem;
   display: flex;
@@ -935,7 +935,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   transition: var(--dp-transition);
   line-height: 1;
 }
-.pw-product-card:hover .pw-product-add { background: var(--dp-green); }
+.pw-product-card:hover .pw-product-add { background: #1e3519; }
 
 /* Aviso sede cerrada en menu */
 .pw-closed-banner {
