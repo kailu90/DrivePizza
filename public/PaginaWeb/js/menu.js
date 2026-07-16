@@ -169,11 +169,7 @@ const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
-const cartBar           = document.getElementById('cart-bar');
-const cartBadge         = null; // badge movido al bottom nav (bottom-cart-badge)
-const cartBtnTotal      = null;
-const cartBarItems      = document.getElementById('cart-bar-items');
-const cartBarTotal      = document.getElementById('cart-bar-total');
+const bottomCartBadge   = document.getElementById('bottom-cart-badge');
 const sheetNombre       = document.getElementById('sheet-nombre');
 const sheetDesc         = document.getElementById('sheet-desc');
 const sheetOpcionesWrap = document.getElementById('sheet-opciones-wrap');
@@ -692,17 +688,9 @@ function renderCarrito() {
   const conteo  = getConteo();
   const total   = getTotal();
 
-  if (cartBadge) { cartBadge.textContent = conteo; cartBadge.classList.toggle('visible', conteo > 0); }
-  cartBar.classList.toggle('visible', conteo > 0);
-  const bottomCartBadge = document.getElementById('bottom-cart-badge');
   if (bottomCartBadge) {
     bottomCartBadge.textContent = conteo;
     bottomCartBadge.classList.toggle('visible', conteo > 0);
-  }
-  if (cartBtnTotal) cartBtnTotal.textContent = conteo > 0 ? formatPrecio(total) : '';
-  if (conteo > 0) {
-    cartBarItems.textContent = `${conteo} ${conteo === 1 ? 'producto' : 'productos'}`;
-    cartBarTotal.textContent  = formatPrecio(total);
   }
 
   const list   = document.getElementById('cart-items-list');
@@ -847,7 +835,6 @@ function setupListeners() {
 
   // Abrir carrito
   document.getElementById('btn-abrir-carrito')?.addEventListener('click', () => abrirSheet(cartSheet));
-  document.getElementById('btn-cart-bar').addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));
 
   // Overlay cierra todo
