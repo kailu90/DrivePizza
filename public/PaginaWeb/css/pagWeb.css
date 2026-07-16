@@ -338,53 +338,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 @keyframes pw-spin { to { transform: rotate(360deg); } }
 
-/* Lista de sedes */
-.pw-sedes-grid {
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-  padding: 0 .75rem;
-}
 
-/* Spacer para que la última card no quede tapada por el bottom nav */
-.pw-sedes-grid::after {
-  content: '';
-  display: block;
-  height: calc(80px + env(safe-area-inset-bottom, 0px));
-  flex-shrink: 0;
-}
-
-.pw-sede-card {
-  display: flex;
-  flex-direction: row;
-  background: #fff;
-  border-radius: var(--dp-radius);
-  overflow: hidden;
-  box-shadow: var(--dp-shadow);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: var(--dp-transition);
-  height: 100px;
-}
-.pw-sede-card:hover:not(.pw-sede-card--cerrada) {
-  border-color: var(--dp-orange);
-  box-shadow: var(--dp-shadow-lg);
-}
-.pw-sede-card--cerrada {
-  opacity: .6;
-  cursor: not-allowed;
-}
-.pw-sede-card-img {
-  width: 130px;
-  flex-shrink: 0;
-  position: relative;
-}
-.pw-sede-card-info-top {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
-}
 .pw-sede-badge-cercana {
   background: var(--dp-orange);
   color: #fff;
@@ -399,20 +353,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
   margin-left: auto;
 }
-.pw-sede-card-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.pw-sede-card-info {
-  flex: 1;
-  padding: .35rem .65rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: .05rem;
-}
+
 .pw-sede-status {
   display: inline-flex;
   align-items: center;
@@ -471,15 +412,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sede-btn--cerrada {
   background: transparent;
   color: var(--dp-green);
-}
-.pw-sede-horario {
-  display: block;
-  font-size: .62rem;
-  color: #aaa;
-}
-.pw-sede-ciudad {
-  font-size: .65rem;
-  color: #aaa;
 }
 
 /* ── Lista horizontal de sedes (nuevo layout) ── */
@@ -1267,40 +1199,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-obs-input:focus { outline: none; border-color: var(--dp-green); }
 
-
-/* ════════════════════════════════════════════════════════════
-   MENU — CARRITO BAR (sticky bottom)
-   ════════════════════════════════════════════════════════════ */
-
-.pw-cart-bar {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 210;
-  padding: .85rem 1.25rem calc(.85rem + env(safe-area-inset-bottom, 0px));
-  background: var(--dp-green);
-  display: none;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, .2);
-}
-.pw-cart-bar.visible { display: flex; }
-
-.pw-cart-bar-info { flex: 1; color: var(--dp-sand); }
-.pw-cart-bar-items { font-size: .78rem; opacity: .75; }
-.pw-cart-bar-total { font-size: 1.1rem; font-weight: 700; }
-
-.pw-cart-bar-btn {
-  background: var(--dp-orange);
-  color: #fff;
-  padding: .6rem 1.25rem;
-  border-radius: var(--dp-radius);
-  font-size: .88rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: var(--dp-transition);
-  font-family: var(--dp-font-ui);
-}
-.pw-cart-bar-btn:hover { background: #c85e10; }
 
 
 /* ════════════════════════════════════════════════════════════
@@ -2398,10 +2296,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     border-bottom: 1px solid rgba(0,0,0,.08);
   }
 
-  .pw-sedes-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
   .pw-sedes-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

@@ -834,7 +834,6 @@ function setupListeners() {
   document.getElementById('btn-cerrar-promo').addEventListener('click', () => cerrarSheet(promoSheet));
 
   // Abrir carrito
-  document.getElementById('btn-abrir-carrito')?.addEventListener('click', () => abrirSheet(cartSheet));
   document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));
 
   // Overlay cierra todo
