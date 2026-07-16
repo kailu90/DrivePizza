@@ -792,7 +792,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   top: var(--pw-sticky-top, 110px);
   z-index: 10;
   background: var(--dp-sand);
-  background: none;
   border: none;
   border-bottom: none;
   text-align: left;
