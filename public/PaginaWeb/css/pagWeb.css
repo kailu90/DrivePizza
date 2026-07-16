@@ -771,7 +771,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-menu-body {
-  padding: 1rem .5rem 140px;
+  padding: .5rem .5rem 140px;
   width: 100%;
   flex: 1;
 }
