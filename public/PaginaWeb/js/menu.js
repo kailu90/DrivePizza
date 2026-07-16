@@ -286,18 +286,11 @@ const CAT_ICONS = {
 const CAT_TO_GRUPO = {};
 GRUPOS_NAV.forEach(g => g.cats.forEach(c => { CAT_TO_GRUPO[c] = g.label; }));
 
-// Categorías que pertenecen a grupos con múltiples subcats → llevan acordeón
-const CATS_COLAPSABLES = new Set(
-  GRUPOS_NAV.filter(g => g.cats.length > 1).flatMap(g => g.cats)
-);
 
 function scrollToSection(id) {
   const sec = document.getElementById(id);
   if (!sec) return;
-  if (sec.dataset.open === 'false') {
-    sec.dataset.open = 'true';
-    sec.querySelector('.pw-cat-toggle')?.setAttribute('aria-expanded', 'true');
-  }
+
   const shellH    = document.querySelector('.pw-menu-shell')?.offsetHeight ?? 0;
   const subShellH = document.querySelector('.pw-sub-shell')?.offsetHeight ?? 0;
   const offset    = shellH + subShellH + 4;
@@ -337,8 +330,7 @@ function renderProductos() {
   menuBody.innerHTML = GRUPOS_NAV.flatMap(g => g.cats).map(cat => {
     const productos = menuData[cat];
     if (!productos) return '';
-    const secId      = 'sec-' + cat.replace(/\s+/g, '-');
-    const colapsable = CATS_COLAPSABLES.has(cat);
+    const secId = 'sec-' + cat.replace(/\s+/g, '-');
 
     const cardsHTML = productos.map(p => {
       const precios        = Object.values(p.opciones);
@@ -369,23 +361,11 @@ function renderProductos() {
     }).join('');
 
     return `
-      <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="true">
-        <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="true">
-          ${cat}
-          <span class="pw-cat-chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="pw-product-list pw-collapsible-body">${cardsHTML}</div>
+      <section class="pw-cat-section" id="${secId}">
+        <div class="pw-cat-section-title">${cat}</div>
+        <div class="pw-product-list">${cardsHTML}</div>
       </section>`;
   }).join('');
-
-  menuBody.querySelectorAll('.pw-cat-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sec  = btn.closest('.pw-cat-collapsible');
-      const open = sec.dataset.open === 'true';
-      sec.dataset.open = open ? 'false' : 'true';
-      btn.setAttribute('aria-expanded', String(!open));
-    });
-  });
 
   menuBody.querySelectorAll('.pw-product-card').forEach(card => {
     const abrir = () => {
