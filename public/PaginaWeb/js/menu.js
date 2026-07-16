@@ -226,8 +226,12 @@ function init() {
 
   // Altura del header para que pw-sub-shell sepa dónde pegarse
   const menuShellEl = document.querySelector('.pw-menu-shell');
+  const subShellEl  = document.querySelector('.pw-sub-shell');
   if (menuShellEl) {
     document.documentElement.style.setProperty('--pw-header-h', menuShellEl.offsetHeight + 'px');
+  }
+  if (menuShellEl && subShellEl) {
+    document.documentElement.style.setProperty('--pw-sticky-top', (menuShellEl.offsetHeight + subShellEl.offsetHeight) + 'px');
   }
 
   // Buscador de productos
