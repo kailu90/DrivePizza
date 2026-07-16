@@ -282,14 +282,6 @@ const CAT_ICONS = {
   'Entradas':     `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M5 3h6v9a3 3 0 01-6 0V3z"/><line x1="16" y1="3" x2="16" y2="21"/></svg>`,
 };
 
-const CAT_SHORT = {
-  'Pizzas Estofadas':       'Estofadas',
-  'Pizzas Super Estofadas': 'Super Estofadas',
-  'Pizzas Especiales':      'Especiales',
-  'Pizzas Clásicas':        'Clásicas',
-  'Pizzas Típicas':         'Típicas',
-  'Pizzetas Premium':       'Premium',
-};
 
 const CAT_TO_GRUPO = {};
 GRUPOS_NAV.forEach(g => g.cats.forEach(c => { CAT_TO_GRUPO[c] = g.label; }));
@@ -379,7 +371,7 @@ function renderProductos() {
     return `
       <section class="pw-cat-section pw-cat-collapsible" id="${secId}" data-open="true">
         <button class="pw-cat-section-title pw-cat-toggle" aria-expanded="true">
-          ${CAT_SHORT[cat] || cat}
+          ${cat}
           <span class="pw-cat-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="pw-product-list pw-collapsible-body">${cardsHTML}</div>
