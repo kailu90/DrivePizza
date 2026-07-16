@@ -776,7 +776,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex: 1;
 }
 
-.pw-cat-section { margin-bottom: 0; }
+.pw-cat-section { margin-bottom: 0; padding-top: 1rem; }
+.pw-cat-section:first-child { padding-top: 0; }
 
 .pw-cat-section-title {
   font-family: var(--dp-font-brand);
