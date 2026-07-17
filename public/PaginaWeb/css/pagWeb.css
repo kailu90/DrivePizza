@@ -725,7 +725,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 .pw-cats {
-  overflow-x: auto;
+  overflow: hidden;
   white-space: nowrap;
   scrollbar-width: none;
   padding: 0.5rem .75rem;
