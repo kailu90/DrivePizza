@@ -783,13 +783,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
   width: 100%;
   margin-bottom: .85rem;
-  padding: .35rem 0 .25rem;
+  padding: 0;
   position: sticky;
   top: var(--pw-sticky-top, 110px);
   z-index: 10;
   background: var(--dp-sand);
-  border: none;
-  border-bottom: none;
   text-align: left;
 }
 
