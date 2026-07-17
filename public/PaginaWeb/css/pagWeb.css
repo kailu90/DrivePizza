@@ -730,14 +730,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   scrollbar-width: none;
   padding: 0.5rem .75rem 0rem .75rem;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: .45rem;
 }
 .pw-cats::-webkit-scrollbar { display: none; }
-
-@media (max-width: 639px) {
-  .pw-cats { justify-content: flex-start; }
-}
 
 .pw-cat-pill {
   display: inline-flex;
