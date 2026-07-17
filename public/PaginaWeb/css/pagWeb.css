@@ -728,7 +728,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   overflow-x: auto;
   white-space: nowrap;
   scrollbar-width: none;
-  padding: 0.5rem .75rem 0rem .75rem;
+  padding: 0.5rem .75rem 0.5rem .75rem;
   display: flex;
   justify-content: flex-start;
   gap: .45rem;
