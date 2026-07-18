@@ -771,6 +771,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding: 0rem .75rem 140px;
   width: 100%;
   flex: 1;
+  background: var(--dp-sand);
+  position: relative;
+  z-index: 20;
 }
 
 .pw-cat-section { margin-bottom: 0; padding-top: 1rem; }
