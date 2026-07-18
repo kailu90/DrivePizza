@@ -2415,12 +2415,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-footer-col-brand {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
+    align-items: center;
+    text-align: center;
     border-top: none;
     padding-top: 0;
   }
   .pw-footer-logo { height: 40px; }
-  .pw-footer-social { justify-content: flex-end; }
+  .pw-footer-social { justify-content: center; }
   .pw-footer-copy { font-size: .68rem; padding: .75rem 2rem; }
 }
