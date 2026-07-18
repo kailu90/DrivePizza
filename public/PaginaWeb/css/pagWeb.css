@@ -795,6 +795,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-weight: 800;
   color: var(--dp-green);
   padding: 0.2rem .75rem 0.4rem;
+  transition: opacity 130ms ease;
 }
 
 

@@ -406,24 +406,42 @@ function initActiveCatTitle() {
   const titleEl = document.getElementById('active-cat-title');
   if (!titleEl) return;
 
-  const subShell = document.querySelector('.pw-sub-shell');
+  const subShell  = document.querySelector('.pw-sub-shell');
   const catSections = [...menuBody.querySelectorAll('.pw-cat-section')];
-  const catTitles  = [...menuBody.querySelectorAll('.pw-cat-section-title')];
+  const catTitles   = [...menuBody.querySelectorAll('.pw-cat-section-title')];
   if (!catSections.length) return;
+
+  // Primera tarjeta de cada sección como punto de referencia
+  const firstCards = catSections.map(s => s.querySelector('.pw-product-card'));
 
   titleEl.textContent = catTitles[0].textContent;
 
+  let fadeTimer = null;
+  function setTitle(newText) {
+    if (titleEl.dataset.pending === newText || titleEl.textContent === newText) return;
+    titleEl.dataset.pending = newText;
+    titleEl.style.opacity = '0';
+    clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(() => {
+      titleEl.textContent = newText;
+      titleEl.style.opacity = '1';
+      delete titleEl.dataset.pending;
+    }, 130);
+  }
+
   let ticking = false;
   function update() {
-    const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + 12;
+    const anticipation = window.innerWidth >= 600 ? 120 : 90;
+    const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + anticipation;
     let activeIdx = 0;
     for (let i = catSections.length - 1; i >= 0; i--) {
-      if (catSections[i].getBoundingClientRect().top <= threshold) {
+      const ref = firstCards[i] || catSections[i];
+      if (ref.getBoundingClientRect().top <= threshold) {
         activeIdx = i;
         break;
       }
     }
-    titleEl.textContent = catTitles[activeIdx].textContent;
+    setTitle(catTitles[activeIdx].textContent);
     ticking = false;
   }
 
