@@ -2403,11 +2403,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
     gap: 2rem;
-    padding: 2.5rem 2.5rem 2.5rem 2rem;
+    padding: 2.5rem 3rem;
     position: relative;
     z-index: 2;
-    max-width: 1100px;
-    margin: 0 auto;
   }
   .pw-footer-col-img { display: block; }
 
