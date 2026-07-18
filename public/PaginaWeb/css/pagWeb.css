@@ -2204,7 +2204,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   height: 36px;
   object-fit: contain;
   align-self: flex-start;
-  background: var(--dp-sand);
+  mix-blend-mode: multiply;
 }
 .pw-footer-location {
   display: flex;
