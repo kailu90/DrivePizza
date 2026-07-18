@@ -399,6 +399,37 @@ function renderProductos() {
 
   menuBody.querySelectorAll('.pw-cat-section').forEach(sec => observer.observe(sec));
 
+  initActiveCatTitle();
+}
+
+function initActiveCatTitle() {
+  const titleEl = document.getElementById('active-cat-title');
+  if (!titleEl) return;
+
+  const subShell = document.querySelector('.pw-sub-shell');
+  const sections = [...menuBody.querySelectorAll('.pw-cat-section')];
+  if (!sections.length) return;
+
+  // Título inicial
+  const firstName = sections[0].querySelector('.pw-cat-section-title')?.textContent;
+  if (firstName) titleEl.textContent = firstName;
+
+  const subH = subShell ? subShell.offsetHeight : 0;
+  const visible = new Set();
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) visible.add(e.target);
+      else visible.delete(e.target);
+    });
+    const top = sections.find(s => visible.has(s));
+    if (top) {
+      const name = top.querySelector('.pw-cat-section-title')?.textContent;
+      if (name) titleEl.textContent = name;
+    }
+  }, { rootMargin: `-${subH}px 0px -50% 0px`, threshold: 0 });
+
+  sections.forEach(s => obs.observe(s));
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
