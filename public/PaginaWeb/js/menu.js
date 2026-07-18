@@ -431,14 +431,19 @@ function initActiveCatTitle() {
 
   let ticking = false;
   function update() {
-    const anticipation = window.innerWidth >= 600 ? 120 : 90;
-    const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + anticipation;
+    const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 10);
     let activeIdx = 0;
-    for (let i = catSections.length - 1; i >= 0; i--) {
-      const ref = firstCards[i] || catSections[i];
-      if (ref.getBoundingClientRect().top <= threshold) {
-        activeIdx = i;
-        break;
+    if (atBottom) {
+      activeIdx = catSections.length - 1;
+    } else {
+      const anticipation = window.innerWidth >= 600 ? 120 : 90;
+      const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + anticipation;
+      for (let i = catSections.length - 1; i >= 0; i--) {
+        const ref = firstCards[i] || catSections[i];
+        if (ref.getBoundingClientRect().top <= threshold) {
+          activeIdx = i;
+          break;
+        }
       }
     }
     setTitle(catTitles[activeIdx].textContent);
