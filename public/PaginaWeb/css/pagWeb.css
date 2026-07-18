@@ -2375,10 +2375,18 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-selector-section::-webkit-scrollbar { display: none; }
   .pw-selector-header { padding: .25rem .75rem .2rem; }
   .pw-selector-title { margin-bottom: 0; }
-  /* Footer desktop */
+
+  /* Promo cards: alineadas con product cards (mismo padding del pw-menu-body) */
+  .pw-promo-scroll-wrap { margin-left: 0; margin-right: 0; }
+  .pw-promo-list { scroll-snap-type: x mandatory; padding-left: 0; padding-right: 0; }
+  .pw-promo-card { min-width: 100%; width: 100%; scroll-snap-align: start; }
+}
+
+/* ── FOOTER DESKTOP ───────────────────────────────────────── */
+@media (min-width: 600px) {
   .pw-footer { padding-bottom: 0; min-height: 200px; }
 
-  /* Imagen: absoluta, esquina inferior izquierda, solo 1/4 visible */
+  /* Imagen: absoluta, esquina inferior izquierda, 1/4 visible */
   .pw-footer-img-wrap {
     display: block;
     position: absolute;
@@ -2389,7 +2397,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     pointer-events: none;
   }
 
-  /* Grid 3 columnas */
+  /* Grid 3 columnas iguales */
   .pw-footer-inner {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -2401,7 +2409,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     max-width: 1100px;
     margin: 0 auto;
   }
-  .pw-footer-col-img { display: block; } /* spacer para imagen */
+  .pw-footer-col-img { display: block; }
 
   .pw-footer-cta-title { font-size: 1.4rem; }
   .pw-footer-cta-sub { font-size: .84rem; }
@@ -2414,9 +2422,4 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   }
   .pw-footer-logo { align-self: flex-end; height: 40px; }
   .pw-footer-copy { font-size: .68rem; padding: .75rem 2rem; }
-
-  /* Promo cards: alineadas con product cards (mismo padding del pw-menu-body) */
-  .pw-promo-scroll-wrap { margin-left: 0; margin-right: 0; }
-  .pw-promo-list { scroll-snap-type: x mandatory; padding-left: 0; padding-right: 0; }
-  .pw-promo-card { min-width: 100%; width: 100%; scroll-snap-align: start; }
 }
