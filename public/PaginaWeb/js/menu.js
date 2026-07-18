@@ -427,7 +427,7 @@ function initActiveCatTitle() {
       const name = top.querySelector('.pw-cat-section-title')?.textContent;
       if (name) titleEl.textContent = name;
     }
-  }, { rootMargin: `-${subH}px 0px -50% 0px`, threshold: 0 });
+  }, { rootMargin: `-${subH}px 0px 0px 0px`, threshold: 0 });
 
   sections.forEach(s => obs.observe(s));
 }
