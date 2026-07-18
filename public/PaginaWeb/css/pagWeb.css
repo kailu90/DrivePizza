@@ -789,8 +789,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
   width: 100%;
   margin-bottom: .85rem;
-  padding: 0rem 0.5rem;
-  position: sticky;
   top: var(--pw-sticky-top, 110px);
   z-index: 10;
   background: var(--dp-sand);
