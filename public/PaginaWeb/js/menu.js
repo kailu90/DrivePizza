@@ -407,18 +407,23 @@ function initActiveCatTitle() {
   if (!titleEl) return;
 
   const subShell = document.querySelector('.pw-sub-shell');
-  const catTitles = [...menuBody.querySelectorAll('.pw-cat-section-title')];
-  if (!catTitles.length) return;
+  const catSections = [...menuBody.querySelectorAll('.pw-cat-section')];
+  const catTitles  = [...menuBody.querySelectorAll('.pw-cat-section-title')];
+  if (!catSections.length) return;
 
   titleEl.textContent = catTitles[0].textContent;
 
   let ticking = false;
   function update() {
     const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + 12;
-    const passed = catTitles.filter(t => t.getBoundingClientRect().top <= threshold);
-    titleEl.textContent = passed.length
-      ? passed[passed.length - 1].textContent
-      : catTitles[0].textContent;
+    let activeIdx = 0;
+    for (let i = catSections.length - 1; i >= 0; i--) {
+      if (catSections[i].getBoundingClientRect().top <= threshold) {
+        activeIdx = i;
+        break;
+      }
+    }
+    titleEl.textContent = catTitles[activeIdx].textContent;
     ticking = false;
   }
 
