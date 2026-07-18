@@ -2160,7 +2160,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-footer-col-img { display: none; }
 
 /* Col 2: CTA */
-.pw-footer-col-cta { display: flex; flex-direction: column; }
+.pw-footer-col-cta { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .pw-footer-cta-title {
   font-family: var(--dp-font-brand);
   font-size: 1.1rem;
@@ -2187,7 +2187,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .82rem;
   font-weight: 700;
   text-decoration: none;
-  align-self: flex-start;
   transition: opacity var(--dp-transition);
 }
 .pw-footer-wa-btn:hover { opacity: .85; }
@@ -2196,6 +2195,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-footer-col-brand {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: .55rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(49,75,39,.1);
@@ -2203,7 +2204,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-footer-logo {
   height: 36px;
   object-fit: contain;
-  align-self: flex-start;
   mix-blend-mode: multiply;
 }
 .pw-footer-location {
