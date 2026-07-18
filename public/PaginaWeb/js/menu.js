@@ -407,29 +407,22 @@ function initActiveCatTitle() {
   if (!titleEl) return;
 
   const subShell = document.querySelector('.pw-sub-shell');
-  const sections = [...menuBody.querySelectorAll('.pw-cat-section')];
-  if (!sections.length) return;
+  const catTitles = [...menuBody.querySelectorAll('.pw-cat-section-title')];
+  if (!catTitles.length) return;
 
-  // Título inicial
-  const firstName = sections[0].querySelector('.pw-cat-section-title')?.textContent;
-  if (firstName) titleEl.textContent = firstName;
+  titleEl.textContent = catTitles[0].textContent;
 
-  const subH = subShell ? subShell.offsetHeight : 0;
-  const visible = new Set();
+  const subH = subShell?.offsetHeight || 0;
+  const trigger = subH + 16;
 
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) visible.add(e.target);
-      else visible.delete(e.target);
-    });
-    const top = sections.find(s => visible.has(s));
-    if (top) {
-      const name = top.querySelector('.pw-cat-section-title')?.textContent;
-      if (name) titleEl.textContent = name;
-    }
-  }, { rootMargin: `-${subH}px 0px 0px 0px`, threshold: 0 });
+  const obs = new IntersectionObserver(() => {
+    const passed = catTitles.filter(t => t.getBoundingClientRect().top <= trigger);
+    titleEl.textContent = passed.length
+      ? passed[passed.length - 1].textContent
+      : catTitles[0].textContent;
+  }, { rootMargin: `-${trigger}px 0px 0px 0px`, threshold: 0 });
 
-  sections.forEach(s => obs.observe(s));
+  catTitles.forEach(t => obs.observe(t));
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────

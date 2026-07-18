@@ -782,7 +782,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cat-section:first-child { padding-top: 0; }
 
 .pw-cat-section-title {
-  display: none;
+  visibility: hidden;
+  height: 1px;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .pw-active-cat-title {
