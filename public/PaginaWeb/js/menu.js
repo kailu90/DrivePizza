@@ -413,7 +413,7 @@ function initActiveCatTitle() {
   titleEl.textContent = catTitles[0].textContent;
 
   const subH = subShell?.offsetHeight || 0;
-  const trigger = subH + 16;
+  const trigger = subH;
 
   const obs = new IntersectionObserver(() => {
     const passed = catTitles.filter(t => t.getBoundingClientRect().top <= trigger);
