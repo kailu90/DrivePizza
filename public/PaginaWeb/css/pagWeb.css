@@ -2413,11 +2413,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-footer-cta-sub { font-size: .84rem; }
 
   .pw-footer-col-brand {
+    display: flex;
+    flex-direction: column;
     align-items: flex-end;
     text-align: right;
     border-top: none;
     padding-top: 0;
   }
-  .pw-footer-logo { align-self: flex-end; height: 40px; }
+  .pw-footer-logo { height: 40px; }
+  .pw-footer-social { justify-content: flex-end; }
   .pw-footer-copy { font-size: .68rem; padding: .75rem 2rem; }
 }
