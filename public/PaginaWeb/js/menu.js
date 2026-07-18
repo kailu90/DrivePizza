@@ -206,6 +206,12 @@ function init() {
     </div>`;
   document.title = `Drive Pizza — ${nombre}`;
 
+  // Links WhatsApp del footer: número de la sede o fallback Linktree
+  const WA_FALLBACK = 'https://linktr.ee/drivepizzabga';
+  const waUrl = sede.whatsapp ? `https://wa.me/${sede.whatsapp}` : WA_FALLBACK;
+  document.querySelectorAll('.pw-footer-wa-btn, .pw-footer-social-link[aria-label="WhatsApp"]')
+    .forEach(el => { el.href = waUrl; });
+
   if (!estaAbierta(sede)) {
     closedMsg.textContent = `Esta sede está cerrada ahora. Horario: ${formatHorario(sede)}.`;
     closedBanner.style.display = '';
