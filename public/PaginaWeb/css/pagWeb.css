@@ -732,7 +732,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   justify-content: flex-start;
   gap: .45rem;
-  background: var(--dp-sand);
+  background: red;
 }
 .pw-cats::-webkit-scrollbar { display: none; }
 
