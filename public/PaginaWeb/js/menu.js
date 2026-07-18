@@ -206,11 +206,14 @@ function init() {
     </div>`;
   document.title = `Drive Pizza — ${nombre}`;
 
-  // Links WhatsApp del footer: número de la sede o fallback Linktree
+  // Links redes sociales del footer: datos de la sede o fallback Linktree
   const WA_FALLBACK = 'https://linktr.ee/drivepizzabga';
   const waUrl = sede.whatsapp ? `https://wa.me/${sede.whatsapp}` : WA_FALLBACK;
   document.querySelectorAll('.pw-footer-wa-btn, .pw-footer-social-link[aria-label="WhatsApp"]')
     .forEach(el => { el.href = waUrl; });
+  if (sede.instagram) document.querySelector('.pw-footer-social-link[aria-label="Instagram"]').href = sede.instagram;
+  if (sede.facebook)  document.querySelector('.pw-footer-social-link[aria-label="Facebook"]').href  = sede.facebook;
+  if (sede.tiktok)    document.querySelector('.pw-footer-social-link[aria-label="TikTok"]').href    = sede.tiktok;
 
   if (!estaAbierta(sede)) {
     closedMsg.textContent = `Esta sede está cerrada ahora. Horario: ${formatHorario(sede)}.`;
