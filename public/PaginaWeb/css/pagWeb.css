@@ -2180,7 +2180,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: inline-flex;
   align-items: center;
   gap: .4rem;
-  background: #25D366;
+  background: var(--dp-green);
   color: #fff;
   padding: .5rem 1rem;
   border-radius: 20px;
