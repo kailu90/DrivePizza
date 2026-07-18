@@ -414,7 +414,7 @@ function initActiveCatTitle() {
 
   let ticking = false;
   function update() {
-    const threshold = subShell ? subShell.getBoundingClientRect().bottom : 0;
+    const threshold = (subShell ? subShell.getBoundingClientRect().bottom : 0) + 12;
     const passed = catTitles.filter(t => t.getBoundingClientRect().top <= threshold);
     titleEl.textContent = passed.length
       ? passed[passed.length - 1].textContent
