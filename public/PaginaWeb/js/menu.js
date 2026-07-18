@@ -412,17 +412,19 @@ function initActiveCatTitle() {
 
   titleEl.textContent = catTitles[0].textContent;
 
-  const subH = subShell?.offsetHeight || 0;
-  const trigger = subH;
-
-  const obs = new IntersectionObserver(() => {
-    const passed = catTitles.filter(t => t.getBoundingClientRect().top <= trigger);
+  let ticking = false;
+  function update() {
+    const subH = subShell?.offsetHeight || 0;
+    const passed = catTitles.filter(t => t.getBoundingClientRect().top <= subH);
     titleEl.textContent = passed.length
       ? passed[passed.length - 1].textContent
       : catTitles[0].textContent;
-  }, { rootMargin: `-${trigger}px 0px 0px 0px`, threshold: 0 });
+    ticking = false;
+  }
 
-  catTitles.forEach(t => obs.observe(t));
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
 }
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
