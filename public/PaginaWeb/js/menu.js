@@ -110,6 +110,7 @@ const PRODUCT_IMAGES = {
   'Calzone Clásico':            '../Imagenes/productos/CalzoneClasico.jpg',
   'Calzone Especial':           '../Imagenes/productos/CalzoneEspecial.jpg',
   // Stromboli
+  'Stromboli Clásico':          '../Imagenes/productos/StromboliClasico.jpg',
   'Stromboli Especial':         '../Imagenes/productos/StromboliEspecial.jpg',
   // Maicitos
   'Maicitos Gratinados':        '../Imagenes/productos/MaicitosGratinados.jpg',
