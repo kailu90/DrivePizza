@@ -744,14 +744,9 @@ function renderAdicionesSection() {
     bordeSeleccionado = null;
   }
 
-  // Actualizar numeración de pasos según si bordes aplica
-  const stepAdiciones = esBordeable ? 3 : 2;
-  const stepCantidad  = stepAdiciones + 1;
-  const stepObs       = stepCantidad + 1;
-  document.querySelectorAll('.pw-step-adiciones').forEach(el => { el.textContent = stepAdiciones; });
-  document.querySelectorAll('.pw-step-adiciones-label').forEach(el => {
-    el.textContent = `${stepAdiciones}. Agrega ingredientes extra`;
-  });
+  // Actualizar numeración de pasos (cantidad y obs) según secciones visibles
+  const stepCantidad = (esBordeable ? 1 : 0) + 3;
+  const stepObs      = stepCantidad + 1;
   document.querySelectorAll('.pw-step-cantidad').forEach(el => { el.textContent = stepCantidad; });
   document.querySelectorAll('.pw-step-obs').forEach(el => { el.textContent = stepObs; });
 }
