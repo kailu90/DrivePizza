@@ -1256,10 +1256,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   margin-bottom: 1.1rem;
 }
 .pw-cantidad-btn {
-  width: 36px; height: 36px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: 1.5px solid rgba(0, 0, 0, .14);
-  font-size: 1.2rem;
+  font-size: 1rem;
   display: flex; align-items: center; justify-content: center;
   transition: var(--dp-transition);
   font-family: var(--dp-font-ui);
