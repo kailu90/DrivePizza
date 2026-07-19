@@ -1189,10 +1189,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-adicion-precio {
   font-size: .68rem;
-  opacity: .75;
+  font-weight: 700;
+  color: var(--dp-green);
   line-height: 1.2;
 }
-.pw-adicion-btn.active .pw-adicion-precio { opacity: .9; }
+.pw-adicion-btn.active .pw-adicion-precio {
+  color: #fff;
+  opacity: .9;
+}
 .pw-label-opt {
   font-size: .68rem;
   font-weight: 400;
