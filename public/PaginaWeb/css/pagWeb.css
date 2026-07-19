@@ -2202,7 +2202,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-top: 1px solid rgba(49,75,39,.1);
 }
 .pw-footer-logo {
-  height: 100px;
+  height: 80px;
   object-fit: contain;
   mix-blend-mode: multiply;
 }
@@ -2418,7 +2418,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     border-top: none;
     padding-top: 0;
   }
-  .pw-footer-logo { height: 100px; align-self: center; }
+  .pw-footer-logo { height: 80px; align-self: center; }
   .pw-footer-social { justify-content: center; }
   .pw-footer-copy { font-size: .68rem; padding: .75rem 2rem; }
 }
