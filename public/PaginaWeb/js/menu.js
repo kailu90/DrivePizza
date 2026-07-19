@@ -16,6 +16,14 @@ initBottomNav();
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
+// Info visual para tarjetas de tamaño de pizza
+const PIZZA_SIZES = {
+  'Pequeña': { cms: '30 Cms', porciones: '4 porciones' },
+  'Mediana':  { cms: '35 Cms', porciones: '6 porciones' },
+  'Grande':   { cms: '40 Cms', porciones: '8 porciones' },
+  'Jumbo':    { cms: '50 Cms', porciones: '10 porciones' },
+};
+
 // ── IMÁGENES DE PRODUCTOS ─────────────────────────────────────
 const PRODUCT_IMAGES = {
   // Pizzas
@@ -506,13 +514,25 @@ function abrirProductSheet(producto) {
     sheetOpcionesWrap.style.display = 'none';
   } else {
     sheetOpcionesWrap.style.display = '';
-    sheetOpciones.innerHTML = opciones.map(([nombre, precio], i) =>
-      `<button class="pw-opcion-btn${i === 0 ? ' active' : ''}"
-               data-nombre="${nombre}" data-precio="${precio}">
-         ${nombre}
-         <span class="pw-opcion-precio">${formatPrecio(precio)}</span>
-       </button>`
-    ).join('');
+    const usaCards = opciones.every(([nombre]) => PIZZA_SIZES[nombre]);
+    sheetOpciones.className = usaCards ? 'pw-opciones pw-opciones-grid' : 'pw-opciones';
+    sheetOpciones.innerHTML = opciones.map(([nombre, precio], i) => {
+      const size = PIZZA_SIZES[nombre];
+      if (size) {
+        return `<button class="pw-opcion-btn pw-opcion-card${i === 0 ? ' active' : ''}"
+                         data-nombre="${nombre}" data-precio="${precio}">
+                  <span class="pw-opcion-card-nombre">${nombre}</span>
+                  <span class="pw-opcion-card-cms">${size.cms}</span>
+                  <span class="pw-opcion-card-porciones">${size.porciones}</span>
+                  <span class="pw-opcion-precio">${formatPrecio(precio)}</span>
+                </button>`;
+      }
+      return `<button class="pw-opcion-btn${i === 0 ? ' active' : ''}"
+                       data-nombre="${nombre}" data-precio="${precio}">
+                ${nombre}
+                <span class="pw-opcion-precio">${formatPrecio(precio)}</span>
+              </button>`;
+    }).join('');
 
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
 
