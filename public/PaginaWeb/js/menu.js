@@ -752,8 +752,9 @@ function renderAdicionesSection() {
 
   // Actualizar numeración de pasos según si bordes aplica
   const stepAdiciones = esBordeable ? 3 : 2;
-  document.querySelectorAll('.pw-step-adiciones').forEach(el => {
-    el.textContent = stepAdiciones;
+  document.querySelectorAll('.pw-step-adiciones').forEach(el => { el.textContent = stepAdiciones; });
+  document.querySelectorAll('.pw-step-adiciones-label').forEach(el => {
+    el.textContent = `${stepAdiciones}. ¿Quieres agregar ingredientes extra?`;
   });
 }
 
