@@ -1176,6 +1176,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cantidad-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: .85rem;
   margin-bottom: 1.1rem;
 }
