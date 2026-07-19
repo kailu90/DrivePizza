@@ -290,8 +290,8 @@ export const menuData = {
         { nombre: "Especial", opciones: preciosCalzones.calzoneEspecial },
     ],
     "Stromboli": [
-        { nombre: "Clásico",  opciones: preciosStromboli.stromboliClasico },
-        { nombre: "Especial", opciones: preciosStromboli.stromboliEspecial },
+        { nombre: "Stromboli Clásico",  opciones: preciosStromboli.stromboliClasico },
+        { nombre: "Stromboli Especial", opciones: preciosStromboli.stromboliEspecial },
     ],
     "Maicitos": [
         { nombre: "Maicitos Gratinados", opciones: preciosMaicitos.maicitosGratinados, descripcion: "Queso mozzarella, queso cheddar, maíz, tocineta y queso parmesano." },
