@@ -1158,15 +1158,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-adiciones-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: .25rem;
+  gap: .2rem;
   margin-bottom: 1.1rem;
 }
 .pw-adicion-btn {
   display: flex;
-  align-items: center;
-  gap: .3rem;
-  padding: .38rem .55rem;
-  border-radius: 99px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: .3rem .5rem;
+  border-radius: 8px;
   min-width: 0;
   overflow: hidden;
   border: 1.5px solid rgba(0, 0, 0, .14);
@@ -1184,16 +1185,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-color: var(--dp-orange);
 }
 .pw-adicion-nombre {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 .pw-adicion-precio {
-  flex-shrink: 0;
-  font-size: .7rem;
+  font-size: .68rem;
   opacity: .75;
+  line-height: 1.2;
 }
 .pw-adicion-btn.active .pw-adicion-precio { opacity: .9; }
 .pw-label-opt {
