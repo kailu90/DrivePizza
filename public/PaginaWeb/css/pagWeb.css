@@ -1197,6 +1197,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Adiciones y Bordes */
+@keyframes pw-adicion-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
 .pw-adiciones-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1218,13 +1224,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: none;
   cursor: pointer;
   font-family: var(--dp-font-ui);
-  transition: var(--dp-transition);
+  transition: background .22s ease, border-color .22s ease, color .22s ease;
 }
 .pw-adicion-btn:hover { border-color: var(--dp-orange); }
 .pw-adicion-btn.active {
   background: var(--dp-orange);
   color: #fff;
   border-color: var(--dp-orange);
+  animation: pw-adicion-pop .22s ease-out;
 }
 .pw-adicion-nombre {
   line-height: 1.2;
