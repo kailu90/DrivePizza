@@ -106,6 +106,8 @@ const PRODUCT_IMAGES = {
   'Ensalada Drive':             '../Imagenes/productos/EnsaladaDrivwe.jpg',
   'Ensalada Mi Cuate':          '../Imagenes/productos/EnsaladaMiCuate.jpg',
   'Ensalada Premium':           '../Imagenes/productos/EnsaladaPremium.jpg',
+  // Calzones
+  'Calzone Especial':           '../Imagenes/productos/CalzoneEspecial.jpg',
   // Stromboli
   'Stromboli Especial':         '../Imagenes/productos/StromboliEspecial.jpg',
   // Maicitos
