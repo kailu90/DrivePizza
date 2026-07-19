@@ -112,6 +112,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 2px;
   margin: 0 auto 1rem;
 }
+/* Imagen del producto en el sheet */
+.pw-sheet-img-wrap {
+  display: none;
+  width: calc(100% + 2rem);
+  margin: -1rem -1rem .75rem;
+  height: 200px;
+  overflow: hidden;
+}
+.pw-sheet-img-wrap.has-img { display: block; }
+.pw-sheet-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
 .pw-sheet-close {
   position: absolute;
   top: 1rem; right: 1.1rem;
@@ -119,6 +133,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #999;
   padding: .25rem;
   line-height: 1;
+  z-index: 1;
 }
 .pw-sheet-close:hover { color: var(--dp-dark); }
 

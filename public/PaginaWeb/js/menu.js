@@ -484,6 +484,18 @@ function abrirProductSheet(producto) {
   document.getElementById('sheet-adiciones-body')?.classList.remove('open');
   document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
 
+  // Imagen del producto
+  const sheetImgWrap = document.getElementById('sheet-img-wrap');
+  const sheetImg     = document.getElementById('sheet-img');
+  const imgSrc       = PRODUCT_IMAGES[producto.nombre];
+  if (imgSrc) {
+    sheetImg.src = imgSrc;
+    sheetImgWrap.classList.add('has-img');
+  } else {
+    sheetImgWrap.classList.remove('has-img');
+    sheetImg.src = '';
+  }
+
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
