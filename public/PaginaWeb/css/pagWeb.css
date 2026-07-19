@@ -997,7 +997,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 /* Opciones de tamaño */
 .pw-opciones { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1.1rem; }
-.pw-opciones-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+.pw-opciones-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .6rem; }
 .pw-opcion-btn {
   padding: .42rem .9rem;
   border-radius: 99px;
@@ -1027,9 +1027,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  padding: .85rem .5rem;
+  padding: .85rem .4rem;
   gap: .15rem;
-  aspect-ratio: 1;
+  min-height: 90px;
 }
 .pw-opcion-card .pw-opcion-precio { margin-left: 0; display: block; }
 .pw-opcion-card-nombre {
