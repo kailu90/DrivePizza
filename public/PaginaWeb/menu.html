@@ -87,9 +87,20 @@
 
     <button class="pw-sheet-close" id="btn-cerrar-producto" aria-label="Cerrar">&#10005;</button>
 
+    <!-- Indicador de pasos -->
+    <div class="pw-step-bar">
+      <div class="pw-step-bar-info">
+        <span class="pw-step-bar-counter" id="sheet-step-counter">Paso 1 de 4</span>
+        <span class="pw-step-bar-title" id="sheet-step-title">Elige un tamaño</span>
+      </div>
+      <div class="pw-step-bar-track">
+        <div class="pw-step-bar-fill" id="sheet-step-fill"></div>
+      </div>
+    </div>
+
     <!-- Contenido scrollable -->
     <div class="pw-sheet-scroll">
-      <!-- Imagen del producto -->
+      <!-- Imagen del producto (siempre visible) -->
       <div class="pw-sheet-img-wrap" id="sheet-img-wrap">
         <img id="sheet-img" alt="" class="pw-sheet-img">
       </div>
@@ -97,58 +108,65 @@
       <h3 class="pw-sheet-nombre" id="sheet-nombre"></h3>
       <p class="pw-sheet-desc" id="sheet-desc"></p>
 
-      <div id="sheet-opciones-wrap">
-        <span class="pw-sheet-label">1. Elige un tamaño</span>
-        <div class="pw-opciones" id="sheet-opciones"></div>
-      </div>
-
-      <!-- ½+½ MEZCLAR SABORES -->
-      <div id="sheet-mezcla-wrap" style="display:none">
-        <button class="pw-btn-mezcla" id="btn-mezcla">🍕 ¿No te decides? Combina dos sabores en una misma pizza.</button>
-      </div>
-
-      <!-- BORDES -->
-      <div id="sheet-bordes-wrap" style="display:none">
-        <p class="pw-sheet-personaliza">Personalízala</p>
-        <span class="pw-sheet-label pw-adiciones-label-desk">Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
-        <button class="pw-adiciones-toggle" id="btn-bordes-toggle" aria-expanded="false">
-          Elige un borde especial
-          <span class="pw-label-opt" style="font-weight:400">&nbsp;(Opcional)</span>
-          <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="pw-adiciones-collapsible" id="sheet-bordes-body">
-          <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+      <!-- PASO: TAMAÑO -->
+      <div class="pw-sheet-step" id="step-tamano">
+        <div id="sheet-opciones-wrap">
+          <div class="pw-opciones" id="sheet-opciones"></div>
+        </div>
+        <div id="sheet-mezcla-wrap" style="display:none">
+          <button class="pw-btn-mezcla" id="btn-mezcla">🍕 ¿No te decides? Combina dos sabores en una misma pizza.</button>
         </div>
       </div>
 
-      <!-- ADICIONES -->
-      <div id="sheet-adiciones-wrap" style="display:none">
-        <span class="pw-sheet-label pw-adiciones-label-desk">Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
-        <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
-          <span class="pw-step-adiciones-label">Agrega ingredientes extra</span>
-          <span class="pw-label-opt" style="font-weight:400">&nbsp;(Opcional)</span>
-          <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
-        </button>
-<div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
-          <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+      <!-- PASO: PERSONALIZAR -->
+      <div class="pw-sheet-step" id="step-personalizar">
+        <!-- BORDES -->
+        <div id="sheet-bordes-wrap" style="display:none">
+          <span class="pw-sheet-label pw-adiciones-label-desk">Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
+          <button class="pw-adiciones-toggle" id="btn-bordes-toggle" aria-expanded="false">
+            Elige un borde especial
+            <span class="pw-label-opt" style="font-weight:400">&nbsp;(Opcional)</span>
+            <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="pw-adiciones-collapsible" id="sheet-bordes-body">
+            <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+          </div>
+        </div>
+        <!-- ADICIONES -->
+        <div id="sheet-adiciones-wrap" style="display:none">
+          <span class="pw-sheet-label pw-adiciones-label-desk">Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
+          <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
+            Agrega ingredientes extra
+            <span class="pw-label-opt" style="font-weight:400">&nbsp;(Opcional)</span>
+            <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
+            <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+          </div>
         </div>
       </div>
 
-      <span class="pw-sheet-label"><span class="pw-step-cantidad">4</span>. ¿Cuántas deseas pedir?</span>
-      <div class="pw-cantidad-row">
-        <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
-        <span class="pw-cantidad-num" id="cant-num">1</span>
-        <button class="pw-cantidad-btn" id="btn-mas" aria-label="Aumentar cantidad">+</button>
+      <!-- PASO: CANTIDAD -->
+      <div class="pw-sheet-step" id="step-cantidad">
+        <div class="pw-cantidad-row">
+          <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
+          <span class="pw-cantidad-num" id="cant-num">1</span>
+          <button class="pw-cantidad-btn" id="btn-mas" aria-label="Aumentar cantidad">+</button>
+        </div>
       </div>
 
-      <span class="pw-sheet-label"><span class="pw-step-obs">5</span>. ¿Alguna indicación para la cocina? <span class="pw-label-opt">(Opcional)</span></span>
-      <textarea class="pw-obs-input" id="sheet-obs" rows="2"
-        placeholder="Estas indicaciones ayudan a preparar mejor tu pedido."></textarea>
+      <!-- PASO: OBSERVACIONES -->
+      <div class="pw-sheet-step" id="step-obs">
+        <textarea class="pw-obs-input" id="sheet-obs" rows="3"
+          placeholder="Estas indicaciones ayudan a preparar mejor tu pedido."></textarea>
+      </div>
+
     </div>
 
-    <!-- Botón fijo abajo -->
-    <div class="pw-sheet-footer">
-      <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
+    <!-- Footer de navegación -->
+    <div class="pw-sheet-footer pw-sheet-footer--nav">
+      <button class="pw-btn-back" id="btn-step-back" aria-label="Paso anterior">← Atrás</button>
+      <button class="pw-btn-primary" id="btn-agregar">Siguiente →</button>
     </div>
 
   </div>

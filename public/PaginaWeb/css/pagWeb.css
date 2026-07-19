@@ -153,6 +153,83 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sheet-close:hover { color: var(--dp-dark); }
 
+/* ── STEP BAR (wizard de pasos) ───────────────────────────── */
+.pw-step-bar {
+  flex-shrink: 0;
+  padding: .65rem 3.2rem .55rem 1.25rem;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.pw-step-bar-info {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin-bottom: .4rem;
+}
+.pw-step-bar-counter {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--dp-orange);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+.pw-step-bar-title {
+  font-family: var(--dp-font-brand);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--dp-dark);
+  line-height: 1.2;
+}
+.pw-step-bar-track {
+  height: 3px;
+  background: rgba(0,0,0,.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pw-step-bar-fill {
+  height: 100%;
+  background: var(--dp-orange);
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+
+/* Pasos del wizard */
+.pw-sheet-step { display: none; }
+.pw-sheet-step.active { display: block; }
+
+#step-cantidad {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0 1rem;
+}
+#step-cantidad.active { display: flex; }
+
+#step-obs { padding: .25rem 0 .5rem; }
+
+/* Footer con navegación atrás / siguiente */
+.pw-sheet-footer--nav {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+}
+.pw-btn-back {
+  flex-shrink: 0;
+  padding: 0 1.1rem;
+  height: 48px;
+  border: 1.5px solid rgba(0,0,0,.14);
+  border-radius: var(--dp-radius);
+  background: transparent;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--dp-dark);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--dp-transition);
+}
+.pw-btn-back:hover { border-color: var(--dp-orange); color: var(--dp-orange); }
+.pw-sheet-footer--nav .pw-btn-primary { flex: 1; }
+
 
 /* ════════════════════════════════════════════════════════════
    INDEX — SELECTOR DE SEDE

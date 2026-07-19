@@ -172,6 +172,8 @@ let opcionActiva           = null;
 let adicionesSeleccionadas = [];
 let bordeSeleccionado      = null;
 let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
+let currentStep            = 0;
+let steps                  = []; // ['tamano','personalizar','cantidad','obs']
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede        = document.getElementById('sede-bar'); // franja debajo del header
@@ -479,6 +481,42 @@ function initActiveCatTitle() {
   }, { passive: true });
 }
 
+// ── WIZARD DE PASOS ───────────────────────────────────────────
+const STEP_TITLES = {
+  tamano:       'Elige un tamaño',
+  personalizar: 'Personalízala',
+  cantidad:     '¿Cuántas quieres?',
+  obs:          'Alguna indicación para la cocina',
+};
+
+function buildSteps(tieneVariantes, esAdicionable) {
+  const s = [];
+  if (tieneVariantes) s.push('tamano');
+  if (esAdicionable)  s.push('personalizar');
+  s.push('cantidad');
+  s.push('obs');
+  return s;
+}
+
+function goToStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.pw-sheet-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('step-' + steps[n])?.classList.add('active');
+
+  const counter = document.getElementById('sheet-step-counter');
+  const title   = document.getElementById('sheet-step-title');
+  const fill    = document.getElementById('sheet-step-fill');
+  if (counter) counter.textContent = `Paso ${n + 1} de ${steps.length}`;
+  if (title)   title.textContent   = STEP_TITLES[steps[n]] || '';
+  if (fill)    fill.style.width    = `${((n + 1) / steps.length) * 100}%`;
+
+  const backBtn = document.getElementById('btn-step-back');
+  if (backBtn) backBtn.style.display = n === 0 ? 'none' : '';
+
+  actualizarBtnAgregar();
+  document.querySelector('.pw-sheet-scroll')?.scrollTo({ top: 0, behavior: 'instant' });
+}
+
 // ── PRODUCT SHEET ─────────────────────────────────────────────
 function abrirProductSheet(producto) {
   productoActivo         = producto;
@@ -559,7 +597,13 @@ function abrirProductSheet(producto) {
   cantNum.textContent = cantActual;
   actualizarMezclaBtn();
   renderAdicionesSection();
-  actualizarBtnAgregar();
+
+  // Init wizard
+  const tieneVariantes = Object.keys(producto.opciones).length > 1;
+  const esAdicionable  = CATS_PIZZAS.includes(producto.categoria) || CATEGORIAS_ADICIONABLES[producto.categoria] !== undefined;
+  steps = buildSteps(tieneVariantes, esAdicionable);
+  goToStep(0);
+
   abrirSheet(productSheet);
 }
 
@@ -667,8 +711,6 @@ function renderAdicionesSection() {
 
   if (!esAdicionable) {
     sheetAdicionesWrap.style.display = 'none';
-    document.querySelectorAll('.pw-step-cantidad').forEach(el => { el.textContent = 2; });
-    document.querySelectorAll('.pw-step-obs').forEach(el => { el.textContent = 3; });
     return;
   }
 
@@ -744,14 +786,14 @@ function renderAdicionesSection() {
     bordeSeleccionado = null;
   }
 
-  // Actualizar numeración de pasos (cantidad y obs) según secciones visibles
-  const stepCantidad = (esBordeable ? 1 : 0) + 3;
-  const stepObs      = stepCantidad + 1;
-  document.querySelectorAll('.pw-step-cantidad').forEach(el => { el.textContent = stepCantidad; });
-  document.querySelectorAll('.pw-step-obs').forEach(el => { el.textContent = stepObs; });
 }
 
 function actualizarBtnAgregar() {
+  const isLast = currentStep === steps.length - 1;
+  if (!isLast) {
+    btnAgregar.textContent = 'Siguiente →';
+    return;
+  }
   if (!opcionActiva) {
     btnAgregar.textContent = 'Selecciona una opción';
     return;
@@ -877,8 +919,17 @@ function setupListeners() {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
   });
 
-  // Agregar normal al carrito
+  // Navegación atrás
+  document.getElementById('btn-step-back')?.addEventListener('click', () => {
+    if (currentStep > 0) goToStep(currentStep - 1);
+  });
+
+  // Siguiente / Agregar al carrito
   btnAgregar.addEventListener('click', () => {
+    if (currentStep < steps.length - 1) {
+      goToStep(currentStep + 1);
+      return;
+    }
     if (!opcionActiva) return;
     const todasAdiciones = [...adicionesSeleccionadas];
     if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
