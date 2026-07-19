@@ -157,6 +157,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-step-inline {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: .45rem;
   margin: 1.25rem 0 .65rem;
   padding-top: 1rem;
