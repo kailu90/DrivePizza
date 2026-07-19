@@ -749,6 +749,12 @@ function renderAdicionesSection() {
     sheetBordesWrap.style.display = 'none';
     bordeSeleccionado = null;
   }
+
+  // Actualizar numeración de pasos según si bordes aplica
+  const stepAdiciones = esBordeable ? 3 : 2;
+  document.querySelectorAll('.pw-step-adiciones').forEach(el => {
+    el.textContent = stepAdiciones;
+  });
 }
 
 function actualizarBtnAgregar() {
