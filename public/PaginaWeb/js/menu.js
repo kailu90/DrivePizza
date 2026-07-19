@@ -492,6 +492,8 @@ function abrirProductSheet(producto) {
   // Cerrar adiciones en mobile al abrir nuevo producto
   document.getElementById('sheet-adiciones-body')?.classList.remove('open');
   document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
+  document.getElementById('sheet-bordes-body')?.classList.remove('open');
+  document.getElementById('btn-bordes-toggle')?.setAttribute('aria-expanded', 'false');
 
   // Imagen del producto
   const sheetImgWrap = document.getElementById('sheet-img-wrap');
@@ -903,6 +905,13 @@ function setupListeners() {
   document.getElementById('btn-adiciones-toggle')?.addEventListener('click', () => {
     const body = document.getElementById('sheet-adiciones-body');
     const btn  = document.getElementById('btn-adiciones-toggle');
+    const open = body.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+
+  document.getElementById('btn-bordes-toggle')?.addEventListener('click', () => {
+    const body = document.getElementById('sheet-bordes-body');
+    const btn  = document.getElementById('btn-bordes-toggle');
     const open = body.classList.toggle('open');
     btn.setAttribute('aria-expanded', String(open));
   });

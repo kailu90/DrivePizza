@@ -102,22 +102,30 @@
         <div class="pw-opciones" id="sheet-opciones"></div>
       </div>
 
-      <!-- BORDES -->
-      <div id="sheet-bordes-wrap" style="display:none">
-        <span class="pw-sheet-label">2. ¿Quieres un borde especial?</span>
-        <div class="pw-adiciones-grid" id="sheet-bordes"></div>
-      </div>
-
       <!-- ½+½ MEZCLAR SABORES -->
       <div id="sheet-mezcla-wrap" style="display:none">
         <button class="pw-btn-mezcla" id="btn-mezcla">🍕 Puedes elegir un segundo sabor para tu pizza (mitad y mitad)</button>
       </div>
 
+      <!-- BORDES -->
+      <div id="sheet-bordes-wrap" style="display:none">
+        <span class="pw-sheet-label pw-adiciones-label-desk">2. ¿Quieres un borde especial? <span class="pw-label-opt">(opcional)</span></span>
+        <button class="pw-adiciones-toggle" id="btn-bordes-toggle" aria-expanded="false">
+          2. ¿Quieres un borde especial?
+          <span class="pw-label-opt" style="font-weight:400">&nbsp;(opcional)</span>
+          <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="pw-adiciones-collapsible" id="sheet-bordes-body">
+          <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+        </div>
+      </div>
+
       <!-- ADICIONES -->
       <div id="sheet-adiciones-wrap" style="display:none">
-        <span class="pw-sheet-label pw-adiciones-label-desk">¿Quieres agregar ingredientes extra?</span>
+        <span class="pw-sheet-label pw-adiciones-label-desk">3. ¿Quieres agregar ingredientes extra? <span class="pw-label-opt">(opcional)</span></span>
         <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
-          ¿Quieres agregar ingredientes extra?
+          3. ¿Quieres agregar ingredientes extra?
+          <span class="pw-label-opt" style="font-weight:400">&nbsp;(opcional)</span>
           <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
         </button>
         <p class="pw-adiciones-hint" id="adiciones-hint">🍕 Puedes realizar adiciones a tu orden</p>
