@@ -1156,16 +1156,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 /* Adiciones y Bordes */
 .pw-adiciones-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: .25rem;
   margin-bottom: 1.1rem;
 }
 .pw-adicion-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: .3rem;
-  padding: .38rem .8rem;
+  padding: .38rem .7rem;
   border-radius: 99px;
   border: 1.5px solid rgba(0, 0, 0, .14);
   font-size: .78rem;
