@@ -667,6 +667,8 @@ function renderAdicionesSection() {
 
   if (!esAdicionable) {
     sheetAdicionesWrap.style.display = 'none';
+    document.querySelectorAll('.pw-step-cantidad').forEach(el => { el.textContent = 2; });
+    document.querySelectorAll('.pw-step-obs').forEach(el => { el.textContent = 3; });
     return;
   }
 
@@ -744,10 +746,14 @@ function renderAdicionesSection() {
 
   // Actualizar numeración de pasos según si bordes aplica
   const stepAdiciones = esBordeable ? 3 : 2;
+  const stepCantidad  = stepAdiciones + 1;
+  const stepObs       = stepCantidad + 1;
   document.querySelectorAll('.pw-step-adiciones').forEach(el => { el.textContent = stepAdiciones; });
   document.querySelectorAll('.pw-step-adiciones-label').forEach(el => {
-    el.textContent = `${stepAdiciones}. ¿Quieres agregar ingredientes extra?`;
+    el.textContent = `${stepAdiciones}. Agrega ingredientes extra`;
   });
+  document.querySelectorAll('.pw-step-cantidad').forEach(el => { el.textContent = stepCantidad; });
+  document.querySelectorAll('.pw-step-obs').forEach(el => { el.textContent = stepObs; });
 }
 
 function actualizarBtnAgregar() {
