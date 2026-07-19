@@ -286,8 +286,8 @@ export const menuData = {
         { nombre: "Borde bocadillo/Queso", opciones: preciosBordes },
     ],
     "Calzones": [
-        { nombre: "Clásico",  opciones: preciosCalzones.calzoneClasico },
-        { nombre: "Especial", opciones: preciosCalzones.calzoneEspecial },
+        { nombre: "Calzone Clásico",  opciones: preciosCalzones.calzoneClasico },
+        { nombre: "Calzone Especial", opciones: preciosCalzones.calzoneEspecial },
     ],
     "Stromboli": [
         { nombre: "Stromboli Clásico",  opciones: preciosStromboli.stromboliClasico },
