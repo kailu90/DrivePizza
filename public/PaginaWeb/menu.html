@@ -84,59 +84,64 @@
 
   <!-- SHEET: PRODUCTO -->
   <div class="pw-sheet" id="product-sheet" role="dialog" aria-modal="true" aria-label="Agregar producto">
-    <div class="pw-sheet-handle"></div>
 
-    <!-- Imagen del producto -->
+    <!-- Imagen fija arriba -->
     <div class="pw-sheet-img-wrap" id="sheet-img-wrap">
       <img id="sheet-img" alt="" class="pw-sheet-img">
     </div>
-
     <button class="pw-sheet-close" id="btn-cerrar-producto" aria-label="Cerrar">&#10005;</button>
 
-    <h3 class="pw-sheet-nombre" id="sheet-nombre"></h3>
-    <p class="pw-sheet-desc" id="sheet-desc"></p>
+    <!-- Contenido scrollable -->
+    <div class="pw-sheet-scroll">
+      <div class="pw-sheet-handle"></div>
 
-    <div id="sheet-opciones-wrap">
-      <span class="pw-sheet-label">Tamaño / Opción</span>
-      <div class="pw-opciones" id="sheet-opciones"></div>
-    </div>
+      <h3 class="pw-sheet-nombre" id="sheet-nombre"></h3>
+      <p class="pw-sheet-desc" id="sheet-desc"></p>
 
-    <!-- ½+½ MEZCLAR SABORES (solo pizzas con tamaño mixable) -->
-    <div id="sheet-mezcla-wrap" style="display:none">
-      <button class="pw-btn-mezcla" id="btn-mezcla">🍕 Puedes elegir un segundo sabor para tu pizza (mitad y mitad)</button>
-    </div>
+      <div id="sheet-opciones-wrap">
+        <span class="pw-sheet-label">Tamaño / Opción</span>
+        <div class="pw-opciones" id="sheet-opciones"></div>
+      </div>
 
-    <!-- ADICIONES Y BORDES (solo productos adicionables) -->
-    <div id="sheet-adiciones-wrap" style="display:none">
-      <!-- Label desktop (siempre visible) -->
-      <span class="pw-sheet-label pw-adiciones-label-desk">Adiciones <span class="pw-label-opt">(opcional)</span></span>
-      <!-- Toggle mobile (colapsable) -->
-      <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
-        Adiciones <span class="pw-label-opt">(opcional)</span>
-        <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
-      </button>
-      <p class="pw-adiciones-hint" id="adiciones-hint">🍕 Puedes realizar adiciones a tu orden</p>
-      <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
-        <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
-        <div id="sheet-bordes-wrap" style="display:none">
-          <span class="pw-sheet-label" style="margin-top:.6rem">Bordes <span class="pw-label-opt">(opcional)</span></span>
-          <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+      <!-- ½+½ MEZCLAR SABORES -->
+      <div id="sheet-mezcla-wrap" style="display:none">
+        <button class="pw-btn-mezcla" id="btn-mezcla">🍕 Puedes elegir un segundo sabor para tu pizza (mitad y mitad)</button>
+      </div>
+
+      <!-- ADICIONES Y BORDES -->
+      <div id="sheet-adiciones-wrap" style="display:none">
+        <span class="pw-sheet-label pw-adiciones-label-desk">Adiciones <span class="pw-label-opt">(opcional)</span></span>
+        <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
+          Adiciones <span class="pw-label-opt">(opcional)</span>
+          <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+        </button>
+        <p class="pw-adiciones-hint" id="adiciones-hint">🍕 Puedes realizar adiciones a tu orden</p>
+        <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
+          <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+          <div id="sheet-bordes-wrap" style="display:none">
+            <span class="pw-sheet-label" style="margin-top:.6rem">Bordes <span class="pw-label-opt">(opcional)</span></span>
+            <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+          </div>
         </div>
       </div>
+
+      <span class="pw-sheet-label">Cantidad</span>
+      <div class="pw-cantidad-row">
+        <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
+        <span class="pw-cantidad-num" id="cant-num">1</span>
+        <button class="pw-cantidad-btn" id="btn-mas" aria-label="Aumentar cantidad">+</button>
+      </div>
+
+      <span class="pw-sheet-label">Observaciones (opcional)</span>
+      <textarea class="pw-obs-input" id="sheet-obs" rows="2"
+        placeholder="Ej: sin cebolla, extra salsa..."></textarea>
     </div>
 
-    <span class="pw-sheet-label">Cantidad</span>
-    <div class="pw-cantidad-row">
-      <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
-      <span class="pw-cantidad-num" id="cant-num">1</span>
-      <button class="pw-cantidad-btn" id="btn-mas" aria-label="Aumentar cantidad">+</button>
+    <!-- Botón fijo abajo -->
+    <div class="pw-sheet-footer">
+      <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
     </div>
 
-    <span class="pw-sheet-label">Observaciones (opcional)</span>
-    <textarea class="pw-obs-input" id="sheet-obs" rows="2"
-      placeholder="Ej: sin cebolla, extra salsa..."></textarea>
-
-    <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
   </div>
 
   <!-- SHEET: CARRITO -->
