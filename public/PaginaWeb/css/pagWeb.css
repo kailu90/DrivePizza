@@ -1035,13 +1035,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   margin-bottom: .5rem;
   display: block;
 }
-.pw-sheet-personaliza {
-  font-family: var(--dp-font-brand);
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--dp-dark);
-  margin: .25rem 0 .75rem;
-}
 
 /* Opciones de tamaño */
 .pw-opciones { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1.1rem; }
