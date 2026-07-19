@@ -1183,7 +1183,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: #fff;
   border-color: var(--dp-orange);
 }
+.pw-adicion-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pw-adicion-precio {
+  flex-shrink: 0;
   font-size: .7rem;
   opacity: .75;
 }

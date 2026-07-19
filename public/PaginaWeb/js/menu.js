@@ -684,7 +684,7 @@ function renderAdicionesSection() {
     const activa = adicionesSeleccionadas.some(s => s.nombre === a.nombre);
     return `<button class="pw-adicion-btn${activa ? ' active' : ''}"
                     data-nombre="${a.nombre}" data-precio="${a.precio}">
-               ${a.nombre.replace('Adición ', '')}
+               <span class="pw-adicion-nombre">${a.nombre.replace('Adición ', '')}</span>
                <span class="pw-adicion-precio">+${formatPrecio(a.precio)}</span>
              </button>`;
   }).join('');
@@ -717,7 +717,7 @@ function renderAdicionesSection() {
       const activo = bordeSeleccionado?.nombre === b.nombre;
       return `<button class="pw-adicion-btn${activo ? ' active' : ''}"
                       data-nombre="${b.nombre}" data-precio="${bordePrecio}">
-                 ${b.nombre}
+                 <span class="pw-adicion-nombre">${b.nombre}</span>
                  <span class="pw-adicion-precio">+${formatPrecio(bordePrecio)}</span>
                </button>`;
     }).join('');
