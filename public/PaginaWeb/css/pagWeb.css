@@ -92,7 +92,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── BOTTOM SHEET ─────────────────────────────────────────── */
 .pw-sheet {
   position: fixed;
-  top: var(--pw-header-h, 60px); bottom: 0; left: 0; right: 0;
+  top: 0; bottom: 0; left: 0; right: 0;
   z-index: 201;
   background: var(--dp-mist);
   border-radius: 0;
