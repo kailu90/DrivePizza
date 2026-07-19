@@ -114,8 +114,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Imagen del producto en el sheet */
 .pw-sheet-img-wrap {
   display: none;
-  width: calc(100% + 2rem);
-  margin: -1rem -1rem .75rem;
+  width: calc(100% + 2.5rem);
+  margin: -1.25rem -1.25rem .75rem;
   height: 200px;
   overflow: hidden;
 }
