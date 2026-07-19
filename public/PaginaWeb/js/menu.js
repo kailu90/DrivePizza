@@ -107,6 +107,7 @@ const PRODUCT_IMAGES = {
   'Ensalada Mi Cuate':          '../Imagenes/productos/EnsaladaMiCuate.jpg',
   'Ensalada Premium':           '../Imagenes/productos/EnsaladaPremium.jpg',
   // Calzones
+  'Calzone Clásico':            '../Imagenes/productos/CalzoneClasico.jpg',
   'Calzone Especial':           '../Imagenes/productos/CalzoneEspecial.jpg',
   // Stromboli
   'Stromboli Especial':         '../Imagenes/productos/StromboliEspecial.jpg',
