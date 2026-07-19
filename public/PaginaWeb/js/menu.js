@@ -18,7 +18,7 @@ const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
 // Info visual para tarjetas de tamaño de pizza
 const PIZZA_SIZES = {
-  'Porción': { cms: 'Porción triangular', porciones: '1 porción' },
+  'Porción': { cms: 'Triangular', porciones: '1 porción' },
   'Pequeña': { cms: '30 Cms', porciones: '4 porciones' },
   'Mediana':  { cms: '35 Cms', porciones: '6 porciones' },
   'Grande':   { cms: '40 Cms', porciones: '8 porciones' },
