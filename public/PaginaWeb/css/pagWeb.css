@@ -95,9 +95,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   bottom: 0; left: 0; right: 0;
   z-index: 201;
   background: var(--dp-mist);
-  border-radius: var(--dp-radius-lg) var(--dp-radius-lg) 0 0;
+  border-radius: 0;
   padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  max-height: 88dvh;
+  height: 100dvh;
   overflow-y: auto;
   transform: translateY(100%);
   visibility: hidden;
