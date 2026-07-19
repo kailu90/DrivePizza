@@ -1046,14 +1046,17 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .75rem;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
 }
 .pw-opcion-card-cms {
   font-size: .65rem;
   opacity: .75;
+  white-space: nowrap;
 }
 .pw-opcion-card-porciones {
   font-size: .62rem;
   opacity: .6;
+  white-space: nowrap;
 }
 
 /* Botón ½+½ mezcla de sabores */
