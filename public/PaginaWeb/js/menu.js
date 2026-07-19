@@ -717,7 +717,7 @@ function renderAdicionesSection() {
       const activo = bordeSeleccionado?.nombre === b.nombre;
       return `<button class="pw-adicion-btn${activo ? ' active' : ''}"
                       data-nombre="${b.nombre}" data-precio="${bordePrecio}">
-                 <span class="pw-adicion-nombre">${b.nombre}</span>
+                 <span class="pw-adicion-nombre">${b.nombre.replace('Borde ', '')}</span>
                  <span class="pw-adicion-precio">+${formatPrecio(bordePrecio)}</span>
                </button>`;
     }).join('');
