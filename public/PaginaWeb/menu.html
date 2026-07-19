@@ -87,20 +87,9 @@
 
     <button class="pw-sheet-close" id="btn-cerrar-producto" aria-label="Cerrar">&#10005;</button>
 
-    <!-- Indicador de pasos -->
-    <div class="pw-step-bar">
-      <div class="pw-step-bar-info">
-        <span class="pw-step-bar-counter" id="sheet-step-counter">Paso 1 de 4</span>
-        <span class="pw-step-bar-title" id="sheet-step-title">Elige un tamaño</span>
-      </div>
-      <div class="pw-step-bar-track">
-        <div class="pw-step-bar-fill" id="sheet-step-fill"></div>
-      </div>
-    </div>
-
     <!-- Contenido scrollable -->
     <div class="pw-sheet-scroll">
-      <!-- Imagen del producto (siempre visible) -->
+      <!-- Imagen del producto -->
       <div class="pw-sheet-img-wrap" id="sheet-img-wrap">
         <img id="sheet-img" alt="" class="pw-sheet-img">
       </div>
@@ -110,6 +99,10 @@
 
       <!-- PASO: TAMAÑO -->
       <div class="pw-sheet-step" id="step-tamano">
+        <div class="pw-step-inline">
+          <span class="pw-step-inline-num" id="step-num-tamano">Paso 1 de 4</span>
+          <span class="pw-step-inline-title">Elige un tamaño</span>
+        </div>
         <div id="sheet-opciones-wrap">
           <div class="pw-opciones" id="sheet-opciones"></div>
         </div>
@@ -120,6 +113,10 @@
 
       <!-- PASO: PERSONALIZAR -->
       <div class="pw-sheet-step" id="step-personalizar">
+        <div class="pw-step-inline">
+          <span class="pw-step-inline-num" id="step-num-personalizar">Paso 2 de 4</span>
+          <span class="pw-step-inline-title">Personalízala</span>
+        </div>
         <!-- BORDES -->
         <div id="sheet-bordes-wrap" style="display:none">
           <span class="pw-sheet-label pw-adiciones-label-desk">Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
@@ -148,6 +145,10 @@
 
       <!-- PASO: CANTIDAD -->
       <div class="pw-sheet-step" id="step-cantidad">
+        <div class="pw-step-inline">
+          <span class="pw-step-inline-num" id="step-num-cantidad">Paso 3 de 4</span>
+          <span class="pw-step-inline-title">¿Cuántas quieres?</span>
+        </div>
         <div class="pw-cantidad-row">
           <button class="pw-cantidad-btn" id="btn-menos" aria-label="Disminuir cantidad">−</button>
           <span class="pw-cantidad-num" id="cant-num">1</span>
@@ -157,16 +158,19 @@
 
       <!-- PASO: OBSERVACIONES -->
       <div class="pw-sheet-step" id="step-obs">
+        <div class="pw-step-inline">
+          <span class="pw-step-inline-num" id="step-num-obs">Paso 4 de 4</span>
+          <span class="pw-step-inline-title">Alguna indicación para la cocina</span>
+        </div>
         <textarea class="pw-obs-input" id="sheet-obs" rows="3"
           placeholder="Estas indicaciones ayudan a preparar mejor tu pedido."></textarea>
       </div>
 
     </div>
 
-    <!-- Footer de navegación -->
-    <div class="pw-sheet-footer pw-sheet-footer--nav">
-      <button class="pw-btn-back" id="btn-step-back" aria-label="Paso anterior">← Atrás</button>
-      <button class="pw-btn-primary" id="btn-agregar">Siguiente →</button>
+    <!-- Botón fijo abajo -->
+    <div class="pw-sheet-footer">
+      <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
     </div>
 
   </div>

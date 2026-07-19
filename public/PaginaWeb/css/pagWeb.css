@@ -153,20 +153,22 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sheet-close:hover { color: var(--dp-dark); }
 
-/* ── STEP BAR (wizard de pasos) ───────────────────────────── */
-.pw-step-bar {
-  flex-shrink: 0;
-  padding: .65rem 3.2rem .55rem 1.25rem;
-  background: #fff;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-}
-.pw-step-bar-info {
+/* ── LABELS DE PASO (scroll vertical) ─────────────────────── */
+.pw-step-inline {
   display: flex;
   align-items: baseline;
-  gap: .5rem;
-  margin-bottom: .4rem;
+  gap: .45rem;
+  margin: 1.25rem 0 .65rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0,0,0,.07);
 }
-.pw-step-bar-counter {
+.pw-sheet-step:first-of-type .pw-step-inline,
+#step-tamano .pw-step-inline {
+  margin-top: .25rem;
+  padding-top: 0;
+  border-top: none;
+}
+.pw-step-inline-num {
   font-size: .65rem;
   font-weight: 700;
   color: var(--dp-orange);
@@ -174,61 +176,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   letter-spacing: .05em;
   white-space: nowrap;
 }
-.pw-step-bar-title {
+.pw-step-inline-title {
   font-family: var(--dp-font-brand);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--dp-dark);
-  line-height: 1.2;
-}
-.pw-step-bar-track {
-  height: 3px;
-  background: rgba(0,0,0,.08);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.pw-step-bar-fill {
-  height: 100%;
-  background: var(--dp-orange);
-  border-radius: 2px;
-  transition: width .3s ease;
 }
 
-/* Pasos del wizard */
-.pw-sheet-step { display: none; }
-.pw-sheet-step.active { display: block; }
+/* Pasos siempre visibles (scroll vertical) */
+.pw-sheet-step { display: block; }
 
 #step-cantidad {
-  display: flex;
+  display: block;
+}
+#step-cantidad .pw-cantidad-row {
   justify-content: center;
-  padding: 2.5rem 0 1rem;
+  padding-bottom: .5rem;
 }
-#step-cantidad.active { display: flex; }
-
-#step-obs { padding: .25rem 0 .5rem; }
-
-/* Footer con navegación atrás / siguiente */
-.pw-sheet-footer--nav {
-  display: flex;
-  gap: .6rem;
-  align-items: center;
-}
-.pw-btn-back {
-  flex-shrink: 0;
-  padding: 0 1.1rem;
-  height: 48px;
-  border: 1.5px solid rgba(0,0,0,.14);
-  border-radius: var(--dp-radius);
-  background: transparent;
-  font-size: .88rem;
-  font-weight: 600;
-  color: var(--dp-dark);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: var(--dp-transition);
-}
-.pw-btn-back:hover { border-color: var(--dp-orange); color: var(--dp-orange); }
-.pw-sheet-footer--nav .pw-btn-primary { flex: 1; }
 
 
 /* ════════════════════════════════════════════════════════════
