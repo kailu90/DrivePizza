@@ -92,12 +92,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── BOTTOM SHEET ─────────────────────────────────────────── */
 .pw-sheet {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  top: var(--pw-header-h, 60px); bottom: 0; left: 0; right: 0;
   z-index: 201;
   background: var(--dp-mist);
   border-radius: 0;
   padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  height: 100dvh;
   overflow-y: auto;
   transform: translateY(100%);
   visibility: hidden;
