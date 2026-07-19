@@ -1164,7 +1164,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-adicion-btn {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0;
   padding: .3rem .5rem;
   border-radius: 8px;
