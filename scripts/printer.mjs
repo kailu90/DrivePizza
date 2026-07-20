@@ -311,6 +311,32 @@ async function procesarPedido(rawPedido) {
     }
 }
 
+// ── Cola serial de impresión ──────────────────────────────────────────────────
+const colaPedidos = [];
+let procesandoCola = false;
+
+function encolar(rawPedido) {
+    const id = rawPedido.id;
+    // Evitar duplicados en cola (ej: Realtime + arranque coinciden)
+    if (colaPedidos.some(p => p.id === id)) {
+        log(`Pedido ${id} ya está en cola — ignorado`);
+        return;
+    }
+    colaPedidos.push(rawPedido);
+    log(`Pedido ${id} encolado (cola: ${colaPedidos.length})`);
+    procesarCola();
+}
+
+async function procesarCola() {
+    if (procesandoCola) return;
+    procesandoCola = true;
+    while (colaPedidos.length > 0) {
+        const pedido = colaPedidos.shift();
+        await procesarPedido(pedido);
+    }
+    procesandoCola = false;
+}
+
 async function iniciar() {
     log(`Monitor iniciado — Sede: ${MI_SEDE}`);
 
@@ -328,7 +354,7 @@ async function iniciar() {
         log(`Error cargando pedidos pendientes: ${errPend.message}`);
     } else {
         for (const pedido of (pendientes || [])) {
-            await procesarPedido(pedido);
+            encolar(pedido);
         }
     }
 
@@ -339,9 +365,9 @@ async function iniciar() {
             schema: 'public',
             table: 'pedidos_callcenter',
             filter: `sede=eq.${MI_SEDE}`,
-        }, async (payload) => {
+        }, (payload) => {
             if (!payload.new.impreso) {
-                await procesarPedido(payload.new);
+                encolar(payload.new);
             }
         })
         .subscribe((status) => {
