@@ -527,11 +527,13 @@ function abrirProductSheet(producto) {
   document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
   document.getElementById('sheet-bordes-body')?.classList.remove('open');
   document.getElementById('btn-bordes-toggle')?.setAttribute('aria-expanded', 'false');
-  // Resetear tarjeta de tamaño
+  // Resetear tarjetas de tamaño y mezcla
   const tamanoOpts   = document.getElementById('tamano-opts');
   const tamanoSelecc = document.getElementById('tamano-selecc');
+  const mezclaSelecc = document.getElementById('mezcla-selecc');
   if (tamanoOpts)   tamanoOpts.style.display   = '';
   if (tamanoSelecc) tamanoSelecc.style.display = 'none';
+  if (mezclaSelecc) mezclaSelecc.style.display = 'none';
 
   // Imagen del producto
   const sheetImgWrap = document.getElementById('sheet-img-wrap');
@@ -672,30 +674,14 @@ function renderSabores2(filtro) {
 
   sabor2Grid.querySelectorAll('.pw-sabor2-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const { sabor1, tamano, precio1 } = mezclaState;
       const precio2     = Number(btn.dataset.precio2);
-      const precioFinal = Math.max(precio1, precio2);
       const esEstofada2 = btn.dataset.estofada === 'true';
-      const esEstofadaFinal = !!(sabor1.esEstofada || esEstofada2);
+      mezclaState.sabor2      = { nombre: btn.dataset.nombre, esEstofada: esEstofada2 };
+      mezclaState.precioFinal = Math.max(mezclaState.precio1, precio2);
 
-      // Adiciones seleccionadas; borde solo si ninguno de los 2 sabores es estofado
-      const todasAdiciones = [...adicionesSeleccionadas];
-      if (bordeSeleccionado && !esEstofadaFinal) todasAdiciones.push(bordeSeleccionado);
-
-      agregarItem({
-        nombre:       `${sabor1.nombre} y mitad ${btn.dataset.nombre}`,
-        categoria:    sabor1.categoria,
-        opcion:       tamano,
-        precio:       precioFinal,
-        obs:          sheetObs.value.trim(),
-        adiciones:    todasAdiciones,
-        esAdicionable: true,
-        esEstofada:   esEstofadaFinal,
-      });
-
-      mezclaState = null;
-      cerrarTodo();
-      renderCarrito();
+      cerrarSheet(sabor2Sheet);
+      actualizarResumenMezcla();
+      actualizarBtnAgregar();
     });
   });
 }
@@ -869,14 +855,29 @@ function renderAdicionesSection() {
 
 }
 
+function actualizarResumenMezcla() {
+  const mezclaEl  = document.getElementById('mezcla-selecc');
+  const tamanoEl  = document.getElementById('tamano-selecc');
+  const valEl     = document.getElementById('mezcla-selecc-val');
+  if (!mezclaEl) return;
+  if (mezclaState?.sabor2) {
+    if (valEl) valEl.textContent = `½ ${mezclaState.sabor1.nombre} + ½ ${mezclaState.sabor2.nombre} · ${formatPrecio(mezclaState.precioFinal)}`;
+    mezclaEl.style.display = '';
+    if (tamanoEl) tamanoEl.style.display = 'none';
+  } else {
+    mezclaEl.style.display = 'none';
+  }
+}
+
 function actualizarBtnAgregar() {
   if (!opcionActiva) {
     btnAgregar.textContent = 'Selecciona una opción';
     return;
   }
+  const precioBase     = mezclaState?.sabor2 ? mezclaState.precioFinal : opcionActiva.precio;
   const adicionesTotal = adicionesSeleccionadas.reduce((s, a) => s + a.precio, 0)
                        + (bordeSeleccionado ? bordeSeleccionado.precio : 0);
-  const total = (opcionActiva.precio + adicionesTotal) * cantActual;
+  const total = (precioBase + adicionesTotal) * cantActual;
   btnAgregar.textContent = `Agregar · ${formatPrecio(total)}`;
 }
 
@@ -995,6 +996,16 @@ function setupListeners() {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
   });
 
+  // Cambiar mezcla seleccionada (reabrir sabor2)
+  document.getElementById('btn-mezcla-cambiar')?.addEventListener('click', () => {
+    if (mezclaState) {
+      mezclaState.sabor2      = null;
+      mezclaState.precioFinal = null;
+    }
+    actualizarResumenMezcla();
+    abrirSegundoSabor();
+  });
+
   // Cambiar tamaño seleccionado
   document.getElementById('btn-tamano-cambiar')?.addEventListener('click', () => {
     const optsEl   = document.getElementById('tamano-opts');
@@ -1022,18 +1033,35 @@ function setupListeners() {
   // Agregar al carrito
   btnAgregar.addEventListener('click', () => {
     if (!opcionActiva) return;
-    const todasAdiciones = [...adicionesSeleccionadas];
-    if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
-    agregarItem({
-      nombre:       productoActivo.nombre,
-      categoria:    productoActivo.categoria,
-      opcion:       opcionActiva.nombre,
-      precio:       opcionActiva.precio,
-      obs:          sheetObs.value.trim(),
-      adiciones:    todasAdiciones,
-      esAdicionable: CATS_PIZZAS.includes(productoActivo.categoria) || !!CATEGORIAS_ADICIONABLES[productoActivo.categoria],
-      esEstofada:   !!productoActivo.esEstofada,
-    });
+    if (mezclaState?.sabor2) {
+      const { sabor1, tamano, sabor2, precioFinal } = mezclaState;
+      const esEstofadaFinal = !!(sabor1.esEstofada || sabor2.esEstofada);
+      const todasAdiciones  = [...adicionesSeleccionadas];
+      if (bordeSeleccionado && !esEstofadaFinal) todasAdiciones.push(bordeSeleccionado);
+      agregarItem({
+        nombre:        `${sabor1.nombre} y mitad ${sabor2.nombre}`,
+        categoria:     sabor1.categoria,
+        opcion:        tamano,
+        precio:        precioFinal,
+        obs:           sheetObs.value.trim(),
+        adiciones:     todasAdiciones,
+        esAdicionable: true,
+        esEstofada:    esEstofadaFinal,
+      });
+    } else {
+      const todasAdiciones = [...adicionesSeleccionadas];
+      if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
+      agregarItem({
+        nombre:       productoActivo.nombre,
+        categoria:    productoActivo.categoria,
+        opcion:       opcionActiva.nombre,
+        precio:       opcionActiva.precio,
+        obs:          sheetObs.value.trim(),
+        adiciones:    todasAdiciones,
+        esAdicionable: CATS_PIZZAS.includes(productoActivo.categoria) || !!CATEGORIAS_ADICIONABLES[productoActivo.categoria],
+        esEstofada:   !!productoActivo.esEstofada,
+      });
+    }
     cerrarSheet(productSheet);
     renderCarrito();
   });
