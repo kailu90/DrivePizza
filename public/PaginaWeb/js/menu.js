@@ -906,6 +906,14 @@ function renderCarrito() {
   if (bottomCartBadge) {
     bottomCartBadge.textContent = conteo;
     bottomCartBadge.classList.toggle('visible', conteo > 0);
+    if (conteo > 0) {
+      const btn = document.getElementById('bottom-nav-cart-btn');
+      if (btn) {
+        btn.classList.remove('pw-cart-pulse');
+        void btn.offsetWidth; // fuerza reflow para reiniciar animación
+        btn.classList.add('pw-cart-pulse');
+      }
+    }
   }
 
   const list   = document.getElementById('cart-items-list');

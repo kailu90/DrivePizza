@@ -781,6 +781,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-cart-badge.visible { display: flex; }
 
+@keyframes pw-cart-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+#bottom-nav-cart-btn.pw-cart-pulse .pw-bottom-nav-isotipo {
+  animation: pw-cart-pulse .55s ease 0s 2;
+}
+
 
 /* ════════════════════════════════════════════════════════════
    MENU — CATEGORÍAS NAV
