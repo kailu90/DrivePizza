@@ -1064,8 +1064,9 @@ function setupListeners() {
       const esEstofadaFinal = !!(sabor1.esEstofada || sabor2.esEstofada);
       const todasAdiciones  = [...adicionesSeleccionadas];
       if (bordeSeleccionado && !esEstofadaFinal) todasAdiciones.push(bordeSeleccionado);
+      const prefijoCat = CAT_PREFIJO[sabor1.categoria] ?? '';
       agregarItem({
-        nombre:        `${sabor1.nombre} y mitad ${sabor2.nombre}`,
+        nombre:        prefijoCat ? `${prefijoCat} ${sabor1.nombre} y mitad ${sabor2.nombre}` : `${sabor1.nombre} y mitad ${sabor2.nombre}`,
         categoria:     sabor1.categoria,
         opcion:        tamano,
         precio:        precioFinal,
@@ -1077,8 +1078,9 @@ function setupListeners() {
     } else {
       const todasAdiciones = [...adicionesSeleccionadas];
       if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
+      const prefijoNormal = CAT_PREFIJO[productoActivo.categoria] ?? '';
       agregarItem({
-        nombre:       productoActivo.nombre,
+        nombre:       prefijoNormal ? `${prefijoNormal} ${productoActivo.nombre}` : productoActivo.nombre,
         categoria:    productoActivo.categoria,
         opcion:       opcionActiva.nombre,
         precio:       opcionActiva.precio,
