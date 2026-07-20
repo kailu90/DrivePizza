@@ -1150,6 +1150,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sabor2-buscar:focus { outline: none; border-color: var(--dp-green); }
 
+.pw-sabor2-tamano {
+  font-weight: 700;
+  color: var(--dp-green);
+}
+
 .pw-sabor2-grid { display: flex; flex-direction: column; gap: .25rem; padding-top: .75rem; }
 
 .pw-sabor2-btn {

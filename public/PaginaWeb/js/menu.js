@@ -650,7 +650,7 @@ function abrirSegundoSabor() {
   mezclaState = { saboresDisponibles, sabor1, tamano, precio1 };
 
   sabor2Titulo.textContent    = `Mitad ${sabor1.nombre}`;
-  sabor2Subtitulo.textContent = `${tamano} · Elige el 2° sabor`;
+  sabor2Subtitulo.innerHTML = `<span class="pw-sabor2-tamano">${tamano}</span> · Elige el 2° sabor`;
   sabor2Buscar.value          = '';
   renderSabores2('');
 
