@@ -1247,6 +1247,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-overflow: ellipsis;
   max-width: 200px;
 }
+#mezcla-selecc .pw-item-selecc-val {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+}
 .pw-item-selecc-btn {
   flex-shrink: 0;
   font-size: .75rem;
