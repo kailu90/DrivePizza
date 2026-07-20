@@ -514,9 +514,11 @@ function abrirProductSheet(producto) {
 
   // Cerrar adiciones en mobile al abrir nuevo producto
   document.getElementById('sheet-adiciones-body')?.classList.remove('open');
-  document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
+  const btnAdTog = document.getElementById('btn-adiciones-toggle');
+  if (btnAdTog) { btnAdTog.setAttribute('aria-expanded', 'false'); const ch = btnAdTog.querySelector('.pw-adiciones-chevron'); if (ch) ch.textContent = '+'; }
   document.getElementById('sheet-bordes-body')?.classList.remove('open');
-  document.getElementById('btn-bordes-toggle')?.setAttribute('aria-expanded', 'false');
+  const btnBdTog = document.getElementById('btn-bordes-toggle');
+  if (btnBdTog) { btnBdTog.setAttribute('aria-expanded', 'false'); const ch = btnBdTog.querySelector('.pw-adiciones-chevron'); if (ch) ch.textContent = '+'; }
 
   // Imagen del producto
   const sheetImgWrap = document.getElementById('sheet-img-wrap');
@@ -1008,17 +1010,21 @@ function setupListeners() {
 
   // Cerrar sheets
   document.getElementById('btn-adiciones-toggle')?.addEventListener('click', () => {
-    const body = document.getElementById('sheet-adiciones-body');
-    const btn  = document.getElementById('btn-adiciones-toggle');
-    const open = body.classList.toggle('open');
+    const body    = document.getElementById('sheet-adiciones-body');
+    const btn     = document.getElementById('btn-adiciones-toggle');
+    const open    = body.classList.toggle('open');
     btn.setAttribute('aria-expanded', String(open));
+    const chevron = btn.querySelector('.pw-adiciones-chevron');
+    if (chevron) chevron.textContent = open ? '−' : '+';
   });
 
   document.getElementById('btn-bordes-toggle')?.addEventListener('click', () => {
-    const body = document.getElementById('sheet-bordes-body');
-    const btn  = document.getElementById('btn-bordes-toggle');
-    const open = body.classList.toggle('open');
+    const body    = document.getElementById('sheet-bordes-body');
+    const btn     = document.getElementById('btn-bordes-toggle');
+    const open    = body.classList.toggle('open');
     btn.setAttribute('aria-expanded', String(open));
+    const chevron = btn.querySelector('.pw-adiciones-chevron');
+    if (chevron) chevron.textContent = open ? '−' : '+';
   });
 
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
