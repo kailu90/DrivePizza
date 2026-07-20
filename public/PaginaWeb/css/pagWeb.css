@@ -185,7 +185,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Pasos siempre visibles (scroll vertical) */
-.pw-sheet-step { display: block; }
+.pw-sheet-step { display: block; transition: opacity .3s ease; }
+.pw-sheet-step.pw-step-disabled {
+  opacity: .35;
+  pointer-events: none;
+  user-select: none;
+}
 
 #step-cantidad {
   display: block;

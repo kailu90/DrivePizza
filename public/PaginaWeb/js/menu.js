@@ -479,6 +479,16 @@ function initActiveCatTitle() {
   }, { passive: true });
 }
 
+// ── ESTADO DE PASOS (activar/desactivar) ──────────────────────
+function actualizarEstadoPasos() {
+  if (!productoActivo) return;
+  const tieneVariantes = Object.keys(productoActivo.opciones).length > 1;
+  const desbloqueado   = !tieneVariantes || opcionActiva !== null;
+  ['step-personalizar', 'step-cantidad', 'step-obs'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('pw-step-disabled', !desbloqueado);
+  });
+}
+
 // ── LABELS DE PASOS (scroll vertical) ────────────────────────
 function renderStepLabels() {
   if (!productoActivo) return;
@@ -580,6 +590,7 @@ function abrirProductSheet(producto) {
         actualizarResumenTamano();
         actualizarResumenBorde();
         actualizarResumenAdiciones();
+        actualizarEstadoPasos();
         actualizarBtnAgregar();
       });
     });
@@ -590,6 +601,7 @@ function abrirProductSheet(producto) {
   renderAdicionesSection();
   actualizarResumenBorde();
   actualizarResumenAdiciones();
+  actualizarEstadoPasos();
   renderStepLabels();
   actualizarBtnAgregar();
   abrirSheet(productSheet);
