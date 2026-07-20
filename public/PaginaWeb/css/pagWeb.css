@@ -1191,9 +1191,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     color: var(--dp-orange);
     line-height: 1;
     flex-shrink: 0;
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(.4, 0, .2, 1);
   }
   .pw-adiciones-toggle[aria-expanded="true"]::after {
-    content: '−';
+    transform: rotate(45deg);
   }
 .pw-adiciones-collapsible { display: none; }
   .pw-adiciones-collapsible.open { display: block; }
