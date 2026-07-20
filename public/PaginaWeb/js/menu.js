@@ -703,16 +703,13 @@ function actualizarResumenBorde() {
 }
 
 function actualizarResumenAdiciones() {
-  const optsEl   = document.getElementById('adiciones-opts');
   const seleccEl = document.getElementById('adiciones-selecc');
   const valEl    = document.getElementById('adiciones-selecc-val');
-  if (!optsEl || !seleccEl) return;
+  if (!seleccEl) return;
   if (adicionesSeleccionadas.length > 0) {
     if (valEl) valEl.textContent = adicionesSeleccionadas.map(a => a.nombre.replace('Adición ', '')).join(', ');
-    optsEl.style.display   = 'none';
     seleccEl.style.display = '';
   } else {
-    optsEl.style.display   = '';
     seleccEl.style.display = 'none';
   }
 }
