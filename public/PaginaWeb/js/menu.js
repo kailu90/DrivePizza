@@ -876,9 +876,11 @@ function actualizarResumenMezcla() {
     mezclaEl.style.display = '';
     if (tamanoEl) tamanoEl.style.display = 'none';
     if (optsEl)   optsEl.style.display   = 'none';
+    sheetMezclaWrap.style.display = 'none';
   } else {
     mezclaEl.style.display = 'none';
     actualizarResumenTamano();
+    actualizarMezclaBtn();
   }
 }
 
