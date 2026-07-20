@@ -721,7 +721,8 @@ function confirmarAdicionExtra(nombre, precio, btn) {
   if (!modal) return;
 
   const nombreLimpio = nombre.replace('Adición ', '');
-  if (msgEl) msgEl.textContent = `¿Estás seguro de agregar "${nombreLimpio}" como ingrediente adicional?`;
+  const total = adicionesSeleccionadas.length;
+  if (msgEl) msgEl.textContent = `Ya tienes ${total} ingrediente${total > 1 ? 's' : ''} adicionado${total > 1 ? 's' : ''}. ¿Deseas agregar "${nombreLimpio}" como ingrediente extra?`;
   modal.style.display = '';
 
   const cerrar = () => {
