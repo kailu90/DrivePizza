@@ -1185,13 +1185,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     font-family: var(--dp-font-ui);
   }
   .pw-adiciones-chevron {
-    font-size: .85rem;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--dp-orange);
-    transition: transform .2s;
+    line-height: 1;
   }
-  .pw-adiciones-toggle[aria-expanded="true"] .pw-adiciones-chevron {
-    transform: rotate(180deg);
-  }
+  .pw-adiciones-toggle[aria-expanded="false"] .pw-adiciones-chevron::before { content: '+'; }
+  .pw-adiciones-toggle[aria-expanded="true"]  .pw-adiciones-chevron::before { content: '−'; }
   .pw-adiciones-collapsible { display: none; }
   .pw-adiciones-collapsible.open { display: block; }
 }
