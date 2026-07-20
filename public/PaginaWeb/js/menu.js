@@ -517,6 +517,11 @@ function abrirProductSheet(producto) {
   document.getElementById('btn-adiciones-toggle')?.setAttribute('aria-expanded', 'false');
   document.getElementById('sheet-bordes-body')?.classList.remove('open');
   document.getElementById('btn-bordes-toggle')?.setAttribute('aria-expanded', 'false');
+  // Resetear tarjeta de tamaño
+  const tamanoOpts   = document.getElementById('tamano-opts');
+  const tamanoSelecc = document.getElementById('tamano-selecc');
+  if (tamanoOpts)   tamanoOpts.style.display   = '';
+  if (tamanoSelecc) tamanoSelecc.style.display = 'none';
 
   // Imagen del producto
   const sheetImgWrap = document.getElementById('sheet-img-wrap');
@@ -589,7 +594,6 @@ function abrirProductSheet(producto) {
   cantNum.textContent = cantActual;
   actualizarMezclaBtn();
   renderAdicionesSection();
-  actualizarResumenTamano();
   actualizarResumenBorde();
   actualizarResumenAdiciones();
   renderStepLabels();
