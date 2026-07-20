@@ -861,7 +861,7 @@ function actualizarResumenMezcla() {
   const valEl     = document.getElementById('mezcla-selecc-val');
   if (!mezclaEl) return;
   if (mezclaState?.sabor2) {
-    if (valEl) valEl.textContent = `½ ${mezclaState.sabor1.nombre} + ½ ${mezclaState.sabor2.nombre} · ${formatPrecio(mezclaState.precioFinal)}`;
+    if (valEl) valEl.textContent = `Mitad ${mezclaState.sabor1.nombre} + mitad ${mezclaState.sabor2.nombre} · ${formatPrecio(mezclaState.precioFinal)}`;
     mezclaEl.style.display = '';
     if (tamanoEl) tamanoEl.style.display = 'none';
   } else {
