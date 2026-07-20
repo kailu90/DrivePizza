@@ -732,7 +732,7 @@ function actualizarResumenAdiciones() {
   const valEl    = document.getElementById('adiciones-selecc-val');
   if (!seleccEl) return;
   if (adicionesSeleccionadas.length > 0) {
-    if (valEl) valEl.textContent = adicionesSeleccionadas.map(a => a.nombre.replace('Adición ', '')).join(', ');
+    if (valEl) valEl.textContent = adicionesSeleccionadas.map(a => `${a.nombre.replace('Adición ', '')} (+${formatPrecio(a.precio)})`).join(', ');
     seleccEl.style.display = '';
   } else {
     seleccEl.style.display = 'none';
