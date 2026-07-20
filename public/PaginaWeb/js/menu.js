@@ -858,12 +858,14 @@ function renderAdicionesSection() {
 function actualizarResumenMezcla() {
   const mezclaEl  = document.getElementById('mezcla-selecc');
   const tamanoEl  = document.getElementById('tamano-selecc');
+  const optsEl    = document.getElementById('tamano-opts');
   const valEl     = document.getElementById('mezcla-selecc-val');
   if (!mezclaEl) return;
   if (mezclaState?.sabor2) {
     if (valEl) valEl.textContent = `Mitad ${mezclaState.sabor1.nombre} + mitad ${mezclaState.sabor2.nombre} · ${formatPrecio(mezclaState.precioFinal)}`;
     mezclaEl.style.display = '';
     if (tamanoEl) tamanoEl.style.display = 'none';
+    if (optsEl)   optsEl.style.display   = 'none';
   } else {
     mezclaEl.style.display = 'none';
   }
