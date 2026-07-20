@@ -119,24 +119,48 @@
         </div>
         <!-- BORDES -->
         <div id="sheet-bordes-wrap" style="display:none">
-          <span class="pw-sheet-label pw-adiciones-label-desk">Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
-          <button class="pw-adiciones-toggle" id="btn-bordes-toggle" aria-expanded="false">
-            <span>Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
-            <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
-          </button>
-          <div class="pw-adiciones-collapsible" id="sheet-bordes-body">
-            <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+          <div id="bordes-opts">
+            <span class="pw-sheet-label pw-adiciones-label-desk">Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
+            <button class="pw-adiciones-toggle" id="btn-bordes-toggle" aria-expanded="false">
+              <span>Elige un borde especial <span class="pw-label-opt">(Opcional)</span></span>
+              <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="pw-adiciones-collapsible" id="sheet-bordes-body">
+              <div class="pw-adiciones-grid" id="sheet-bordes"></div>
+            </div>
+          </div>
+          <div class="pw-item-selecc" id="borde-selecc" style="display:none">
+            <div class="pw-item-selecc-left">
+              <span class="pw-item-selecc-check">✔</span>
+              <div>
+                <span class="pw-item-selecc-tipo">Borde especial</span>
+                <span class="pw-item-selecc-val" id="borde-selecc-val"></span>
+              </div>
+            </div>
+            <button class="pw-item-selecc-btn" id="btn-borde-cambiar">Cambiar</button>
           </div>
         </div>
         <!-- ADICIONES -->
         <div id="sheet-adiciones-wrap" style="display:none">
-          <span class="pw-sheet-label pw-adiciones-label-desk">Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
-          <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
-            <span>Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
-            <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
-          </button>
-          <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
-            <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+          <div id="adiciones-opts">
+            <span class="pw-sheet-label pw-adiciones-label-desk">Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
+            <button class="pw-adiciones-toggle" id="btn-adiciones-toggle" aria-expanded="false">
+              <span>Agrega ingredientes extra <span class="pw-label-opt">(Opcional)</span></span>
+              <span class="pw-adiciones-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="pw-adiciones-collapsible" id="sheet-adiciones-body">
+              <div class="pw-adiciones-grid" id="sheet-adiciones"></div>
+            </div>
+          </div>
+          <div class="pw-item-selecc" id="adiciones-selecc" style="display:none">
+            <div class="pw-item-selecc-left">
+              <span class="pw-item-selecc-check">✔</span>
+              <div>
+                <span class="pw-item-selecc-tipo">Ingredientes extra</span>
+                <span class="pw-item-selecc-val" id="adiciones-selecc-val"></span>
+              </div>
+            </div>
+            <button class="pw-item-selecc-btn" id="btn-adiciones-cambiar">Cambiar</button>
           </div>
         </div>
       </div>

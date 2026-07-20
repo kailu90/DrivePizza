@@ -586,6 +586,8 @@ function abrirProductSheet(producto) {
   cantNum.textContent = cantActual;
   actualizarMezclaBtn();
   renderAdicionesSection();
+  actualizarResumenBorde();
+  actualizarResumenAdiciones();
   renderStepLabels();
   actualizarBtnAgregar();
   abrirSheet(productSheet);
@@ -684,6 +686,37 @@ function renderSabores2(filtro) {
   });
 }
 
+// ── RESUMEN DE SELECCIÓN ──────────────────────────────────────
+function actualizarResumenBorde() {
+  const optsEl   = document.getElementById('bordes-opts');
+  const seleccEl = document.getElementById('borde-selecc');
+  const valEl    = document.getElementById('borde-selecc-val');
+  if (!optsEl || !seleccEl) return;
+  if (bordeSeleccionado) {
+    if (valEl) valEl.textContent = `${bordeSeleccionado.nombre.replace('Borde ', '')} (+${formatPrecio(bordeSeleccionado.precio)})`;
+    optsEl.style.display   = 'none';
+    seleccEl.style.display = '';
+  } else {
+    optsEl.style.display   = '';
+    seleccEl.style.display = 'none';
+  }
+}
+
+function actualizarResumenAdiciones() {
+  const optsEl   = document.getElementById('adiciones-opts');
+  const seleccEl = document.getElementById('adiciones-selecc');
+  const valEl    = document.getElementById('adiciones-selecc-val');
+  if (!optsEl || !seleccEl) return;
+  if (adicionesSeleccionadas.length > 0) {
+    if (valEl) valEl.textContent = adicionesSeleccionadas.map(a => a.nombre.replace('Adición ', '')).join(', ');
+    optsEl.style.display   = 'none';
+    seleccEl.style.display = '';
+  } else {
+    optsEl.style.display   = '';
+    seleccEl.style.display = 'none';
+  }
+}
+
 // ── ADICIONES Y BORDES ────────────────────────────────────────
 function renderAdicionesSection() {
   if (!productoActivo || !opcionActiva) return;
@@ -729,6 +762,7 @@ function renderAdicionesSection() {
         adicionesSeleccionadas.push({ nombre, precio });
         btn.classList.add('active');
       }
+      actualizarResumenAdiciones();
       actualizarBtnAgregar();
     });
   });
@@ -762,6 +796,7 @@ function renderAdicionesSection() {
           sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
         }
+        actualizarResumenBorde();
         actualizarBtnAgregar();
       });
     });
@@ -896,6 +931,22 @@ function setupListeners() {
   });
   document.getElementById('btn-mas').addEventListener('click', () => {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
+  });
+
+  // Cambiar borde seleccionado
+  document.getElementById('btn-borde-cambiar')?.addEventListener('click', () => {
+    bordeSeleccionado = null;
+    sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
+    actualizarResumenBorde();
+    actualizarBtnAgregar();
+  });
+
+  // Cambiar adiciones seleccionadas
+  document.getElementById('btn-adiciones-cambiar')?.addEventListener('click', () => {
+    adicionesSeleccionadas = [];
+    sheetAdicionesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
+    actualizarResumenAdiciones();
+    actualizarBtnAgregar();
   });
 
   // Agregar al carrito
