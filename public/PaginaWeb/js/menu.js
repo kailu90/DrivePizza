@@ -16,6 +16,16 @@ initBottomNav();
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
+// Prefijo a mostrar en el título del sheet según categoría
+const CAT_PREFIJO = {
+  'Pizzas Super Estofadas': 'Pizza',
+  'Pizzas Estofadas':       'Pizza',
+  'Pizzas Especiales':      'Pizza',
+  'Pizzas Clásicas':        'Pizza',
+  'Pizzas Típicas':         'Pizza',
+  // Pizzetas Premium ya traen "Pizzeta" en el nombre → sin prefijo
+};
+
 // Info visual para tarjetas de tamaño de pizza
 const PIZZA_SIZES = {
   'Porción': { cms: 'Triangular', porciones: '1 porción' },
@@ -547,7 +557,8 @@ function abrirProductSheet(producto) {
     sheetImg.src = '';
   }
 
-  sheetNombre.textContent = producto.nombre;
+  const prefijo = CAT_PREFIJO[producto.categoria];
+  sheetNombre.textContent = prefijo ? `${prefijo} ${producto.nombre}` : producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
   const opciones = Object.entries(producto.opciones);
