@@ -878,6 +878,7 @@ function actualizarResumenMezcla() {
     if (optsEl)   optsEl.style.display   = 'none';
   } else {
     mezclaEl.style.display = 'none';
+    actualizarResumenTamano();
   }
 }
 
@@ -1080,7 +1081,10 @@ function setupListeners() {
 
   // ½+½ mezcla
   document.getElementById('btn-mezcla').addEventListener('click', abrirSegundoSabor);
-  document.getElementById('btn-cerrar-sabor2').addEventListener('click', () => cerrarSheet(sabor2Sheet));
+  document.getElementById('btn-cerrar-sabor2').addEventListener('click', () => {
+    cerrarSheet(sabor2Sheet);
+    actualizarResumenMezcla();
+  });
   sabor2Buscar.addEventListener('input', () => renderSabores2(sabor2Buscar.value));
 
   // Cerrar sheets
