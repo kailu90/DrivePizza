@@ -1184,11 +1184,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     color: var(--dp-dark);
     font-family: var(--dp-font-ui);
   }
-  .pw-adiciones-chevron {
-    font-size: 1.1rem;
+  .pw-adiciones-toggle::after {
+    content: '+';
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--dp-orange);
     line-height: 1;
+    flex-shrink: 0;
+  }
+  .pw-adiciones-toggle[aria-expanded="true"]::after {
+    content: '−';
   }
 .pw-adiciones-collapsible { display: none; }
   .pw-adiciones-collapsible.open { display: block; }
