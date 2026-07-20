@@ -714,6 +714,37 @@ function actualizarResumenAdiciones() {
   }
 }
 
+// ── MODAL CONFIRMACIÓN ADICIÓN EXTRA ──────────────────────────
+function confirmarAdicionExtra(nombre, precio, btn) {
+  const modal  = document.getElementById('modal-adicion-extra');
+  const msgEl  = document.getElementById('modal-adicion-msg');
+  if (!modal) return;
+
+  const nombreLimpio = nombre.replace('Adición ', '');
+  if (msgEl) msgEl.textContent = `¿Estás seguro de agregar "${nombreLimpio}" como ingrediente adicional?`;
+  modal.style.display = '';
+
+  const cerrar = () => {
+    modal.style.display = 'none';
+    document.getElementById('btn-adicion-extra-confirm').removeEventListener('click', onConfirm);
+    document.getElementById('btn-adicion-extra-cancel').removeEventListener('click', onCancel);
+    modal.removeEventListener('click', onOverlay);
+  };
+  const onConfirm = () => {
+    adicionesSeleccionadas.push({ nombre, precio });
+    btn.classList.add('active');
+    actualizarResumenAdiciones();
+    actualizarBtnAgregar();
+    cerrar();
+  };
+  const onCancel  = () => cerrar();
+  const onOverlay = (e) => { if (e.target === modal) cerrar(); };
+
+  document.getElementById('btn-adicion-extra-confirm').addEventListener('click', onConfirm);
+  document.getElementById('btn-adicion-extra-cancel').addEventListener('click', onCancel);
+  modal.addEventListener('click', onOverlay);
+}
+
 // ── ADICIONES Y BORDES ────────────────────────────────────────
 function renderAdicionesSection() {
   if (!productoActivo || !opcionActiva) return;
@@ -755,12 +786,16 @@ function renderAdicionesSection() {
       if (idx >= 0) {
         adicionesSeleccionadas.splice(idx, 1);
         btn.classList.remove('active');
+        actualizarResumenAdiciones();
+        actualizarBtnAgregar();
+      } else if (adicionesSeleccionadas.length >= 2) {
+        confirmarAdicionExtra(nombre, precio, btn);
       } else {
         adicionesSeleccionadas.push({ nombre, precio });
         btn.classList.add('active');
+        actualizarResumenAdiciones();
+        actualizarBtnAgregar();
       }
-      actualizarResumenAdiciones();
-      actualizarBtnAgregar();
     });
   });
 

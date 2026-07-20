@@ -1250,6 +1250,67 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-underline-offset: 2px;
 }
 
+/* Modal confirmación adición extra */
+.pw-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.48);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+.pw-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.5rem 1.25rem;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,.2);
+}
+.pw-modal-titulo {
+  font-family: var(--dp-font-brand);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--dp-dark);
+  margin: 0 0 .5rem;
+  text-align: center;
+}
+.pw-modal-msg {
+  font-size: .875rem;
+  color: #555;
+  margin: 0 0 1.25rem;
+  line-height: 1.45;
+  text-align: center;
+}
+.pw-modal-btns {
+  display: flex;
+  gap: .75rem;
+}
+.pw-modal-btn-cancel {
+  flex: 1;
+  padding: .65rem;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--dp-dark);
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pw-modal-btn-confirm {
+  flex: 1;
+  padding: .65rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--dp-orange);
+  color: #fff;
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* Adiciones y Bordes */
 @keyframes pw-adicion-pop {
   0%   { transform: scale(1); }
