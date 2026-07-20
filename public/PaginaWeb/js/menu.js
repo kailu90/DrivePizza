@@ -619,12 +619,13 @@ function actualizarMezclaBtn() {
 function abrirSegundoSabor() {
   if (!productoActivo) return;
   if (!opcionActiva) {
-    // Mostrar el grid de tamaños para que elija primero
-    const optsEl   = document.getElementById('tamano-opts');
-    const seleccEl = document.getElementById('tamano-selecc');
-    if (optsEl)   optsEl.style.display   = '';
-    if (seleccEl) seleccEl.style.display = 'none';
-    document.getElementById('step-tamano')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const modal = document.getElementById('modal-aviso-tamano');
+    if (modal) {
+      modal.style.display = '';
+      const cerrar = () => { modal.style.display = 'none'; };
+      document.getElementById('btn-aviso-tamano-ok').onclick    = cerrar;
+      modal.onclick = (e) => { if (e.target === modal) cerrar(); };
+    }
     return;
   }
 
