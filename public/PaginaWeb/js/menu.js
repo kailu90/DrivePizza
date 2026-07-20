@@ -906,8 +906,6 @@ function renderCarrito() {
   if (bottomCartBadge) {
     bottomCartBadge.textContent = conteo;
     bottomCartBadge.classList.toggle('visible', conteo > 0);
-    const btn = document.getElementById('bottom-nav-cart-btn');
-    if (btn) btn.classList.toggle('pw-cart-pulse', conteo > 0);
   }
 
   const list   = document.getElementById('cart-items-list');
