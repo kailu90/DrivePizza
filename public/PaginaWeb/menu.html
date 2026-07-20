@@ -103,11 +103,23 @@
           <span class="pw-step-inline-title">Elige un tamaño</span>
           <span class="pw-step-inline-num" id="step-num-tamano">Paso 1 de 4</span>
         </div>
-        <div id="sheet-opciones-wrap">
-          <div class="pw-opciones" id="sheet-opciones"></div>
+        <div class="pw-item-selecc" id="tamano-selecc" style="display:none">
+          <div class="pw-item-selecc-left">
+            <span class="pw-item-selecc-check">✔</span>
+            <div>
+              <span class="pw-item-selecc-tipo">Tamaño seleccionado</span>
+              <span class="pw-item-selecc-val" id="tamano-selecc-val"></span>
+            </div>
+          </div>
+          <button class="pw-item-selecc-btn" id="btn-tamano-cambiar">Cambiar</button>
         </div>
-        <div id="sheet-mezcla-wrap" style="display:none">
-          <button class="pw-btn-mezcla" id="btn-mezcla">🍕 ¿No te decides? Combina dos sabores en una misma pizza.</button>
+        <div id="tamano-opts">
+          <div id="sheet-opciones-wrap">
+            <div class="pw-opciones" id="sheet-opciones"></div>
+          </div>
+          <div id="sheet-mezcla-wrap" style="display:none">
+            <button class="pw-btn-mezcla" id="btn-mezcla">🍕 ¿No te decides? Combina dos sabores en una misma pizza.</button>
+          </div>
         </div>
       </div>
 

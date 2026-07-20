@@ -578,6 +578,9 @@ function abrirProductSheet(producto) {
         cantNum.textContent    = cantActual;
         actualizarMezclaBtn();
         renderAdicionesSection();
+        actualizarResumenTamano();
+        actualizarResumenBorde();
+        actualizarResumenAdiciones();
         actualizarBtnAgregar();
       });
     });
@@ -586,6 +589,7 @@ function abrirProductSheet(producto) {
   cantNum.textContent = cantActual;
   actualizarMezclaBtn();
   renderAdicionesSection();
+  actualizarResumenTamano();
   actualizarResumenBorde();
   actualizarResumenAdiciones();
   renderStepLabels();
@@ -687,6 +691,21 @@ function renderSabores2(filtro) {
 }
 
 // ── RESUMEN DE SELECCIÓN ──────────────────────────────────────
+function actualizarResumenTamano() {
+  const optsEl   = document.getElementById('tamano-opts');
+  const seleccEl = document.getElementById('tamano-selecc');
+  const valEl    = document.getElementById('tamano-selecc-val');
+  if (!optsEl || !seleccEl) return;
+  if (opcionActiva) {
+    if (valEl) valEl.textContent = `${opcionActiva.nombre} · ${formatPrecio(opcionActiva.precio)}`;
+    optsEl.style.display   = 'none';
+    seleccEl.style.display = '';
+  } else {
+    optsEl.style.display   = '';
+    seleccEl.style.display = 'none';
+  }
+}
+
 function actualizarResumenBorde() {
   const optsEl   = document.getElementById('bordes-opts');
   const seleccEl = document.getElementById('borde-selecc');
@@ -964,6 +983,14 @@ function setupListeners() {
   });
   document.getElementById('btn-mas').addEventListener('click', () => {
     cantActual++; cantNum.textContent = cantActual; actualizarBtnAgregar();
+  });
+
+  // Cambiar tamaño seleccionado
+  document.getElementById('btn-tamano-cambiar')?.addEventListener('click', () => {
+    const optsEl   = document.getElementById('tamano-opts');
+    const seleccEl = document.getElementById('tamano-selecc');
+    if (optsEl)   optsEl.style.display   = '';
+    if (seleccEl) seleccEl.style.display = 'none';
   });
 
   // Cambiar borde seleccionado
