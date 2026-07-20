@@ -787,7 +787,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   100% { transform: scale(1); }
 }
 #bottom-nav-cart-btn.pw-cart-pulse .pw-bottom-nav-isotipo {
-  animation: pw-cart-pulse .55s ease 0s 2;
+  animation: pw-cart-pulse 1.2s ease infinite;
 }
 
 
