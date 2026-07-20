@@ -16,15 +16,6 @@ initBottomNav();
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
-// Prefijo a mostrar en el título del sheet según categoría
-const CAT_PREFIJO = {
-  'Pizzas Super Estofadas': 'Pizza',
-  'Pizzas Estofadas':       'Pizza',
-  'Pizzas Especiales':      'Pizza',
-  'Pizzas Clásicas':        'Pizza',
-  'Pizzas Típicas':         'Pizza',
-  // Pizzetas Premium ya traen "Pizzeta" en el nombre → sin prefijo
-};
 
 // Info visual para tarjetas de tamaño de pizza
 const PIZZA_SIZES = {
@@ -38,44 +29,46 @@ const PIZZA_SIZES = {
 // ── IMÁGENES DE PRODUCTOS ─────────────────────────────────────
 const PRODUCT_IMAGES = {
   // Pizzas
-  'Bocadillo':                  '../Imagenes/productos/Bocadillo.jpg',
-  'Bocadillo Tocineta':         '../Imagenes/productos/BocadilloTocineta.jpg',
-  'Carbonara':                  '../Imagenes/productos/Carbonara.jpg',
-  'Carnivora':                  '../Imagenes/productos/Carnivora.jpg',
-  'Champiñones':                '../Imagenes/productos/Champiñones.jpg',
-  'Ciruelas y Tocineta':        '../Imagenes/productos/CiruelaTocineta.jpg',
-  'Criolla':                    '../Imagenes/productos/Criolla.jpg',
-  'Doble Queso':                '../Imagenes/productos/DobleQueso.jpg',
-  'Drive':                      '../Imagenes/productos/Drive.jpg',
-  'Especial de carnes':         '../Imagenes/productos/EspecialCarnes.jpg',
-  'Estofada de Carnes':         '../Imagenes/productos/EstofadaCarnes.jpg',
-  'Estofada Hawaiana':          '../Imagenes/productos/EstofadaHawaiana.jpg',
-  'Estofada Suprema':           '../Imagenes/productos/EstofadaSuprema.jpg',
-  'Estofada Triple Queso':      '../Imagenes/productos/EstofadaTripleQueso.jpg',
-  'Hawaiana':                   '../Imagenes/productos/Hawaiana.jpg',
-  'Hawaiana Chic':              '../Imagenes/productos/HawaianaChic.jpg',
-  'Jamon':                      '../Imagenes/productos/Jamón.jpg',
-  'La Majestuosa':              '../Imagenes/productos/Majestuosa.jpeg',
-  'Maduro tocineta':            '../Imagenes/productos/MaduroTocineta.jpg',
-  'Margarita':                  '../Imagenes/productos/Margarita.jpg',
-  'Mexicana':                   '../Imagenes/productos/Mexicana.jpg',
-  'Napolitana':                 '../Imagenes/productos/Napolitana.jpg',
-  'Paisa':                      '../Imagenes/productos/Paisa.jpg',
-  'Pepperoni':                  '../Imagenes/productos/Pepperoni.jpg',
-  'Pollo':                      '../Imagenes/productos/Pollo.jpg',
-  'Pollo Bbq':                  '../Imagenes/productos/PolloBbq.jpg',
-  'Pollo Champiñones':          '../Imagenes/productos/PolloChampiñones.jpg',
-  'Pollo Miel-Mostaza':         '../Imagenes/productos/PolloMielMostaza.jpg',
-  'Super Estofada de Carnes':   '../Imagenes/productos/SuperEstofadaCarnes.jpg',
-  'Super Estofada Hawaiana':    '../Imagenes/productos/SuperEstofadaHawaiana.jpg',
-  'Suprema':                    '../Imagenes/productos/Suprema.jpg',
-  'Suprema de Pollo':           '../Imagenes/productos/SupremaPollo.jpg',
-  'Suprema Pepperoni':          '../Imagenes/productos/SupremaPepperoni.jpeg',
-  'Teriyaki':                   '../Imagenes/productos/Teriyaki.jpg',
-  'Toc':                        '../Imagenes/productos/Toc.jpg',
-  'Topetunas':                  '../Imagenes/productos/Topetunas.jpg',
-  'Tres Carnes':                '../Imagenes/productos/TresCarnes.jpg',
-  'Vegetariana':                '../Imagenes/productos/Vegetariana.jpg',
+  'Pizza Bocadillo':                  '../Imagenes/productos/Bocadillo.jpg',
+  'Pizza Bocadillo Tocineta':         '../Imagenes/productos/BocadilloTocineta.jpg',
+  'Pizza Carbonara':                  '../Imagenes/productos/Carbonara.jpg',
+  'Pizza Carnivora':                  '../Imagenes/productos/Carnivora.jpg',
+  'Pizza Champiñones':                '../Imagenes/productos/Champiñones.jpg',
+  'Pizza Ciruelas y Tocineta':        '../Imagenes/productos/CiruelaTocineta.jpg',
+  'Pizza Criolla':                    '../Imagenes/productos/Criolla.jpg',
+  'Pizza Doble Queso':                '../Imagenes/productos/DobleQueso.jpg',
+  'Pizza Drive':                      '../Imagenes/productos/Drive.jpg',
+  'Pizza Especial de Carnes':         '../Imagenes/productos/EspecialCarnes.jpg',
+  'Pizza Estofada de Carnes':         '../Imagenes/productos/EstofadaCarnes.jpg',
+  'Pizza Estofada Hawaiana':          '../Imagenes/productos/EstofadaHawaiana.jpg',
+  'Pizza Estofada Suprema':           '../Imagenes/productos/EstofadaSuprema.jpg',
+  'Pizza Estofada Triple Queso':      '../Imagenes/productos/EstofadaTripleQueso.jpg',
+  'Pizza Hawaiana':                   '../Imagenes/productos/Hawaiana.jpg',
+  'Pizza Hawaiana Chic':              '../Imagenes/productos/HawaianaChic.jpg',
+  'Pizza Jamón':                      '../Imagenes/productos/Jamón.jpg',
+  'Pizza La Majestuosa':              '../Imagenes/productos/Majestuosa.jpeg',
+  'Pizza Maduro Tocineta':            '../Imagenes/productos/MaduroTocineta.jpg',
+  'Pizza Margarita':                  '../Imagenes/productos/Margarita.jpg',
+  'Pizza Mexicana':                   '../Imagenes/productos/Mexicana.jpg',
+  'Pizza Napolitana':                 '../Imagenes/productos/Napolitana.jpg',
+  'Pizza Paisa':                      '../Imagenes/productos/Paisa.jpg',
+  'Pizza Pepperoni':                  '../Imagenes/productos/Pepperoni.jpg',
+  'Pizza Pollo':                      '../Imagenes/productos/Pollo.jpg',
+  'Pizza Pollo Bbq':                  '../Imagenes/productos/PolloBbq.jpg',
+  'Pizza Pollo Champiñones':          '../Imagenes/productos/PolloChampiñones.jpg',
+  'Pizza Pollo Miel-Mostaza':         '../Imagenes/productos/PolloMielMostaza.jpg',
+  'Pizza Super Estofada de Carnes':   '../Imagenes/productos/SuperEstofadaCarnes.jpg',
+  'Pizza Super Estofada Hawaiana':    '../Imagenes/productos/SuperEstofadaHawaiana.jpg',
+  'Pizza Suprema':                    '../Imagenes/productos/Suprema.jpg',
+  'Pizza Suprema de Pollo':           '../Imagenes/productos/SupremaPollo.jpg',
+  'Pizza Suprema Pepperoni':          '../Imagenes/productos/SupremaPepperoni.jpeg',
+  'Pizza Teriyaki':                   '../Imagenes/productos/Teriyaki.jpg',
+  'Pizza Toc':                        '../Imagenes/productos/Toc.jpg',
+  'Pizza Topetunas':                  '../Imagenes/productos/Topetunas.jpg',
+  'Pizza Tres Carnes':                '../Imagenes/productos/TresCarnes.jpg',
+  'Pizza Vegetariana':                '../Imagenes/productos/Vegetariana.jpg',
+  'Pizza Bolognesa':                  '../Imagenes/productos/Bolognesa.jpg',
+  'Pizza Camarón a la Criolla':       '../Imagenes/productos/CamarónALaCriolla.jpg',
   // Pizzetas
   'Pizzeta California':         '../Imagenes/productos/PizzetaCalifornia.jpg',
   'Pizzeta Carbonara':          '../Imagenes/productos/PizzetaCarbonara.jpg',
@@ -95,8 +88,6 @@ const PRODUCT_IMAGES = {
   'Lasaña Sencilla':            '../Imagenes/productos/LasañaSencilla.jpg',
   'Lasaña Vegetariana':         '../Imagenes/productos/LasañaVegetariana.jpg',
   // Pastas
-  'Bolognesa':                  '../Imagenes/productos/Bolognesa.jpg',
-  'Camarón a la criolla':       '../Imagenes/productos/CamarónALaCriolla.jpg',
   'Fetuccine Mixto':            '../Imagenes/productos/FetuccineSencillo.jpg',
   'Fetuccine Remix':            '../Imagenes/productos/FetuccineSencillo.jpg',
   'Fetuccine Sencillo':         '../Imagenes/productos/FetuccineSencillo.jpg',
@@ -557,8 +548,7 @@ function abrirProductSheet(producto) {
     sheetImg.src = '';
   }
 
-  const prefijo = CAT_PREFIJO[producto.categoria];
-  sheetNombre.textContent = prefijo ? `${prefijo} ${producto.nombre}` : producto.nombre;
+  sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
   const opciones = Object.entries(producto.opciones);
@@ -1064,9 +1054,8 @@ function setupListeners() {
       const esEstofadaFinal = !!(sabor1.esEstofada || sabor2.esEstofada);
       const todasAdiciones  = [...adicionesSeleccionadas];
       if (bordeSeleccionado && !esEstofadaFinal) todasAdiciones.push(bordeSeleccionado);
-      const prefijoCat = CAT_PREFIJO[sabor1.categoria] ?? '';
       agregarItem({
-        nombre:        prefijoCat ? `${prefijoCat} ${sabor1.nombre} y mitad ${sabor2.nombre}` : `${sabor1.nombre} y mitad ${sabor2.nombre}`,
+        nombre:        `${sabor1.nombre} y mitad ${sabor2.nombre}`,
         categoria:     sabor1.categoria,
         opcion:        tamano,
         precio:        precioFinal,
@@ -1078,9 +1067,8 @@ function setupListeners() {
     } else {
       const todasAdiciones = [...adicionesSeleccionadas];
       if (bordeSeleccionado) todasAdiciones.push(bordeSeleccionado);
-      const prefijoNormal = CAT_PREFIJO[productoActivo.categoria] ?? '';
       agregarItem({
-        nombre:       prefijoNormal ? `${prefijoNormal} ${productoActivo.nombre}` : productoActivo.nombre,
+        nombre:       productoActivo.nombre,
         categoria:    productoActivo.categoria,
         opcion:       opcionActiva.nombre,
         precio:       opcionActiva.precio,
