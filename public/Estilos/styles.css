@@ -693,6 +693,27 @@ body.orders_body {
   margin: 0;
 }
 
+/*********************MODAL AVISO MIÉRCOLES (products.html)*********************/
+
+#modal-aviso-miercoles {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 420px;
+  width: 92vw;
+  background-color: var(--color-secundario);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+#modal-aviso-miercoles::backdrop {
+  background: rgba(0,0,0,0.5);
+}
+
 /*********************MODAL BIENVENIDA PEDIDO (products.html)*******************/
 
 #modal-bienvenida {

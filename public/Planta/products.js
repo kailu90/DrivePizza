@@ -148,7 +148,35 @@ async function initializeForm({ username, sede, rol }) {
     document.getElementById('mb-sede').textContent = sedeAsignada || '';
   }
 
-  document.getElementById('modal-bienvenida').showModal();
+  mostrarAvisoOBienvenida();
+}
+
+function estaEnVentanaAviso() {
+  // Ventana: lunes 16:00 → miércoles 16:00 (hora Colombia UTC-5)
+  const ahora = new Date();
+  const offsetCOL = -5 * 60;
+  const localMin  = ahora.getTime() / 60000 + ahora.getTimezoneOffset() + offsetCOL;
+  const col  = new Date(localMin * 60000);
+  const dia  = col.getDay();
+  const hhmm = col.getHours() * 60 + col.getMinutes();
+  const las14 = 14 * 60;
+  return (dia === 1 && hhmm >= las14) || dia === 2 || (dia === 3 && hhmm < las14);
+}
+
+function mostrarAvisoOBienvenida() {
+  if (estaEnVentanaAviso()) {
+    const aviso = document.getElementById('modal-aviso-miercoles');
+    // Impedir cierre con Escape o clic en backdrop
+    aviso.addEventListener('cancel', e => e.preventDefault());
+    aviso.addEventListener('click', e => { if (e.target === aviso) e.preventDefault(); });
+    aviso.showModal();
+    document.getElementById('aviso-miercoles-cerrar').addEventListener('click', () => {
+      aviso.close();
+      document.getElementById('modal-bienvenida').showModal();
+    });
+  } else {
+    document.getElementById('modal-bienvenida').showModal();
+  }
 }
 
 // ── Categorías ────────────────────────────────────────────────────────────────
