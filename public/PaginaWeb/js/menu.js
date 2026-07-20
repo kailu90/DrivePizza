@@ -612,12 +612,21 @@ function abrirProductSheet(producto) {
 // ── BOTÓN ½+½ ─────────────────────────────────────────────────
 function actualizarMezclaBtn() {
   const esPizza = productoActivo && CATS_PIZZAS.includes(productoActivo.categoria);
-  const mixable = esPizza && opcionActiva && TAMANOS_MIXABLES.has(opcionActiva.nombre);
+  const mixable = esPizza && (!opcionActiva || TAMANOS_MIXABLES.has(opcionActiva.nombre));
   sheetMezclaWrap.style.display = mixable ? '' : 'none';
 }
 
 function abrirSegundoSabor() {
-  if (!opcionActiva || !productoActivo) return;
+  if (!productoActivo) return;
+  if (!opcionActiva) {
+    // Mostrar el grid de tamaños para que elija primero
+    const optsEl   = document.getElementById('tamano-opts');
+    const seleccEl = document.getElementById('tamano-selecc');
+    if (optsEl)   optsEl.style.display   = '';
+    if (seleccEl) seleccEl.style.display = 'none';
+    document.getElementById('step-tamano')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
 
   const sabor1  = productoActivo;
   const tamano  = opcionActiva.nombre;
