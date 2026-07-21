@@ -1294,6 +1294,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-overflow: ellipsis;
   max-width: 200px;
 }
+#adiciones-selecc .pw-item-selecc-val {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+}
+.pw-adicion-selecc-item { display: block; line-height: 1.5; }
+.pw-adicion-selecc-precio { font-weight: 400; opacity: .7; }
 #mezcla-selecc .pw-item-selecc-val {
   white-space: normal;
   overflow: visible;

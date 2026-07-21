@@ -694,7 +694,9 @@ function actualizarResumenAdiciones() {
   const valEl    = document.getElementById('adiciones-selecc-val');
   if (!seleccEl) return;
   if (adicionesSeleccionadas.length > 0) {
-    if (valEl) valEl.textContent = adicionesSeleccionadas.map(a => `${a.nombre.replace('Adición ', '')} (+${formatPrecio(a.precio)})`).join(', ');
+    if (valEl) valEl.innerHTML = adicionesSeleccionadas.map(a =>
+      `<span class="pw-adicion-selecc-item">${a.nombre.replace('Adición ', '')} <span class="pw-adicion-selecc-precio">+${formatPrecio(a.precio)}</span></span>`
+    ).join('');
     seleccEl.style.display = '';
   } else {
     seleccEl.style.display = 'none';
@@ -723,6 +725,7 @@ function confirmarAdicionExtra(nombre, precio, btn) {
     btn.classList.add('active');
     actualizarResumenAdiciones();
     actualizarBtnAgregar();
+    cerrarColapsable('sheet-adiciones-body', 'btn-adiciones-toggle');
     cerrar();
   };
   const onCancel  = () => cerrar();
@@ -734,6 +737,11 @@ function confirmarAdicionExtra(nombre, precio, btn) {
 }
 
 // ── ADICIONES Y BORDES ────────────────────────────────────────
+function cerrarColapsable(bodyId, btnId) {
+  document.getElementById(bodyId)?.classList.remove('open');
+  document.getElementById(btnId)?.setAttribute('aria-expanded', 'false');
+}
+
 function renderAdicionesSection() {
   if (!productoActivo || !opcionActiva) return;
 
@@ -786,6 +794,7 @@ function renderAdicionesSection() {
         btn.classList.add('active');
         actualizarResumenAdiciones();
         actualizarBtnAgregar();
+        cerrarColapsable('sheet-adiciones-body', 'btn-adiciones-toggle');
       }
     });
   });
@@ -818,6 +827,7 @@ function renderAdicionesSection() {
           bordeSeleccionado = { nombre, precio };
           sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+          cerrarColapsable('sheet-bordes-body', 'btn-bordes-toggle');
         }
         actualizarResumenBorde();
         actualizarBtnAgregar();
