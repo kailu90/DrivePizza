@@ -680,7 +680,18 @@ function actualizarResumenBorde() {
   const valEl    = document.getElementById('borde-selecc-val');
   if (!optsEl || !seleccEl) return;
   if (bordeSeleccionado) {
-    if (valEl) valEl.textContent = `${bordeSeleccionado.nombre.replace('Borde ', '')} (+${formatPrecio(bordeSeleccionado.precio)})`;
+    if (valEl) {
+      valEl.innerHTML = `<span class="pw-adicion-selecc-item">
+        <span class="pw-adicion-selecc-nombre">${bordeSeleccionado.nombre.replace('Borde ', '')} <span class="pw-adicion-selecc-precio">+${formatPrecio(bordeSeleccionado.precio)}</span></span>
+        <button class="pw-adicion-selecc-remove" aria-label="Quitar borde">−</button>
+      </span>`;
+      valEl.querySelector('.pw-adicion-selecc-remove').addEventListener('click', () => {
+        bordeSeleccionado = null;
+        sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
+        actualizarResumenBorde();
+        actualizarBtnAgregar();
+      });
+    }
     optsEl.style.display   = 'none';
     seleccEl.style.display = '';
   } else {
