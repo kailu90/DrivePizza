@@ -1063,14 +1063,6 @@ function setupListeners() {
     if (seleccEl) seleccEl.style.display = 'none';
   });
 
-  // Cambiar borde seleccionado
-  document.getElementById('btn-borde-cambiar')?.addEventListener('click', () => {
-    bordeSeleccionado = null;
-    sheetBordesEl.querySelectorAll('.pw-adicion-btn').forEach(b => b.classList.remove('active'));
-    actualizarResumenBorde();
-    actualizarBtnAgregar();
-  });
-
   // Cambiar adiciones seleccionadas
   document.getElementById('btn-adiciones-cambiar')?.addEventListener('click', () => {
     adicionesSeleccionadas = [];

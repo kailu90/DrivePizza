@@ -1119,7 +1119,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: .4rem;
-  margin-bottom: 1.1rem;
 }
 .pw-opcion-sabor {
   width: 100%;
