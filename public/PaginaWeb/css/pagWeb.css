@@ -2236,7 +2236,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-banner-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, rgba(40,76,34,.45) 0%, rgba(40,76,34,.2) 100%);
+  background: linear-gradient(160deg, rgba(40,76,34,.2) 0%, rgba(40,76,34,.05) 100%);
   border-radius: var(--dp-radius-lg);
 }
 .pw-banner-content {
@@ -2839,4 +2839,22 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   .pw-footer-logo { height: 80px; align-self: center; }
   .pw-footer-social { justify-content: center; }
   .pw-footer-copy { font-size: .68rem; padding: .75rem 2rem; }
+}
+
+/* ── BANNER MOBILE ─────────────────────────────────────────── */
+.pw-banner-mobile {
+  display: none;
+}
+@media (max-width: 599px) {
+  .pw-banner-mobile {
+    display: block;
+    width: 100%;
+    line-height: 0;
+  }
+  .pw-banner-mobile img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
 }
