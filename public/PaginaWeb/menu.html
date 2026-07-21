@@ -100,7 +100,7 @@
       <!-- PASO: TAMAÑO -->
       <div class="pw-sheet-step" id="step-tamano">
         <div class="pw-step-inline">
-          <span class="pw-step-inline-title">Elige un tamaño</span>
+          <span class="pw-step-inline-title" id="step-tamano-title">Elige un tamaño</span>
           <span class="pw-step-inline-num" id="step-num-tamano">Paso 1 de 4</span>
         </div>
         <div class="pw-item-selecc" id="mezcla-selecc" style="display:none">
@@ -130,6 +130,27 @@
         </div>
         <div id="sheet-mezcla-wrap" style="display:none">
           <button class="pw-btn-mezcla" id="btn-mezcla">🍕 ¿No te decides? Combina dos sabores en una misma pizza.</button>
+        </div>
+      </div>
+
+      <!-- PASO: SABOR (Calzones y productos con sabores) -->
+      <div class="pw-sheet-step" id="step-sabor" style="display:none">
+        <div class="pw-step-inline">
+          <span class="pw-step-inline-title">Elige un sabor</span>
+          <span class="pw-step-inline-num" id="step-num-sabor">Paso 2 de 3</span>
+        </div>
+        <div class="pw-item-selecc" id="sabor-selecc" style="display:none">
+          <div class="pw-item-selecc-left">
+            <span class="pw-item-selecc-check">✔</span>
+            <div>
+              <span class="pw-item-selecc-tipo">Sabor seleccionado</span>
+              <span class="pw-item-selecc-val" id="sabor-selecc-val"></span>
+            </div>
+          </div>
+          <button class="pw-item-selecc-btn" id="btn-sabor-cambiar">Cambiar</button>
+        </div>
+        <div id="sabor-opts">
+          <div class="pw-opciones" id="sheet-sabores"></div>
         </div>
       </div>
 
@@ -208,11 +229,11 @@
           placeholder="Estas indicaciones ayudan a preparar mejor tu pedido."></textarea>
       </div>
 
-    </div>
+      <!-- Botón agregar (fluye dentro del scroll) -->
+      <div class="pw-sheet-agregar-wrap">
+        <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
+      </div>
 
-    <!-- Botón fijo abajo -->
-    <div class="pw-sheet-footer">
-      <button class="pw-btn-primary" id="btn-agregar">Agregar al carrito</button>
     </div>
 
   </div>

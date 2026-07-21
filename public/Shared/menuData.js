@@ -47,8 +47,8 @@ export const preciosLasañas = {
 
 // ── PRECIOS CALZONES / STROMBOLI ──────────────────────────────
 export const preciosCalzones = {
-    calzoneClasico:  { "pequeño": 29000, "Grande": 45000 },
-    calzoneEspecial: { "pequeño": 32000, "Grande": 49000 },
+    calzoneClasico:  { "Pequeño": 29000, "Grande": 45000 },
+    calzoneEspecial: { "Pequeño": 32000, "Grande": 49000 },
 };
 export const preciosStromboli = {
     stromboliClasico:  { "unidad": 20000 },
@@ -106,25 +106,25 @@ export const preciosBordes = {
 
 // ── PRECIOS BEBIDAS ───────────────────────────────────────────
 export const preciosBebidas = {
-    jugoHit500ml:        { "Unidad": 4500 },
-    gaseosa400ml:        { "Unidad": 3000 },
-    gaseosa1500ml:       { "Unidad": 7000 },
-    agua:                { "Unidad": 2500 },
-    bretaña:             { "Unidad": 4000 },
-    jugoEnAgua:          { "Unidad": 8000 },
-    jugoEnLeche:         { "Unidad": 9000 },
-    granizada:           { "Unidad": 8000 },
-    granizadaEspecial:   { "Unidad": 10000 },
-    limonada:            { "Unidad": 8000 },
-    sodas:               { "Unidad": 8000 },
-    cervezaNacional:     { "Unidad": 5000 },
-    cerveza3Cordilleras: { "Unidad": 9000 },
-    vasoMichelado:       { "Unidad": 6000 },
-    MrTea:               { "Unidad": 4500 },
-    H2OH:                { "Unidad": 4500 },
-    HatsuSoda:           { "Unidad": 5000 },
-    Hatsu:               { "Unidad": 5500 },
-    bretaña300ml:        { "Unidad": 5000 },
+    // Refrescos
+    gaseosa400ml:        { "Pepsi": 6000, "Colombiana": 6000, "Manzana": 6000, "Piña": 6000, "Kola": 6000, "Uva": 6000, "7 up": 6000, "Naranja": 6000 },
+    gaseosa1500ml:       { "Pepsi": 9000, "Colombiana": 9000, "Manzana": 9000, "Piña": 9000, "Kola": 9000, "Uva": 9000, "7 up": 9000, "Naranja": 9000 },
+    jugoHit500ml:        { "Tropical": 6000, "Mora": 6000, "Naranja/Piña": 6000, "Mango": 6000 },
+    agua:                { "Sin gas": 6000, "Con gas": 6000 },
+    bretaña:             { "300 ml": 4000, "1.5 lts": 9000 },
+    // Jugos Naturales
+    jugoEnAgua:          { "Mango": 9000, "Fresa": 9000, "Mora": 9000, "Mandarina": 9000, "Naranja": 9000, "Lulo": 9000, "Guanábana": 9000, "Maracuyá": 9000 },
+    jugoEnLeche:         { "Mango": 10000, "Fresa": 10000, "Mora": 10000, "Mandarina": 10000, "Naranja": 10000, "Lulo": 10000, "Guanábana": 10000, "Maracuyá": 10000 },
+    granizada:           { "Limón": 9000, "Maracuyá": 9000, "Naranja": 9000, "Mora": 9000, "Lulo": 9000, "Guanábana": 9000, "Mandarina": 9000 },
+    granizadaEspecial:   { "MaracuMango": 10000, "Frutos Rojos": 10000, "Fresa": 10000, "Frutos Blancos": 10000, "Frutos Amarillos": 10000 },
+    // Cervezas
+    cerveza3Cordilleras: { "Unidad": 10000 },
+    vasoMichelado:       { "Unidad": 2200 },
+    // Otros
+    MrTea:               { "Limón": 6000, "Durazno": 6000 },
+    H2OH:                { "Limón": 6000, "Maracuyá": 6000, "Limonata": 6000 },
+    HatsuSoda:           { "Rojo": 8000, "Blanco": 8000, "Negro": 8000, "Rosado": 8000, "Verde": 8000 },
+    Hatsu:               { "Rojo": 8000, "Blanco": 8000, "Negro": 8000, "Rosado": 8000, "Verde": 8000 },
 };
 
 // ── PRECIOS ENTRADAS ──────────────────────────────────────────
@@ -144,6 +144,8 @@ export const CATEGORIAS_ADICIONABLES = {
     "Ensaladas":     "Porción",
     "Sandwiches":    "Unidad",
     "Hamburguesas":  "Hamburguesa",
+    "Calzones":      "Unidad",
+    "Stromboli":     "Unidad",
 };
 
 // ── TAMAÑOS QUE ADMITEN BORDE ─────────────────────────────────
@@ -286,12 +288,12 @@ export const menuData = {
         { nombre: "Borde bocadillo/Queso", opciones: preciosBordes },
     ],
     "Calzones": [
-        { nombre: "Calzone Clásico",  opciones: preciosCalzones.calzoneClasico },
-        { nombre: "Calzone Especial", opciones: preciosCalzones.calzoneEspecial },
+        { nombre: "Calzone Clásico (Panceroti)",  sabores: 'clasicos', opciones: preciosCalzones.calzoneClasico,  descripcion: "Especialidad preparada con masa de pizza doblada y horneada, rellena de queso mozzarella e ingredientes clásicos seleccionados." },
+        { nombre: "Calzone Especial (Panceroti)", sabores: 'tipicosEspeciales', opciones: preciosCalzones.calzoneEspecial, descripcion: "Especialidad preparada con masa de pizza doblada y horneada, rellena de queso mozzarella e ingredientes típicos y especiales seleccionados." },
     ],
     "Stromboli": [
-        { nombre: "Stromboli Clásico",  opciones: preciosStromboli.stromboliClasico },
-        { nombre: "Stromboli Especial", opciones: preciosStromboli.stromboliEspecial },
+        { nombre: "Stromboli Clásico",  sabores: 'clasicos', opciones: preciosStromboli.stromboliClasico,  descripcion: "Especialidad preparada con masa de pizza enrollada y horneada, rellena de queso mozzarella e ingredientes clásicos seleccionados." },
+        { nombre: "Stromboli Especial", sabores: 'tipicosEspeciales', opciones: preciosStromboli.stromboliEspecial, descripcion: "Especialidad preparada con masa de pizza enrollada y horneada, rellena de queso mozzarella e ingredientes típicos y especiales seleccionados." },
     ],
     "Maicitos": [
         { nombre: "Maicitos Gratinados", opciones: preciosMaicitos.maicitosGratinados, descripcion: "Queso mozzarella, queso cheddar, maíz, tocineta y queso parmesano." },
@@ -329,24 +331,45 @@ export const menuData = {
         { nombre: "Granizada Especial",  opciones: preciosBebidas.granizadaEspecial },
     ],
     "Limonadas": [
-        { nombre: "Limonada", opciones: preciosBebidas.limonada },
+        { nombre: "Limonada Natural",      opciones: { "Unidad": 8000 } },
+        { nombre: "Limonada Hierbabuena",  opciones: { "Unidad": 9000 } },
+        { nombre: "Limonada Cerezada",     opciones: { "Unidad": 10000 } },
+        { nombre: "Limonada Frutos Rojos", opciones: { "Unidad": 11000 } },
+        { nombre: "Limonada de Coco",      opciones: { "Unidad": 11000 } },
     ],
     "Sodas": [
-        { nombre: "Sodas", opciones: preciosBebidas.sodas },
+        { nombre: "Soda Frutos Rojos",     opciones: { "Unidad": 12000 }, descripcion: "Mezcla artesanal de mora, uva, fresa y arándanos, con el toque burbujeante de soda Bretaña." },
+        { nombre: "Soda Frutos Amarillos", opciones: { "Unidad": 12000 }, descripcion: "Mezcla artesanal de maracuyá, piña y mango, con el toque burbujeante de soda Bretaña." },
+        { nombre: "Soda Lychee",           opciones: { "Unidad": 12000 }, descripcion: "Delicada bebida artesanal de lychee con el toque burbujeante de soda Bretaña." },
+        { nombre: "Soda Tamarindo",        opciones: { "Unidad": 12000 }, descripcion: "Tradicional bebida artesanal de tamarindo con el toque burbujeante de soda Bretaña." },
     ],
     "Cervezas": [
-        { nombre: "Cerveza Nacional",      opciones: preciosBebidas.cervezaNacional },
+        { nombre: "Cerveza Club Colombia", opciones: { "Unidad": 8000 } },
+        { nombre: "Cerveza Heineken",      opciones: { "Unidad": 8000 } },
+        { nombre: "Cerveza Sol",           opciones: { "Unidad": 8000 } },
         { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras },
         { nombre: "Vaso Michelado",        opciones: preciosBebidas.vasoMichelado },
     ],
     "Otros": [
-        { nombre: "Mr Tea",                  opciones: preciosBebidas.MrTea },
-        { nombre: "H2OH",                    opciones: preciosBebidas.H2OH },
-        { nombre: "Hatsu Soda",              opciones: preciosBebidas.HatsuSoda },
-        { nombre: "Hatsu",                   opciones: preciosBebidas.Hatsu },
-        { nombre: "Soda Bretaña 300 ml",     opciones: preciosBebidas.bretaña300ml },
+        { nombre: "Mr Tea",     opciones: preciosBebidas.MrTea },
+        { nombre: "H2OH",       opciones: preciosBebidas.H2OH },
+        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda },
+        { nombre: "Hatsu",      opciones: preciosBebidas.Hatsu },
     ],
 };
+
+export const SABORES_CLASICOS = menuData['Pizzas Clásicas'].map(p => ({
+  nombre:      p.nombre.replace('Pizza ', ''),
+  descripcion: p.descripcion || '',
+}));
+
+export const SABORES_TIPICOS_ESPECIALES = [
+  ...menuData['Pizzas Típicas'],
+  ...menuData['Pizzas Especiales'],
+].map(p => ({
+  nombre:      p.nombre.replace('Pizza ', ''),
+  descripcion: p.descripcion || '',
+}));
 
 export const PRODUCT_IMAGES = {
   'Pizza Bocadillo':                  '../Imagenes/productos/Bocadillo.jpg',
@@ -430,14 +453,16 @@ export const PRODUCT_IMAGES = {
   'Ensalada Drive':                   '../Imagenes/productos/EnsaladaDrivwe.jpg',
   'Ensalada Mi Cuate':                '../Imagenes/productos/EnsaladaMiCuate.jpg',
   'Ensalada Premium':                 '../Imagenes/productos/EnsaladaPremium.jpg',
-  'Calzone Clásico':                  '../Imagenes/productos/CalzoneClasico.jpg',
-  'Calzone Especial':                 '../Imagenes/productos/CalzoneEspecial.jpg',
+  'Calzone Clásico (Panceroti)':      '../Imagenes/productos/CalzoneClasico.jpg',
+  'Calzone Especial (Panceroti)':     '../Imagenes/productos/CalzoneEspecial.jpg',
   'Stromboli Clásico':                '../Imagenes/productos/StromboliClasico.jpg',
   'Stromboli Especial':               '../Imagenes/productos/StromboliEspecial.jpg',
   'Maicitos Gratinados':              '../Imagenes/productos/MaicitosGratinados.jpg',
   'Agua':                             '../Imagenes/productos/Agua.jpg',
   'Cerveza 3 Cordilleras':            '../Imagenes/productos/Cerveza3Cordilleras.png',
-  'Cerveza Nacional':                 '../Imagenes/productos/Cerveza.jpg',
+  'Cerveza Club Colombia':            '../Imagenes/productos/Cerveza.jpg',
+  'Cerveza Heineken':                 '../Imagenes/productos/Cerveza.jpg',
+  'Cerveza Sol':                      '../Imagenes/productos/Cerveza.jpg',
   'Gaseosa 1.5 lts':                  '../Imagenes/productos/Gaseosa1.5Lts.jpg',
   'Gaseosa 400 ml':                   '../Imagenes/productos/Gaseosa400ml.jpg',
   'H2OH':                             '../Imagenes/productos/H2OH!.jpg',
@@ -446,8 +471,14 @@ export const PRODUCT_IMAGES = {
   'Jugo en Agua':                     '../Imagenes/productos/JugosNaturalesAgua.jpg',
   'Jugo en Leche':                    '../Imagenes/productos/JugosNaturalesLeche.jpg',
   'Jugo Hit 500 ml':                  '../Imagenes/productos/JugosHit500ml.jpg',
-  'Limonada':                         '../Imagenes/productos/LimonadaNatural.jpg',
+  'Limonada Natural':                 '../Imagenes/productos/LimonadaNatural.jpg',
+  'Limonada Hierbabuena':             '../Imagenes/productos/LimonadaNatural.jpg',
+  'Limonada Cerezada':                '../Imagenes/productos/LimonadaNatural.jpg',
+  'Limonada Frutos Rojos':            '../Imagenes/productos/LimonadaNatural.jpg',
+  'Limonada de Coco':                 '../Imagenes/productos/LimonadaNatural.jpg',
   'Mr Tea':                           '../Imagenes/productos/MrTea.jpg',
-  'Soda Bretaña 300 ml':              '../Imagenes/productos/SobasSaborizadas.jpg',
-  'Sodas':                            '../Imagenes/productos/SobasSaborizadas.jpg',
+  'Soda Frutos Rojos':                '../Imagenes/productos/SobasSaborizadas.jpg',
+  'Soda Frutos Amarillos':            '../Imagenes/productos/SobasSaborizadas.jpg',
+  'Soda Lychee':                      '../Imagenes/productos/SobasSaborizadas.jpg',
+  'Soda Tamarindo':                   '../Imagenes/productos/SobasSaborizadas.jpg',
 };

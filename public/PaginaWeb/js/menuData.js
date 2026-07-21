@@ -8,4 +8,6 @@ export {
     TAMANOS_CON_BORDE,
     CATS_PIZZAS,
     PRODUCT_IMAGES,
+    SABORES_CLASICOS,
+    SABORES_TIPICOS_ESPECIALES,
 } from '../../Shared/menuData.js';

@@ -4,7 +4,7 @@
 
 import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
 import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
-import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES } from './menuData.js';
+import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES, SABORES_CLASICOS, SABORES_TIPICOS_ESPECIALES } from './menuData.js';
 import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
@@ -25,6 +25,12 @@ const PIZZA_SIZES = {
   'Mediana':  { cms: '35 Cms', porciones: '6 porciones' },
   'Grande':   { cms: '40 Cms', porciones: '8 porciones' },
   'Jumbo':    { cms: '50 Cms', porciones: '10 porciones' },
+};
+
+// Info visual para tarjetas de tamaño de calzone
+const CALZONE_SIZES = {
+  'Pequeño': { cms: '', porciones: '1 persona' },
+  'Grande':  { cms: '', porciones: '2-3 personas' },
 };
 
 
@@ -60,6 +66,7 @@ let opcionActiva           = null;
 let adicionesSeleccionadas = [];
 let bordeSeleccionado      = null;
 let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
+let saborCalzone           = null;
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede        = document.getElementById('sede-bar'); // franja debajo del header
@@ -374,9 +381,12 @@ function initActiveCatTitle() {
 function actualizarEstadoPasos() {
   if (!productoActivo) return;
   const tieneVariantes = Object.keys(productoActivo.opciones).length > 1;
-  const desbloqueado   = !tieneVariantes || opcionActiva !== null;
+  const tieneSabores   = !!productoActivo.sabores;
+  const opcionOk       = !tieneVariantes || opcionActiva !== null;
+  const saborOk        = !tieneSabores || saborCalzone !== null;
+  document.getElementById('step-sabor')?.classList.toggle('pw-step-disabled', !opcionOk);
   ['step-personalizar', 'step-cantidad', 'step-obs'].forEach(id => {
-    document.getElementById(id)?.classList.toggle('pw-step-disabled', !desbloqueado);
+    document.getElementById(id)?.classList.toggle('pw-step-disabled', !opcionOk || !saborOk);
   });
 }
 
@@ -384,17 +394,19 @@ function actualizarEstadoPasos() {
 function renderStepLabels() {
   if (!productoActivo) return;
   const tieneVariantes = Object.keys(productoActivo.opciones).length > 1;
+  const tieneSabores   = !!productoActivo.sabores;
   const esAdicionable  = CATS_PIZZAS.includes(productoActivo.categoria) || CATEGORIAS_ADICIONABLES[productoActivo.categoria] !== undefined;
 
   const visibles = [];
   if (tieneVariantes) visibles.push('tamano');
+  if (tieneSabores)   visibles.push('sabor');
   if (esAdicionable)  visibles.push('personalizar');
   visibles.push('cantidad');
   visibles.push('obs');
 
   const total = visibles.length;
 
-  document.getElementById('step-tamano').style.display      = tieneVariantes ? '' : 'none';
+  document.getElementById('step-tamano').style.display       = tieneVariantes ? '' : 'none';
   document.getElementById('step-personalizar').style.display = esAdicionable  ? '' : 'none';
 
   visibles.forEach((key, i) => {
@@ -411,7 +423,15 @@ function abrirProductSheet(producto) {
   adicionesSeleccionadas = [];
   bordeSeleccionado      = null;
   mezclaState            = null;
+  saborCalzone           = null;
   sheetObs.value         = '';
+
+  const stepSaborEl = document.getElementById('step-sabor');
+  if (stepSaborEl) stepSaborEl.style.display = 'none';
+  const saborOptsEl   = document.getElementById('sabor-opts');
+  const saborSeleccEl = document.getElementById('sabor-selecc');
+  if (saborOptsEl)   saborOptsEl.style.display   = '';
+  if (saborSeleccEl) saborSeleccEl.style.display = 'none';
 
   // Cerrar adiciones en mobile al abrir nuevo producto
   document.getElementById('sheet-adiciones-body')?.classList.remove('open');
@@ -441,22 +461,31 @@ function abrirProductSheet(producto) {
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
+  const CATS_BEBIDAS = ['Refrescos', 'Jugos Naturales', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'];
+  const esBebida = CATS_BEBIDAS.includes(producto.categoria);
+  document.getElementById('step-tamano-title').textContent = esBebida ? 'Elige un sabor' : 'Elige un tamaño';
+
   const opciones = Object.entries(producto.opciones);
 
   if (opciones.length === 1) {
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
     sheetOpcionesWrap.style.display = 'none';
+    if (producto.sabores) renderSaborStep();
   } else {
     sheetOpcionesWrap.style.display = '';
-    const usaCards = opciones.every(([nombre]) => PIZZA_SIZES[nombre]);
-    sheetOpciones.className = usaCards ? 'pw-opciones pw-opciones-grid' : 'pw-opciones';
+    const esCalzone = ['Calzones', 'Stromboli'].includes(productoActivo.categoria);
+    const sizeMap   = esCalzone ? CALZONE_SIZES : PIZZA_SIZES;
+    const usaCards  = opciones.every(([nombre]) => sizeMap[nombre]);
+    sheetOpciones.className = usaCards
+      ? `pw-opciones pw-opciones-grid${esCalzone ? ' pw-opciones-grid--calzone' : ''}`
+      : 'pw-opciones';
     sheetOpciones.innerHTML = opciones.map(([nombre, precio]) => {
-      const size = PIZZA_SIZES[nombre];
+      const size = sizeMap[nombre];
       if (size) {
         return `<button class="pw-opcion-btn pw-opcion-card"
                          data-nombre="${nombre}" data-precio="${precio}">
                   <span class="pw-opcion-card-nombre">${nombre}</span>
-                  <span class="pw-opcion-card-cms">${size.cms}</span>
+                  ${size.cms ? `<span class="pw-opcion-card-cms">${size.cms}</span>` : ''}
                   <span class="pw-opcion-card-porciones">${size.porciones}</span>
                   <span class="pw-opcion-precio">${formatPrecio(precio)}</span>
                 </button>`;
@@ -477,12 +506,14 @@ function abrirProductSheet(producto) {
         adicionesSeleccionadas = [];
         bordeSeleccionado      = null;
         mezclaState            = null;
+        saborCalzone           = null;
         cantNum.textContent    = cantActual;
         actualizarMezclaBtn();
         renderAdicionesSection();
         actualizarResumenTamano();
         actualizarResumenBorde();
         actualizarResumenAdiciones();
+        if (productoActivo.sabores) renderSaborStep();
         actualizarEstadoPasos();
         actualizarBtnAgregar();
       });
@@ -505,6 +536,46 @@ function actualizarMezclaBtn() {
   const esPizza = productoActivo && CATS_PIZZAS.includes(productoActivo.categoria);
   const mixable = esPizza && (!opcionActiva || TAMANOS_MIXABLES.has(opcionActiva.nombre));
   sheetMezclaWrap.style.display = mixable ? '' : 'none';
+}
+
+// ── STEP SABOR (calzones y productos con sabores) ─────────────
+function renderSaborStep() {
+  const stepSabor    = document.getElementById('step-sabor');
+  const saborOpts    = document.getElementById('sabor-opts');
+  const saborSelecc  = document.getElementById('sabor-selecc');
+  const sheetSabores = document.getElementById('sheet-sabores');
+  if (!stepSabor || !sheetSabores) return;
+
+  saborSelecc.style.display = 'none';
+  saborOpts.style.display   = '';
+  stepSabor.style.display   = '';
+
+  const lista = productoActivo.sabores === 'clasicos'         ? SABORES_CLASICOS
+              : productoActivo.sabores === 'tipicosEspeciales' ? SABORES_TIPICOS_ESPECIALES
+              : [];
+  sheetSabores.className = 'pw-opciones pw-opciones-list';
+  sheetSabores.innerHTML = lista.map(s =>
+    `<button class="pw-opcion-btn pw-opcion-sabor" data-sabor="${s.nombre}">
+      <span class="pw-opcion-sabor-nombre">${s.nombre}</span>
+      ${s.descripcion ? `<span class="pw-opcion-sabor-desc">${s.descripcion}</span>` : ''}
+    </button>`
+  ).join('');
+
+  sheetSabores.querySelectorAll('.pw-opcion-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sheetSabores.querySelectorAll('.pw-opcion-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saborCalzone = btn.dataset.sabor;
+      document.getElementById('sabor-selecc-val').textContent = saborCalzone;
+      saborOpts.style.display   = 'none';
+      saborSelecc.style.display = '';
+      actualizarEstadoPasos();
+      actualizarBtnAgregar();
+    });
+  });
+
+  actualizarEstadoPasos();
+  actualizarBtnAgregar();
 }
 
 function abrirSegundoSabor() {
@@ -676,13 +747,16 @@ function renderAdicionesSection() {
     return;
   }
 
+  // Calzone Grande: adiciones cuestan el doble que Pequeño
+  const multiplicadorAdicion = (cat === 'Calzones' && opcionActiva.nombre === 'Grande') ? 2 : 1;
+
   sheetAdicionesWrap.style.display = '';
 
   const adicionesData        = menuData['Adiciones'] || [];
   const adicionesDisponibles = adicionesData
     .map(a => {
       const precio = a.opciones[tamanoRaw];
-      return typeof precio === 'number' ? { nombre: a.nombre, precio } : null;
+      return typeof precio === 'number' ? { nombre: a.nombre, precio: precio * multiplicadorAdicion } : null;
     })
     .filter(Boolean);
 
@@ -780,6 +854,10 @@ function actualizarBtnAgregar() {
     btnAgregar.textContent = 'Selecciona una opción';
     return;
   }
+  if (productoActivo?.sabores && !saborCalzone) {
+    btnAgregar.textContent = 'Selecciona un sabor';
+    return;
+  }
   const precioBase     = mezclaState?.sabor2 ? mezclaState.precioFinal : opcionActiva.precio;
   const adicionesTotal = adicionesSeleccionadas.reduce((s, a) => s + a.precio, 0)
                        + (bordeSeleccionado ? bordeSeleccionado.precio : 0);
@@ -833,18 +911,20 @@ function renderCarrito() {
             <span class="pw-cart-item-opcion">${item.opcion}</span>
             <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
           </div>
-          <div class="pw-cart-item-qty">
-            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
-            <span class="pw-cart-qty-num">${item.cantidad}</span>
-            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
-            <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
-          </div>
           ${item.adiciones?.length ? item.adiciones.map(a => `
           <div class="pw-cart-item-adicion">
             <span>${a.nombre}</span>
             <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
           </div>`).join('') : ''}
           ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
+          <div class="pw-cart-item-bottom">
+            <div class="pw-cart-item-qty">
+              <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
+              <span class="pw-cart-qty-num">${item.cantidad}</span>
+              <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+            </div>
+            <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">Eliminar</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -927,6 +1007,15 @@ function setupListeners() {
     abrirSegundoSabor();
   });
 
+  // Cambiar sabor seleccionado (calzones)
+  document.getElementById('btn-sabor-cambiar')?.addEventListener('click', () => {
+    saborCalzone = null;
+    document.getElementById('sabor-selecc').style.display = 'none';
+    document.getElementById('sabor-opts').style.display   = '';
+    actualizarEstadoPasos();
+    actualizarBtnAgregar();
+  });
+
   // Cambiar tamaño seleccionado
   document.getElementById('btn-tamano-cambiar')?.addEventListener('click', () => {
     const optsEl   = document.getElementById('tamano-opts');
@@ -975,7 +1064,11 @@ function setupListeners() {
       agregarItem({
         nombre:       productoActivo.nombre,
         categoria:    productoActivo.categoria,
-        opcion:       opcionActiva.nombre,
+        opcion:       saborCalzone
+                        ? (Object.keys(productoActivo.opciones).length > 1
+                            ? `${opcionActiva.nombre} · ${saborCalzone}`
+                            : saborCalzone)
+                        : opcionActiva.nombre,
         precio:       opcionActiva.precio,
         obs:          sheetObs.value.trim(),
         adiciones:    todasAdiciones,
