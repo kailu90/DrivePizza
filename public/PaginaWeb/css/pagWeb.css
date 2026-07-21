@@ -669,7 +669,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
 
 .pw-sub-shell {
@@ -909,12 +908,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: 0 1px 4px rgba(0, 0, 0, .07);
   cursor: pointer;
   transition: var(--dp-transition);
-  border: 1.5px solid transparent;
   overflow: hidden;
 }
 .pw-product-card:hover {
-  border-color: var(--dp-orange);
-  box-shadow: var(--dp-shadow);
+  box-shadow: 0 0 0 1.5px var(--dp-orange), var(--dp-shadow);
 }
 .pw-product-card:hover .pw-product-img img {
   transform: scale(1.05);
