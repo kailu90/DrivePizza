@@ -1300,8 +1300,27 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-overflow: unset;
   max-width: none;
 }
-.pw-adicion-selecc-item { display: block; line-height: 1.5; }
+.pw-adicion-selecc-item { display: flex; align-items: center; justify-content: space-between; line-height: 1.5; gap: .4rem; }
+.pw-adicion-selecc-nombre { flex: 1; }
 .pw-adicion-selecc-precio { font-weight: 400; opacity: .7; }
+.pw-adicion-selecc-remove {
+  background: none;
+  border: 1.5px solid rgba(0,0,0,.2);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: .8rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dp-dark);
+  opacity: .6;
+  transition: opacity .15s;
+}
+.pw-adicion-selecc-remove:hover { opacity: 1; }
 #mezcla-selecc .pw-item-selecc-val {
   white-space: normal;
   overflow: visible;

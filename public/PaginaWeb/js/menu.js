@@ -694,9 +694,27 @@ function actualizarResumenAdiciones() {
   const valEl    = document.getElementById('adiciones-selecc-val');
   if (!seleccEl) return;
   if (adicionesSeleccionadas.length > 0) {
-    if (valEl) valEl.innerHTML = adicionesSeleccionadas.map(a =>
-      `<span class="pw-adicion-selecc-item">${a.nombre.replace('Adición ', '')} <span class="pw-adicion-selecc-precio">+${formatPrecio(a.precio)}</span></span>`
-    ).join('');
+    if (valEl) {
+      valEl.innerHTML = adicionesSeleccionadas.map((a, i) =>
+        `<span class="pw-adicion-selecc-item">
+          <span class="pw-adicion-selecc-nombre">${a.nombre.replace('Adición ', '')} <span class="pw-adicion-selecc-precio">+${formatPrecio(a.precio)}</span></span>
+          <button class="pw-adicion-selecc-remove" data-i="${i}" aria-label="Quitar ${a.nombre}">−</button>
+        </span>`
+      ).join('');
+      valEl.querySelectorAll('.pw-adicion-selecc-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.i);
+          const nombre = adicionesSeleccionadas[idx]?.nombre;
+          adicionesSeleccionadas.splice(idx, 1);
+          // Desmarcar el botón en la grilla
+          sheetAdicionesEl.querySelectorAll('.pw-adicion-btn').forEach(b => {
+            if (b.dataset.nombre === nombre) b.classList.remove('active');
+          });
+          actualizarResumenAdiciones();
+          actualizarBtnAgregar();
+        });
+      });
+    }
     seleccEl.style.display = '';
   } else {
     seleccEl.style.display = 'none';
