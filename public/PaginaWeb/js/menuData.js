@@ -7,4 +7,5 @@ export {
     CATEGORIAS_ADICIONABLES,
     TAMANOS_CON_BORDE,
     CATS_PIZZAS,
+    PRODUCT_IMAGES,
 } from '../../Shared/menuData.js';

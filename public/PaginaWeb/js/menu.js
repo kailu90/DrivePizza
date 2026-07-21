@@ -4,7 +4,8 @@
 
 import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
 import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
-import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS } from './menuData.js';
+import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES } from './menuData.js';
+import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 import { initHeader } from './header.js';
@@ -26,121 +27,7 @@ const PIZZA_SIZES = {
   'Jumbo':    { cms: '50 Cms', porciones: '10 porciones' },
 };
 
-// ── IMÁGENES DE PRODUCTOS ─────────────────────────────────────
-const PRODUCT_IMAGES = {
-  // Pizzas
-  'Pizza Bocadillo':                  '../Imagenes/productos/Bocadillo.jpg',
-  'Pizza Bocadillo Tocineta':         '../Imagenes/productos/BocadilloTocineta.jpg',
-  'Pizza Carbonara':                  '../Imagenes/productos/Carbonara.jpg',
-  'Pizza Carnivora':                  '../Imagenes/productos/Carnivora.jpg',
-  'Pizza Champiñones':                '../Imagenes/productos/Champiñones.jpg',
-  'Pizza Ciruelas y Tocineta':        '../Imagenes/productos/CiruelaTocineta.jpg',
-  'Pizza Criolla':                    '../Imagenes/productos/Criolla.jpg',
-  'Pizza Doble Queso':                '../Imagenes/productos/DobleQueso.jpg',
-  'Pizza Drive':                      '../Imagenes/productos/Drive.jpg',
-  'Pizza Especial de Carnes':         '../Imagenes/productos/EspecialCarnes.jpg',
-  'Pizza Estofada de Carnes':         '../Imagenes/productos/EstofadaCarnes.jpg',
-  'Pizza Estofada Hawaiana':          '../Imagenes/productos/EstofadaHawaiana.jpg',
-  'Pizza Estofada Suprema':           '../Imagenes/productos/EstofadaSuprema.jpg',
-  'Pizza Estofada Triple Queso':      '../Imagenes/productos/EstofadaTripleQueso.jpg',
-  'Pizza Hawaiana':                   '../Imagenes/productos/Hawaiana.jpg',
-  'Pizza Hawaiana Chic':              '../Imagenes/productos/HawaianaChic.jpg',
-  'Pizza Jamón':                      '../Imagenes/productos/Jamón.jpg',
-  'Pizza La Majestuosa':              '../Imagenes/productos/Majestuosa.jpeg',
-  'Pizza Maduro Tocineta':            '../Imagenes/productos/MaduroTocineta.jpg',
-  'Pizza Margarita':                  '../Imagenes/productos/Margarita.jpg',
-  'Pizza Mexicana':                   '../Imagenes/productos/Mexicana.jpg',
-  'Pizza Napolitana':                 '../Imagenes/productos/Napolitana.jpg',
-  'Pizza Paisa':                      '../Imagenes/productos/Paisa.jpg',
-  'Pizza Pepperoni':                  '../Imagenes/productos/Pepperoni.jpg',
-  'Pizza Pollo':                      '../Imagenes/productos/Pollo.jpg',
-  'Pizza Pollo Bbq':                  '../Imagenes/productos/PolloBbq.jpg',
-  'Pizza Pollo Champiñones':          '../Imagenes/productos/PolloChampiñones.jpg',
-  'Pizza Pollo Miel-Mostaza':         '../Imagenes/productos/PolloMielMostaza.jpg',
-  'Pizza Super Estofada de Carnes':   '../Imagenes/productos/SuperEstofadaCarnes.jpg',
-  'Pizza Super Estofada Hawaiana':    '../Imagenes/productos/SuperEstofadaHawaiana.jpg',
-  'Pizza Suprema':                    '../Imagenes/productos/Suprema.jpg',
-  'Pizza Suprema de Pollo':           '../Imagenes/productos/SupremaPollo.jpg',
-  'Pizza Suprema Pepperoni':          '../Imagenes/productos/SupremaPepperoni.jpeg',
-  'Pizza Teriyaki':                   '../Imagenes/productos/Teriyaki.jpg',
-  'Pizza Toc':                        '../Imagenes/productos/Toc.jpg',
-  'Pizza Topetunas':                  '../Imagenes/productos/Topetunas.jpg',
-  'Pizza Tres Carnes':                '../Imagenes/productos/TresCarnes.jpg',
-  'Pizza Vegetariana':                '../Imagenes/productos/Vegetariana.jpg',
-  'Pizza Bolognesa':                  '../Imagenes/productos/Bolognesa.jpg',
-  'Pizza Camarón a la Criolla':       '../Imagenes/productos/CamarónALaCriolla.jpg',
-  // Pizzetas
-  'Pizzeta California':         '../Imagenes/productos/PizzetaCalifornia.jpg',
-  'Pizzeta Carbonara':          '../Imagenes/productos/PizzetaCarbonara.jpg',
-  'Pizzeta Cuatro Quesos':      '../Imagenes/productos/PizzetaCuatroQuesos.jpg',
-  'Pizzeta del Huerto':         '../Imagenes/productos/PizzetaDelHuerto.jpg',
-  'Pizzeta Florencia':          '../Imagenes/productos/PizzetaFlorencia.jpg',
-  'Pizzeta Genova':             '../Imagenes/productos/PizzetaGenova.jpg',
-  'Pizzeta Iberica':            '../Imagenes/productos/PizzetaIbérica.jpg',
-  'Pizzeta la Majestuosa':      '../Imagenes/productos/PizzetaMajestuosa.jpeg',
-  'Pizzeta Livorno':            '../Imagenes/productos/PizzetaLivorno.jpg',
-  'Pizzeta Milan':              '../Imagenes/productos/PizzetaMilan.jpg',
-  'Pizzeta Venecia':            '../Imagenes/productos/PizzetaVenecia.jpg',
-  // Lasañas
-  'Lasaña Drive':               '../Imagenes/productos/LasañaDrive.jpg',
-  'Lasaña Mixta':               '../Imagenes/productos/LasañaSencilla.jpg',
-  'Lasaña Remix':               '../Imagenes/productos/LasañaSencilla.jpg',
-  'Lasaña Sencilla':            '../Imagenes/productos/LasañaSencilla.jpg',
-  'Lasaña Vegetariana':         '../Imagenes/productos/LasañaVegetariana.jpg',
-  // Pastas
-  'Fetuccine Mixto':            '../Imagenes/productos/FetuccineSencillo.jpg',
-  'Fetuccine Remix':            '../Imagenes/productos/FetuccineSencillo.jpg',
-  'Fetuccine Sencillo':         '../Imagenes/productos/FetuccineSencillo.jpg',
-  'Macaroni Mixto':             '../Imagenes/productos/Macarron.jpg',
-  'Macaroni Remix':             '../Imagenes/productos/Macarron.jpg',
-  'Macaroni Sencillo':          '../Imagenes/productos/Macarron.jpg',
-  'Pasta Alfredo':              '../Imagenes/productos/PastaAlfredo.jpg',
-  'Pasta Carbonara':            '../Imagenes/productos/PastaCarbonara.jpg',
-  'Pasta Marinera':             '../Imagenes/productos/PastaMarinera.jpg',
-  'Pasta Matriziana':           '../Imagenes/productos/PastaMatriziana.jpg',
-  'Pasta Pesto Camaron':        '../Imagenes/productos/PastaPestoCamarón.jpg',
-  'Pasta Spaguetti Mixto':      '../Imagenes/productos/SpaguettiSencillo.jpg',
-  'Pasta Spaguetti Remix':      '../Imagenes/productos/SpaguettiSencillo.jpg',
-  'Pasta Spaguetti Sencillo':   '../Imagenes/productos/SpaguettiSencillo.jpg',
-  // Sandwiches
-  'Sandwiche Atun':             '../Imagenes/productos/SandiwchAtún.jpg',
-  'Sandwiche Jamon':            '../Imagenes/productos/SandiwchJamón.jpg',
-  'Sandwiche Pollo':            '../Imagenes/productos/SandiwchPollo.jpg',
-  // Hamburguesas
-  'Hamburguesa Clasica':        '../Imagenes/productos/HamburguesaClásica.jpg',
-  'Hamburguesa Estofada':       '../Imagenes/productos/HamburguesaEstofadaPollo.jpg',
-  'Hamburguesa Pollo':          '../Imagenes/productos/HamburguesaPollo.jpg',
-  // Ensaladas
-  'Ensalada Balsámica':         '../Imagenes/productos/EnsaladaBalsámica.jpg',
-  'Ensalada Cesar':             '../Imagenes/productos/EnsaladaCesar.jpg',
-  'Ensalada Drive':             '../Imagenes/productos/EnsaladaDrivwe.jpg',
-  'Ensalada Mi Cuate':          '../Imagenes/productos/EnsaladaMiCuate.jpg',
-  'Ensalada Premium':           '../Imagenes/productos/EnsaladaPremium.jpg',
-  // Calzones
-  'Calzone Clásico':            '../Imagenes/productos/CalzoneClasico.jpg',
-  'Calzone Especial':           '../Imagenes/productos/CalzoneEspecial.jpg',
-  // Stromboli
-  'Stromboli Clásico':          '../Imagenes/productos/StromboliClasico.jpg',
-  'Stromboli Especial':         '../Imagenes/productos/StromboliEspecial.jpg',
-  // Maicitos
-  'Maicitos Gratinados':        '../Imagenes/productos/MaicitosGratinados.jpg',
-  // Bebidas
-  'Agua':                       '../Imagenes/productos/Agua.jpg',
-  'Cerveza 3 Cordilleras':      '../Imagenes/productos/Cerveza3Cordilleras.png',
-  'Cerveza Nacional':           '../Imagenes/productos/Cerveza.jpg',
-  'Gaseosa 1.5 lts':            '../Imagenes/productos/Gaseosa1.5Lts.jpg',
-  'Gaseosa 400 ml':             '../Imagenes/productos/Gaseosa400ml.jpg',
-  'H2OH':                       '../Imagenes/productos/H2OH!.jpg',
-  'Hatsu':                      '../Imagenes/productos/Hatsu.jpg',
-  'Hatsu Soda':                 '../Imagenes/productos/Hatsu.jpg',
-  'Jugo en Agua':               '../Imagenes/productos/JugosNaturalesAgua.jpg',
-  'Jugo en Leche':              '../Imagenes/productos/JugosNaturalesLeche.jpg',
-  'Jugo Hit 500 ml':            '../Imagenes/productos/JugosHit500ml.jpg',
-  'Limonada':                   '../Imagenes/productos/LimonadaNatural.jpg',
-  'Mr Tea':                     '../Imagenes/productos/MrTea.jpg',
-  'Soda Bretaña 300 ml':        '../Imagenes/productos/SobasSaborizadas.jpg',
-  'Sodas':                      '../Imagenes/productos/SobasSaborizadas.jpg',
-};
+
 
 const CAT_EMOJI = {
   'Pizzas Especiales':      '🍕',
@@ -185,6 +72,7 @@ const productSheet      = document.getElementById('product-sheet');
 const cartSheet         = document.getElementById('cart-sheet');
 const sabor2Sheet       = document.getElementById('sabor2-sheet');
 const promoSheet        = document.getElementById('promo-sheet');
+const checkoutSheet     = document.getElementById('checkout-sheet');
 const bottomCartBadge   = document.getElementById('bottom-cart-badge');
 const sheetNombre       = document.getElementById('sheet-nombre');
 const sheetDesc         = document.getElementById('sheet-desc');
@@ -221,6 +109,8 @@ function init() {
       <a href="index.html" class="pw-sede-bar-cambiar">Cambiar sede</a>
     </div>`;
   document.title = `Drive Pizza — ${nombre}`;
+  document.getElementById('cart-sede-chip').textContent = nombre;
+  document.getElementById('co-sede-chip').textContent   = nombre;
 
   // Links redes sociales del footer: datos de la sede o fallback Linktree
   const WA_FALLBACK = 'https://linktr.ee/drivepizzabga';
@@ -918,41 +808,52 @@ function renderCarrito() {
   }
 
   list.innerHTML = carrito.map((item, idx) => {
-    const precioUnitario = item.precio + getTotalAdiciones(item);
-    const subtotal = precioUnitario * item.cantidad;
-    const formulaHtml = item.cantidad > 1
-      ? `<span class="pw-cart-formula">${item.cantidad} × ${formatPrecio(precioUnitario)} = </span>`
-      : '';
+    const esMezcla = item.nombre.includes(' y mitad ');
+    let thumbHTML, thumbClass;
+    if (esMezcla) {
+      const [n1, n2]  = item.nombre.split(' y mitad ');
+      const src1      = PRODUCT_IMAGES[n1] || '';
+      const src2      = PRODUCT_IMAGES[n2] || '';
+      thumbClass = 'pw-cart-item-thumb pw-cart-item-thumb--mezcla';
+      thumbHTML  = `
+        ${src1 ? `<img class="pw-cart-thumb-main" src="${src1}" alt="${n1}" loading="lazy">` : ''}
+        ${src2 ? `<img class="pw-cart-thumb-secondary" src="${src2}" alt="${n2}" loading="lazy">` : ''}`;
+    } else {
+      const src  = PRODUCT_IMAGES[item.nombre] || '';
+      thumbClass = `pw-cart-item-thumb${src ? '' : ' pw-cart-item-thumb--empty'}`;
+      thumbHTML  = src ? `<img src="${src}" alt="${item.nombre}" loading="lazy">` : '';
+    }
     return `
     <div class="pw-cart-item">
-      <div class="pw-cart-item-header">
-        <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
-        <span class="pw-cart-item-nombre">${item.nombre}</span>
-      </div>
-      <div class="pw-cart-item-row">
-        <span class="pw-cart-item-opcion">${item.opcion}</span>
-        <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
-      </div>
-      ${item.adiciones?.length ? item.adiciones.map(a => `
-      <div class="pw-cart-item-adicion">
-        <span>${a.nombre}</span>
-        <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
-      </div>`).join('') : ''}
-      ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
-      <div class="pw-cart-item-footer">
-        <div class="pw-cart-item-qty">
-          <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
-          <span class="pw-cart-qty-num">${item.cantidad}</span>
-          <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+      <div class="pw-cart-item-body">
+        <div class="${thumbClass}">${thumbHTML}</div>
+        <div class="pw-cart-item-info">
+          <span class="pw-cart-item-nombre">${item.nombre}</span>
+          <div class="pw-cart-item-row">
+            <span class="pw-cart-item-opcion">${item.opcion}</span>
+            <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
+          </div>
+          <div class="pw-cart-item-qty">
+            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
+            <span class="pw-cart-qty-num">${item.cantidad}</span>
+            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+            <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">🗑</button>
+          </div>
+          ${item.adiciones?.length ? item.adiciones.map(a => `
+          <div class="pw-cart-item-adicion">
+            <span>${a.nombre}</span>
+            <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
+          </div>`).join('') : ''}
+          ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
         </div>
-        <div class="pw-cart-item-precio">${formulaHtml}${formatPrecio(subtotal)}</div>
       </div>
     </div>`;
   }).join('');
 
+  const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
   footer.innerHTML = `
     <div class="pw-cart-total-row">
-      <span>Total</span>
+      <span>Total <span class="pw-cart-total-count">${totalUnidades} producto${totalUnidades !== 1 ? 's' : ''}</span></span>
       <span>${formatPrecio(total)}</span>
     </div>
     <button class="pw-btn-primary" id="btn-checkout">Proceder al pago</button>`;
@@ -972,7 +873,9 @@ function renderCarrito() {
   });
 
   document.getElementById('btn-checkout')?.addEventListener('click', () => {
-    window.location.href = 'checkout.html';
+    cerrarSheet(cartSheet);
+    openCheckoutSheet(getSedeActual());
+    abrirSheet(checkoutSheet);
   });
 }
 
@@ -988,7 +891,8 @@ function cerrarSheet(sheet) {
   if (!productSheet.classList.contains('open') &&
       !cartSheet.classList.contains('open') &&
       !sabor2Sheet.classList.contains('open') &&
-      !promoSheet.classList.contains('open')) {
+      !promoSheet.classList.contains('open') &&
+      !checkoutSheet.classList.contains('open')) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -999,6 +903,7 @@ function cerrarTodo() {
   cartSheet.classList.remove('open');
   sabor2Sheet.classList.remove('open');
   promoSheet.classList.remove('open');
+  checkoutSheet.classList.remove('open');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -1108,6 +1013,17 @@ function setupListeners() {
   document.getElementById('btn-cerrar-producto').addEventListener('click', () => cerrarSheet(productSheet));
   document.getElementById('btn-cerrar-carrito').addEventListener('click', () => cerrarSheet(cartSheet));
   document.getElementById('btn-cerrar-promo').addEventListener('click', () => cerrarSheet(promoSheet));
+  document.getElementById('btn-checkout-back').addEventListener('click', () => {
+    cerrarSheet(checkoutSheet);
+    abrirSheet(cartSheet);
+  });
+
+  initCheckoutSheet({
+    onCarritoChange: () => {
+      renderCarrito();
+      if (!getCarrito().length) cerrarSheet(checkoutSheet);
+    },
+  });
 
   // Abrir carrito
   document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));

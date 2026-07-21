@@ -220,8 +220,11 @@
   <!-- SHEET: CARRITO -->
   <div class="pw-sheet pw-cart-sheet" id="cart-sheet" role="dialog" aria-modal="true" aria-label="Tu carrito">
     <div class="pw-cart-sheet-header">
-      <h3 class="pw-cart-sheet-title">Tu carrito</h3>
-      <button class="pw-sheet-close" id="btn-cerrar-carrito" aria-label="Cerrar">&#10005;</button>
+      <div>
+        <h3 class="pw-cart-sheet-title">Tu carrito</h3>
+        <span class="pw-sheet-sede-chip" id="cart-sede-chip"></span>
+      </div>
+      <button class="pw-cart-agregar-mas" id="btn-cerrar-carrito" aria-label="Agregar más productos">+ Agregar más</button>
     </div>
     <div class="pw-sheet-scroll">
       <div id="cart-items-list"></div>
@@ -330,6 +333,95 @@
         <button class="pw-modal-btn-cancel" id="btn-adicion-extra-cancel">No, gracias</button>
         <button class="pw-modal-btn-confirm" id="btn-adicion-extra-confirm">Sí, agregar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- SHEET: CHECKOUT -->
+  <div class="pw-sheet pw-checkout-sheet" id="checkout-sheet" role="dialog" aria-modal="true" aria-label="Confirmar pedido">
+    <div class="pw-co-header">
+      <button class="pw-co-back-btn" id="btn-checkout-back" aria-label="Volver al carrito">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <h3 class="pw-co-title">Confirmar pedido</h3>
+        <span class="pw-sheet-sede-chip" id="co-sede-chip"></span>
+      </div>
+    </div>
+    <div class="pw-sheet-scroll">
+
+      <!-- Productos -->
+      <div id="co-resumen-items"></div>
+
+      <!-- Datos -->
+      <section class="pw-checkout-section">
+        <h4 class="pw-checkout-section-title">Tus datos</h4>
+        <div class="pw-form-group">
+          <label class="pw-form-label" for="co-nombre">Nombre *</label>
+          <input class="pw-form-input" id="co-nombre" type="text" placeholder="¿Cómo te llamamos?" autocomplete="name">
+        </div>
+        <div class="pw-form-group">
+          <label class="pw-form-label" for="co-tel">Teléfono *</label>
+          <input class="pw-form-input" id="co-tel" type="tel" placeholder="Número de contacto" autocomplete="tel" inputmode="tel">
+        </div>
+      </section>
+
+      <!-- Entrega -->
+      <section class="pw-checkout-section">
+        <h4 class="pw-checkout-section-title">¿Cómo lo recibés?</h4>
+        <div class="pw-entrega-pills" id="co-entrega-pills">
+          <button class="pw-entrega-pill active" data-tipo="domicilio">&#x1F6F5; Domicilio</button>
+          <button class="pw-entrega-pill" data-tipo="recoger">&#x1F3EA; Recoger en tienda</button>
+        </div>
+        <div id="co-seccion-domicilio">
+          <div class="pw-form-group">
+            <label class="pw-form-label" for="co-dir">Dirección *</label>
+            <input class="pw-form-input" id="co-dir" type="text" placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="street-address">
+          </div>
+          <div class="pw-form-group" id="co-barrio-group">
+            <label class="pw-form-label" for="co-barrio">Barrio *</label>
+            <select class="pw-form-input pw-form-select" id="co-barrio">
+              <option value="">Selecciona tu barrio</option>
+            </select>
+          </div>
+        </div>
+        <div id="co-seccion-recoger" style="display:none">
+          <div class="pw-recoger-info" id="co-recoger-info"></div>
+        </div>
+      </section>
+
+      <!-- Pago -->
+      <section class="pw-checkout-section">
+        <h4 class="pw-checkout-section-title">Método de pago</h4>
+        <div class="pw-pago-pills" id="co-pago-pills">
+          <button class="pw-pago-pill active" data-pago="Efectivo">&#x1F4B5; Efectivo</button>
+          <button class="pw-pago-pill" data-pago="Transferencia">&#x1F4F1; Transferencia</button>
+        </div>
+      </section>
+
+      <!-- Observaciones -->
+      <section class="pw-checkout-section">
+        <h4 class="pw-checkout-section-title">Observaciones <span style="font-weight:400;font-size:.75rem;color:#aaa">(opcional)</span></h4>
+        <textarea class="pw-obs-input" id="co-obs" rows="2" placeholder="Instrucciones especiales para el pedido..."></textarea>
+      </section>
+
+    </div>
+    <div class="pw-sheet-footer pw-co-footer">
+      <div class="pw-co-totales">
+        <div class="pw-co-total-row">
+          <span>Subtotal</span>
+          <span id="co-subtotal"></span>
+        </div>
+        <div class="pw-co-total-row" id="co-row-domicilio" style="display:none">
+          <span>Domicilio</span>
+          <span id="co-domicilio-val"></span>
+        </div>
+        <div class="pw-co-total-row pw-co-total-final">
+          <span>Total</span>
+          <span id="co-total-final"></span>
+        </div>
+      </div>
+      <button class="pw-btn-primary" id="btn-co-confirmar">Confirmar pedido</button>
+      <div class="pw-confirm-error" id="co-error" style="display:none"></div>
     </div>
   </div>
 
