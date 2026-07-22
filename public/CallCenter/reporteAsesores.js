@@ -344,7 +344,7 @@ async function obtenerUsuarioCC() {
 (async () => {
     try {
         const usuario = await obtenerUsuarioCC();
-        const ROLES_REPORTE = ['callcenter', 'callcenter-admin', 'admin', 'pizzeria'];
+        const ROLES_REPORTE = ['callcenter', 'callcenter-admin', 'admin'];
         if (!usuario?.rol || !ROLES_REPORTE.includes(usuario.rol)) { window.top.location.href = "../index.html"; return; }
 
         sedeUsuario = usuario.rol === 'pizzeria' ? usuario.sede : null;
