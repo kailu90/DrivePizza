@@ -63,6 +63,15 @@ initBottomNav({
   onMenu:   () => switchView('menu'),
 });
 
+// Exponer altura real del nav como variable CSS
+(function setNavHeight() {
+  const nav = document.querySelector('.pw-bottom-nav');
+  if (!nav) return;
+  const update = () => document.documentElement.style.setProperty('--nav-height', nav.offsetHeight + 'px');
+  update();
+  new ResizeObserver(update).observe(nav);
+})();
+
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 
@@ -1301,7 +1310,12 @@ function setupListeners() {
 
   // Abrir/cerrar carrito
   document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => {
-    cartSheet.classList.contains('open') ? cerrarSheet(cartSheet) : abrirSheet(cartSheet);
+    if (checkoutSheet.classList.contains('open')) {
+      cerrarSheet(checkoutSheet);
+      abrirSheet(cartSheet);
+    } else {
+      cartSheet.classList.contains('open') ? cerrarSheet(cartSheet) : abrirSheet(cartSheet);
+    }
   });
 
   // Overlay cierra todo

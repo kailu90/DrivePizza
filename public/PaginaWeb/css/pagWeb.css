@@ -158,8 +158,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── BOTTOM SHEET ─────────────────────────────────────────── */
 .pw-sheet {
   position: fixed;
-  top: 0; bottom: 0; left: 0; right: 0;
-  z-index: 10001;
+  top: 0; bottom: var(--nav-height, 64px); left: 0; right: 0;
+  z-index: 10000;
   background: var(--dp-mist);
   display: flex;
   flex-direction: column;
@@ -170,7 +170,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   box-shadow: 0 -4px 32px rgba(0, 0, 0, .15);
 }
 .pw-cart-sheet {
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   border-radius: 1.25rem 1.25rem 0 0;
 }
 
@@ -184,7 +183,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 /* Botón fijo abajo */
 .pw-sheet-agregar-wrap {
-  padding: .5rem 0 calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  padding: .5rem 0 1.25rem;
 }
 .pw-sheet.open { transform: translateY(0); visibility: visible; }
 
@@ -1633,7 +1632,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sheet-footer {
   flex-shrink: 0;
-  padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom, 0px));
+  padding: .75rem 1.25rem;
   background: var(--dp-mist);
   border-top: 1px solid rgba(0,0,0,.06);
 }
@@ -1759,7 +1758,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 
 .pw-cart-footer {
   flex-shrink: 0;
-  padding: 0 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  padding: 0 1.25rem 1.25rem;
 }
 .pw-cart-total-row {
   display: flex;
@@ -2033,6 +2032,26 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-color: var(--dp-green);
   color: var(--dp-green);
   background: rgba(49,75,39,.06);
+}
+
+/* ── ERROR INLINE DE CAMPO ────────────────────────────────── */
+.pw-field-error {
+  font-size: .78rem;
+  color: #c0392b;
+  margin-top: .35rem;
+  padding: .3rem .6rem;
+  background: rgba(192,57,43,.08);
+  border-left: 3px solid #c0392b;
+  border-radius: 0 var(--dp-radius) var(--dp-radius) 0;
+  animation: pw-field-error-in .2s ease both, pw-field-error-out .4s 2.1s ease forwards;
+}
+@keyframes pw-field-error-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pw-field-error-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 .pw-entrega-pill-icon { font-size: .95rem; }
 
@@ -2770,7 +2789,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 10000;
+  z-index: 10001;
   background: var(--dp-sand);
   display: flex;
   align-items: center;

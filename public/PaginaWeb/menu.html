@@ -454,10 +454,10 @@
       <section class="pw-checkout-section">
         <h4 class="pw-checkout-section-title">¿Cómo lo recibés?</h4>
         <div class="pw-entrega-pills" id="co-entrega-pills">
-          <button class="pw-entrega-pill active" data-tipo="domicilio">&#x1F6F5; Domicilio</button>
+          <button class="pw-entrega-pill" data-tipo="domicilio">&#x1F6F5; Domicilio</button>
           <button class="pw-entrega-pill" data-tipo="recoger">&#x1F3EA; Recoger en tienda</button>
         </div>
-        <div id="co-seccion-domicilio">
+        <div id="co-seccion-domicilio" style="display:none">
           <div class="pw-form-group">
             <label class="pw-form-label" for="co-dir">Dirección *</label>
             <input class="pw-form-input" id="co-dir" type="text" placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="street-address">
@@ -478,7 +478,7 @@
       <section class="pw-checkout-section">
         <h4 class="pw-checkout-section-title">Método de pago</h4>
         <div class="pw-pago-pills" id="co-pago-pills">
-          <button class="pw-pago-pill active" data-pago="Efectivo">&#x1F4B5; Efectivo</button>
+          <button class="pw-pago-pill" data-pago="Efectivo">&#x1F4B5; Efectivo</button>
           <button class="pw-pago-pill" data-pago="Transferencia">&#x1F4F1; Transferencia</button>
         </div>
       </section>
@@ -506,7 +506,6 @@
         </div>
       </div>
       <button class="pw-btn-primary" id="btn-co-confirmar">Confirmar pedido</button>
-      <div class="pw-confirm-error" id="co-error" style="display:none"></div>
     </div>
   </div>
 

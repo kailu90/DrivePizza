@@ -9,8 +9,8 @@ import { PRODUCT_IMAGES }  from './menuData.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
 let _sede            = null;
-let _tipoEntrega     = 'domicilio';
-let _pagoActivo      = 'Efectivo';
+let _tipoEntrega     = null;
+let _pagoActivo      = null;
 let _domicilioFee    = 0;
 let _onCarritoChange = null;
 
@@ -30,7 +30,6 @@ const coRowDomicilio = document.getElementById('co-row-domicilio');
 const coDomicilioVal = document.getElementById('co-domicilio-val');
 const coTotalFinal   = document.getElementById('co-total-final');
 const btnConfirmar   = document.getElementById('btn-co-confirmar');
-const coError        = document.getElementById('co-error');
 
 // ── INIT (una vez al cargar la página) ───────────────────────
 export function initCheckoutSheet({ onCarritoChange }) {
@@ -41,17 +40,15 @@ export function initCheckoutSheet({ onCarritoChange }) {
 // ── OPEN (cada vez que se abre el sheet) ─────────────────────
 export function openCheckoutSheet(sede) {
   _sede         = sede;
-  _tipoEntrega  = 'domicilio';
-  _pagoActivo   = 'Efectivo';
+  _tipoEntrega  = null;
+  _pagoActivo   = null;
   _domicilioFee = 0;
 
-  document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p =>
-    p.classList.toggle('active', p.dataset.tipo === 'domicilio'));
-  coDomSec.style.display    = '';
+  document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => p.classList.remove('active'));
+  coDomSec.style.display     = 'none';
   coRecogerSec.style.display = 'none';
 
-  document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p =>
-    p.classList.toggle('active', p.dataset.pago === 'Efectivo'));
+  document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p => p.classList.remove('active'));
 
   renderItems();
   cargarBarrios();
@@ -195,25 +192,53 @@ function setupFormListeners() {
 }
 
 // ── VALIDACIÓN ────────────────────────────────────────────────
-function mostrarError(msg) {
-  coError.textContent   = msg;
-  coError.style.display = 'block';
-  coError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function mostrarErrorCampo(anchorEl, msg) {
+  // Eliminar error previo en el mismo anchor
+  const prev = anchorEl.parentElement.querySelector('.pw-field-error');
+  if (prev) prev.remove();
+
+  const el = document.createElement('div');
+  el.className   = 'pw-field-error';
+  el.textContent = msg;
+  anchorEl.insertAdjacentElement('afterend', el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Auto-ocultar al terminar la animación de salida (2.5s total)
+  setTimeout(() => el.remove(), 2500);
 }
 
 function validar() {
-  if (!coNombre.value.trim()) { mostrarError('Por favor ingresa tu nombre.'); coNombre.focus(); return false; }
-  if (!coTel.value.trim() || coTel.value.trim().length < 7) { mostrarError('Ingresa un número de teléfono válido.'); coTel.focus(); return false; }
+  if (!coNombre.value.trim()) {
+    mostrarErrorCampo(coNombre, 'Por favor ingresa tu nombre.');
+    coNombre.focus(); return false;
+  }
+  if (!coTel.value.trim() || coTel.value.trim().length < 7) {
+    mostrarErrorCampo(coTel, 'Ingresa un número de teléfono válido.');
+    coTel.focus(); return false;
+  }
+  if (!_tipoEntrega) {
+    mostrarErrorCampo(document.getElementById('co-entrega-pills'), 'Selecciona cómo quieres recibir tu pedido.');
+    return false;
+  }
   if (_tipoEntrega === 'domicilio') {
-    if (!coDir.value.trim()) { mostrarError('Ingresa tu dirección.'); coDir.focus(); return false; }
-    if (coBarrioGroup.style.display !== 'none' && !coBarrio.value) { mostrarError('Selecciona tu barrio.'); coBarrio.focus(); return false; }
+    if (!coDir.value.trim()) {
+      mostrarErrorCampo(coDir, 'Ingresa tu dirección.');
+      coDir.focus(); return false;
+    }
+    if (coBarrioGroup.style.display !== 'none' && !coBarrio.value) {
+      mostrarErrorCampo(coBarrio, 'Selecciona tu barrio.');
+      coBarrio.focus(); return false;
+    }
+  }
+  if (!_pagoActivo) {
+    mostrarErrorCampo(document.getElementById('co-pago-pills'), 'Selecciona el método de pago.');
+    return false;
   }
   return true;
 }
 
 // ── CREAR PEDIDO ──────────────────────────────────────────────
 async function confirmarPedido() {
-  coError.style.display = 'none';
   if (!validar()) return;
 
   btnConfirmar.disabled    = true;
