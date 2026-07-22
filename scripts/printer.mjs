@@ -274,13 +274,21 @@ async function procesarPedido(rawPedido) {
             return;
         }
 
-        // Marcar en Supabase como recibido
+        // Marcar en Supabase como recibido — con reintentos para garantizar consistencia
         const ahora = new Date().toISOString();
-        const { error: errUpdate } = await supabase
-            .from('pedidos_callcenter')
-            .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
-            .eq('id', id);
-        if (errUpdate) log(`Advertencia: error marcando pedido en Supabase: ${errUpdate.message}`);
+        const MAX_INTENTOS_UPDATE = 5;
+        const DELAY_UPDATE_MS = 5000;
+        let updateOk = false;
+        for (let intento = 1; intento <= MAX_INTENTOS_UPDATE; intento++) {
+            const { error: errUpdate } = await supabase
+                .from('pedidos_callcenter')
+                .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
+                .eq('id', id);
+            if (!errUpdate) { updateOk = true; break; }
+            log(`Advertencia: error marcando pedido en Supabase (intento ${intento}/${MAX_INTENTOS_UPDATE}): ${errUpdate.message}`);
+            if (intento < MAX_INTENTOS_UPDATE) await new Promise(r => setTimeout(r, DELAY_UPDATE_MS));
+        }
+        if (!updateOk) log(`Error crítico: pedido #${pedido.nPedido} impreso físicamente pero NO pudo marcarse en Supabase tras ${MAX_INTENTOS_UPDATE} intentos.`);
         else {
             log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado como recibido`);
 
