@@ -78,6 +78,25 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 @keyframes pw-spin { to { transform: rotate(360deg); } }
 
+/* ── TRANSICIONES DE PÁGINA ───────────────────────────────── */
+@keyframes pw-overlay-cover {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes pw-overlay-reveal {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+.pw-page-transition {
+  position: fixed;
+  inset: 0;
+  background: var(--dp-sand);
+  z-index: 9999;
+  pointer-events: none;
+}
+.pw-page-transition--cover  { animation: pw-overlay-cover  240ms ease forwards; }
+.pw-page-transition--reveal { animation: pw-overlay-reveal 300ms ease forwards; }
+
 /* ── OVERLAY ──────────────────────────────────────────────── */
 .pw-overlay {
   position: fixed; inset: 0;
@@ -520,6 +539,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   background: #fff;
   border-radius: 12px;
+  position: relative;
   box-shadow: var(--dp-shadow);
   overflow: hidden;
   cursor: pointer;
@@ -549,7 +569,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-card-h-info {
   flex: 1;
-  padding: .45rem .6rem;
+  padding: .45rem .6rem 1.8rem;
   display: flex;
   flex-direction: column;
   gap: .18rem;
@@ -565,13 +585,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .64rem;
 }
 .pw-sede-card-h .pw-sede-badge-cercana {
-  align-self: flex-start;
-  margin-left: 0;
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 .pw-sede-card-h .pw-sede-btn {
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
   width: auto;
-  margin-right: .6rem;
   padding: .3rem .65rem;
   font-size: .64rem;
   white-space: nowrap;
@@ -580,13 +602,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* ── Tarjeta dirección seleccionada ── */
 .pw-dir-selected-card {
   margin: 0 .75rem .5rem;
-  background: #fff;
+  background: var(--dp-sand);
   border-radius: 12px;
-  box-shadow: var(--dp-shadow);
+  border: 1.5px solid rgba(0,0,0,.10);
   overflow: hidden;
 }
 .pw-dir-card-top {
   display: flex;
+  align-items: center;
   gap: .5rem;
   padding: .7rem .85rem .55rem;
 }
@@ -595,6 +618,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex-direction: column;
   gap: .15rem;
   flex: 1;
+  min-width: 0;
 }
 .pw-dir-card-col--right {
   border-left: 1px solid #f0f0f0;
@@ -615,8 +639,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-family: var(--dp-font-brand);
   font-size: .88rem;
   font-weight: 800;
-  color: var(--dp-dark);
+  color: var(--dp-green);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pw-dir-card-addr {
   font-size: .65rem;
@@ -630,15 +657,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-family: var(--dp-font-brand);
   font-size: .9rem;
   font-weight: 800;
-  color: var(--dp-dark);
+  color: var(--dp-green);
 }
 .pw-dir-card-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: .4rem .85rem;
-  background: rgba(34, 139, 34, .07);
-  border-top: 1px solid rgba(34, 139, 34, .12);
+  background: rgba(0,0,0,.05);
+  border-top: 1px solid rgba(0,0,0,.07);
 }
 .pw-dir-card-zona {
   display: flex;
@@ -652,11 +679,13 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-dir-card-cambiar {
   background: none;
   border: none;
-  font-size: .65rem;
+  font-size: .72rem;
   font-weight: 600;
   color: var(--dp-green);
   cursor: pointer;
   padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .pw-dir-card-cambiar:hover { text-decoration: underline; }
 
@@ -759,6 +788,31 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   font-size: .72rem;
   font-weight: 600;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+.pw-sede-sheet-title {
+  font-family: var(--dp-font-brand);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 1.25rem 1.25rem .75rem;
+  padding-right: 3rem;
+}
+.pw-sede-sheet-list {
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  padding: .25rem 0 2rem;
+}
+.pw-sede-dist {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--dp-green);
+  margin-top: .1rem;
 }
 
 .pw-cart-badge {

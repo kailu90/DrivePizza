@@ -10,6 +10,8 @@
 </head>
 <body>
 
+  <div class="pw-page-transition" id="pw-page-transition"></div>
+
   <!-- MENU SHELL (sticky: header + pills juntos) -->
   <div class="pw-menu-shell">
 
@@ -262,6 +264,15 @@
     </div>
     <div class="pw-sheet-scroll">
       <div id="sabor2-grid" class="pw-sabor2-grid"></div>
+    </div>
+  </div>
+
+  <!-- SHEET: CAMBIAR SEDE -->
+  <div class="pw-sheet pw-sede-sheet" id="sede-sheet" role="dialog" aria-modal="true" aria-label="Cambiar sede">
+    <button class="pw-sheet-close" id="btn-cerrar-sede" aria-label="Cerrar">&#10005;</button>
+    <p class="pw-sede-sheet-title">Elige una sede</p>
+    <div class="pw-sheet-scroll">
+      <div id="sede-sheet-list" class="pw-sede-sheet-list"></div>
     </div>
   </div>
 

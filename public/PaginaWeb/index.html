@@ -74,12 +74,6 @@
         </button>
       </div>
       <div class="pw-dir-suggestions" id="dir-suggestions" hidden></div>
-      <div class="pw-dir-complemento-wrap" id="dir-complemento-wrap" hidden>
-        <label class="pw-dir-complemento-label" for="dir-complemento">Dirección completa</label>
-        <input type="text" id="dir-complemento" class="pw-dir-complemento"
-               placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="off">
-        <button class="pw-btn-confirmar-dir" id="btn-confirmar-dir">Confirmar dirección →</button>
-      </div>
     </div>
     <div id="dir-selected-card" class="pw-dir-selected-card" hidden></div>
     <h3 class="pw-sedes-title" id="sedes-title">Elige una sede</h3>
@@ -261,7 +255,9 @@
         const sedeImg      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
         const esMasCercana = idx === iCercana;
         const distLabel    = sede._dist !== null
-          ? (sede._dist < 1 ? ` · ${Math.round(sede._dist * 1000)} m` : ` · ${sede._dist.toFixed(1)} km`)
+          ? (sede._dist < 1
+              ? `Distancia ${Math.round(sede._dist * 1000)} m`
+              : `Distancia ${sede._dist.toFixed(1)} km`)
           : '';
 
         return `
@@ -275,7 +271,8 @@
               <span class="pw-sede-status pw-sede-status--${fueraZona ? 'fuera' : (abierta ? 'abierta' : 'cerrada')}">
                 ${fueraZona ? 'Fuera de zona' : (abierta ? 'Abierto' : 'Cerrado')}
               </span>
-              <div class="pw-sede-nombre">${nombre}${distLabel}</div>
+              <div class="pw-sede-nombre">${nombre}</div>
+              ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
               <div class="pw-sede-tiempo">🕐 45 - 60 min &nbsp;⭐ 4.8</div>
               ${esMasCercana ? `<span class="pw-sede-badge-cercana">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -292,7 +289,10 @@
           const sede = JSON.parse(card.dataset.sede);
           setSedeActual(sede);
           vaciarCarrito();
-          window.location.href = 'menu.html';
+          const t = document.createElement('div');
+          t.className = 'pw-page-transition pw-page-transition--cover';
+          document.body.appendChild(t);
+          setTimeout(() => { window.location.href = 'menu.html'; }, 220);
         };
         card.addEventListener('click', abrir);
         card.addEventListener('keydown', e => {
@@ -325,21 +325,14 @@
     // ── AUTOCOMPLETE DIRECCIÓN (Nominatim) ──────────────────────
     const dirField        = document.getElementById('dir-inicio');
     const dirSug          = document.getElementById('dir-suggestions');
-    const dirCompWrap     = document.getElementById('dir-complemento-wrap');
-    const dirComp         = document.getElementById('dir-complemento');
     const dirWrapper      = document.querySelector('.pw-direccion-wrapper');
     const dirSelectedCard = document.getElementById('dir-selected-card');
     let   dirTimer;
 
-    function mostrarComplemento() {
-      dirCompWrap.hidden = false;
-      dirComp.focus();
-    }
-
     function confirmarDireccion() {
-      const dirCompleta = dirComp.value.trim();
+      const dirCompleta = dirField.value.trim();
       if (!dirCompleta) return;
-      const barrio = dirField.value.trim();
+      const barrio = dirCompleta;
 
       // Calcular sede disponible más cercana
       const sedesCalc = sedesData.map(s => {
@@ -375,6 +368,7 @@
             </span>
             <strong class="pw-dir-card-tiempo">45 - 60 min</strong>
           </div>
+          <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar →</button>
         </div>
         <div class="pw-dir-card-bottom">
           <span class="pw-dir-card-zona pw-dir-card-zona--${enZona ? 'ok' : 'fuera'}">
@@ -382,7 +376,6 @@
               ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Entregamos en tu zona`
               : `⚠ Fuera de zona de entrega`}
           </span>
-          <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar dirección →</button>
         </div>`;
 
       // Guardar dirección en localStorage
@@ -403,17 +396,12 @@
         dirSelectedCard.hidden = true;
         dirWrapper.hidden = false;
         dirField.value = '';
-        dirComp.value = '';
-        dirCompWrap.hidden = true;
         userLat = null;
         userLng = null;
         renderSedes();
         document.getElementById('sedes-title').textContent = 'Elige una sede';
       });
     }
-
-    dirComp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); confirmarDireccion(); } });
-    document.getElementById('btn-confirmar-dir').addEventListener('click', confirmarDireccion);
 
     dirField.addEventListener('input', () => {
       clearTimeout(dirTimer);
@@ -444,8 +432,8 @@
             userLat = parseFloat(btn.dataset.lat);
             userLng = parseFloat(btn.dataset.lon);
             hideSug();
-            mostrarComplemento();
             renderSedes();
+            confirmarDireccion();
           });
         });
       } catch { hideSug(); }
@@ -475,8 +463,8 @@
             const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
             const data = await res.json();
             dirField.value = data.display_name.split(',').slice(0, 3).join(',').trim();
-            mostrarComplemento();
             renderSedes();
+            confirmarDireccion();
           } catch {
             alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
           } finally {

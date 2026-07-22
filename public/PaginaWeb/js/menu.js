@@ -2,8 +2,8 @@
    Drive Pizza — Menú y carrito
    ============================================================ */
 
-import { getSedeActual, estaAbierta, formatHorario, displayNombre } from './sede.js';
-import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem } from './carrito.js';
+import { getSedeActual, setSedeActual, cargarSedes, estaAbierta, formatHorario, displayNombre } from './sede.js';
+import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem, vaciarCarrito } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES, SABORES_CLASICOS, SABORES_TIPICOS_ESPECIALES } from './menuData.js';
 import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
@@ -70,6 +70,7 @@ let saborCalzone           = null;
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede        = document.getElementById('sede-bar'); // franja debajo del header
+const sedeSheet         = document.getElementById('sede-sheet');
 const catsNav           = document.getElementById('cats-nav');
 const menuBody          = document.getElementById('menu-body');
 const closedBanner      = document.getElementById('closed-banner');
@@ -113,7 +114,7 @@ function init() {
           <strong class="pw-sede-bar-nombre">${nombre}</strong>
         </div>
       </div>
-      <a href="index.html" class="pw-sede-bar-cambiar">Cambiar sede</a>
+      <button class="pw-sede-bar-cambiar" id="btn-cambiar-sede">Cambiar sede</button>
     </div>`;
   document.title = `Drive Pizza — ${nombre}`;
   document.getElementById('cart-sede-chip').textContent = nombre;
@@ -1011,7 +1012,8 @@ function cerrarSheet(sheet) {
       !cartSheet.classList.contains('open') &&
       !sabor2Sheet.classList.contains('open') &&
       !promoSheet.classList.contains('open') &&
-      !checkoutSheet.classList.contains('open')) {
+      !checkoutSheet.classList.contains('open') &&
+      !sedeSheet.classList.contains('open')) {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -1023,12 +1025,111 @@ function cerrarTodo() {
   sabor2Sheet.classList.remove('open');
   promoSheet.classList.remove('open');
   checkoutSheet.classList.remove('open');
+  sedeSheet.classList.remove('open');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
 
+// ── SHEET CAMBIAR SEDE ────────────────────────────────────────
+const SEDE_IMGS = {
+  'acropolis':   '../Imagenes/sedes/acropolis.png',
+  'cabecera':    '../Imagenes/sedes/cabecera.png',
+  'cañaveral':   '../Imagenes/sedes/canaveral.png',
+  'canaveral':   '../Imagenes/sedes/canaveral.png',
+  'megamall':    '../Imagenes/sedes/megamall.png',
+  'piedecuesta': '../Imagenes/sedes/piedecuesta.png',
+  'unico':       '../Imagenes/sedes/unico.jpeg',
+  'único':       '../Imagenes/sedes/unico.jpeg',
+};
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat / 2) ** 2 +
+               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+               Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+async function abrirSedeSheet() {
+  const listEl = document.getElementById('sede-sheet-list');
+  listEl.innerHTML = '<div class="pw-loading"><div class="pw-spinner"></div><span>Cargando sedes...</span></div>';
+  abrirSheet(sedeSheet);
+
+  try {
+    const sedes      = await cargarSedes();
+    const sedeActual = getSedeActual();
+
+    // Coordenadas del usuario desde localStorage (guardadas en index.html)
+    const dpDir  = JSON.parse(localStorage.getItem('dp_direccion') || 'null');
+    const userLat = dpDir?.lat ?? null;
+    const userLng = dpDir?.lng ?? null;
+
+    // Calcular distancia y ordenar: activas primero, luego por distancia
+    const sedesOrdenadas = sedes
+      .map(s => {
+        const dist = (userLat && userLng && s.lat && s.lng)
+          ? haversineKm(userLat, userLng, s.lat, s.lng)
+          : null;
+        return { ...s, _dist: dist };
+      })
+      .sort((a, b) => {
+        const aActiva = estaAbierta(a);
+        const bActiva = estaAbierta(b);
+        if (aActiva !== bActiva) return Number(bActiva) - Number(aActiva);
+        if (a._dist !== null && b._dist !== null) return a._dist - b._dist;
+        return 0;
+      });
+
+    listEl.innerHTML = sedesOrdenadas.map(sede => {
+      const abierta  = estaAbierta(sede);
+      const nombre   = displayNombre(sede);
+      const img      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
+      const esActual = sedeActual?.id === sede.id;
+      const distLabel = sede._dist !== null
+        ? (sede._dist < 1
+            ? `Distancia ${Math.round(sede._dist * 1000)} m`
+            : `Distancia ${sede._dist.toFixed(1)} km`)
+        : '';
+
+      return `
+        <div class="pw-sede-card-h${abierta ? '' : ' pw-sede-card-h--cerrada'}"
+             data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'>
+          <div class="pw-sede-card-h-img"><img src="${img}" alt="${nombre}"></div>
+          <div class="pw-sede-card-h-info">
+            <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
+              ${abierta ? 'Abierto' : 'Cerrado'}
+            </span>
+            <div class="pw-sede-nombre">${nombre}</div>
+            ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
+            <div class="pw-sede-tiempo">🕐 45 - 60 min</div>
+          </div>
+          <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}" ${!abierta ? 'disabled' : ''}>
+            ${esActual ? 'Sede actual' : (abierta ? 'Seleccionar →' : 'Cerrado')}
+          </button>
+        </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.pw-sede-card-h:not(.pw-sede-card-h--cerrada)').forEach(card => {
+      card.addEventListener('click', () => {
+        const sede = JSON.parse(card.dataset.sede);
+        if (getSedeActual()?.id === sede.id) { cerrarSheet(sedeSheet); return; }
+        setSedeActual(sede);
+        vaciarCarrito();
+        window.location.reload();
+      });
+    });
+  } catch {
+    listEl.innerHTML = '<p style="padding:1rem;color:#e74c3c;text-align:center;">No pudimos cargar las sedes. Intenta de nuevo.</p>';
+  }
+}
+
 // ── LISTENERS ─────────────────────────────────────────────────
 function setupListeners() {
+  document.getElementById('btn-cambiar-sede')?.addEventListener('click', abrirSedeSheet);
+  document.getElementById('btn-cerrar-sede')?.addEventListener('click', () => cerrarSheet(sedeSheet));
+
   document.getElementById('btn-menos').addEventListener('click', () => {
     if (cantActual > 1) { cantActual--; cantNum.textContent = cantActual; actualizarBtnAgregar(); }
   });
@@ -1168,3 +1269,11 @@ function setupListeners() {
 
 // ── ARRANCAR ──────────────────────────────────────────────────
 init();
+
+// Revelar página una vez que el menú está pintado en el DOM
+requestAnimationFrame(() => {
+  const t = document.getElementById('pw-page-transition');
+  if (!t) return;
+  t.classList.add('pw-page-transition--reveal');
+  t.addEventListener('animationend', () => t.remove(), { once: true });
+});
