@@ -10,7 +10,9 @@
 </head>
 <body>
 
-  <div class="pw-page-transition" id="pw-page-transition"></div>
+  <div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+  </div>
 
   <!-- MENU SHELL (sticky: header + pills juntos) -->
   <div class="pw-menu-shell">
@@ -26,6 +28,52 @@
     <div class="pw-sede-bar" id="sede-bar"></div>
 
   </div><!-- /pw-menu-shell -->
+
+  <!-- ══ VISTA: INICIO ══════════════════════════════════════ -->
+  <div id="view-home" style="display:none">
+
+    <!-- BANNER CARRUSEL -->
+    <div class="pw-banner-wrapper">
+      <div class="pw-banner" id="pw-banner" style="display:none">
+        <div class="pw-banner-track" id="pw-banner-track"></div>
+        <div class="pw-banner-dots" id="pw-banner-dots"></div>
+      </div>
+    </div>
+
+    <!-- SELECTOR DE SEDE -->
+    <section class="pw-selector-section">
+      <div class="pw-selector-header">
+        <h2 class="pw-selector-title">¿Dónde quieres disfrutar tu Drive Pizza?</h2>
+        <p class="pw-selector-subtitle">Escribe tu barrio o dirección y te mostraremos la sede más cercana para atenderte.</p>
+      </div>
+      <div class="pw-direccion-wrapper" id="home-dir-wrapper">
+        <div class="pw-direccion-input">
+          <svg class="pw-direccion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+          </svg>
+          <input type="text" placeholder="Ej.: Cabecera, Real de minas, Soto mayor o tu dirección." class="pw-direccion-field" id="dir-inicio" autocomplete="off">
+          <button class="pw-direccion-gps" id="home-gps-btn" aria-label="Usar mi ubicación">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pw-dir-suggestions" id="dir-suggestions" hidden></div>
+      </div>
+      <div id="dir-selected-card" class="pw-dir-selected-card" hidden></div>
+      <h3 class="pw-sedes-title" id="sedes-title">Elige una sede</h3>
+      <div id="sedes-grid" class="pw-sedes-list">
+        <div class="pw-loading">
+          <div class="pw-spinner"></div>
+          <span>Cargando sedes...</span>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /view-home -->
+
+  <!-- ══ VISTA: MENÚ ═════════════════════════════════════════ -->
+  <div id="view-menu">
 
   <!-- SUB-SHELL (sticky: buscador + categorías) -->
   <div class="pw-sub-shell">
@@ -55,6 +103,8 @@
       <span>Cargando menú...</span>
     </div>
   </main>
+
+  </div><!-- /view-menu -->
 
   <!-- BOTTOM NAV -->
   <nav class="pw-bottom-nav">
@@ -286,7 +336,7 @@
     <div id="promo-content"></div>
   </div>
 
-  <footer class="pw-footer">
+  <footer class="pw-footer" id="main-footer">
 
     <!-- Imagen decorativa (solo desktop, posicionada absoluta) -->
     <div class="pw-footer-img-wrap" aria-hidden="true">

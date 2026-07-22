@@ -9,10 +9,59 @@ import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 import { initHeader } from './header.js';
+import { initHomeView } from './home.js';
+
+// ── CAMBIO DE VISTA (SPA) ─────────────────────────────────────
+let currentView    = 'menu';
+let menuScrollY    = 0;
+
+function switchView(toView) {
+  if (toView === currentView) return;
+  const isGoHome = toView === 'home';
+
+  const t = document.createElement('div');
+  t.className = `pw-page-transition pw-page-transition--${isGoHome ? 'cover-left' : 'cover'}`;
+  t.innerHTML = '<img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">';
+  document.body.appendChild(t);
+
+  t.addEventListener('animationend', async () => {
+    // Guardar/restaurar scroll
+    if (!isGoHome) menuScrollY = window.scrollY;
+
+    document.getElementById('view-home').style.display   = isGoHome ? '' : 'none';
+    document.getElementById('view-menu').style.display   = isGoHome ? 'none' : '';
+    document.getElementById('main-footer').style.display = isGoHome ? 'none' : '';
+
+    // Sede-bar: solo visible en menú
+    const sedeBar = document.getElementById('sede-bar');
+    if (sedeBar) sedeBar.style.display = isGoHome ? 'none' : '';
+
+    if (isGoHome) {
+      window.scrollTo(0, 0);
+      await initHomeView({ onSedeSelected: () => switchView('menu') });
+    } else {
+      window.scrollTo(0, menuScrollY);
+    }
+
+    currentView = toView;
+
+    // Actualizar active en bottom nav
+    document.getElementById('bottom-nav-inicio')?.classList.toggle('pw-bottom-nav-btn--active', isGoHome);
+    document.querySelector('.pw-bottom-nav-btn:not(#bottom-nav-inicio):not(#bottom-nav-cart-btn)')
+      ?.classList.toggle('pw-bottom-nav-btn--active', !isGoHome);
+
+    // Revelar
+    t.className = `pw-page-transition pw-page-transition--${isGoHome ? 'reveal-right' : 'reveal'}`;
+    t.addEventListener('animationend', () => t.remove(), { once: true });
+  }, { once: true });
+}
 
 // Conectar listeners comunes
 initHeader();
-initBottomNav();
+initBottomNav({
+  onInicio: () => switchView('home'),
+  onMenu:   () => switchView('menu'),
+});
 
 // Tamaños que permiten mezcla de 2 sabores (igual que TAMANOS_CON_BORDE)
 const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
@@ -1250,8 +1299,10 @@ function setupListeners() {
     },
   });
 
-  // Abrir carrito
-  document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => abrirSheet(cartSheet));
+  // Abrir/cerrar carrito
+  document.getElementById('bottom-nav-cart-btn')?.addEventListener('click', () => {
+    cartSheet.classList.contains('open') ? cerrarSheet(cartSheet) : abrirSheet(cartSheet);
+  });
 
   // Overlay cierra todo
   overlay.addEventListener('click', cerrarTodo);

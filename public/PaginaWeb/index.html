@@ -11,6 +11,8 @@
 </head>
 <body class="pw-page-index">
 
+  <div class="pw-page-transition" id="pw-page-transition"></div>
+
   <!-- NAV SHELL (sticky en desktop, agrupa header + top nav) -->
   <div class="pw-nav-shell">
 
@@ -111,12 +113,57 @@
   </nav>
 
   <script type="module">
-    import { cargarSedes, estaAbierta, formatHorario, setSedeActual, displayNombre } from './js/sede.js';
+    import { cargarSedes, estaAbierta, formatHorario, setSedeActual, getSedeActual, displayNombre } from './js/sede.js';
     import { vaciarCarrito } from './js/carrito.js';
     import { initBottomNav } from './js/bottomNav.js';
     import { initHeader } from './js/header.js';
     initHeader();
     initBottomNav();
+
+    // ── RESTAURAR ESTADO DESDE MENÚ (síncrono, antes del primer render) ──
+    const fromMenu = sessionStorage.getItem('dp_from_menu') === '1';
+    if (fromMenu) {
+      sessionStorage.removeItem('dp_from_menu');
+      const _sede = (() => { try { return JSON.parse(localStorage.getItem('dp_sede')); } catch { return null; } })();
+      const _dir  = (() => { try { return JSON.parse(localStorage.getItem('dp_direccion')); } catch { return null; } })();
+      if (_sede) {
+        document.querySelector('.pw-direccion-wrapper').hidden = true;
+        document.getElementById('sedes-title').textContent = 'Sedes cercanas';
+        const _card = document.getElementById('dir-selected-card');
+        const _addrLine = _dir?.direccion ? `<span class="pw-dir-card-addr">${_dir.direccion}</span>` : '';
+        _card.innerHTML = `
+          <div class="pw-dir-card-top">
+            <div class="pw-dir-card-col">
+              <span class="pw-dir-card-label">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                Entrega en
+              </span>
+              <strong class="pw-dir-card-sede">${displayNombre(_sede)}</strong>
+              ${_addrLine}
+            </div>
+            <div class="pw-dir-card-col pw-dir-card-col--right">
+              <span class="pw-dir-card-label">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v5"/><circle cx="15.5" cy="17.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M3 11h13"/></svg>
+                Tiempo estimado
+              </span>
+              <strong class="pw-dir-card-tiempo">45 - 60 min</strong>
+            </div>
+            <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar →</button>
+          </div>
+          <div class="pw-dir-card-bottom">
+            <span class="pw-dir-card-zona pw-dir-card-zona--ok">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Sede seleccionada
+            </span>
+          </div>`;
+        _card.hidden = false;
+        _card.querySelector('#btn-cambiar-dir').addEventListener('click', () => {
+          _card.hidden = true;
+          document.querySelector('.pw-direccion-wrapper').hidden = false;
+          document.getElementById('sedes-title').textContent = 'Elige una sede';
+        });
+      }
+    }
 
     // ── BANNER ──────────────────────────────────────────────────
     const BANNERS = [
@@ -287,8 +334,9 @@
       grid.querySelectorAll('.pw-sede-card-h:not(.pw-sede-card-h--cerrada)').forEach(card => {
         const abrir = () => {
           const sede = JSON.parse(card.dataset.sede);
+          const actual = getSedeActual();
+          if (!actual || actual.id !== sede.id) vaciarCarrito();
           setSedeActual(sede);
-          vaciarCarrito();
           const t = document.createElement('div');
           t.className = 'pw-page-transition pw-page-transition--cover';
           document.body.appendChild(t);
@@ -478,6 +526,26 @@
         { timeout: 10000 }
       );
     });
+
+    // Botón "Menú" en bottom nav → ir al menú si hay sede seleccionada
+    document.getElementById('bottom-nav-menu')?.addEventListener('click', () => {
+      if (!getSedeActual()) return;
+      const t2 = document.createElement('div');
+      t2.className = 'pw-page-transition pw-page-transition--cover';
+      document.body.appendChild(t2);
+      setTimeout(() => { window.location.href = 'menu.html'; }, 220);
+    });
+
+    // Revelar si viene del menú (animación de derecha)
+    const t = document.getElementById('pw-page-transition');
+    if (fromMenu) {
+      requestAnimationFrame(() => {
+        t.classList.add('pw-page-transition--reveal-right');
+        t.addEventListener('animationend', () => t.remove(), { once: true });
+      });
+    } else {
+      t?.remove();
+    }
   </script>
 
 </body>

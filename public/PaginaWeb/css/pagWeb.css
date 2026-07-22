@@ -93,9 +93,27 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-sand);
   z-index: 9999;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .pw-page-transition--cover  { animation: pw-overlay-cover  240ms ease forwards; }
 .pw-page-transition--reveal { animation: pw-overlay-reveal 300ms ease forwards; }
+@keyframes pw-overlay-cover-left   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes pw-overlay-reveal-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+.pw-page-transition--cover-left   { animation: pw-overlay-cover-left   240ms ease forwards; }
+.pw-page-transition--reveal-right { animation: pw-overlay-reveal-right 300ms ease forwards; }
+@keyframes pw-logo-pulse {
+  0%, 100% { transform: scale(1);    opacity: .9; }
+  50%       { transform: scale(1.07); opacity: 1;  }
+}
+.pw-page-transition-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  object-fit: cover;
+  animation: pw-logo-pulse 1.2s ease-in-out infinite;
+}
 
 /* ── OVERLAY ──────────────────────────────────────────────── */
 .pw-overlay {
@@ -2720,7 +2738,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: 10000;
   background: var(--dp-sand);
   display: flex;
   align-items: center;
