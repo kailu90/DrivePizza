@@ -347,7 +347,8 @@ async function obtenerUsuarioCC() {
 (async () => {
     try {
         const usuario = await obtenerUsuarioCC();
-        if (!usuario?.rol) { window.top.location.href = '../index.html'; return; }
+        const ROLES_CC = ['callcenter', 'callcenter-admin', 'admin'];
+        if (!usuario?.rol || !ROLES_CC.includes(usuario.rol)) { window.top.location.href = '../index.html'; return; }
 
         document.getElementById('username').textContent = usuario.username;
         document.getElementById('btn-home').onclick = () => window.location.href = './callcenter.html';
