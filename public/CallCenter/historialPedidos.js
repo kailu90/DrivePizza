@@ -929,7 +929,8 @@ async function obtenerUsuarioCC() {
 (async () => {
     try {
         const usuario = await obtenerUsuarioCC();
-        if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
+        const ROLES_HISTORIAL = ['callcenter', 'callcenter-admin', 'admin', 'pizzeria'];
+        if (!usuario?.rol || !ROLES_HISTORIAL.includes(usuario.rol)) { window.top.location.href = "../index.html"; return; }
 
         const { sede, rol } = usuario;
         rolUsuario = rol;
