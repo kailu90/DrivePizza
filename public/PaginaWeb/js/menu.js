@@ -21,7 +21,7 @@ function switchView(toView) {
 
   const t = document.createElement('div');
   t.className = `pw-page-transition pw-page-transition--${isGoHome ? 'cover-left' : 'cover'}`;
-  t.innerHTML = '<img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">';
+  t.innerHTML = '<img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza"><span class="pw-page-transition-slogan"><span class="pw-pts-left">HECHA PARA</span><span class="pw-pts-right">COMPARTIR</span></span>';
   document.body.appendChild(t);
 
   t.addEventListener('animationend', async () => {

@@ -94,15 +94,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   z-index: 9999;
   pointer-events: none;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-.pw-page-transition--cover  { animation: pw-overlay-cover  240ms ease forwards; }
-.pw-page-transition--reveal { animation: pw-overlay-reveal 300ms ease forwards; }
+.pw-page-transition--cover  { animation: pw-overlay-cover  700ms ease forwards; }
+.pw-page-transition--reveal { animation: pw-overlay-reveal 400ms ease forwards; }
 @keyframes pw-overlay-cover-left   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes pw-overlay-reveal-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
-.pw-page-transition--cover-left   { animation: pw-overlay-cover-left   240ms ease forwards; }
-.pw-page-transition--reveal-right { animation: pw-overlay-reveal-right 300ms ease forwards; }
+.pw-page-transition--cover-left   { animation: pw-overlay-cover-left   700ms ease forwards; }
+.pw-page-transition--reveal-right { animation: pw-overlay-reveal-right 400ms ease forwards; }
 @keyframes pw-logo-pulse {
   0%, 100% { transform: scale(1);    opacity: .9; }
   50%       { transform: scale(1.07); opacity: 1;  }
@@ -113,6 +114,34 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-radius: 20px;
   object-fit: cover;
   animation: pw-logo-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pw-slogan-left {
+  from { transform: translateX(-70px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes pw-slogan-right {
+  from { transform: translateX(70px);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.pw-page-transition-slogan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15em;
+  margin-top: 1rem;
+  font-family: var(--dp-font-ui);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.pw-pts-left {
+  color: var(--dp-green);
+  animation: pw-slogan-left .4s .25s ease both;
+}
+.pw-pts-right {
+  color: #b8622a;
+  animation: pw-slogan-right .4s .45s ease both;
 }
 
 /* ── OVERLAY ──────────────────────────────────────────────── */
