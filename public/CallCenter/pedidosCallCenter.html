@@ -517,7 +517,8 @@
     (async () => {
         try {
             const usuario = await obtenerUsuarioCC();
-            if (!usuario?.rol) { window.top.location.href = "../index.html"; return; }
+            const ROLES_CC = ['callcenter', 'callcenter-admin', 'admin'];
+            if (!usuario?.rol || !ROLES_CC.includes(usuario.rol)) { window.top.location.href = "../index.html"; return; }
             asesorActual = usuario.username;
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;

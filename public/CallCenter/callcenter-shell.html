@@ -126,6 +126,8 @@
         try {
             const { data, error } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
             if (error || !data) { window.location.href = '../index.html'; return; }
+            const ROLES_CC = ['callcenter', 'callcenter-admin', 'admin'];
+            if (!ROLES_CC.includes(data.rol)) { window.location.href = '../index.html'; return; }
             window._usuarioCC = {
                 uid:         user.id,
                 email:       user.email,
