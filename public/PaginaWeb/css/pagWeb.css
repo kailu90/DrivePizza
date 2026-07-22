@@ -148,7 +148,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-overlay {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, .5);
-  z-index: 200;
+  z-index: 10001;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dp-transition);
@@ -159,7 +159,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-sheet {
   position: fixed;
   top: 0; bottom: 0; left: 0; right: 0;
-  z-index: 201;
+  z-index: 10002;
   background: var(--dp-mist);
   border-radius: 0;
   display: flex;
@@ -952,7 +952,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
    ════════════════════════════════════════════════════════════ */
 
 .pw-menu-body {
-  padding: 0rem .75rem 40px;
+  padding: 0rem .75rem calc(80px + env(safe-area-inset-bottom, 0px));
   width: 100%;
   flex: 1;
   background: var(--dp-sand);
@@ -2827,7 +2827,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Espacio para que el contenido no quede tapado por el nav */
-.pw-selector-section { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+.pw-selector-section { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 
 /* ── TOP NAV (desktop) ────────────────────────────────────── */
 .pw-top-nav {
