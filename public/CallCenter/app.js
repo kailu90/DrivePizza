@@ -179,6 +179,8 @@ function renderProducts(categoria) {
 
     if (categoria === "Promociones") {
         const esMartes = new Date().getDay() === 2;
+        const _hoyB = new Date();
+        const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
         grid.innerHTML = `
             <div class="card card-promo ${esMartes ? '' : 'card-promo--inactiva'}" onclick="${esMartes ? 'abrirPromo3x2()' : ''}">
                 <div class="promo-badge">MARTES</div>
@@ -211,6 +213,13 @@ function renderProducts(categoria) {
                 <div class="promo-badge">PROMO</div>
                 <h4>99K</h4>
                 <p class="product-desc">Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken</p>
+            </div>
+            <div class="card card-promo ${esFechaBerrionda ? '' : 'card-promo--inactiva'}" onclick="${esFechaBerrionda ? 'abrirPromoBerrionda()' : ''}">
+                <div class="promo-badge">PROMO</div>
+                <div class="promo-sede-badge">SOLO PIEDECUESTA</div>
+                <h4>35K</h4>
+                <p class="product-desc">Pizza Berrionda Pequeña<br>Mozarella · Maíz · Chicharrón · Chorizo</p>
+                <p class="promo-elegibles">${esFechaBerrionda ? 'Solo Piedecuesta · 22 y 23 Jul' : 'No disponible hoy'}</p>
             </div>
         `;
         return;
@@ -639,6 +648,8 @@ function actualizarComanda() {
             ? `<span class="promo-tag">PROMO 28K</span>`
             : item.esPromoKit
             ? `<span class="promo-tag">KIT PIZZERITOS</span>`
+            : item.esPromoBerrionda
+            ? `<span class="promo-tag">PROMO 35K</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
             ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
@@ -655,7 +666,7 @@ function actualizarComanda() {
                     <div class="item-controls">
                         ${botonAdicion}
                         ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
-                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : `<div class="qty-control">
+                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
                             <button class="btn-qty" onclick="incrementarQty(${item.id})">+</button>
@@ -1122,6 +1133,9 @@ async function procesarPedidoFinal() {
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoKit)) {
         const label = localStorage.getItem('dp_promoKit_obs') || 'KIT PIZZERITOS 25K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoBerrionda)) {
+        const label = 'PROMO BERRIONDA 35K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     }
 
@@ -2137,6 +2151,21 @@ window.abrirPromoPepperoni = function () {
         esPromoPepperoni: true,
     });
     localStorage.setItem('dp_promoPepperoni_obs', 'PROMO PEPPERONI 28K');
+    actualizarComanda();
+};
+
+// ── PROMO BERRIONDA 35K (22-23 Jul 2026 · Solo Piedecuesta) ───────────────
+
+window.abrirPromoBerrionda = function () {
+    carrito.push({
+        id: Date.now(),
+        nombre: 'Pizza Berrionda (Pequeña)',
+        precio: 35000,
+        qty: 1,
+        esPromoBerrionda: true,
+        esAdicionable: true,
+        tamanoRaw: 'Pequeña',
+    });
     actualizarComanda();
 };
 
