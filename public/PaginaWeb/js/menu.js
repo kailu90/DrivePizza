@@ -699,7 +699,7 @@ function renderSabores2(filtro) {
                     data-precio2="${precio2}"
                     data-estofada="${!!s.esEstofada}">
                <span class="pw-sabor2-nombre">${s.nombre}</span>
-               <span class="pw-sabor2-precio">${formatPrecio(precioFinal)}</span>
+               ${s.descripcion ? `<span class="pw-sabor2-desc">${s.descripcion}</span>` : ''}
              </button>`;
   }).join('');
 
@@ -1321,15 +1321,6 @@ function setupListeners() {
   // Overlay cierra todo
   overlay.addEventListener('click', cerrarTodo);
 
-  // Swipe hacia abajo cierra sheet (UX móvil)
-  [productSheet, cartSheet, sabor2Sheet, promoSheet].forEach(sheet => {
-    let startY = 0;
-    sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-    sheet.addEventListener('touchend', e => {
-      const delta = e.changedTouches[0].clientY - startY;
-      if (delta > 80) cerrarSheet(sheet);
-    }, { passive: true });
-  });
 }
 
 // ── ARRANCAR ──────────────────────────────────────────────────

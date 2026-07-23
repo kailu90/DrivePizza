@@ -175,10 +175,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cart-sheet {
   border-radius: 1.25rem 1.25rem 0 0;
 }
+.pw-checkout-sheet {
+  top: auto;
+  max-height: calc(92dvh - var(--nav-height, 64px));
+  border-radius: 1.25rem 1.25rem 0 0;
+}
 
 /* Área scrollable */
 .pw-sheet-scroll {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   padding: 0 1.25rem;
   -webkit-overflow-scrolling: touch;
@@ -1293,13 +1299,19 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 
-.pw-sabor2-grid { display: flex; flex-direction: column; gap: .25rem; padding-top: .75rem; }
+.pw-sabor2-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  padding-top: .75rem;
+}
 
 .pw-sabor2-btn {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: .7rem 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .25rem;
+  padding: .7rem .75rem;
   border: 1.5px solid rgba(0, 0, 0, .1);
   border-radius: var(--dp-radius);
   background: var(--dp-mist);
@@ -1310,9 +1322,9 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   width: 100%;
 }
 .pw-sabor2-btn:hover { border-color: var(--dp-orange); background: rgba(230, 115, 24, .04); }
-.pw-sabor2-nombre { font-size: .88rem; font-weight: 600; color: var(--dp-dark); }
-.pw-sabor2-precio { font-size: .82rem; font-weight: 700; color: var(--dp-green); flex-shrink: 0; padding-left: .5rem; }
-.pw-sabor2-vacio { text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
+.pw-sabor2-nombre { font-size: .82rem; font-weight: 700; color: var(--dp-dark); line-height: 1.2; }
+.pw-sabor2-desc { font-size: .72rem; color: #888; line-height: 1.3; }
+.pw-sabor2-vacio { grid-column: 1 / -1; text-align: center; color: #aaa; padding: 2rem 0; font-size: .9rem; }
 
 
 /* Adiciones toggle mobile */
@@ -1447,7 +1459,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.48);
-  z-index: 9999;
+  z-index: 10002;
   display: flex;
   align-items: center;
   justify-content: center;
