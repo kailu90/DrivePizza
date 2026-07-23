@@ -61,14 +61,14 @@
   <section class="pw-selector-section">
     <div class="pw-selector-header">
       <h2 class="pw-selector-title">¿Dónde quieres disfrutar tu Drive Pizza?</h2>
-      <p class="pw-selector-subtitle">Escribe tu barrio o dirección y te mostraremos la sede más cercana para atenderte.</p>
+      <p class="pw-selector-subtitle">Escribe tu barrio o sector y te mostraremos la sede más cercana para atenderte.</p>
     </div>
     <div class="pw-direccion-wrapper">
       <div class="pw-direccion-input">
         <svg class="pw-direccion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
         </svg>
-        <input type="text" placeholder="Ej.: Cabecera, Real de minas, Soto mayor o tu dirección." class="pw-direccion-field" id="dir-inicio" autocomplete="off">
+        <input type="text" placeholder="Ej.: Provenza, Real de minas, Soto mayor, centro." class="pw-direccion-field" id="dir-inicio" autocomplete="off">
         <button class="pw-direccion-gps" aria-label="Usar mi ubicación">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
@@ -111,6 +111,22 @@
       <span>Cuenta</span>
     </button>
   </nav>
+
+  <!-- MODAL HORARIOS -->
+  <div class="pw-horarios-overlay" id="pw-horarios-overlay" role="dialog" aria-modal="true" aria-labelledby="pw-horarios-titulo">
+    <div class="pw-horarios-modal">
+      <div class="pw-horarios-header">
+        <div>
+          <p class="pw-horarios-label">Horarios de atención</p>
+          <h3 class="pw-horarios-titulo" id="pw-horarios-titulo"></h3>
+        </div>
+        <button class="pw-horarios-close" id="pw-horarios-close" aria-label="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="pw-horarios-lista" id="pw-horarios-lista"></div>
+    </div>
+  </div>
 
   <script type="module">
     import { cargarSedes, estaAbierta, formatHorario, setSedeActual, getSedeActual, displayNombre } from './js/sede.js';
@@ -319,17 +335,24 @@
                 ${fueraZona ? 'Fuera de zona' : (abierta ? 'Abierto' : 'Cerrado')}
               </span>
               <div class="pw-sede-nombre">${nombre}</div>
-              ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
-              <div class="pw-sede-tiempo">🕐 45 - 60 min &nbsp;⭐ 4.8</div>
-              ${esMasCercana ? `<span class="pw-sede-badge-cercana">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                Más cercana</span>` : ''}
+              ${sede.direccion ? `<div class="pw-sede-dir">${sede.direccion}</div>` : ''}
             </div>
-            <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}">
-              ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios')}
+            ${esMasCercana ? `<span class="pw-sede-badge-cercana">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Más cercana</span>` : ''}
+            <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}${!disponible && !fueraZona ? ' pw-sede-btn--horarios' : ''}">
+              ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios →')}
             </button>
           </div>`;
       }).join('');
+
+      grid.querySelectorAll('.pw-sede-btn--horarios').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const sede = JSON.parse(btn.closest('[data-sede]').dataset.sede);
+          abrirModalHorarios(sede);
+        });
+      });
 
       grid.querySelectorAll('.pw-sede-card-h:not(.pw-sede-card-h--cerrada)').forEach(card => {
         const abrir = () => {
@@ -348,6 +371,57 @@
         });
       });
     }
+
+    // ── MODAL HORARIOS ──────────────────────────────────────────
+    const horariosOverlay = document.getElementById('pw-horarios-overlay');
+
+    function abrirModalHorarios(sede) {
+      document.getElementById('pw-horarios-titulo').textContent = displayNombre(sede);
+      const lista = document.getElementById('pw-horarios-lista');
+
+      // ── Horarios ──
+      const horarios = sede.horarios_display;
+      let horariosHtml = '';
+      if (Array.isArray(horarios) && horarios.length) {
+        horariosHtml = horarios.map(h => `
+          <div class="pw-horarios-fila">
+            <span class="pw-horarios-dia">${h.dia}</span>
+            <span class="pw-horarios-hora">${h.horario}</span>
+          </div>`).join('');
+      } else {
+        horariosHtml = `<p class="pw-horarios-empty">Horarios no disponibles por el momento.</p>`;
+      }
+
+      // ── Contacto ──
+      const lineas = Array.isArray(sede.lineas_domicilio) ? sede.lineas_domicilio : [];
+      const wa     = sede.whatsapp;
+
+      const contactoHtml = (wa || lineas.length) ? `
+        <div class="pw-horarios-contacto">
+          <p class="pw-horarios-contacto-label">¿Necesitas ayuda? Contáctanos</p>
+          <div class="pw-horarios-contacto-btns">
+            ${wa ? `
+            <a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="pw-horarios-btn pw-horarios-btn--wa">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WhatsApp
+            </a>` : ''}
+            ${lineas.map(n => `
+            <a href="tel:${n}" class="pw-horarios-btn pw-horarios-btn--tel">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .82h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+              ${n}
+            </a>`).join('')}
+          </div>
+        </div>` : '';
+
+      lista.innerHTML = horariosHtml + contactoHtml;
+      horariosOverlay.classList.add('open');
+    }
+
+    horariosOverlay.addEventListener('click', e => {
+      if (e.target === horariosOverlay || e.target.closest('#pw-horarios-close')) {
+        horariosOverlay.classList.remove('open');
+      }
+    });
 
     // ── CARGA INICIAL ───────────────────────────────────────────
     async function init() {

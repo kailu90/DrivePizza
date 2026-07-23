@@ -13,7 +13,7 @@ const SEDE_KEY = 'dp_sede';
 export async function cargarSedes() {
   const { data, error } = await supabase
     .from('sedes')
-    .select('id, name, nombre_display, ciudad, direccion, telefono, linea_ivr, whatsapp, instagram, tiktok, facebook, lineas_domicilio, horario_apertura, horario_cierre, dias_activos, activa_web, lat, lng, radio_km')
+    .select('id, name, nombre_display, ciudad, direccion, telefono, linea_ivr, whatsapp, instagram, tiktok, facebook, lineas_domicilio, horario_apertura, horario_cierre, dias_activos, activa_web, lat, lng, radio_km, horarios_display')
     .eq('activa_web', true)
     .order('nombre_display');
   if (error) throw error;
@@ -24,7 +24,7 @@ export async function cargarSedes() {
 export async function cargarSede(slug) {
   const { data, error } = await supabase
     .from('sedes')
-    .select('id, name, nombre_display, ciudad, direccion, telefono, linea_ivr, whatsapp, instagram, tiktok, facebook, lineas_domicilio, horario_apertura, horario_cierre, dias_activos, activa_web, lat, lng, radio_km')
+    .select('id, name, nombre_display, ciudad, direccion, telefono, linea_ivr, whatsapp, instagram, tiktok, facebook, lineas_domicilio, horario_apertura, horario_cierre, dias_activos, activa_web, lat, lng, radio_km, horarios_display')
     .eq('name', slug)
     .single();
   if (error) throw error;

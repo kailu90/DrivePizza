@@ -602,7 +602,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   cursor: pointer;
   border: 2px solid transparent;
   transition: var(--dp-transition);
-  min-height: 76px;
+  min-height: 90px;
 }
 .pw-sede-card-h:hover:not(.pw-sede-card-h--cerrada) {
   border-color: var(--dp-green);
@@ -614,7 +614,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-sede-card-h-img {
   width: 82px;
-  min-height: 76px;
+  min-height: 90px;
   flex-shrink: 0;
   align-self: stretch;
 }
@@ -625,21 +625,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: block;
 }
 .pw-sede-card-h-info {
-  flex: 1;
-  padding: .45rem .6rem 1.8rem;
+  flex: none;
+  width: 180px;
+  padding: .65rem .6rem 1.75rem .6rem;
   display: flex;
   flex-direction: column;
-  gap: .18rem;
-  min-width: 0;
+  justify-content: space-between;
 }
 .pw-sede-card-h .pw-sede-nombre {
-  font-size: .85rem;
+  font-size: .87rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pw-sede-card-h .pw-sede-tiempo {
-  font-size: .64rem;
+.pw-sede-card-h .pw-sede-dir {
+  font-size: .63rem;
+  color: rgba(45, 45, 45, .5);
+  line-height: 1.4;
 }
 .pw-sede-card-h .pw-sede-badge-cercana {
   position: absolute;
@@ -2920,6 +2922,155 @@ input, textarea, select { font-family: var(--dp-font-ui); }
     display: grid;
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ── Modal horarios ──────────────────────────────────────── */
+.pw-horarios-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; /* por debajo del bottom-nav (10001) para que siempre quede encima */
+  background: rgba(49, 75, 39, .35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.pw-horarios-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.pw-horarios-modal {
+  background: var(--dp-sand);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 0 1.25rem 1.5rem;
+  margin-bottom: 60px;
+  transform: translateY(calc(100% + 60px));
+  transition: transform 240ms cubic-bezier(.4, 0, .2, 1);
+  box-shadow: 0 -4px 32px rgba(49, 75, 39, .12);
+}
+.pw-horarios-overlay.open .pw-horarios-modal {
+  transform: translateY(0);
+}
+
+/* handle visual */
+.pw-horarios-modal::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(49, 75, 39, .20);
+  margin: .75rem auto .9rem;
+}
+
+.pw-horarios-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: .9rem;
+}
+.pw-horarios-label {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(45, 45, 45, .55);
+  margin: 0 0 .2rem;
+}
+.pw-horarios-titulo {
+  font-family: var(--dp-font-brand);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--dp-green);
+  margin: 0;
+}
+.pw-horarios-close {
+  background: rgba(49, 75, 39, .08);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--dp-green);
+  transition: var(--dp-transition);
+}
+.pw-horarios-close:hover { background: rgba(49, 75, 39, .16); }
+.pw-horarios-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .55rem 0;
+  border-bottom: 1px solid rgba(49, 75, 39, .08);
+}
+.pw-horarios-fila:last-child { border-bottom: none; }
+.pw-horarios-dia {
+  font-size: .83rem;
+  color: var(--dp-dark);
+}
+.pw-horarios-hora {
+  font-size: .83rem;
+  font-weight: 700;
+  color: var(--dp-green);
+}
+.pw-horarios-empty {
+  font-size: .83rem;
+  color: rgba(49, 75, 39, .5);
+  text-align: center;
+  padding: .75rem 0;
+  margin: 0;
+}
+.pw-horarios-contacto {
+  margin-top: 1rem;
+  padding-top: .9rem;
+  border-top: 1px solid rgba(49, 75, 39, .10);
+}
+.pw-horarios-contacto-label {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(45, 45, 45, .55);
+  margin: 0 0 .6rem;
+}
+.pw-horarios-contacto-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.pw-horarios-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem 1rem;
+  border-radius: 99px;
+  font-size: .8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--dp-transition);
+}
+.pw-horarios-btn--wa {
+  background: var(--dp-green);
+  color: #fff;
+}
+.pw-horarios-btn--wa:hover { background: #1e3519; }
+.pw-horarios-btn--tel {
+  background: transparent;
+  color: var(--dp-green);
+  border: 1.5px solid rgba(49, 75, 39, .30);
+}
+.pw-horarios-btn--tel:hover { background: rgba(49, 75, 39, .07); }
+@media (min-width: 600px) {
+  .pw-horarios-overlay { align-items: center; }
+  .pw-horarios-modal { border-radius: 16px; margin-bottom: 0; transform: translateY(20px); }
+  .pw-horarios-overlay.open .pw-horarios-modal { transform: translateY(0); }
 }
 
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
