@@ -99,11 +99,11 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   justify-content: center;
 }
 .pw-page-transition--cover  { animation: pw-overlay-cover  700ms ease forwards; }
-.pw-page-transition--reveal { animation: pw-overlay-reveal 400ms ease forwards; }
+.pw-page-transition--reveal { animation: pw-overlay-reveal  400ms ease forwards; }
 @keyframes pw-overlay-cover-left   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes pw-overlay-reveal-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
 .pw-page-transition--cover-left   { animation: pw-overlay-cover-left   700ms ease forwards; }
-.pw-page-transition--reveal-right { animation: pw-overlay-reveal-right 400ms ease forwards; }
+.pw-page-transition--reveal-right { animation: pw-overlay-reveal-right  400ms ease forwards; }
 @keyframes pw-logo-pulse {
   0%, 100% { transform: scale(1);    opacity: .9; }
   50%       { transform: scale(1.07); opacity: 1;  }
@@ -127,20 +127,23 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .15em;
-  margin-top: 1rem;
-  font-family: var(--dp-font-ui);
-  font-size: .78rem;
-  font-weight: 900;
-  letter-spacing: .16em;
+  gap: 0;
+  margin-top: .5rem;
+  line-height: 1;
+  font-family: var(--dp-font-brand);
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 .pw-pts-left {
   color: var(--dp-green);
+  text-shadow: 0 0 1px var(--dp-green), 1px 0 0 var(--dp-green);
   animation: pw-slogan-left .4s .25s ease both;
 }
 .pw-pts-right {
-  color: #b8622a;
+  color: var(--dp-orange);
+  text-shadow: 0 0 1px var(--dp-orange), 1px 0 0 var(--dp-orange);
   animation: pw-slogan-right .4s .45s ease both;
 }
 
