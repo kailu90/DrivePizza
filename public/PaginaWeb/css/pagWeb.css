@@ -279,7 +279,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
 
 /* ── HEADER (compartido: index + menú) ─────────────────────── */
