@@ -1,10 +1,13 @@
 /**
  * navCallCenter.js
  * Inyecta los botones de navegación del CallCenter en #header-controls,
- * antes del botón de logout, omitiendo la página actual.
+ * antes del botón de logout, según la página actual.
  *
  * Uso: import { initNavButtons } from './navCallCenter.js';
- *      initNavButtons('pedidos' | 'historial' | 'clientes');
+ *      initNavButtons('pedidos' | 'historial' | 'clientes', { onBarrios });
+ *
+ * onBarrios: función opcional que se llama al hacer click en el botón de barrios.
+ *            Si no se pasa, el botón no se inyecta.
  */
 
 const PAGES = {
@@ -43,21 +46,49 @@ const PAGES = {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>`,
     },
+    barrios: {
+        tooltip: 'Consultar domicilios',
+        action:  true,   // no navega — llama a onBarrios()
+        icon:    `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>`,
+    },
 };
 
-export function initNavButtons(paginaActual) {
+// Orden global fijo (izquierda → derecha). Para agregar una nueva sección
+// solo añadir su clave aquí y en PAGES — el resto es automático.
+const GLOBAL_ORDER = ['barrios', 'historial', 'pedidos', 'clientes'];
+
+/**
+ * @param {'pedidos'|'historial'|'clientes'} paginaActual
+ * @param {{ onBarrios?: () => void }} [opciones]
+ */
+export function initNavButtons(paginaActual, { onBarrios } = {}) {
     const logout = document.getElementById('btn-logout');
     if (!logout) return;
 
-    Object.entries(PAGES)
-        .filter(([key]) => key !== paginaActual)
-        .reverse() // mantener orden: pedidos → historial → clientes
-        .forEach(([, page]) => {
+    const fragment = document.createDocumentFragment();
+
+    GLOBAL_ORDER
+        .filter(key => key !== paginaActual)
+        .filter(key => !(key === 'barrios' && paginaActual === 'pedidos')) // ya hardcodeado en pedidos
+        .forEach(key => {
+            const page = PAGES[key];
+            if (!page) return;
+            if (page.action && !onBarrios) return;
+
             const btn = document.createElement('button');
             btn.className       = 'btn-historial with-tooltip';
             btn.dataset.tooltip = page.tooltip;
             btn.innerHTML       = page.icon;
-            btn.addEventListener('click', () => { window.location.href = page.href; });
-            logout.parentElement.insertBefore(btn, logout);
+            btn.addEventListener('click', page.action
+                ? onBarrios
+                : () => { window.location.href = page.href; }
+            );
+            fragment.appendChild(btn);
         });
+
+    logout.parentElement.insertBefore(fragment, logout);
 }

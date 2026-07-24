@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { initNavButtons } from './navCallCenter.js';
+import { openBarriosModal } from './modalBarrios.js';
 
 const SEDE_LABELS = {
     cabecera: 'Cabecera', cañaveral: 'Cañaveral', acropolis: 'Acrópolis',
@@ -426,5 +427,5 @@ document.querySelectorAll('.tag-chip').forEach(chip => {
     chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 
-initNavButtons('clientes');
+initNavButtons('clientes', { onBarrios: openBarriosModal });
 if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
