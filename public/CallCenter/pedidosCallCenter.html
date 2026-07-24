@@ -323,7 +323,7 @@
     <script type="module">
     import { supabase } from '../Api/supabaseConfig.js';
     import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
-    import { domicilios } from "./domicilios.js";
+    import { cargarTodosBarrios } from "./barriosService.js";
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
     import { initPanel }    from "../Shared/panelToggle.js";
     import { initPbxPanel }  from "./pbxPanel.js";
@@ -421,7 +421,8 @@
     document.addEventListener('click', e => {
         if (!e.target.closest('.tel-wrap')) telDropdown.style.display = 'none';
     });
-    window.domicilios = domicilios;
+    window.domicilios = {};
+    cargarTodosBarrios().then(d => { window.domicilios = d; });
     window.mostrarOverlay  = mostrarOverlay;
     window.actualizarOverlay = actualizarOverlay;
     window.ocultarOverlay  = ocultarOverlay;

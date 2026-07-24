@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Administrar Barrios - CallCenter</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
+    <link rel="stylesheet" href="pedidosCallCenter.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+    <style>
+        .modal-overlay { display: none; }
+
+        .admin-barrios-wrap {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        .admin-barrios-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .admin-barrios-header h2 { margin: 0; font-size: 20px; }
+
+        .btn-agregar {
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-agregar:hover { background: var(--color-cuaternario); }
+
+        .barrios-search {
+            padding: 10px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 14px;
+        }
+        .barrios-search:focus { border-color: var(--color-primario); outline: none; }
+
+        .barrios-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .barrios-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: var(--color-secundario);
+            border-bottom: 2px solid var(--color-primario);
+            font-weight: 600;
+            color: var(--color-primario);
+        }
+        .barrios-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e8e0d4;
+            vertical-align: middle;
+        }
+        .barrios-table tr:hover td { background: #ede6d8; }
+
+        .td-barrio { width: 55%; }
+        .td-valor  { width: 25%; }
+        .td-accion { width: 20%; text-align: right; white-space: nowrap; }
+
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-edit         { background: var(--color-secundario); color: var(--color-terciario); border: 1px solid #ccc; }
+        .btn-edit:hover   { border-color: var(--color-primario); color: var(--color-primario); }
+        .btn-delete       { background: #fdecea; color: #c0392b; border: 1px solid #f5c0bb; margin-left: 4px; }
+        .btn-delete:hover { background: #f5c0bb; border-color: #c0392b; }
+        .btn-save         { background: var(--color-primario); color: var(--color-secundario); }
+        .btn-save:hover   { background: var(--color-cuaternario); }
+        .btn-cancel       { background: var(--color-secundario); color: var(--color-terciario); border: 1px solid #ccc; margin-left: 4px; }
+        .btn-cancel:hover { border-color: var(--color-terciario); }
+
+        .input-edit {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px 8px;
+            border: 2px solid var(--color-primario);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .barrios-empty {
+            text-align: center;
+            color: #aaa;
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        .migration-banner {
+            background: #f9f4eb;
+            border: 1px solid var(--color-cuaternario);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .migration-banner p { margin: 0; color: var(--color-terciario); }
+        .btn-migrar {
+            background: var(--color-quinto);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-migrar:hover   { opacity: 0.85; }
+        .btn-migrar:disabled { background: #bcbcbc; cursor: not-allowed; }
+
+        #barrios-status {
+            font-size: 13px;
+            min-height: 20px;
+            margin-bottom: 8px;
+        }
+        #barrios-status.error { color: #c0392b; }
+        #barrios-status.ok    { color: var(--color-primario); }
+
+        @media (max-width: 768px) {
+            .logout-text { display: none; }
+            .logout-icon { display: block; }
+            #btn-logout  { padding: 4px 6px; font-size: 0; }
+            .header-controls { gap: 4px; }
+        }
+    </style>
+</head>
+<body data-skeleton="historial">
+
+<div id="skeleton" class="sk-page"></div>
+
+<div id="contenido-principal" style="display:none;">
+
+    <header class="main-header">
+        <div class="header-left">
+            <img src="../Imagenes/logo.png" alt="DrivePizza">
+        </div>
+        <div class="header-name">
+            <button class="btn-home with-tooltip" data-tooltip="Regresar al Panel" id="btn-home">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" class="icon-home">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+            </button>
+            <div class="header-username" id="username">—</div>
+        </div>
+        <div class="header-controls" id="header-controls">
+            <button id="btn-logout" class="header-link">
+                <span class="logout-text">Cerrar Sesión</span>
+                <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="admin-barrios-wrap">
+
+        <div class="migration-banner" id="migration-banner">
+            <p>¿Primera vez? Importa todos los barrios del archivo local <code>domicilios.js</code> a Supabase.</p>
+            <button class="btn-migrar" id="btn-migrar">Importar datos locales</button>
+        </div>
+
+        <div class="admin-barrios-header">
+            <h2>Administrar barrios</h2>
+            <button class="btn-agregar" id="btn-agregar-barrio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Agregar barrio
+            </button>
+        </div>
+
+        <div class="sede-toggle" id="admin-sede-toggle" style="margin-bottom:14px;">
+            <button type="button" class="sede-btn active" data-sede="cabecera">Cabecera</button>
+            <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
+            <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
+            <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
+            <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
+            <button type="button" class="sede-btn" data-sede="unico">Único</button>
+        </div>
+
+        <input type="text" id="admin-barrios-search" class="barrios-search"
+               placeholder="Buscar barrio..." autocomplete="off">
+
+        <div id="barrios-status"></div>
+
+        <table class="barrios-table">
+            <thead>
+                <tr>
+                    <th class="td-barrio">Barrio</th>
+                    <th class="td-valor">Domicilio</th>
+                    <th class="td-accion">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="barrios-tbody"></tbody>
+        </table>
+
+    </div>
+</div>
+
+<script type="module" src="./adminBarrios.js"></script>
+</body>
+</html>

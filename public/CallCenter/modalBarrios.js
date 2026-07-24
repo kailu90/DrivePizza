@@ -8,25 +8,33 @@
  *   openBarriosModal();
  */
 
-import { domicilios } from './domicilios.js';
+import { cargarBarriosSede } from './barriosService.js';
+import { supabase } from '../Api/supabaseConfig.js';
 
-let _sede = null;
-let _initialized = false;
+let _sede          = null;
+let _barriosSede   = [];   // [{ barrio, valor }] de la sede activa
+let _initialized   = false;
+let _esAdmin       = false;
 
 const MODAL_HTML = `
 <div id="modal-barrios-shared" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-content" style="max-width:480px; max-height:90vh; display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3 style="margin:0;">Consultar domicilios</h3>
-            <button id="btn-cerrar-barrios-shared" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;">&times;</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <a id="btn-admin-barrios" href="./adminBarrios.html"
+                   style="display:none;font-size:12px;color:#666;text-decoration:none;padding:4px 8px;
+                          border:1px solid #ddd;border-radius:6px;">⚙ Administrar</a>
+                <button id="btn-cerrar-barrios-shared" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;">&times;</button>
+            </div>
         </div>
         <div class="sede-toggle" id="barrios-sede-toggle" style="margin-bottom:12px;">
             <button type="button" class="sede-btn" data-sede="cabecera">Cabecera</button>
-            <button type="button" class="sede-btn" data-sede="ca\u00f1averal">Ca\u00f1averal</button>
-            <button type="button" class="sede-btn" data-sede="acropolis">Acr\u00f3polis</button>
+            <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
+            <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
             <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
             <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
-            <button type="button" class="sede-btn" data-sede="unico">\u00danico</button>
+            <button type="button" class="sede-btn" data-sede="unico">Único</button>
         </div>
         <input type="text" id="barrios-buscador"
             placeholder="\uD83D\uDD0D Escribe el barrio..."
@@ -44,9 +52,8 @@ function _filtrar() {
     if (!_sede) return;
 
     const q       = document.getElementById('barrios-buscador').value.toLowerCase().trim();
-    const barrios = domicilios[_sede] || {};
-    const entradas = Object.entries(barrios).filter(([nombre]) =>
-        !q || nombre.toLowerCase().includes(q)
+    const entradas = _barriosSede.filter(({ barrio }) =>
+        !q || barrio.toLowerCase().includes(q)
     );
 
     if (!entradas.length) {
@@ -57,10 +64,10 @@ function _filtrar() {
         return;
     }
 
-    contenedor.innerHTML = entradas.map(([nombre, valor]) => `
+    contenedor.innerHTML = entradas.map(({ barrio, valor }) => `
         <div style="display:flex;justify-content:space-between;align-items:center;
                     padding:10px 14px;border-bottom:1px solid #f0f0f0;">
-            <span style="font-size:14px;">${nombre}</span>
+            <span style="font-size:14px;">${barrio}</span>
             <span style="font-weight:700;color:#27ae60;white-space:nowrap;margin-left:12px;">
                 $${valor.toLocaleString('es-CO')}
             </span>
@@ -71,6 +78,23 @@ function _filtrar() {
 function _close() {
     const modal = document.getElementById('modal-barrios-shared');
     if (modal) modal.style.display = 'none';
+}
+
+async function _verificarRolAdmin() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+            .from('usuarios')
+            .select('rol')
+            .eq('id', user.id)
+            .single();
+        if (data && ['admin', 'callcenter-admin'].includes(data.rol)) {
+            _esAdmin = true;
+            const btnAdmin = document.getElementById('btn-admin-barrios');
+            if (btnAdmin) btnAdmin.style.display = 'inline-block';
+        }
+    } catch (_) { /* silencioso */ }
 }
 
 function _init() {
@@ -90,11 +114,22 @@ function _init() {
     document.getElementById('barrios-sede-toggle')
         .querySelectorAll('.sede-btn')
         .forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 document.querySelectorAll('#barrios-sede-toggle .sede-btn')
                     .forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 _sede = btn.dataset.sede;
+
+                const contenedor = document.getElementById('barrios-resultados');
+                contenedor.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
+                document.getElementById('barrios-buscador').value = '';
+
+                try {
+                    _barriosSede = await cargarBarriosSede(_sede);
+                } catch (e) {
+                    contenedor.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:20px;margin:0;">Error al cargar barrios</p>`;
+                    return;
+                }
                 _filtrar();
                 document.getElementById('barrios-buscador').focus();
             });
@@ -104,6 +139,8 @@ function _init() {
         .addEventListener('click', e => {
             if (e.target.id === 'modal-barrios-shared') _close();
         });
+
+    _verificarRolAdmin();
 }
 
 export function openBarriosModal() {
@@ -114,6 +151,12 @@ export function openBarriosModal() {
     document.getElementById('barrios-resultados').innerHTML =
         '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Selecciona una sede para comenzar</p>';
     _sede = null;
+    _barriosSede = [];
     document.querySelectorAll('#barrios-sede-toggle .sede-btn')
         .forEach(b => b.classList.remove('active'));
+
+    if (_esAdmin) {
+        const btnAdmin = document.getElementById('btn-admin-barrios');
+        if (btnAdmin) btnAdmin.style.display = 'inline-block';
+    }
 }
