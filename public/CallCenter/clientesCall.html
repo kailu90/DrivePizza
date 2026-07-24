@@ -295,19 +295,32 @@
         }
         .btn-nuevo-cliente:hover { background: var(--color-cuaternario); }
 
-        /* Eliminar cliente */
+        /* Override table-layout para que columnas se ajusten al contenido */
+        #clientes-table {
+            table-layout: auto;
+        }
+        #clientes-table .col-tel   { width: 110px; white-space: nowrap; }
+        #clientes-table .col-nombre { min-width: 120px; }
+        #clientes-table .col-dir-td { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Acciones */
+        .td-acciones { width: 110px; text-align: center; white-space: nowrap; }
         .btn-eliminar-cli {
-            background: none;
-            border: none;
+            background: #fff5f5;
+            border: 1px solid #fdd;
             cursor: pointer;
-            color: #ccc;
-            padding: 4px;
-            border-radius: 4px;
-            transition: color .15s, background .15s;
+            color: #e74c3c;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: background .15s, border-color .15s;
             display: inline-flex;
             align-items: center;
+            gap: 4px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: 500;
         }
-        .btn-eliminar-cli:hover { color: #e74c3c; background: #fff0f0; }
+        .btn-eliminar-cli:hover { background: #e74c3c; color: white; border-color: #e74c3c; }
 
         /* Paginación */
         .clientes-paginacion {
@@ -345,13 +358,103 @@
             white-space: nowrap;
         }
 
+        /* ── Layout sidebar ── */
+        .cli-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            height: calc(100vh - 100px);
+        }
+        .cli-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 16px 12px;
+            border-right: 1px solid #e0d8cc;
+            overflow-y: auto;
+        }
+        .cli-sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--color-primario);
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+        .cli-sidebar .sede-btn {
+            width: 100%;
+            text-align: center;
+        }
+        .cli-sidebar-divider {
+            height: 1px;
+            background: #e0d8cc;
+            margin: 6px 0;
+        }
+        .cli-main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px 24px;
+        }
+
         /* Mobile */
         @media (max-width: 768px) {
             .logout-text { display: none; }
             .logout-icon { display: block; }
             #btn-logout { padding: 4px 6px; font-size: 0; }
             .header-controls { gap: 4px; }
+            .cli-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .cli-sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-right: none;
+                border-bottom: 1px solid #e0d8cc;
+                padding: 10px 12px;
+            }
+            .cli-sidebar-title { display: none; }
+            .cli-main { padding: 14px 16px; }
         }
+
+        /* Columnas responsivas */
+        @media (max-width: 960px) {
+            .col-tags-th, .col-tags-td { display: none; }
+        }
+        @media (max-width: 680px) {
+            .col-dir-th, .col-dir-td,
+            .col-fecha-th, .col-fecha-td { display: none; }
+            .btn-eliminar-cli span { display: none; }
+        }
+
+        /* Badge días inactivo */
+        .dias-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .dias-badge.moderado { background: #fff8e1; color: #f39c12; }
+        .dias-badge.critico  { background: #fff0f0; color: #e74c3c; }
+
+        /* Infinite scroll sentinel */
+        #clientes-sentinel {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sentinel-spinner {
+            display: none;
+            width: 26px; height: 26px;
+            border: 2.5px solid #e8ddd0;
+            border-top-color: var(--color-primario);
+            border-radius: 50%;
+            animation: sentinel-spin 0.65s linear infinite;
+        }
+        @keyframes sentinel-spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body data-skeleton="historial">
@@ -389,45 +492,62 @@
         </div>
     </header>
 
-    <main class="historial__main">
+    <div class="cli-layout">
 
-        <div class="clientes-topbar">
-            <div class="clientes-search-wrap">
-                <input type="text" id="buscar-cliente-input"
-                       placeholder="Buscar por teléfono o nombre..."
-                       autocomplete="off">
-                <button class="btn-buscar-cliente" id="btn-buscar-cliente">Buscar</button>
+        <!-- ── Sidebar ── -->
+        <nav class="cli-sidebar">
+            <div class="cli-sidebar-title">Clientes</div>
+            <button class="sede-btn active" id="nav-todos">Todos</button>
+            <button class="sede-btn" id="nav-frecuentes">Frecuentes</button>
+            <div class="cli-sidebar-divider"></div>
+            <button class="sede-btn" id="nav-reactivacion">Reactivación</button>
+        </nav>
+
+        <!-- ── Contenido principal ── -->
+        <div class="cli-main">
+
+            <div class="clientes-topbar">
+                <div class="clientes-search-wrap">
+                    <input type="text" id="buscar-cliente-input"
+                           placeholder="Buscar por teléfono o nombre..."
+                           autocomplete="off">
+                    <button class="btn-buscar-cliente" id="btn-buscar-cliente">Buscar</button>
+                </div>
+                <span class="clientes-count" id="clientes-count"></span>
+                <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
             </div>
-            <span class="clientes-count" id="clientes-count"></span>
-            <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
+
+            <section class="inventory-management" style="flex:1;overflow-y:auto;padding-right:20px;">
+                <table class="inventory-management__table" id="clientes-table">
+                    <thead class="inventory-management__thead">
+                        <tr class="inventory-management__row" id="clientes-thead-row">
+                            <th class="inventory-management__heading col-tel">Teléfono</th>
+                            <th class="inventory-management__heading col-nombre">Nombre</th>
+                            <th class="inventory-management__heading col-dir-th">Dirección</th>
+                            <th class="inventory-management__heading col-tags-th">Tags</th>
+                            <th class="inventory-management__heading" id="th-pedidos" style="display:none;">Pedidos</th>
+                            <th class="inventory-management__heading col-fecha-th">Última actividad</th>
+                            <th class="inventory-management__heading td-acciones">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientes-tbody">
+                        <tr>
+                            <td class="inventory-management__cell" colspan="6"
+                                style="text-align:center; padding:30px;">
+                                Cargando clientes...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="clientes-sentinel">
+                    <div id="sentinel-spinner"></div>
+                </div>
+            </section>
+
+            <div id="clientes-paginacion" class="clientes-paginacion"></div>
+
         </div>
-
-        <section class="inventory-management">
-            <table class="inventory-management__table">
-                <thead class="inventory-management__thead">
-                    <tr class="inventory-management__row">
-                        <th class="inventory-management__heading">Teléfono</th>
-                        <th class="inventory-management__heading">Nombre</th>
-                        <th class="inventory-management__heading">Dirección</th>
-                        <th class="inventory-management__heading">Tags</th>
-                        <th class="inventory-management__heading">Última actividad</th>
-                        <th class="inventory-management__heading" style="width:44px;"></th>
-                    </tr>
-                </thead>
-                <tbody id="clientes-tbody">
-                    <tr>
-                        <td class="inventory-management__cell" colspan="5"
-                            style="text-align:center; padding:30px;">
-                            Cargando clientes...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <div id="clientes-paginacion" class="clientes-paginacion"></div>
-
-    </main>
+    </div>
 
 </div><!-- /contenido-principal -->
 

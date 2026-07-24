@@ -6,6 +6,12 @@
     <title>CallCenter — DrivePizza</title>
     <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="../Estilos/styles.css">
+    <!-- Prefetch de páginas frecuentes para navegación más rápida -->
+    <link rel="prefetch" href="./callcenter.html">
+    <link rel="prefetch" href="./historialPedidos.html">
+    <link rel="prefetch" href="./clientesCall.html">
+    <link rel="prefetch" href="./pedidosCallCenter.html">
+    <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
         #cc-frame { width: 100%; height: 100%; border: none; display: block; }
@@ -48,12 +54,34 @@
         #btn-sip-answer { background: #22c55e; color: #fff; }
         #btn-sip-reject,
         #btn-sip-hangup { background: #ef4444; color: #fff; }
+
+        /* ── Overlay navegación ── */
+        #nav-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.82);
+            z-index: 8000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        #nav-overlay.visible { display: flex; }
+        .nav-spinner {
+            width: 38px; height: 38px;
+            border: 3px solid #e8ddd0;
+            border-top-color: #c0392b;
+            border-radius: 50%;
+            animation: nav-spin 0.65s linear infinite;
+        }
+        @keyframes nav-spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <iframe id="cc-frame" src="./callcenter.html"></iframe>
 <audio id="sip-audio" autoplay></audio>
+<div id="nav-overlay"><div class="nav-spinner"></div></div>
 
 <!-- Panel llamada entrante / en curso -->
 <div id="sip-panel">
@@ -102,8 +130,15 @@
             window._sipUA.register();
         }
     }
+    // ── Overlay de navegación ─────────────────────────────────────────────────
+    const _overlay = document.getElementById('nav-overlay');
+    document.getElementById('cc-frame').addEventListener('load', () => {
+        _overlay.classList.remove('visible');
+    });
+
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
+        if (e.data?.type === 'nav-loading')   _overlay.classList.add('visible');
         if (e.data?.type === 'frame-ready')   postToFrame(_sipState);
         if (e.data?.type === 'sip-reconnect') sipReconnect();
         if (e.data?.type === 'sip-hangup')  { if (_session) _session.terminate(); hidePanel(); }

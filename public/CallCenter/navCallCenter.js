@@ -85,7 +85,10 @@ export function initNavButtons(paginaActual, { onBarrios } = {}) {
             btn.innerHTML       = page.icon;
             btn.addEventListener('click', page.action
                 ? onBarrios
-                : () => { window.location.href = page.href; }
+                : () => {
+                    window.parent.postMessage({ type: 'nav-loading' }, '*');
+                    window.location.href = page.href;
+                }
             );
             fragment.appendChild(btn);
         });
