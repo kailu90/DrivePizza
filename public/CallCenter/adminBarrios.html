@@ -6,34 +6,76 @@
     <title>Administrar Barrios - CallCenter</title>
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="../Estilos/skeleton.css">
-    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
     <link rel="stylesheet" href="pedidosCallCenter.css">
     <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
     <style>
         .modal-overlay { display: none; }
 
-        .admin-barrios-wrap {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 20px 16px 40px;
+        /* ── Layout dos columnas ───────────────────────────────── */
+        .ab-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            height: calc(100vh - 100px);
+            background: var(--color-secundario);
         }
 
-        .admin-barrios-header {
+        /* ── Sidebar izquierdo ─────────────────────────────────── */
+        .ab-sidebar {
+            grid-column: 1;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            border-right: 1px solid #e0d8cc;
+            padding: 16px 12px;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .ab-sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--color-primario);
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+
+        /* ── Panel principal ───────────────────────────────────── */
+        .ab-main {
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px 24px;
+        }
+
+        .ab-topbar {
+            display: flex;
             align-items: center;
-            margin-bottom: 16px;
+            justify-content: space-between;
+            margin-bottom: 14px;
             flex-wrap: wrap;
             gap: 10px;
         }
-        .admin-barrios-header h2 { margin: 0; font-size: 20px; }
+
+        .ab-topbar h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--color-primario);
+        }
+
+        .ab-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         .btn-agregar {
             background: var(--color-primario);
             color: var(--color-secundario);
             border: none;
             border-radius: 8px;
-            padding: 9px 18px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
@@ -43,41 +85,94 @@
         }
         .btn-agregar:hover { background: var(--color-cuaternario); }
 
+        /* ── Banner migración ──────────────────────────────────── */
+        .migration-banner {
+            background: #f9f4eb;
+            border: 1px solid var(--color-cuaternario);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .migration-banner p { margin: 0; color: var(--color-terciario); }
+        .btn-migrar {
+            background: var(--color-quinto);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-migrar:hover    { opacity: 0.85; }
+        .btn-migrar:disabled { background: #bcbcbc; cursor: not-allowed; }
+
+        /* ── Buscador ──────────────────────────────────────────── */
         .barrios-search {
-            padding: 10px 14px;
+            padding: 9px 14px;
             border: 2px solid #ddd;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 14px;
             width: 100%;
             box-sizing: border-box;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
         .barrios-search:focus { border-color: var(--color-primario); outline: none; }
+
+        /* ── Status ────────────────────────────────────────────── */
+        #barrios-status {
+            font-size: 13px;
+            min-height: 18px;
+            margin-bottom: 6px;
+        }
+        #barrios-status.error { color: #c0392b; }
+        #barrios-status.ok    { color: var(--color-primario); }
+
+        /* ── Tabla ─────────────────────────────────────────────── */
+        .ab-table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #e0d8cc;
+            border-radius: 8px;
+        }
 
         .barrios-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
         }
+        .barrios-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
         .barrios-table th {
             text-align: left;
-            padding: 10px 12px;
+            padding: 10px 14px;
             background: var(--color-secundario);
             border-bottom: 2px solid var(--color-primario);
-            font-weight: 600;
+            font-weight: 700;
             color: var(--color-primario);
         }
         .barrios-table td {
-            padding: 9px 12px;
+            padding: 9px 14px;
             border-bottom: 1px solid #e8e0d4;
             vertical-align: middle;
         }
         .barrios-table tr:hover td { background: #ede6d8; }
 
-        .td-barrio { width: 55%; }
+        .td-barrio { width: 50%; }
         .td-valor  { width: 25%; }
-        .td-accion { width: 20%; text-align: right; white-space: nowrap; }
+        .td-accion { width: 25%; text-align: right; white-space: nowrap; }
 
+        /* ── Botones acción ────────────────────────────────────── */
         .btn-edit, .btn-delete, .btn-save, .btn-cancel {
             border: none;
             border-radius: 6px;
@@ -111,47 +206,122 @@
             font-size: 14px;
         }
 
-        .migration-banner {
-            background: #f9f4eb;
-            border: 1px solid var(--color-cuaternario);
-            border-radius: 8px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .migration-banner p { margin: 0; color: var(--color-terciario); }
-        .btn-migrar {
-            background: var(--color-quinto);
-            color: #fff;
-            border: none;
-            border-radius: 7px;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
+        /* ── Toast ─────────────────────────────────────────────── */
+        .ab-toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            z-index: 99999;
             white-space: nowrap;
         }
-        .btn-migrar:hover   { opacity: 0.85; }
-        .btn-migrar:disabled { background: #bcbcbc; cursor: not-allowed; }
-
-        #barrios-status {
-            font-size: 13px;
-            min-height: 20px;
-            margin-bottom: 8px;
+        .ab-toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
-        #barrios-status.error { color: #c0392b; }
-        #barrios-status.ok    { color: var(--color-primario); }
 
+        /* ── Botón log en sidebar ──────────────────────────────── */
+        #admin-sede-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #admin-sede-nav .sede-btn {
+            width: 100%;
+            text-align: center;
+        }
+
+        .ab-sidebar-divider {
+            height: 1px;
+            background: #e0d8cc;
+            margin: 12px 0;
+        }
+
+        .btn-log {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: none;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .btn-log:hover { border-color: var(--color-primario); color: var(--color-primario); }
+        .btn-log.active {
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border-color: var(--color-primario);
+        }
+
+        /* ── Tabla log ─────────────────────────────────────────── */
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .log-table th {
+            text-align: left;
+            padding: 9px 12px;
+            background: var(--color-secundario);
+            border-bottom: 2px solid var(--color-primario);
+            font-weight: 700;
+            color: var(--color-primario);
+            white-space: nowrap;
+        }
+        .log-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e8e0d4;
+            vertical-align: middle;
+        }
+        .log-table tr:hover td { background: #ede6d8; }
+        .log-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .log-badge.crear    { background: #e8f5e9; color: var(--color-primario); }
+        .log-badge.editar   { background: #fff8e1; color: #c07800; }
+        .log-badge.eliminar { background: #fdecea; color: #c0392b; }
+
+        /* ── Responsive ────────────────────────────────────────── */
         @media (max-width: 768px) {
             .logout-text { display: none; }
             .logout-icon { display: block; }
             #btn-logout  { padding: 4px 6px; font-size: 0; }
             .header-controls { gap: 4px; }
+
+            .ab-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+            }
+            .ab-sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-right: none;
+                border-bottom: 1px solid #e0d8cc;
+                padding: 10px 12px;
+            }
+            .ab-sidebar-title { display: none; }
+            .ab-main { padding: 14px 16px; }
         }
     </style>
 </head>
@@ -190,53 +360,128 @@
         </div>
     </header>
 
-    <div class="admin-barrios-wrap">
+    <div class="ab-layout">
 
-        <div class="migration-banner" id="migration-banner">
-            <p>¿Primera vez? Importa todos los barrios del archivo local <code>domicilios.js</code> a Supabase.</p>
-            <button class="btn-migrar" id="btn-migrar">Importar datos locales</button>
-        </div>
-
-        <div class="admin-barrios-header">
-            <h2>Administrar barrios</h2>
-            <button class="btn-agregar" id="btn-agregar-barrio">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2.5"
+        <!-- ── Sidebar sedes ────────────────────────────────────── -->
+        <nav class="ab-sidebar">
+            <div class="ab-sidebar-title">Sedes</div>
+            <div id="admin-sede-nav">
+                <button type="button" class="sede-btn active" data-sede="cabecera">Cabecera</button>
+                <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
+                <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
+                <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
+                <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
+                <button type="button" class="sede-btn" data-sede="unico">Único</button>
+            </div>
+            <div class="ab-sidebar-divider"></div>
+            <button class="btn-log" id="btn-ver-log">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
                      stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
                 </svg>
-                Agregar barrio
+                Log de cambios
             </button>
+        </nav>
+
+        <!-- ── Panel principal ─────────────────────────────────── -->
+        <div class="ab-main">
+
+            <div class="migration-banner" id="migration-banner">
+                <p>¿Primera vez? Importa todos los barrios del archivo local <code>domicilios.js</code> a Supabase.</p>
+                <button class="btn-migrar" id="btn-migrar">Importar datos locales</button>
+            </div>
+
+            <div class="ab-topbar">
+                <h2 id="ab-titulo">Cabecera</h2>
+                <div class="ab-actions">
+                    <button class="btn-agregar" id="btn-agregar-barrio">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Agregar barrio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista: Barrios -->
+            <div id="ab-view-barrios">
+                <input type="text" id="admin-barrios-search" class="barrios-search"
+                       placeholder="Buscar barrio..." autocomplete="off">
+
+                <div id="barrios-status"></div>
+
+                <div class="ab-table-wrap">
+                    <table class="barrios-table">
+                        <thead>
+                            <tr>
+                                <th class="td-barrio">Barrio</th>
+                                <th class="td-valor">Domicilio</th>
+                                <th class="td-accion">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="barrios-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vista: Log -->
+            <div id="ab-view-log" style="display:none;">
+                <div class="ab-table-wrap">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th>Sede</th>
+                                <th>Barrio</th>
+                                <th>Valor ant.</th>
+                                <th>Valor nuevo</th>
+                                <th>Usuario</th>
+                                <th>Fecha y hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
-
-        <div class="sede-toggle" id="admin-sede-toggle" style="margin-bottom:14px;">
-            <button type="button" class="sede-btn active" data-sede="cabecera">Cabecera</button>
-            <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
-            <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
-            <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
-            <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
-            <button type="button" class="sede-btn" data-sede="unico">Único</button>
-        </div>
-
-        <input type="text" id="admin-barrios-search" class="barrios-search"
-               placeholder="Buscar barrio..." autocomplete="off">
-
-        <div id="barrios-status"></div>
-
-        <table class="barrios-table">
-            <thead>
-                <tr>
-                    <th class="td-barrio">Barrio</th>
-                    <th class="td-valor">Domicilio</th>
-                    <th class="td-accion">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="barrios-tbody"></tbody>
-        </table>
-
     </div>
 </div>
 
+<!-- ── Modal agregar barrio ─────────────────────────────────────── -->
+<div id="modal-agregar-barrio" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <h3 style="margin:0;color:var(--color-primario);">Agregar barrio</h3>
+            <button id="btn-cerrar-modal-barrio" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;">&times;</button>
+        </div>
+        <p id="modal-barrio-sede-label" style="margin:0 0 18px;font-size:22px;font-weight:900;color:var(--color-primario);letter-spacing:0.5px;"></p>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">Nombre del barrio</label>
+                <input id="modal-barrio-nombre" type="text" placeholder="Ej: Villa del Prado"
+                       class="barrios-search" style="margin-bottom:0;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">Valor domicilio</label>
+                <input id="modal-barrio-valor" type="number" min="0" placeholder="Ej: 5000"
+                       class="barrios-search" style="margin-bottom:0;">
+            </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:24px;">
+            <button class="btn-cancel" id="btn-cancelar-modal-barrio">Cancelar</button>
+            <button class="btn-save"   id="btn-guardar-modal-barrio">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div class="ab-toast" id="ab-toast"></div>
 <script type="module" src="./adminBarrios.js"></script>
 </body>
 </html>

@@ -945,7 +945,7 @@ async function obtenerUsuarioCC() {
             }
         });
 
-        if (rol === 'callcenter-admin' || rol === 'admin') {
+        if (rol === 'admin') {
             document.getElementById("btn-exportar").style.display = "";
             document.getElementById("btn-liquidacion").style.display = "";
         }

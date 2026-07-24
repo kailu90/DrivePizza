@@ -14,8 +14,9 @@ import { invalidarCacheBarrios }            from './barriosService.js';
 const ROLES_PERMITIDOS = ['admin', 'callcenter-admin'];
 
 let _sede    = 'cabecera';
-let _barrios = [];   // [{ id, barrio, valor }] de la sede activa
+let _barrios = [];
 let _query   = '';
+let _usuario = '';    // username del usuario activo
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 mostrarSkeleton('historial');
@@ -37,7 +38,8 @@ mostrarSkeleton('historial');
             return;
         }
 
-        document.getElementById('username').textContent = usuario.username || '';
+        _usuario = usuario.username || '';
+        document.getElementById('username').textContent = _usuario;
         document.getElementById('btn-home').onclick = () => { window.location.href = './callcenter.html'; };
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
@@ -47,6 +49,10 @@ mostrarSkeleton('historial');
         });
 
         initNavButtons('adminBarrios', { onBarrios: openBarriosModal });
+
+        if (usuario.rol !== 'admin') {
+            document.getElementById('migration-banner').style.display = 'none';
+        }
 
         document.body.classList.add('loaded');
         ocultarSkeleton('contenido-principal');
@@ -59,16 +65,33 @@ mostrarSkeleton('historial');
     }
 })();
 
+// ── Vistas: barrios vs log ────────────────────────────────────────────────────
+function _mostrarVista(vista) {
+    document.getElementById('ab-view-barrios').style.display = vista === 'barrios' ? '' : 'none';
+    document.getElementById('ab-view-log').style.display     = vista === 'log'     ? '' : 'none';
+    document.getElementById('btn-agregar-barrio').style.display = vista === 'barrios' ? '' : 'none';
+    document.getElementById('btn-ver-log').classList.toggle('active', vista === 'log');
+}
+
 // ── Sede toggle ───────────────────────────────────────────────────────────────
-document.getElementById('admin-sede-toggle').querySelectorAll('.sede-btn').forEach(btn => {
+document.getElementById('admin-sede-nav').querySelectorAll('.sede-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('#admin-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#admin-sede-nav .sede-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _sede = btn.dataset.sede;
+        document.getElementById('ab-titulo').textContent = btn.textContent;
         document.getElementById('admin-barrios-search').value = '';
         _query = '';
+        _mostrarVista('barrios');
         _cargarSede(_sede);
     });
+});
+
+document.getElementById('btn-ver-log').addEventListener('click', () => {
+    document.querySelectorAll('#admin-sede-nav .cat-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('ab-titulo').textContent = 'Log de cambios';
+    _mostrarVista('log');
+    _cargarLog();
 });
 
 // ── Búsqueda ──────────────────────────────────────────────────────────────────
@@ -145,8 +168,9 @@ async function _guardarEdicion(id) {
     const barrio = document.getElementById(`edit-barrio-${id}`).value.trim();
     const valor  = parseInt(document.getElementById(`edit-valor-${id}`).value, 10);
 
-    if (!barrio)               { alert('El nombre del barrio no puede estar vacío.'); return; }
-    if (isNaN(valor) || valor < 0) { alert('Valor de domicilio inválido.'); return; }
+    if (!barrio)                      { alert('El nombre del barrio no puede estar vacío.'); return; }
+    if (isNaN(valor) || valor < 4000) { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
+    if (valor > 50000)               { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
     _setStatus('Guardando...', '');
     const { error } = await supabase
@@ -156,9 +180,12 @@ async function _guardarEdicion(id) {
 
     if (error) { _setStatus('Error al guardar.', 'error'); return; }
 
+    const valorAnterior = _barrios.find(b => b.id === id)?.valor;
     const idx = _barrios.findIndex(b => b.id === id);
     if (idx >= 0) _barrios[idx] = { id, barrio, valor };
     invalidarCacheBarrios(_sede);
+    _registrarLog('editar', _sede, barrio, valorAnterior, valor);
+    _toast(`✓ "${barrio}" actualizado correctamente`);
     _setStatus('Guardado.', 'ok');
     _renderTabla();
 }
@@ -177,60 +204,74 @@ async function _eliminar(id, tr) {
 
     if (error) { tr.style.opacity = ''; _setStatus('Error al eliminar.', 'error'); return; }
 
+    const nombreEliminado = item.barrio;
+    _registrarLog('eliminar', _sede, nombreEliminado, item.valor, null);
     _barrios = _barrios.filter(b => b.id !== id);
     invalidarCacheBarrios(_sede);
+    _toast(`🗑 "${nombreEliminado}" eliminado`);
     _setStatus('Eliminado.', 'ok');
     _renderTabla();
 }
 
-// ── Agregar nuevo ─────────────────────────────────────────────────────────────
-document.getElementById('btn-agregar-barrio').addEventListener('click', () => {
-    const tbody = document.getElementById('barrios-tbody');
+// ── Modal agregar barrio ──────────────────────────────────────────────────────
+function _abrirModalAgregar() {
+    document.getElementById('modal-barrio-nombre').value = '';
+    document.getElementById('modal-barrio-valor').value  = '';
+    const sedeLabel = document.querySelector('#admin-sede-nav .cat-btn.active')?.textContent || _sede;
+    document.getElementById('modal-barrio-sede-label').textContent = sedeLabel;
+    document.getElementById('modal-agregar-barrio').style.display = 'flex';
+    document.getElementById('modal-barrio-nombre').focus();
+}
 
-    if (document.getElementById('edit-barrio-new')) {
-        document.getElementById('edit-barrio-new').focus();
-        return;
-    }
+function _cerrarModalAgregar() {
+    document.getElementById('modal-agregar-barrio').style.display = 'none';
+}
 
-    const tr = document.createElement('tr');
-    tr.dataset.id = 'new';
-    tr.innerHTML = `
-        <td class="td-barrio"><input class="input-edit" id="edit-barrio-new" placeholder="Nombre del barrio"></td>
-        <td class="td-valor"><input class="input-edit" id="edit-valor-new" type="number" min="0" placeholder="0"></td>
-        <td class="td-accion">
-            <button class="btn-save"   id="save-new">Guardar</button>
-            <button class="btn-cancel" id="cancel-new">Cancelar</button>
-        </td>
-    `;
-    tbody.insertBefore(tr, tbody.firstChild);
+document.getElementById('btn-agregar-barrio').addEventListener('click', _abrirModalAgregar);
+document.getElementById('btn-cerrar-modal-barrio').addEventListener('click', _cerrarModalAgregar);
+document.getElementById('btn-cancelar-modal-barrio').addEventListener('click', _cerrarModalAgregar);
+document.getElementById('modal-agregar-barrio').addEventListener('click', e => {
+    if (e.target.id === 'modal-agregar-barrio') _cerrarModalAgregar();
+});
 
-    document.getElementById('save-new').addEventListener('click', _guardarNuevo);
-    document.getElementById('cancel-new').addEventListener('click', () => tr.remove());
-    document.getElementById('edit-barrio-new').focus();
+document.getElementById('btn-guardar-modal-barrio').addEventListener('click', _guardarNuevo);
+document.getElementById('modal-barrio-nombre').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('modal-barrio-valor').focus();
+});
+document.getElementById('modal-barrio-valor').addEventListener('keydown', e => {
+    if (e.key === 'Enter') _guardarNuevo();
 });
 
 async function _guardarNuevo() {
-    const barrio = document.getElementById('edit-barrio-new').value.trim();
-    const valor  = parseInt(document.getElementById('edit-valor-new').value, 10);
+    const barrio = document.getElementById('modal-barrio-nombre').value.trim();
+    const valor  = parseInt(document.getElementById('modal-barrio-valor').value, 10);
 
-    if (!barrio)               { alert('El nombre del barrio no puede estar vacío.'); return; }
-    if (isNaN(valor) || valor < 0) { alert('Valor de domicilio inválido.'); return; }
+    if (!barrio)                        { alert('El nombre del barrio no puede estar vacío.'); return; }
+    if (isNaN(valor) || valor < 4000)   { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
+    if (valor > 50000)                 { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
-    _setStatus('Guardando...', '');
+    const btnGuardar = document.getElementById('btn-guardar-modal-barrio');
+    btnGuardar.disabled = true;
+
     const { data, error } = await supabase
         .from('barrios_domicilio')
         .insert({ sede: _sede, barrio, valor })
         .select('id, barrio, valor')
         .single();
 
+    btnGuardar.disabled = false;
+
     if (error) {
         _setStatus(error.code === '23505' ? 'Ya existe ese barrio en esta sede.' : 'Error al guardar.', 'error');
         return;
     }
 
+    _cerrarModalAgregar();
+    _registrarLog('crear', _sede, barrio, null, valor);
     _barrios.push(data);
     _barrios.sort((a, b) => a.barrio.localeCompare(b.barrio));
     invalidarCacheBarrios(_sede);
+    _toast(`✓ "${barrio}" agregado correctamente`);
     _setStatus('Barrio agregado.', 'ok');
     _renderTabla();
 }
@@ -274,7 +315,67 @@ document.getElementById('btn-migrar').addEventListener('click', async () => {
     _cargarSede(_sede);
 });
 
+// ── Log de cambios ────────────────────────────────────────────────────────────
+async function _registrarLog(accion, sede, barrio, valor_ant, valor_nuevo) {
+    await supabase.from('barrios_log').insert({
+        accion, sede, barrio,
+        valor_ant:   valor_ant  ?? null,
+        valor_nuevo: valor_nuevo ?? null,
+        usuario: _usuario,
+    });
+}
+
+async function _cargarLog() {
+    const tbody = document.getElementById('log-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="barrios-empty">Cargando...</td></tr>';
+
+    const { data, error } = await supabase
+        .from('barrios_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+    if (error) {
+        tbody.innerHTML = '<tr><td colspan="7" class="barrios-empty" style="color:#c0392b;">Error al cargar el log.</td></tr>';
+        return;
+    }
+
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="barrios-empty">Sin registros aún.</td></tr>';
+        return;
+    }
+
+    const fmt = ts => new Intl.DateTimeFormat('es-CO', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+    }).format(new Date(ts));
+
+    const fmtValor = v => v != null ? `$${Number(v).toLocaleString('es-CO')}` : '—';
+
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td><span class="log-badge ${r.accion}">${r.accion}</span></td>
+            <td>${_esc(r.sede)}</td>
+            <td>${_esc(r.barrio)}</td>
+            <td>${fmtValor(r.valor_ant)}</td>
+            <td>${fmtValor(r.valor_nuevo)}</td>
+            <td>${_esc(r.usuario)}</td>
+            <td style="white-space:nowrap;">${fmt(r.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function _toast(msg) {
+    const el = document.getElementById('ab-toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('visible'), 3000);
+}
+
 function _setStatus(msg, cls) {
     const el = document.getElementById('barrios-status');
     el.textContent = msg;
