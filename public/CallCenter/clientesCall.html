@@ -299,9 +299,8 @@
         #clientes-table {
             table-layout: auto;
         }
-        #clientes-table .col-tel   { width: 110px; white-space: nowrap; }
+        #clientes-table .col-tel    { width: 110px; white-space: nowrap; }
         #clientes-table .col-nombre { min-width: 120px; }
-        #clientes-table .col-dir-td { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* Acciones */
         .td-acciones { width: 110px; text-align: center; white-space: nowrap; }
@@ -362,8 +361,54 @@
         .cli-layout {
             display: grid;
             grid-template-columns: 200px 1fr;
+            grid-template-rows: 1fr;
             height: calc(100vh - 100px);
+            overflow: hidden;
         }
+
+        /* Sidebar filtros */
+        .filtro-sidebar-label {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 6px;
+            margin-top: 12px;
+            padding: 0 4px;
+        }
+        .sidebar-tags { flex-direction: column; gap: 5px; }
+        .sidebar-tags .tag-chip { text-align: center; font-size: 1.25rem; }
+        .cli-sidebar .btn-buscar-cliente,
+        .cli-sidebar .btn-ver-historial { padding: 10px; flex: none; }
+
+        /* Encabezados ordenables */
+        .sort-th { cursor: pointer; user-select: none; white-space: nowrap; position: relative; }
+        .sort-th:hover { background: rgba(0,0,0,.04); }
+        .sort-icon { font-size: 0.75rem; color: #999; margin-left: 5px; vertical-align: middle; transition: color .15s; line-height: 1; }
+        .sort-th:hover .sort-icon { color: #555; }
+        .sort-th.sort-active .sort-icon { color: var(--color-primario); font-size: 0.85rem; }
+
+        /* Tooltip al hacer hover */
+        .sort-th::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 400;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .15s;
+            z-index: 200;
+        }
+        .sort-th:hover::after { opacity: 1; }
         .cli-sidebar {
             display: flex;
             flex-direction: column;
@@ -391,6 +436,8 @@
             margin: 6px 0;
         }
         .cli-main {
+            height: calc(100vh - 100px);
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -405,25 +452,36 @@
             .header-controls { gap: 4px; }
             .cli-layout {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto;
                 height: auto;
+                overflow: visible;
             }
             .cli-sidebar {
-                flex-direction: row;
-                flex-wrap: wrap;
                 border-right: none;
                 border-bottom: 1px solid #e0d8cc;
-                padding: 10px 12px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-end;
+                gap: 10px;
+                padding: 12px 16px;
             }
-            .cli-sidebar-title { display: none; }
-            .cli-main { padding: 14px 16px; }
+            .cli-sidebar .cli-sidebar-divider { display: none; }
+            .sidebar-tags { flex-direction: row; }
+            .cli-sidebar .filtro-sidebar-label:first-of-type { margin-top: 0; }
+            .cli-main {
+                height: auto;
+                padding: 14px 16px;
+            }
         }
 
         /* Columnas responsivas */
-        @media (max-width: 960px) {
+        @media (max-width: 1100px) {
             .col-tags-th, .col-tags-td { display: none; }
         }
+        @media (max-width: 860px) {
+            .col-pedidos-th, .col-pedidos-td { display: none; }
+        }
         @media (max-width: 680px) {
-            .col-dir-th, .col-dir-td,
             .col-fecha-th, .col-fecha-td { display: none; }
             .btn-eliminar-cli span { display: none; }
         }
@@ -438,6 +496,14 @@
         }
         .dias-badge.moderado { background: #fff8e1; color: #f39c12; }
         .dias-badge.critico  { background: #fff0f0; color: #e74c3c; }
+
+        /* Wrapper scroll tabla */
+        .clientes-table-wrap {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
 
         /* Infinite scroll sentinel */
         #clientes-sentinel {
@@ -455,6 +521,22 @@
             animation: sentinel-spin 0.65s linear infinite;
         }
         @keyframes sentinel-spin { to { transform: rotate(360deg); } }
+
+        /* Badge filtros activos */
+        .filtros-badge-cli {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            color: var(--color-primario);
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-left: 6px;
+            padding: 0 2px;
+        }
     </style>
 </head>
 <body data-skeleton="historial">
@@ -494,14 +576,34 @@
 
     <div class="cli-layout">
 
-        <!-- ── Sidebar ── -->
-        <nav class="cli-sidebar">
-            <div class="cli-sidebar-title">Clientes</div>
-            <button class="sede-btn active" id="nav-todos">Todos</button>
-            <button class="sede-btn" id="nav-frecuentes">Frecuentes</button>
+        <!-- ── Filtros sidebar (fijo) ── -->
+        <aside class="cli-sidebar">
+            <div class="cli-sidebar-title">Filtros</div>
             <div class="cli-sidebar-divider"></div>
-            <button class="sede-btn" id="nav-reactivacion">Reactivación</button>
-        </nav>
+
+            <div class="filtro-sidebar-label">Tag</div>
+            <div class="tags-wrap sidebar-tags">
+                <span class="tag-chip tag-filtro active" data-tag="">Todos</span>
+                <span class="tag-chip tag-filtro" data-tag="frecuente">Frecuente</span>
+                <span class="tag-chip tag-filtro" data-tag="vip">VIP</span>
+                <span class="tag-chip tag-filtro" data-tag="problemas">Problemas</span>
+                <span class="tag-chip tag-filtro" data-tag="corporativo">Corporativo</span>
+            </div>
+
+            <div class="cli-sidebar-divider" style="margin-top:8px;"></div>
+
+            <div class="filtro-sidebar-label">Días sin actividad</div>
+            <div class="tags-wrap sidebar-tags">
+                <span class="tag-chip dias-filtro active" data-dias="">Todos</span>
+                <span class="tag-chip dias-filtro" data-dias="30">Más de 30d</span>
+                <span class="tag-chip dias-filtro" data-dias="60">Más de 60d</span>
+                <span class="tag-chip dias-filtro" data-dias="90">Más de 90d</span>
+            </div>
+
+            <div class="cli-sidebar-divider" style="margin-top:16px;"></div>
+            <button class="btn-buscar-cliente" id="btn-aplicar-filtros" style="width:100%;margin-top:12px;">Aplicar</button>
+            <button class="btn-ver-historial" id="btn-limpiar-filtros" style="width:100%;margin-top:8px;text-align:center;">Limpiar</button>
+        </aside>
 
         <!-- ── Contenido principal ── -->
         <div class="cli-main">
@@ -517,17 +619,16 @@
                 <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
             </div>
 
-            <section class="inventory-management" style="flex:1;overflow-y:auto;padding-right:20px;">
+            <div class="clientes-table-wrap">
                 <table class="inventory-management__table" id="clientes-table">
                     <thead class="inventory-management__thead">
                         <tr class="inventory-management__row" id="clientes-thead-row">
-                            <th class="inventory-management__heading col-tel">Teléfono</th>
-                            <th class="inventory-management__heading col-nombre">Nombre</th>
-                            <th class="inventory-management__heading col-dir-th">Dirección</th>
+                            <th class="inventory-management__heading col-tel sort-th" data-sort="telefono">Teléfono <span class="sort-icon">▲▼</span></th>
+                            <th class="inventory-management__heading col-nombre sort-th" data-sort="nombre">Nombre <span class="sort-icon">▲▼</span></th>
                             <th class="inventory-management__heading col-tags-th">Tags</th>
-                            <th class="inventory-management__heading" id="th-pedidos" style="display:none;">Pedidos</th>
-                            <th class="inventory-management__heading col-fecha-th">Última actividad</th>
-                            <th class="inventory-management__heading td-acciones">Acciones</th>
+                            <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
+                            <th class="inventory-management__heading sort-th" id="th-pedidos" data-sort="pedidos">Días <span class="sort-icon">▲▼</span></th>
+                            <th class="inventory-management__heading col-fecha-th sort-th sort-active" data-sort="fecha">Última actividad <span class="sort-icon">▼</span></th>
                         </tr>
                     </thead>
                     <tbody id="clientes-tbody">
@@ -542,7 +643,7 @@
                 <div id="clientes-sentinel">
                     <div id="sentinel-spinner"></div>
                 </div>
-            </section>
+            </div>
 
             <div id="clientes-paginacion" class="clientes-paginacion"></div>
 
@@ -608,9 +709,21 @@
 
         </div>
 
-        <div class="modal-cli-footer">
-            <button class="btn-guardar-cli" id="btn-guardar-cli">Guardar</button>
-            <button class="btn-ver-historial" id="btn-ver-historial">Ver historial</button>
+        <div class="modal-cli-footer" style="justify-content:space-between;">
+            <button class="btn-eliminar-cli" id="btn-eliminar-cliente">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                Eliminar
+            </button>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-ver-historial" id="btn-ver-historial">Ver historial</button>
+                <button class="btn-guardar-cli" id="btn-guardar-cli">Guardar</button>
+            </div>
         </div>
 
     </div>

@@ -10,6 +10,10 @@ const SEDE_LABELS = {
 
 let clienteActual = null;
 let _vista        = 'todos';  // 'todos' | 'frecuentes' | 'reactivacion'
+let _filtroTag    = null;     // null | 'frecuente' | 'vip' | 'problemas' | 'corporativo'
+let _filtroDias   = null;     // null | 30 | 60 | 90
+let _sortCol      = 'fecha';  // 'telefono' | 'nombre' | 'pedidos' | 'fecha'
+let _sortDir      = 'desc';   // 'asc' | 'desc'
 
 const POR_PAGINA  = 20;
 let   paginaActual = 1;
@@ -22,16 +26,28 @@ async function buscarClientes(query = '', pagina = 1) {
     const digitos  = q.replace(/\D/g, '');
     const esNumero = digitos.length >= 2;
 
+    const supabaseCol = _sortCol === 'telefono'      ? 'telefono'
+        : _sortCol === 'nombre'         ? 'nombre'
+        : _sortCol === 'total_pedidos'  ? 'total_pedidos'
+        : 'updated_at';
+
     let req = supabase
         .from('clientes')
-        .select('id, telefono, nombre, tags, updated_at, direcciones_cliente(direccion, predeterminada)')
-        .order('updated_at', { ascending: false })
+        .select('id, telefono, nombre, tags, updated_at, total_pedidos')
+        .order(supabaseCol, { ascending: _sortDir === 'asc' })
         .range(offset, offset + POR_PAGINA - 1);
 
     if (q && esNumero) {
         req = req.ilike('telefono', `%${digitos}%`);
     } else if (q) {
         req = req.ilike('nombre', `%${q}%`);
+    }
+
+    if (_filtroTag)  req = req.contains('tags', [_filtroTag]);
+    if (_filtroDias) {
+        const corte = new Date();
+        corte.setDate(corte.getDate() - _filtroDias);
+        req = req.lt('updated_at', corte.toISOString());
     }
 
     const { data, error } = await req;
@@ -68,7 +84,8 @@ async function _fetchReactivacionPagina(pagina) {
         desplazamiento: (pagina - 1) * POR_PAGINA,
     });
     if (error) { console.error('Error reactivación:', error); return []; }
-    const result = data || [];
+    let result = data || [];
+    if (_filtroTag) result = result.filter(c => (c.tags || []).includes(_filtroTag));
     _reactivacionCache.set(pagina, result);
     return result;
 }
@@ -119,61 +136,49 @@ async function _fetchFrecuentesPagina(pagina) {
         desplazamiento: offset,
     });
     if (error) { console.error('Error frecuentes:', error); return []; }
-    const result = data || [];
+    let result = data || [];
+    if (_filtroTag) result = result.filter(c => (c.tags || []).includes(_filtroTag));
     _frecuentesCache.set(pagina, result);
     return result;
 }
 
 async function ejecutarFrecuentes(pagina = 1) {
-    paginaActual = pagina;
-
-    if (pagina === 1 && _frecuentesCache.size === 0) {
+    if (pagina === 1) {
         document.getElementById('clientes-count').textContent = 'Cargando...';
-        // Carga páginas 1 y 2 en paralelo
-        const [data1] = await Promise.all([
-            _fetchFrecuentesPagina(1),
-            _fetchFrecuentesPagina(2),
-        ]);
-        _mostrarFrecuentes(data1, 1);
-    } else {
-        const data = await _fetchFrecuentesPagina(pagina);
-        _mostrarFrecuentes(data, pagina);
-        // Prefetch siguiente en background
-        if (data.length === POR_PAGINA) _fetchFrecuentesPagina(pagina + 1);
+        document.getElementById('clientes-tbody').innerHTML =
+            `<tr><td class="inventory-management__cell" colspan="6"
+                style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
+        document.getElementById('clientes-paginacion').innerHTML = '';
     }
-}
 
-function _mostrarFrecuentes(data, pagina) {
-    renderTabla(data, data.length);
-    document.getElementById('clientes-count').textContent =
-        data.length ? `${(pagina - 1) * POR_PAGINA + 1}–${(pagina - 1) * POR_PAGINA + data.length}` : 'Sin resultados';
+    const data = await _fetchFrecuentesPagina(pagina);
 
-    const paginEl = document.getElementById('clientes-paginacion');
-    const hayAnterior = pagina > 1;
-    const haysiguiente = data.length === POR_PAGINA || _frecuentesCache.has(pagina + 1);
-    paginEl.innerHTML = (hayAnterior || haysiguiente) ? `
-        <button class="pag-btn" id="frec-prev" ${!hayAnterior ? 'disabled' : ''}>← Anterior</button>
-        <span class="pag-info">Página ${pagina}</span>
-        <button class="pag-btn" id="frec-next" ${!haysiguiente ? 'disabled' : ''}>Siguiente →</button>
-    ` : '';
-    paginEl.querySelector('#frec-prev')?.addEventListener('click', () => ejecutarFrecuentes(pagina - 1));
-    paginEl.querySelector('#frec-next')?.addEventListener('click', () => ejecutarFrecuentes(pagina + 1));
+    _infPage    = pagina;
+    _infHasMore = data.length === POR_PAGINA;
+
+    if (pagina === 1) {
+        renderTabla(data);
+    } else {
+        appendTabla(data);
+    }
+
+    if (data.length === POR_PAGINA) _fetchFrecuentesPagina(pagina + 1);
+    _initScrollObserver(_fetchFrecuentesPagina);
 }
 
 // ── SIDEBAR NAV ───────────────────────────────────────────────────────────────
 function _setVistaActiva(vista) {
     _disconnectObserver();
     _vista = vista;
-    document.querySelectorAll('.cli-sidebar .sede-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`nav-${vista}`)?.classList.add('active');
 
     const esReactivacion = vista === 'reactivacion';
     const esFrecuentes   = vista === 'frecuentes';
 
-    document.getElementById('th-pedidos').style.display  = (esFrecuentes || esReactivacion) ? '' : 'none';
-    document.getElementById('th-pedidos').textContent    = esReactivacion ? 'Días sin pedir' : 'Pedidos';
-    document.querySelector('.col-fecha-th').textContent  = esReactivacion ? 'Último pedido'  : 'Última actividad';
-    document.querySelector('.col-dir-th').style.display  = esReactivacion ? 'none' : '';
+    document.getElementById('th-pedidos').style.display = '';
+    document.getElementById('th-pedidos').firstChild.textContent =
+        esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días ';
+    document.querySelector('.col-fecha-th').firstChild.textContent =
+        esReactivacion ? 'Último pedido ' : 'Última actividad ';
 
     document.getElementById('buscar-cliente-input').value = '';
     document.querySelector('.clientes-search-wrap').style.display   = vista === 'todos' ? '' : 'none';
@@ -186,10 +191,6 @@ let _clientesData = []; // acumula todos los clientes visibles en scroll
 function _rowHtml(c) {
     const esFrecuentes   = _vista === 'frecuentes';
     const esReactivacion = _vista === 'reactivacion';
-
-    const dirs    = c.direcciones_cliente || [];
-    const dirPred = dirs.find(d => d.predeterminada) || dirs[0] || null;
-    const dirTexto = esReactivacion ? '—' : (dirPred ? dirPred.direccion : '—');
 
     const fechaMostrar = esReactivacion ? c.ultimo_pedido : c.updated_at;
 
@@ -204,46 +205,28 @@ function _rowHtml(c) {
         const dias = c.dias_inactivo ?? 0;
         const cls  = dias >= 90 ? 'critico' : 'moderado';
         colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${cls}">${dias}d</span></td>`;
+    } else {
+        const dias = c.updated_at
+            ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000)
+            : '—';
+        const cls  = typeof dias === 'number' && dias >= 90 ? 'critico' : typeof dias === 'number' && dias >= 30 ? 'moderado' : '';
+        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="${cls ? `dias-badge ${cls}` : ''}">${typeof dias === 'number' ? dias + 'd' : dias}</span></td>`;
     }
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
         <td class="inventory-management__cell col-nombre">${c.nombre || '—'}</td>
-        <td class="inventory-management__cell col-dir-td" title="${dirTexto}">${dirTexto}</td>
         <td class="inventory-management__cell col-tags-td">${tags || '—'}</td>
+        <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
         ${colPedidos}
-        <td class="inventory-management__cell col-fecha-td">${formatFecha(c.updated_at)}</td>
-        <td class="inventory-management__cell td-acciones">
-            <button class="btn-eliminar-cli" data-id="${c.id}" data-nombre="${c.nombre || c.telefono}" title="Eliminar cliente">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-                <span>Eliminar</span>
-            </button>
-        </td>
+        <td class="inventory-management__cell col-fecha-td">${formatFecha(fechaMostrar)}</td>
     </tr>`;
 }
 
 function _bindRows(rows) {
     rows.forEach(tr => {
-        tr.addEventListener('click', e => {
-            if (e.target.closest('.btn-eliminar-cli')) return;
-            const cli = _clientesData.find(c => c.id === tr.dataset.id);
+        tr.addEventListener('click', () => {
+            const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
             if (cli) abrirModal(cli);
-        });
-        tr.querySelector('.btn-eliminar-cli')?.addEventListener('click', async e => {
-            e.stopPropagation();
-            const btn = e.currentTarget;
-            if (!confirm(`¿Eliminar a "${btn.dataset.nombre}"? Se borrarán también sus direcciones.`)) return;
-            tr.style.opacity = '0.4';
-            await supabase.from('direcciones_cliente').delete().eq('cliente_id', btn.dataset.id);
-            const { error } = await supabase.from('clientes').delete().eq('id', btn.dataset.id);
-            if (error) { tr.style.opacity = ''; return; }
-            tr.remove();
-            _clientesData = _clientesData.filter(c => c.id !== btn.dataset.id);
         });
     });
 }
@@ -286,24 +269,43 @@ let _infPage       = 1;
 let _infQuery      = '';
 let _infLoading    = false;
 let _infHasMore    = true; // false cuando el último fetch devolvió < POR_PAGINA
-let _observer      = null;
+let _scrollHandler = null;
+let _scrollWrapRef = null;
 
 function _disconnectObserver() {
-    if (_observer) { _observer.disconnect(); _observer = null; }
+    if (_scrollHandler) {
+        if (_scrollWrapRef) _scrollWrapRef.removeEventListener('scroll', _scrollHandler);
+        window.removeEventListener('scroll', _scrollHandler);
+        _scrollHandler = null;
+        _scrollWrapRef = null;
+    }
     const sp = document.getElementById('sentinel-spinner');
     if (sp) sp.style.display = 'none';
 }
 
-// fetchFn: (pagina) => Promise<data[]>  — se captura en el closure al crear el observer
+// fetchFn: (pagina) => Promise<data[]>
+// Detecta scroll tanto en el contenedor interno como en la ventana
 function _initScrollObserver(fetchFn) {
     _disconnectObserver();
     if (!_infHasMore) return;
 
-    const sentinel = document.getElementById('clientes-sentinel');
-    const section  = sentinel.closest('section');
+    const scrollWrap = document.querySelector('.clientes-table-wrap');
+    const sentinel   = document.getElementById('clientes-sentinel');
 
-    _observer = new IntersectionObserver(async ([entry]) => {
-        if (!entry.isIntersecting || _infLoading || !_infHasMore) return;
+    _scrollHandler = async () => {
+        if (_infLoading || !_infHasMore) return;
+
+        // Condición 1: sentinel visible en la ventana (página scrollea)
+        const rect         = sentinel.getBoundingClientRect();
+        const nearViewport = rect.top <= window.innerHeight + 200;
+
+        // Condición 2: cerca del fondo del contenedor interno
+        const wrapNearBottom = scrollWrap
+            ? scrollWrap.scrollTop + scrollWrap.clientHeight >= scrollWrap.scrollHeight - 150
+            : false;
+
+        if (!nearViewport && !wrapNearBottom) return;
+
         _infLoading = true;
         document.getElementById('sentinel-spinner').style.display = 'block';
 
@@ -321,10 +323,18 @@ function _initScrollObserver(fetchFn) {
         if (data.length < POR_PAGINA) {
             _infHasMore = false;
             _disconnectObserver();
+        } else {
+            // Si el sentinel sigue visible después de cargar, continuar
+            setTimeout(_scrollHandler, 0);
         }
-    }, { root: section, threshold: 0.1 });
+    };
 
-    _observer.observe(sentinel);
+    _scrollWrapRef = scrollWrap;
+    if (scrollWrap) scrollWrap.addEventListener('scroll', _scrollHandler);
+    window.addEventListener('scroll', _scrollHandler);
+
+    // Verificar inmediatamente (sentinel puede estar ya en pantalla)
+    setTimeout(_scrollHandler, 50);
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
@@ -350,7 +360,7 @@ async function abrirModal(clienteBasico) {
 
     // Tags
     const tags = data.tags || [];
-    document.querySelectorAll('.tag-chip').forEach(chip => {
+    document.querySelectorAll('#modal-cliente-detalle .tag-chip').forEach(chip => {
         chip.classList.toggle('active', tags.includes(chip.dataset.tag));
     });
 
@@ -368,6 +378,20 @@ async function abrirModal(clienteBasico) {
 function cerrarModal() {
     document.getElementById('modal-cliente-detalle').style.display = 'none';
     clienteActual = null;
+}
+
+async function eliminarCliente() {
+    if (!clienteActual) return;
+    if (!confirm(`¿Eliminar a "${clienteActual.nombre || clienteActual.telefono}"? Se borrarán también sus direcciones.`)) return;
+
+    const id = clienteActual.id;
+    await supabase.from('direcciones_cliente').delete().eq('cliente_id', id);
+    const { error } = await supabase.from('clientes').delete().eq('id', id);
+    if (error) { alert('Error al eliminar.'); return; }
+
+    cerrarModal();
+    document.querySelector(`tr[data-id="${id}"]`)?.remove();
+    _clientesData = _clientesData.filter(c => c.id !== id);
 }
 
 function renderDirecciones(dirs) {
@@ -522,22 +546,36 @@ async function guardarCliente() {
     if (!clienteActual) return;
     const nombre = document.getElementById('cli-nombre').value.trim();
     const notas  = document.getElementById('cli-notas').value.trim();
-    const tags   = [...document.querySelectorAll('.tag-chip.active')].map(c => c.dataset.tag);
+    const tags   = [...document.querySelectorAll('#modal-cliente-detalle .tag-chip.active')].map(c => c.dataset.tag);
 
     const btn = document.getElementById('btn-guardar-cli');
     btn.textContent = 'Guardando...';
     btn.disabled = true;
 
     const { error } = await supabase.from('clientes').update({
-        nombre, notas, tags, updated_at: new Date().toISOString()
+        nombre, notas, tags
     }).eq('id', clienteActual.id);
 
     btn.textContent = 'Guardar';
     btn.disabled = false;
 
     if (error) { alert('Error al guardar: ' + error.message); return; }
+
+    // Actualizar fila en el DOM sin recargar la lista (preserva orden y vista actual)
+    const idx = _clientesData.findIndex(c => String(c.id) === String(clienteActual.id));
+    if (idx !== -1) {
+        _clientesData[idx] = { ..._clientesData[idx], nombre, notas, tags };
+        const oldRow = document.querySelector(`tr[data-id="${clienteActual.id}"]`);
+        if (oldRow) {
+            const tpl = document.createElement('template');
+            tpl.innerHTML = _rowHtml(_clientesData[idx]);
+            const newRow = tpl.content.firstElementChild;
+            _bindRows([newRow]);
+            oldRow.replaceWith(newRow);
+        }
+    }
+
     cerrarModal();
-    document.getElementById('btn-buscar-cliente').click();
 }
 
 // ── AUTH + INIT ───────────────────────────────────────────────────────────────
@@ -571,6 +609,7 @@ async function obtenerUsuarioCC() {
 
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
+        _updateSortIcons();
 
         // Carga inicial: mostrar clientes recientes
         await ejecutarBusqueda();
@@ -621,26 +660,117 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
     _initScrollObserver(p => _fetchTodosPagina(queryCapturada, p).then(r => r.data));
 }
 
-// ── Sidebar nav ───────────────────────────────────────────────────────────────
-document.getElementById('nav-todos').addEventListener('click', () => {
-    _frecuentesCache.clear();
+// ── Ordenamiento de tabla ─────────────────────────────────────────────────────
+function _updateSortIcons() {
+    document.querySelectorAll('#clientes-thead-row .sort-th').forEach(th => {
+        const col    = th.dataset.sort;
+        const icon   = th.querySelector('.sort-icon');
+        const isText = col === 'nombre';
+
+        if (col === _sortCol) {
+            icon.textContent = _sortDir === 'asc' ? '▲' : '▼';
+            th.classList.add('sort-active');
+            // El tooltip muestra qué pasará al hacer clic (la dirección opuesta)
+            th.dataset.tooltip = _sortDir === 'asc'
+                ? (isText ? 'Ordenar Z → A'        : 'Ordenar de mayor a menor')
+                : (isText ? 'Ordenar A → Z'        : 'Ordenar de menor a mayor');
+        } else {
+            icon.textContent = '▲▼';
+            th.classList.remove('sort-active');
+            // Primera vez: muestra la dirección por defecto que se aplicará
+            const defaultDesc = col === 'pedidos' || col === 'fecha' || col === 'total_pedidos';
+            th.dataset.tooltip = defaultDesc
+                ? 'Ordenar de mayor a menor'
+                : isText ? 'Ordenar A → Z' : 'Ordenar de menor a mayor';
+        }
+    });
+}
+
+function _sortClienteData() {
+    const dir = _sortDir === 'asc' ? 1 : -1;
+    _clientesData.sort((a, b) => {
+        let va, vb;
+        if (_sortCol === 'telefono') {
+            va = a.telefono || ''; vb = b.telefono || '';
+        } else if (_sortCol === 'nombre') {
+            va = (a.nombre || '').toLowerCase(); vb = (b.nombre || '').toLowerCase();
+        } else if (_sortCol === 'total_pedidos') {
+            va = a.total_pedidos ?? 0; vb = b.total_pedidos ?? 0;
+        } else if (_sortCol === 'pedidos') {
+            va = new Date(a.updated_at || 0); vb = new Date(b.updated_at || 0);
+        } else { // fecha
+            const fa = _vista === 'reactivacion' ? a.ultimo_pedido : a.updated_at;
+            const fb = _vista === 'reactivacion' ? b.ultimo_pedido : b.updated_at;
+            va = new Date(fa || 0); vb = new Date(fb || 0);
+        }
+        if (va < vb) return -dir;
+        if (va > vb) return  dir;
+        return 0;
+    });
+    const tbody = document.getElementById('clientes-tbody');
+    tbody.innerHTML = _clientesData.map(c => _rowHtml(c)).join('');
+    _bindRows([...tbody.querySelectorAll('.fila-cliente')]);
+    _actualizarCount();
+}
+
+document.querySelectorAll('#clientes-thead-row .sort-th').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = th.dataset.sort;
+        if (_sortCol === col) {
+            _sortDir = _sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            _sortCol = col;
+            // Por defecto: desc para pedidos/fecha, asc para texto
+            _sortDir = (col === 'pedidos' || col === 'fecha') ? 'desc' : 'asc';
+        }
+        _updateSortIcons();
+
+        if (_vista === 'todos') {
+            _todosCache.clear();
+            ejecutarBusqueda(1);
+        } else {
+            _sortClienteData();
+        }
+    });
+});
+
+// ── Panel de filtros (sidebar fijo) ───────────────────────────────────────────
+document.querySelectorAll('.tag-filtro').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.tag-filtro').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+    });
+});
+
+document.querySelectorAll('.dias-filtro').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.dias-filtro').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+    });
+});
+
+document.getElementById('btn-aplicar-filtros').addEventListener('click', () => {
+    const tagChip  = document.querySelector('.tag-filtro.active');
+    const diasChip = document.querySelector('.dias-filtro.active');
+    _filtroTag  = tagChip?.dataset.tag   || null;
+    _filtroDias = diasChip?.dataset.dias ? Number(diasChip.dataset.dias) : null;
+
     _todosCache.clear();
     _setVistaActiva('todos');
-    document.getElementById('clientes-tbody').innerHTML =
-        `<tr><td class="inventory-management__cell" colspan="6" style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
     ejecutarBusqueda(1);
 });
 
-document.getElementById('nav-frecuentes').addEventListener('click', () => {
-    _frecuentesCache.clear();
-    _setVistaActiva('frecuentes');
-    ejecutarFrecuentes(1);
-});
+document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
+    _filtroTag  = null;
+    _filtroDias = null;
+    document.querySelectorAll('.tag-filtro').forEach(c => c.classList.remove('active'));
+    document.querySelector('.tag-filtro[data-tag=""]')?.classList.add('active');
+    document.querySelectorAll('.dias-filtro').forEach(c => c.classList.remove('active'));
+    document.querySelector('.dias-filtro[data-dias=""]')?.classList.add('active');
 
-document.getElementById('nav-reactivacion').addEventListener('click', () => {
-    _reactivacionCache.clear();
-    _setVistaActiva('reactivacion');
-    ejecutarReactivacion(1);
+    _todosCache.clear();
+    _setVistaActiva('todos');
+    ejecutarBusqueda(1);
 });
 
 let debounceTimer = null;
@@ -654,6 +784,7 @@ searchInput.addEventListener('input', () => {
 
 document.getElementById('cerrar-modal-cli').addEventListener('click', cerrarModal);
 document.getElementById('btn-guardar-cli').addEventListener('click', guardarCliente);
+document.getElementById('btn-eliminar-cliente').addEventListener('click', eliminarCliente);
 document.getElementById('modal-cliente-detalle').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-cliente-detalle')) cerrarModal();
 });
@@ -679,7 +810,7 @@ document.querySelectorAll('.nuevo-tag').forEach(chip => {
     chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 
-document.querySelectorAll('.tag-chip').forEach(chip => {
+document.querySelectorAll('.tag-chip:not(.tag-filtro):not(.dias-filtro)').forEach(chip => {
     chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 
