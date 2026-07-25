@@ -497,6 +497,36 @@
         .dias-badge.moderado { background: #fff8e1; color: #f39c12; }
         .dias-badge.critico  { background: #fff0f0; color: #e74c3c; }
 
+        /* Barra de tags bajo el buscador */
+        .clientes-tags-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+        .clientes-tags-bar .tag-chip { font-size: 1.25rem; }
+        .btn-add-tag {
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px dashed #ccc;
+            background: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: inherit;
+            transition: all .15s;
+        }
+        .btn-add-tag:hover { border-color: var(--color-primario); color: var(--color-primario); }
+        .tag-input-nuevo {
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1.5px solid var(--color-primario);
+            font-size: 1.2rem;
+            font-family: inherit;
+            outline: none;
+            width: 130px;
+        }
+
         /* Wrapper scroll tabla */
         .clientes-table-wrap {
             flex: 1;
@@ -581,17 +611,6 @@
             <div class="cli-sidebar-title">Filtros</div>
             <div class="cli-sidebar-divider"></div>
 
-            <div class="filtro-sidebar-label">Tag</div>
-            <div class="tags-wrap sidebar-tags">
-                <span class="tag-chip tag-filtro active" data-tag="">Todos</span>
-                <span class="tag-chip tag-filtro" data-tag="frecuente">Frecuente</span>
-                <span class="tag-chip tag-filtro" data-tag="vip">VIP</span>
-                <span class="tag-chip tag-filtro" data-tag="problemas">Problemas</span>
-                <span class="tag-chip tag-filtro" data-tag="corporativo">Corporativo</span>
-            </div>
-
-            <div class="cli-sidebar-divider" style="margin-top:8px;"></div>
-
             <div class="filtro-sidebar-label">Días sin actividad</div>
             <div class="tags-wrap sidebar-tags">
                 <span class="tag-chip dias-filtro active" data-dias="">Todos</span>
@@ -601,8 +620,7 @@
             </div>
 
             <div class="cli-sidebar-divider" style="margin-top:16px;"></div>
-            <button class="btn-buscar-cliente" id="btn-aplicar-filtros" style="width:100%;margin-top:12px;">Aplicar</button>
-            <button class="btn-ver-historial" id="btn-limpiar-filtros" style="width:100%;margin-top:8px;text-align:center;">Limpiar</button>
+            <button class="btn-ver-historial" id="btn-limpiar-filtros" style="width:100%;margin-top:12px;text-align:center;">Limpiar filtros</button>
         </aside>
 
         <!-- ── Contenido principal ── -->
@@ -618,6 +636,8 @@
                 <span class="clientes-count" id="clientes-count"></span>
                 <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
             </div>
+
+            <div class="clientes-tags-bar"></div>
 
             <div class="clientes-table-wrap">
                 <table class="inventory-management__table" id="clientes-table">
@@ -675,12 +695,7 @@
 
             <div class="cli-field">
                 <label>Tags</label>
-                <div class="tags-wrap" id="cli-tags">
-                    <span class="tag-chip" data-tag="frecuente">Frecuente</span>
-                    <span class="tag-chip" data-tag="vip">VIP</span>
-                    <span class="tag-chip" data-tag="problemas">Problemas</span>
-                    <span class="tag-chip" data-tag="corporativo">Corporativo</span>
-                </div>
+                <div class="tags-wrap" id="cli-tags"></div>
             </div>
 
             <hr class="cli-sep">
@@ -757,12 +772,7 @@
 
             <div class="cli-field">
                 <label>Tags</label>
-                <div class="tags-wrap">
-                    <span class="tag-chip nuevo-tag" data-tag="frecuente">Frecuente</span>
-                    <span class="tag-chip nuevo-tag" data-tag="vip">VIP</span>
-                    <span class="tag-chip nuevo-tag" data-tag="problemas">Problemas</span>
-                    <span class="tag-chip nuevo-tag" data-tag="corporativo">Corporativo</span>
-                </div>
+                <div class="tags-wrap" id="nuevo-cli-tags"></div>
             </div>
 
         </div>

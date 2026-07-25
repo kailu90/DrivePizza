@@ -10,7 +10,7 @@ const SEDE_LABELS = {
 
 let clienteActual = null;
 let _vista        = 'todos';  // 'todos' | 'frecuentes' | 'reactivacion'
-let _filtroTag    = null;     // null | 'frecuente' | 'vip' | 'problemas' | 'corporativo'
+let _filtroTags   = [];       // [] | ['frecuente', 'vip', ...]  (multi-select)
 let _filtroDias   = null;     // null | 30 | 60 | 90
 let _sortCol      = 'fecha';  // 'telefono' | 'nombre' | 'pedidos' | 'fecha'
 let _sortDir      = 'desc';   // 'asc' | 'desc'
@@ -43,7 +43,7 @@ async function buscarClientes(query = '', pagina = 1) {
         req = req.ilike('nombre', `%${q}%`);
     }
 
-    if (_filtroTag)  req = req.contains('tags', [_filtroTag]);
+    if (_filtroTags.length) req = req.overlaps('tags', _filtroTags);
     if (_filtroDias) {
         const corte = new Date();
         corte.setDate(corte.getDate() - _filtroDias);
@@ -85,7 +85,7 @@ async function _fetchReactivacionPagina(pagina) {
     });
     if (error) { console.error('Error reactivación:', error); return []; }
     let result = data || [];
-    if (_filtroTag) result = result.filter(c => (c.tags || []).includes(_filtroTag));
+    if (_filtroTags.length) result = result.filter(c => _filtroTags.some(t => (c.tags || []).includes(t)));
     _reactivacionCache.set(pagina, result);
     return result;
 }
@@ -137,7 +137,7 @@ async function _fetchFrecuentesPagina(pagina) {
     });
     if (error) { console.error('Error frecuentes:', error); return []; }
     let result = data || [];
-    if (_filtroTag) result = result.filter(c => (c.tags || []).includes(_filtroTag));
+    if (_filtroTags.length) result = result.filter(c => _filtroTags.some(t => (c.tags || []).includes(t)));
     _frecuentesCache.set(pagina, result);
     return result;
 }
@@ -611,14 +611,95 @@ async function obtenerUsuarioCC() {
         document.body.classList.add('loaded');
         _updateSortIcons();
 
-        // Carga inicial: mostrar clientes recientes
-        await ejecutarBusqueda();
+        // Carga inicial
+        await Promise.all([cargarTags(), ejecutarBusqueda()]);
         _scheduleMidnightRefresh();
     } catch (err) {
         console.error('Error auth clientes:', err);
         document.body.classList.add('loaded');
     }
 })();
+
+// ── TAGS DINÁMICOS ────────────────────────────────────────────────────────────
+let _todosLosTags = [];
+const _capTag = t => t.charAt(0).toUpperCase() + t.slice(1);
+
+function _renderTagsFiltro() {
+    const bar = document.querySelector('.clientes-tags-bar');
+    bar.innerHTML = _todosLosTags.map(t =>
+        `<span class="tag-chip tag-filtro" data-tag="${t}">${_capTag(t)}</span>`
+    ).join('') + `<button class="btn-add-tag" id="btn-add-tag">+ Tag</button>`;
+
+    bar.querySelectorAll('.tag-filtro').forEach(chip => {
+        chip.addEventListener('click', () => { chip.classList.toggle('active'); _aplicarFiltros(); });
+    });
+    document.getElementById('btn-add-tag').addEventListener('click', _abrirCrearTag);
+}
+
+function _renderTagsModal() {
+    const wrap = document.getElementById('cli-tags');
+    if (!wrap) return;
+    wrap.innerHTML = _todosLosTags.map(t =>
+        `<span class="tag-chip" data-tag="${t}">${_capTag(t)}</span>`
+    ).join('');
+    wrap.querySelectorAll('.tag-chip').forEach(chip => {
+        chip.addEventListener('click', () => chip.classList.toggle('active'));
+    });
+}
+
+function _renderTagsNuevoModal() {
+    const wrap = document.getElementById('nuevo-cli-tags');
+    if (!wrap) return;
+    wrap.innerHTML = _todosLosTags.map(t =>
+        `<span class="tag-chip nuevo-tag" data-tag="${t}">${_capTag(t)}</span>`
+    ).join('');
+    wrap.querySelectorAll('.nuevo-tag').forEach(chip => {
+        chip.addEventListener('click', () => chip.classList.toggle('active'));
+    });
+}
+
+async function cargarTags() {
+    const { data } = await supabase.from('tags_clientes').select('nombre').order('nombre');
+    _todosLosTags = (data || []).map(t => t.nombre);
+    _renderTagsFiltro();
+    _renderTagsModal();
+    _renderTagsNuevoModal();
+}
+
+function _abrirCrearTag() {
+    const bar = document.querySelector('.clientes-tags-bar');
+    document.getElementById('btn-add-tag').style.display = 'none';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = 'Nombre del tag...';
+    inp.className = 'tag-input-nuevo';
+    inp.maxLength = 30;
+    bar.appendChild(inp);
+    inp.focus();
+
+    const confirmar = async () => {
+        if (inp.value.trim()) await _crearTag(inp.value.trim());
+        else _renderTagsFiltro();
+    };
+    inp.addEventListener('keydown', async e => {
+        if (e.key === 'Enter')  await confirmar();
+        if (e.key === 'Escape') _renderTagsFiltro();
+    });
+    inp.addEventListener('blur', () => setTimeout(_renderTagsFiltro, 200));
+}
+
+async function _crearTag(nombre) {
+    if (_todosLosTags.some(t => t.toLowerCase() === nombre.toLowerCase())) {
+        _renderTagsFiltro(); return;
+    }
+    const { error } = await supabase.from('tags_clientes').insert({ nombre });
+    if (error) { alert('Error al crear tag: ' + error.message); _renderTagsFiltro(); return; }
+    _todosLosTags.push(nombre);
+    _todosLosTags.sort((a, b) => a.localeCompare(b));
+    _renderTagsFiltro();
+    _renderTagsModal();
+    _renderTagsNuevoModal();
+}
 
 // ── REFRESCO MEDIANOCHE ───────────────────────────────────────────────────────
 function _scheduleMidnightRefresh() {
@@ -753,40 +834,43 @@ document.querySelectorAll('#clientes-thead-row .sort-th').forEach(th => {
 });
 
 // ── Panel de filtros (sidebar fijo) ───────────────────────────────────────────
+function _aplicarFiltros() {
+    _filtroTags = [...document.querySelectorAll('.tag-filtro.active')].map(c => c.dataset.tag).filter(Boolean);
+    const diasChip = document.querySelector('.dias-filtro.active');
+    _filtroDias = diasChip?.dataset.dias ? Number(diasChip.dataset.dias) : null;
+    _todosCache.clear();
+    _frecuentesCache.clear();
+    _reactivacionCache.clear();
+    _setVistaActiva('todos');
+    ejecutarBusqueda(1);
+}
+
+// Tags: multi-select, filtran al instante
 document.querySelectorAll('.tag-filtro').forEach(chip => {
     chip.addEventListener('click', () => {
-        document.querySelectorAll('.tag-filtro').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
+        chip.classList.toggle('active');
+        _aplicarFiltros();
     });
 });
 
+// Días: selección exclusiva, filtra al instante
 document.querySelectorAll('.dias-filtro').forEach(chip => {
     chip.addEventListener('click', () => {
         document.querySelectorAll('.dias-filtro').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
+        _aplicarFiltros();
     });
 });
 
-document.getElementById('btn-aplicar-filtros').addEventListener('click', () => {
-    const tagChip  = document.querySelector('.tag-filtro.active');
-    const diasChip = document.querySelector('.dias-filtro.active');
-    _filtroTag  = tagChip?.dataset.tag   || null;
-    _filtroDias = diasChip?.dataset.dias ? Number(diasChip.dataset.dias) : null;
-
-    _todosCache.clear();
-    _setVistaActiva('todos');
-    ejecutarBusqueda(1);
-});
-
 document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
-    _filtroTag  = null;
+    _filtroTags = [];
     _filtroDias = null;
     document.querySelectorAll('.tag-filtro').forEach(c => c.classList.remove('active'));
-    document.querySelector('.tag-filtro[data-tag=""]')?.classList.add('active');
     document.querySelectorAll('.dias-filtro').forEach(c => c.classList.remove('active'));
     document.querySelector('.dias-filtro[data-dias=""]')?.classList.add('active');
-
     _todosCache.clear();
+    _frecuentesCache.clear();
+    _reactivacionCache.clear();
     _setVistaActiva('todos');
     ejecutarBusqueda(1);
 });
@@ -823,13 +907,6 @@ document.getElementById('cerrar-modal-nuevo').addEventListener('click', cerrarMo
 document.getElementById('btn-crear-cliente').addEventListener('click', crearCliente);
 document.getElementById('modal-nuevo-cliente').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-nuevo-cliente')) cerrarModalNuevo();
-});
-document.querySelectorAll('.nuevo-tag').forEach(chip => {
-    chip.addEventListener('click', () => chip.classList.toggle('active'));
-});
-
-document.querySelectorAll('.tag-chip:not(.tag-filtro):not(.dias-filtro)').forEach(chip => {
-    chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 
 initNavButtons('clientes', { onBarrios: openBarriosModal });
