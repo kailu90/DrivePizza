@@ -176,7 +176,7 @@ function _setVistaActiva(vista) {
 
     document.getElementById('th-pedidos').style.display = '';
     document.getElementById('th-pedidos').firstChild.textContent =
-        esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días ';
+        esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días sin ordenar ';
     document.querySelector('.col-fecha-th').firstChild.textContent =
         esReactivacion ? 'Último pedido ' : 'Última actividad ';
 
