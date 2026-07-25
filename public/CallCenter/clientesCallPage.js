@@ -613,11 +613,29 @@ async function obtenerUsuarioCC() {
 
         // Carga inicial: mostrar clientes recientes
         await ejecutarBusqueda();
+        _scheduleMidnightRefresh();
     } catch (err) {
         console.error('Error auth clientes:', err);
         document.body.classList.add('loaded');
     }
 })();
+
+// ── REFRESCO MEDIANOCHE ───────────────────────────────────────────────────────
+function _scheduleMidnightRefresh() {
+    const ahora   = new Date();
+    const manana  = new Date(ahora);
+    manana.setDate(manana.getDate() + 1);
+    manana.setHours(0, 0, 0, 0);
+    const ms = manana - ahora;
+
+    setTimeout(() => {
+        _todosCache.clear();
+        _frecuentesCache.clear();
+        _reactivacionCache.clear();
+        ejecutarBusqueda(1);
+        _scheduleMidnightRefresh(); // reprogramar para la siguiente medianoche
+    }, ms);
+}
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────────
 const searchInput = document.getElementById('buscar-cliente-input');
