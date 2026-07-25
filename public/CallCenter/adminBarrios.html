@@ -15,6 +15,7 @@
         .ab-layout {
             display: grid;
             grid-template-columns: 200px 1fr;
+            grid-template-rows: 1fr;
             height: calc(100vh - 100px);
             background: var(--color-secundario);
         }
@@ -47,6 +48,16 @@
             flex-direction: column;
             overflow: hidden;
             padding: 20px 24px;
+            min-height: 0;
+        }
+
+        #ab-view-barrios,
+        #ab-view-log {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .ab-topbar {

@@ -488,9 +488,12 @@
 
         /* Botón reactivar */
         .btn-reactivar-cli {
-            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 6px;
+            padding: 2px 8px;
             border-radius: 6px;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             border: 1.5px solid var(--color-primario);
@@ -499,19 +502,20 @@
             font-family: inherit;
             transition: all .15s;
             white-space: nowrap;
+            vertical-align: middle;
         }
         .btn-reactivar-cli:hover { background: var(--color-primario); color: white; }
-        .td-reactivar { width: 110px; text-align: center; white-space: nowrap; }
         .badge-reactivado {
             display: inline-block;
-            padding: 3px 10px;
+            margin-left: 6px;
+            padding: 2px 8px;
             border-radius: 10px;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
             background: #e8f8f0;
             color: #27ae60;
+            vertical-align: middle;
         }
-        @media (max-width: 860px) { .col-reactivar-th, .td-reactivar { display: none; } }
 
         /* Badge días inactivo */
         .dias-badge {
@@ -676,7 +680,6 @@
                             <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
                             <th class="inventory-management__heading sort-th" id="th-pedidos" data-sort="pedidos">Días sin ordenar <span class="sort-icon">▲▼</span></th>
                             <th class="inventory-management__heading col-fecha-th sort-th sort-active" data-sort="fecha">Última actividad <span class="sort-icon">▼</span></th>
-                            <th class="inventory-management__heading col-reactivar-th"></th>
                         </tr>
                     </thead>
                     <tbody id="clientes-tbody">

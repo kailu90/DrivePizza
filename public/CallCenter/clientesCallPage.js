@@ -208,26 +208,26 @@ function _rowHtml(c) {
             ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000)
             : 0;
 
+    // Botón reactivar — se inserta dentro de la celda de días
+    let btnReactivarHtml = '';
+    if (diasNum >= 30) {
+        const diasDesdeReact = c.fecha_ultima_reactivacion
+            ? Math.floor((Date.now() - new Date(c.fecha_ultima_reactivacion)) / 86_400_000)
+            : 999;
+        btnReactivarHtml = diasDesdeReact <= 7
+            ? `<span class="badge-reactivado">✓ Reactivado</span>`
+            : `<button class="btn-reactivar-cli" data-id="${c.id}" data-dias="${diasNum}">Reactivar</button>`;
+    }
+
     let colPedidos = '';
     if (esFrecuentes) {
         colPedidos = `<td class="inventory-management__cell" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>`;
     } else if (esReactivacion) {
         const cls = diasNum >= 90 ? 'critico' : 'moderado';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${cls}">${diasNum}d</span></td>`;
+        colPedidos = `<td class="inventory-management__cell" style="text-align:center;white-space:nowrap;"><span class="dias-badge ${cls}">${diasNum}d</span>${btnReactivarHtml}</td>`;
     } else {
         const cls = diasNum >= 90 ? 'critico' : diasNum >= 30 ? 'moderado' : '';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="${cls ? `dias-badge ${cls}` : ''}">${diasNum}d</span></td>`;
-    }
-
-    // Botón reactivar — visible cuando lleva 30+ días sin ordenar
-    let tdReactivar = '<td class="inventory-management__cell td-reactivar"></td>';
-    if (diasNum >= 30) {
-        const diasDesdeReact = c.fecha_ultima_reactivacion
-            ? Math.floor((Date.now() - new Date(c.fecha_ultima_reactivacion)) / 86_400_000)
-            : 999;
-        tdReactivar = diasDesdeReact <= 7
-            ? `<td class="inventory-management__cell td-reactivar"><span class="badge-reactivado">✓ Reactivado</span></td>`
-            : `<td class="inventory-management__cell td-reactivar"><button class="btn-reactivar-cli" data-id="${c.id}" data-dias="${diasNum}">Reactivar</button></td>`;
+        colPedidos = `<td class="inventory-management__cell" style="text-align:center;white-space:nowrap;"><span class="${cls ? `dias-badge ${cls}` : ''}">${diasNum}d</span>${btnReactivarHtml}</td>`;
     }
 
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
@@ -237,7 +237,6 @@ function _rowHtml(c) {
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
         ${colPedidos}
         <td class="inventory-management__cell col-fecha-td">${formatFecha(fechaMostrar)}</td>
-        ${tdReactivar}
     </tr>`;
 }
 
