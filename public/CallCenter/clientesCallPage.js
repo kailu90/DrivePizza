@@ -8,7 +8,10 @@ const SEDE_LABELS = {
     piedecuesta: 'Piedecuesta', megamall: 'Megamall', unico: 'Único',
 };
 
-let clienteActual = null;
+let clienteActual      = null;
+let _usuarioActual     = '';
+let _reactivarCli      = null;
+let _reactivarDias     = 0;
 let _vista        = 'todos';  // 'todos' | 'frecuentes' | 'reactivacion'
 let _filtroTags   = [];       // [] | ['frecuente', 'vip', ...]  (multi-select)
 let _filtroDias   = null;     // null | 30 | 60 | 90
@@ -33,7 +36,7 @@ async function buscarClientes(query = '', pagina = 1) {
 
     let req = supabase
         .from('clientes')
-        .select('id, telefono, nombre, tags, updated_at, total_pedidos')
+        .select('id, telefono, nombre, tags, updated_at, total_pedidos, fecha_ultima_reactivacion')
         .order(supabaseCol, { ascending: _sortDir === 'asc' })
         .range(offset, offset + POR_PAGINA - 1);
 
@@ -198,20 +201,35 @@ function _rowHtml(c) {
         `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
     ).join(' ');
 
+    // Días inactivo (siempre numérico)
+    const diasNum = esReactivacion
+        ? (c.dias_inactivo ?? 0)
+        : c.updated_at
+            ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000)
+            : 0;
+
     let colPedidos = '';
     if (esFrecuentes) {
         colPedidos = `<td class="inventory-management__cell" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>`;
     } else if (esReactivacion) {
-        const dias = c.dias_inactivo ?? 0;
-        const cls  = dias >= 90 ? 'critico' : 'moderado';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${cls}">${dias}d</span></td>`;
+        const cls = diasNum >= 90 ? 'critico' : 'moderado';
+        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${cls}">${diasNum}d</span></td>`;
     } else {
-        const dias = c.updated_at
-            ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000)
-            : '—';
-        const cls  = typeof dias === 'number' && dias >= 90 ? 'critico' : typeof dias === 'number' && dias >= 30 ? 'moderado' : '';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="${cls ? `dias-badge ${cls}` : ''}">${typeof dias === 'number' ? dias + 'd' : dias}</span></td>`;
+        const cls = diasNum >= 90 ? 'critico' : diasNum >= 30 ? 'moderado' : '';
+        colPedidos = `<td class="inventory-management__cell" style="text-align:center;"><span class="${cls ? `dias-badge ${cls}` : ''}">${diasNum}d</span></td>`;
     }
+
+    // Botón reactivar — visible cuando lleva 30+ días sin ordenar
+    let tdReactivar = '<td class="inventory-management__cell td-reactivar"></td>';
+    if (diasNum >= 30) {
+        const diasDesdeReact = c.fecha_ultima_reactivacion
+            ? Math.floor((Date.now() - new Date(c.fecha_ultima_reactivacion)) / 86_400_000)
+            : 999;
+        tdReactivar = diasDesdeReact <= 7
+            ? `<td class="inventory-management__cell td-reactivar"><span class="badge-reactivado">✓ Reactivado</span></td>`
+            : `<td class="inventory-management__cell td-reactivar"><button class="btn-reactivar-cli" data-id="${c.id}" data-dias="${diasNum}">Reactivar</button></td>`;
+    }
+
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
         <td class="inventory-management__cell col-nombre">${c.nombre || '—'}</td>
@@ -219,15 +237,25 @@ function _rowHtml(c) {
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
         ${colPedidos}
         <td class="inventory-management__cell col-fecha-td">${formatFecha(fechaMostrar)}</td>
+        ${tdReactivar}
     </tr>`;
 }
 
 function _bindRows(rows) {
     rows.forEach(tr => {
-        tr.addEventListener('click', () => {
+        tr.addEventListener('click', e => {
+            if (e.target.closest('.btn-reactivar-cli')) return;
             const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
             if (cli) abrirModal(cli);
         });
+        const btnReactivar = tr.querySelector('.btn-reactivar-cli');
+        if (btnReactivar) {
+            btnReactivar.addEventListener('click', e => {
+                e.stopPropagation();
+                const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
+                if (cli) abrirModalReactivar(cli, Number(btnReactivar.dataset.dias));
+            });
+        }
     });
 }
 
@@ -599,6 +627,7 @@ async function obtenerUsuarioCC() {
         if (!usuario?.rol || !ROLES_CC.includes(usuario.rol)) { window.top.location.href = '../index.html'; return; }
 
         document.getElementById('username').textContent = usuario.username;
+        _usuarioActual = usuario.username;
         document.getElementById('btn-home').onclick = () => window.location.href = './callcenter.html';
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
@@ -699,6 +728,66 @@ async function _crearTag(nombre) {
     _renderTagsFiltro();
     _renderTagsModal();
     _renderTagsNuevoModal();
+}
+
+// ── REACTIVACIÓN ──────────────────────────────────────────────────────────────
+function abrirModalReactivar(cli, dias) {
+    _reactivarCli  = cli;
+    _reactivarDias = dias;
+    document.getElementById('reactivar-nombre').textContent = cli.nombre || cli.telefono;
+    document.getElementById('reactivar-tel').textContent    = cli.telefono;
+    document.getElementById('reactivar-dias').textContent   = `${dias} días sin ordenar`;
+    document.getElementById('reactivar-notas').value        = '';
+    document.getElementById('modal-reactivar').style.display = 'flex';
+    document.getElementById('reactivar-notas').focus();
+}
+
+async function registrarReactivacion() {
+    if (!_reactivarCli) return;
+    const notas = document.getElementById('reactivar-notas').value.trim();
+    const btn   = document.getElementById('btn-confirmar-reactivar');
+    btn.textContent = 'Registrando...';
+    btn.disabled    = true;
+
+    const { error } = await supabase.from('reactivaciones').insert({
+        cliente_id:     _reactivarCli.id,
+        telefono:       _reactivarCli.telefono,
+        nombre_cliente: _reactivarCli.nombre || '',
+        dias_inactivo:  _reactivarDias,
+        agente:         _usuarioActual,
+        notas:          notas || null,
+    });
+
+    if (error) {
+        alert('Error al registrar: ' + error.message);
+        btn.textContent = 'Confirmar reactivación';
+        btn.disabled = false;
+        return;
+    }
+
+    const ahora = new Date().toISOString();
+    await supabase.from('clientes')
+        .update({ fecha_ultima_reactivacion: ahora })
+        .eq('id', _reactivarCli.id);
+
+    // Actualizar fila en el DOM
+    const idx = _clientesData.findIndex(c => String(c.id) === String(_reactivarCli.id));
+    if (idx !== -1) {
+        _clientesData[idx] = { ..._clientesData[idx], fecha_ultima_reactivacion: ahora };
+        const oldRow = document.querySelector(`tr[data-id="${_reactivarCli.id}"]`);
+        if (oldRow) {
+            const tpl = document.createElement('template');
+            tpl.innerHTML = _rowHtml(_clientesData[idx]);
+            const newRow = tpl.content.firstElementChild;
+            _bindRows([newRow]);
+            oldRow.replaceWith(newRow);
+        }
+    }
+
+    btn.textContent = 'Confirmar reactivación';
+    btn.disabled    = false;
+    document.getElementById('modal-reactivar').style.display = 'none';
+    _reactivarCli = null;
 }
 
 // ── REFRESCO MEDIANOCHE ───────────────────────────────────────────────────────
@@ -907,6 +996,18 @@ document.getElementById('cerrar-modal-nuevo').addEventListener('click', cerrarMo
 document.getElementById('btn-crear-cliente').addEventListener('click', crearCliente);
 document.getElementById('modal-nuevo-cliente').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-nuevo-cliente')) cerrarModalNuevo();
+});
+
+document.getElementById('cerrar-modal-reactivar').addEventListener('click', () => {
+    document.getElementById('modal-reactivar').style.display = 'none';
+    _reactivarCli = null;
+});
+document.getElementById('btn-confirmar-reactivar').addEventListener('click', registrarReactivacion);
+document.getElementById('modal-reactivar').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-reactivar')) {
+        document.getElementById('modal-reactivar').style.display = 'none';
+        _reactivarCli = null;
+    }
 });
 
 initNavButtons('clientes', { onBarrios: openBarriosModal });
