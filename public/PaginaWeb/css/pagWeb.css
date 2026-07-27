@@ -2092,6 +2092,30 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 
+/* Autocomplete compartido (dirección + barrio) */
+.pw-ac-wrap { position: relative; }
+.pw-ac-suggs {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  list-style: none;
+  margin: 0; padding: .3rem 0;
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pw-ac-item {
+  padding: .55rem .9rem;
+  font-size: .875rem;
+  cursor: pointer;
+}
+.pw-ac-item:hover { background: var(--dp-sand); }
+.pw-ac-suggs:empty { display: none; }
+
 /* Campos opcionales torre/apto — grid 2 columnas */
 .pw-dir-extras {
   display: grid;

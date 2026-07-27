@@ -19,10 +19,14 @@ const coResumen      = document.getElementById('co-resumen-items');
 const coNombre       = document.getElementById('co-nombre');
 const coTel          = document.getElementById('co-tel');
 const coDir          = document.getElementById('co-dir');
+const coDirSuggs     = document.getElementById('co-dir-suggs');
 const coTorre        = document.getElementById('co-torre');
 const coApto         = document.getElementById('co-apto');
-const coBarrio       = document.getElementById('co-barrio');
+const coBarrio       = document.getElementById('co-barrio');       // hidden — valor interno
+const coBarrioInput  = document.getElementById('co-barrio-input'); // visible — búsqueda
+const coBarrioSuggs  = document.getElementById('co-barrio-suggs'); // dropdown sugerencias
 const coBarrioGroup  = document.getElementById('co-barrio-group');
+let _barriosData     = {}; // { nombre: fee }
 const coDomSec       = document.getElementById('co-seccion-domicilio');
 const coRecogerSec   = document.getElementById('co-seccion-recoger');
 const coRecogerInfo  = document.getElementById('co-recoger-info');
@@ -77,13 +81,9 @@ function preLlenarDireccion() {
     coDomSec.style.display     = '';
     coRecogerSec.style.display = 'none';
 
-    // Precargar barrio si coincide con alguna opción del select
-    if (saved.barrio && coBarrio.options.length > 1) {
-      const match = [...coBarrio.options].find(o => o.value === saved.barrio);
-      if (match) {
-        coBarrio.value = saved.barrio;
-        _domicilioFee  = Number(match.dataset.fee) || 0;
-      }
+    // Precargar barrio si existe en los datos de la sede
+    if (saved.barrio && _barriosData[saved.barrio] !== undefined) {
+      seleccionarBarrio(saved.barrio, _barriosData[saved.barrio]);
     }
   } catch { /* ignorar si localStorage falla */ }
 }
@@ -160,14 +160,62 @@ function cargarBarrios() {
   const barrios = domicilios[_sede?.name || ''];
   if (!barrios || !Object.keys(barrios).length) {
     coBarrioGroup.style.display = 'none';
+    _barriosData = {};
     return;
   }
+  _barriosData = barrios;
   coBarrioGroup.style.display = '';
-  coBarrio.value = '';
-  const sorted = Object.keys(barrios).sort((a, b) => a.localeCompare(b, 'es'));
-  coBarrio.innerHTML = '<option value="">Selecciona tu barrio</option>' +
-    sorted.map(b => `<option value="${b}" data-fee="${barrios[b]}">${b} — ${formatPrecio(barrios[b])}</option>`).join('');
+  coBarrio.value      = '';
+  coBarrioInput.value = '';
+  coBarrioSuggs.innerHTML = '';
   _domicilioFee = 0;
+}
+
+function filtrarBarrios(query) {
+  if (query.length < 3) { coBarrioSuggs.innerHTML = ''; return; }
+  const q = query.toLowerCase();
+  const matches = Object.keys(_barriosData)
+    .filter(b => b.toLowerCase().includes(q))
+    .sort((a, b) => a.localeCompare(b, 'es'))
+    .slice(0, 8);
+  if (!matches.length) { coBarrioSuggs.innerHTML = ''; return; }
+  coBarrioSuggs.innerHTML = matches
+    .map(b => `<li class="pw-ac-item" data-barrio="${b}" data-fee="${_barriosData[b]}">${b}</li>`)
+    .join('');
+}
+
+// ── HISTORIAL DIRECCIÓN ───────────────────────────────────────
+const DIR_HIST_KEY = 'dp_dir_historial';
+
+function getDirHistorial() {
+  try { return JSON.parse(localStorage.getItem(DIR_HIST_KEY)) || []; }
+  catch { return []; }
+}
+
+export function guardarDirHistorial(dir) {
+  if (!dir) return;
+  const hist = getDirHistorial().filter(d => d !== dir);
+  hist.unshift(dir);
+  localStorage.setItem(DIR_HIST_KEY, JSON.stringify(hist.slice(0, 5)));
+}
+
+function mostrarDirSuggs(query = '') {
+  const hist = getDirHistorial();
+  const matches = query.length >= 2
+    ? hist.filter(d => d.toLowerCase().includes(query.toLowerCase()))
+    : hist;
+  if (!matches.length) { coDirSuggs.innerHTML = ''; return; }
+  coDirSuggs.innerHTML = matches
+    .map(d => `<li class="pw-ac-item" data-dir="${d}">${d}</li>`)
+    .join('');
+}
+
+function seleccionarBarrio(nombre, fee) {
+  coBarrio.value      = nombre;
+  coBarrioInput.value = nombre;
+  _domicilioFee       = fee;
+  coBarrioSuggs.innerHTML = '';
+  renderTotales();
 }
 
 // ── TOTALES ───────────────────────────────────────────────────
@@ -186,10 +234,33 @@ function renderTotales() {
 
 // ── LISTENERS (una vez) ───────────────────────────────────────
 function setupFormListeners() {
-  coBarrio.addEventListener('change', () => {
-    const opt     = coBarrio.options[coBarrio.selectedIndex];
-    _domicilioFee = opt.value ? Number(opt.dataset.fee) : 0;
+  coDir.addEventListener('focus', () => mostrarDirSuggs(coDir.value.trim()));
+  coDir.addEventListener('input', () => mostrarDirSuggs(coDir.value.trim()));
+  coDirSuggs.addEventListener('mousedown', e => {
+    const item = e.target.closest('.pw-ac-item');
+    if (!item) return;
+    coDir.value = item.dataset.dir;
+    coDirSuggs.innerHTML = '';
+  });
+  coDir.addEventListener('blur', () => {
+    setTimeout(() => { coDirSuggs.innerHTML = ''; }, 150);
+  });
+
+  coBarrioInput.addEventListener('input', () => {
+    coBarrio.value = ''; // limpiar selección al escribir de nuevo
+    _domicilioFee  = 0;
+    filtrarBarrios(coBarrioInput.value.trim());
     renderTotales();
+  });
+
+  coBarrioSuggs.addEventListener('mousedown', e => {
+    const item = e.target.closest('.pw-ac-item');
+    if (!item) return;
+    seleccionarBarrio(item.dataset.barrio, Number(item.dataset.fee));
+  });
+
+  coBarrioInput.addEventListener('blur', () => {
+    setTimeout(() => { coBarrioSuggs.innerHTML = ''; }, 150);
   });
 
   document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(pill => {
@@ -329,6 +400,7 @@ async function confirmarPedido() {
     });
     if (insertError) throw new Error(insertError.message);
 
+    guardarDirHistorial(coDir.value.trim());
     vaciarCarrito();
     window.location.href = `confirmacion.html?n=${encodeURIComponent(nPedido)}`;
 

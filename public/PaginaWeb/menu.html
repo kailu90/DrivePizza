@@ -460,13 +460,20 @@
         <div id="co-seccion-domicilio" style="display:none">
           <div class="pw-form-group">
             <label class="pw-form-label" for="co-dir">Dirección (Cra / Calle) *</label>
-            <input class="pw-form-input" id="co-dir" type="text" placeholder="Ej: Cra 27 # 45-10" autocomplete="street-address">
+            <div class="pw-ac-wrap">
+              <input class="pw-form-input" id="co-dir" type="text"
+                     placeholder="Ej: Cra 27 # 45-10" autocomplete="off">
+              <ul class="pw-ac-suggs" id="co-dir-suggs"></ul>
+            </div>
           </div>
           <div class="pw-form-group" id="co-barrio-group">
-            <label class="pw-form-label" for="co-barrio">Barrio *</label>
-            <select class="pw-form-input pw-form-select" id="co-barrio">
-              <option value="">Selecciona tu barrio</option>
-            </select>
+            <label class="pw-form-label" for="co-barrio-input">Barrio *</label>
+            <div class="pw-ac-wrap">
+              <input class="pw-form-input" id="co-barrio-input" type="text"
+                     placeholder="Escribe las primeras letras..." autocomplete="off">
+              <ul class="pw-ac-suggs" id="co-barrio-suggs"></ul>
+            </div>
+            <input type="hidden" id="co-barrio">
           </div>
           <div class="pw-dir-extras">
             <div class="pw-form-group">
