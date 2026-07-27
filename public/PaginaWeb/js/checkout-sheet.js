@@ -52,7 +52,36 @@ export function openCheckoutSheet(sede) {
 
   renderItems();
   cargarBarrios();
+  preLlenarDireccion();
   renderTotales();
+}
+
+// ── PRE-LLENAR DIRECCIÓN GUARDADA ─────────────────────────────
+function preLlenarDireccion() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('dp_direccion'));
+    if (!saved) return;
+
+    // Activar pill domicilio
+    _tipoEntrega = 'domicilio';
+    document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.tipo === 'domicilio');
+    });
+    coDomSec.style.display     = '';
+    coRecogerSec.style.display = 'none';
+
+    // Precargar dirección
+    if (saved.direccion) coDir.value = saved.direccion;
+
+    // Precargar barrio si coincide con alguna opción del select
+    if (saved.barrio && coBarrio.options.length > 1) {
+      const match = [...coBarrio.options].find(o => o.value === saved.barrio);
+      if (match) {
+        coBarrio.value = saved.barrio;
+        _domicilioFee  = Number(match.dataset.fee) || 0;
+      }
+    }
+  } catch { /* ignorar si localStorage falla */ }
 }
 
 // ── RENDER ITEMS ──────────────────────────────────────────────

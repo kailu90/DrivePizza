@@ -177,8 +177,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-checkout-sheet {
   top: auto;
-  max-height: calc(92dvh - var(--nav-height, 64px));
+  height: calc(92dvh - var(--nav-height, 64px));
   border-radius: 1.25rem 1.25rem 0 0;
+}
+.pw-checkout-sheet .pw-sheet-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding-top: .5rem;
+  padding-bottom: .75rem;
 }
 
 /* Área scrollable */
