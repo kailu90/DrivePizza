@@ -2092,6 +2092,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 
+/* Campos opcionales torre/apto — grid 2 columnas */
+.pw-dir-extras {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 .5rem;
+}
+.pw-label-optional { font-weight: 400; color: #aaa; font-size: .7rem; }
+
 /* Info recogida */
 .pw-recoger-info {
   font-size: .86rem;

@@ -19,6 +19,8 @@ const coResumen      = document.getElementById('co-resumen-items');
 const coNombre       = document.getElementById('co-nombre');
 const coTel          = document.getElementById('co-tel');
 const coDir          = document.getElementById('co-dir');
+const coTorre        = document.getElementById('co-torre');
+const coApto         = document.getElementById('co-apto');
 const coBarrio       = document.getElementById('co-barrio');
 const coBarrioGroup  = document.getElementById('co-barrio-group');
 const coDomSec       = document.getElementById('co-seccion-domicilio');
@@ -58,6 +60,11 @@ export function openCheckoutSheet(sede) {
 
 // ── PRE-LLENAR DIRECCIÓN GUARDADA ─────────────────────────────
 function preLlenarDireccion() {
+  // Limpiar campos extra al abrir
+  coDir.value   = '';
+  coTorre.value = '';
+  coApto.value  = '';
+
   try {
     const saved = JSON.parse(localStorage.getItem('dp_direccion'));
     if (!saved) return;
@@ -69,9 +76,6 @@ function preLlenarDireccion() {
     });
     coDomSec.style.display     = '';
     coRecogerSec.style.display = 'none';
-
-    // Precargar dirección
-    if (saved.direccion) coDir.value = saved.direccion;
 
     // Precargar barrio si coincide con alguna opción del select
     if (saved.barrio && coBarrio.options.length > 1) {
@@ -298,7 +302,10 @@ async function confirmarPedido() {
     } else {
       const barrio = coBarrio.value || null;
       domicilioObj = barrio ? { barrio, valor: _domicilioFee } : { valor: _domicilioFee };
-      direccion    = coDir.value.trim();
+      const partes = [coDir.value.trim()];
+      if (coTorre.value.trim()) partes.push(coTorre.value.trim());
+      if (coApto.value.trim())  partes.push(coApto.value.trim());
+      direccion = partes.join(', ');
     }
 
     const total = subtotal + (_tipoEntrega === 'domicilio' ? _domicilioFee : 0);

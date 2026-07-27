@@ -459,14 +459,24 @@
         </div>
         <div id="co-seccion-domicilio" style="display:none">
           <div class="pw-form-group">
-            <label class="pw-form-label" for="co-dir">Dirección *</label>
-            <input class="pw-form-input" id="co-dir" type="text" placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="street-address">
+            <label class="pw-form-label" for="co-dir">Dirección (Cra / Calle) *</label>
+            <input class="pw-form-input" id="co-dir" type="text" placeholder="Ej: Cra 27 # 45-10" autocomplete="street-address">
           </div>
           <div class="pw-form-group" id="co-barrio-group">
             <label class="pw-form-label" for="co-barrio">Barrio *</label>
             <select class="pw-form-input pw-form-select" id="co-barrio">
               <option value="">Selecciona tu barrio</option>
             </select>
+          </div>
+          <div class="pw-dir-extras">
+            <div class="pw-form-group">
+              <label class="pw-form-label" for="co-torre">Torre / Bloque <span class="pw-label-optional">(opcional)</span></label>
+              <input class="pw-form-input" id="co-torre" type="text" placeholder="Ej: Torre 3, Bloque B">
+            </div>
+            <div class="pw-form-group">
+              <label class="pw-form-label" for="co-apto">Apto / Casa <span class="pw-label-optional">(opcional)</span></label>
+              <input class="pw-form-input" id="co-apto" type="text" placeholder="Ej: Apto 302, Casa 5">
+            </div>
           </div>
         </div>
         <div id="co-seccion-recoger" style="display:none">
