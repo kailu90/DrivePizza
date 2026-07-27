@@ -58,9 +58,20 @@ function switchView(toView) {
 
 // Conectar listeners comunes
 initHeader();
+const SHEET_TRANSITION_MS = 280; // coincide con --dp-transition (0.28s)
+
 initBottomNav({
-  onInicio: () => switchView('home'),
-  onMenu:   () => switchView('menu'),
+  onInicio: () => {
+    const sheets = [productSheet, cartSheet, checkoutSheet, promoSheet, sabor2Sheet];
+    const openSheet = sheets.find(s => s?.classList.contains('open'));
+    if (openSheet) {
+      cerrarSheet(openSheet);
+      setTimeout(() => switchView('home'), SHEET_TRANSITION_MS);
+    } else {
+      switchView('home');
+    }
+  },
+  onMenu: () => switchView('menu'),
 });
 
 // Exponer altura real del nav como variable CSS
