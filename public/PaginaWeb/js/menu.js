@@ -179,7 +179,7 @@ function init() {
       <div class="pw-sede-bar-info">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pw-sede-bar-pin"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
         <div class="pw-sede-bar-text">
-          <span class="pw-sede-bar-label">Preparando en</span>
+          <span class="pw-sede-bar-label">Preparando desde</span>
           <strong class="pw-sede-bar-nombre">${nombre}</strong>
         </div>
       </div>

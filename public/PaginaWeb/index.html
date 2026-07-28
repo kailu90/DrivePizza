@@ -343,6 +343,7 @@
                 ${fueraZona ? 'Fuera de zona' : (abierta ? 'Abierto' : 'Cerrado')}
               </span>
               <div class="pw-sede-nombre">${nombre}</div>
+              ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
               ${sede.direccion ? `<div class="pw-sede-dir">${sede.direccion}</div>` : ''}
             </div>
             ${esMasCercana ? `<span class="pw-sede-badge-cercana">
