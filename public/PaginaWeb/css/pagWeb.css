@@ -412,49 +412,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-dir-sug-item:last-child { border-bottom: none; }
 .pw-dir-sug-item:hover { background: var(--dp-sand); color: var(--dp-green); }
-.pw-dir-complemento-wrap {
-  margin-top: .5rem;
-}
-.pw-dir-complemento-label {
-  display: block;
-  font-size: .7rem;
-  font-weight: 600;
-  color: var(--dp-green);
-  margin-bottom: .3rem;
-  padding-left: .25rem;
-  font-family: var(--dp-font-ui);
-}
-.pw-dir-complemento {
-  width: 100%;
-  background: #fff;
-  border: 1.5px solid var(--dp-green);
-  border-radius: 10px;
-  padding: .55rem .75rem;
-  font-size: .82rem;
-  color: var(--dp-dark);
-  font-family: var(--dp-font-ui);
-  outline: none;
-  box-sizing: border-box;
-  box-shadow: var(--dp-shadow);
-}
-.pw-dir-complemento::placeholder { color: #aaa; }
-.pw-btn-confirmar-dir {
-  display: block;
-  width: 100%;
-  margin-top: .6rem;
-  padding: .6rem 1rem;
-  background: var(--dp-green);
-  color: #fff;
-  border: none;
-  border-radius: var(--dp-radius);
-  font-family: var(--dp-font-ui);
-  font-size: .82rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: var(--dp-transition);
-  box-sizing: border-box;
-}
-.pw-btn-confirmar-dir:hover { background: #1e3519; }
 .pw-direccion-input {
   display: flex;
   align-items: center;
@@ -2092,6 +2049,54 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-green);
 }
 
+/* Barrio seleccionado — confirmation card en checkout */
+.pw-barrio-selecc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .45rem .65rem;
+  background: rgba(49,75,39,.07);
+  border: 1.5px solid rgba(49,75,39,.22);
+  border-radius: var(--dp-radius);
+  margin-bottom: .35rem;
+}
+.pw-barrio-selecc-left {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+  color: var(--dp-green);
+}
+.pw-barrio-selecc-left svg { flex-shrink: 0; }
+.pw-barrio-selecc-nombre {
+  display: block;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--dp-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pw-barrio-selecc-fee {
+  display: block;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--dp-green);
+}
+.pw-barrio-selecc-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--dp-green);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Autocomplete compartido (dirección + barrio) */
 .pw-ac-wrap { position: relative; }
 .pw-ac-suggs {
@@ -2114,6 +2119,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   cursor: pointer;
 }
 .pw-ac-item:hover { background: var(--dp-sand); }
+.pw-ac-item-fee { color: var(--dp-green); font-weight: 600; font-size: .75rem; }
 .pw-ac-suggs:empty { display: none; }
 
 /* Campos opcionales torre/apto — grid 2 columnas */

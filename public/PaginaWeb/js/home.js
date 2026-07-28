@@ -4,13 +4,20 @@
 
 import { cargarSedes, estaAbierta, setSedeActual, getSedeActual, displayNombre } from './sede.js';
 import { vaciarCarrito } from './carrito.js';
+import { cargarTodosBarrios, getBarrioCoordsMap } from '../../CallCenter/barriosService.js';
 
 // ── ESTADO ───────────────────────────────────────────────────
-let sedesData    = [];
-let userLat      = null;
-let userLng      = null;
-let initialized  = false;
-let _onSedeSelected = null;
+let sedesData          = [];
+let userLat            = null;
+let userLng            = null;
+let barrioSeleccionado = '';
+let initialized        = false;
+let _onSedeSelected    = null;
+
+// ── ÍNDICE DE BARRIOS (se llena async en initHomeView()) ──────
+let barrioIndex     = {};
+let todosLosBarrios = [];
+let barrioCoords    = {}; // { barrio: { lat, lng } } — para Haversine sin GPS
 
 // ── CONSTANTES ───────────────────────────────────────────────
 const BANNERS = [
@@ -90,13 +97,17 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 // ── RENDER SEDES ─────────────────────────────────────────────
 function renderSedes() {
-  const grid = document.getElementById('sedes-grid');
+  const grid           = document.getElementById('sedes-grid');
   if (!grid) return;
-  const tieneUbicacion = userLat !== null && userLng !== null;
+  const refLat         = userLat ?? barrioCoords[barrioSeleccionado]?.lat ?? null;
+  const refLng         = userLng ?? barrioCoords[barrioSeleccionado]?.lng ?? null;
+  const tieneUbicacion = refLat !== null && refLng !== null;
 
   const sedes = sedesData.map(s => {
-    const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(userLat, userLng, s.lat, s.lng) : null;
-    const fueraZona = tieneUbicacion && dist !== null && s.radio_km ? dist > s.radio_km : false;
+    const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
+    const fueraZona = (barrioSeleccionado && barrioIndex[barrioSeleccionado])
+      ? !barrioIndex[barrioSeleccionado].has(s.name || '')
+      : (tieneUbicacion && dist !== null && s.radio_km ? dist > s.radio_km : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
 
@@ -156,15 +167,23 @@ function renderSedes() {
 }
 
 // ── DIRECCIÓN CARD ───────────────────────────────────────────
-function renderDirCard(dirCompleta) {
+function renderDirCard(barrio) {
   const dirWrapper      = document.getElementById('home-dir-wrapper');
   const dirSelectedCard = document.getElementById('dir-selected-card');
   const sedesTitle      = document.getElementById('sedes-title');
   if (!dirSelectedCard) return;
 
+  barrioSeleccionado = barrio;
+
+  // Sede disponible que cubre este barrio (o la más cercana si hay GPS o coords de barrio)
+  const barCoords = barrioCoords[barrio];
+  const refLat    = userLat ?? barCoords?.lat ?? null;
+  const refLng    = userLng ?? barCoords?.lng ?? null;
   const sedesCalc = sedesData.map(s => {
-    const dist      = (userLat && s.lat && s.lng) ? haversine(userLat, userLng, s.lat, s.lng) : null;
-    const fueraZona = dist !== null && s.radio_km ? dist > s.radio_km : false;
+    const dist      = (refLat && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
+    const fueraZona = barrioIndex[barrio]
+      ? !barrioIndex[barrio].has(s.name || '')
+      : (dist !== null && s.radio_km ? dist > s.radio_km : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
   sedesCalc.sort((a, b) => {
@@ -186,7 +205,7 @@ function renderDirCard(dirCompleta) {
           Entrega en
         </span>
         <strong class="pw-dir-card-sede">${nombreSede}</strong>
-        <span class="pw-dir-card-addr">${dirCompleta}</span>
+        <span class="pw-dir-card-addr">${barrio}</span>
       </div>
       <div class="pw-dir-card-col pw-dir-card-col--right">
         <span class="pw-dir-card-label">
@@ -206,17 +225,21 @@ function renderDirCard(dirCompleta) {
     </div>`;
 
   localStorage.setItem('dp_direccion', JSON.stringify({
-    direccion: dirCompleta, barrio: dirCompleta,
-    lat: userLat, lng: userLng,
-    sedeId: sedeEntrega?.id ?? null, sedeNombre: nombreSede,
+    barrio,
+    direccion:  '',
+    lat:        refLat,
+    lng:        refLng,
+    sedeId:     sedeEntrega?.id ?? null,
+    sedeNombre: nombreSede,
   }));
 
+  renderSedes();
   if (dirWrapper) dirWrapper.hidden = true;
   dirSelectedCard.hidden = false;
   if (sedesTitle) sedesTitle.textContent = 'Sedes cercanas';
-  renderSedes();
 
   dirSelectedCard.querySelector('#btn-cambiar-dir')?.addEventListener('click', () => {
+    barrioSeleccionado = '';
     dirSelectedCard.hidden = true;
     if (dirWrapper) dirWrapper.hidden = false;
     const dirField = document.getElementById('dir-inicio');
@@ -229,7 +252,7 @@ function renderDirCard(dirCompleta) {
 
 // ── RESTAURAR ESTADO ─────────────────────────────────────────
 function restoreState() {
-  const sede = getSedeActual();
+  const sede  = getSedeActual();
   const dpDir = (() => { try { return JSON.parse(localStorage.getItem('dp_direccion')); } catch { return null; } })();
   if (!sede) return;
 
@@ -238,10 +261,12 @@ function restoreState() {
   const sedesTitle      = document.getElementById('sedes-title');
   if (!dirSelectedCard) return;
 
-  if (dpDir?.lat) { userLat = dpDir.lat; userLng = dpDir.lng; renderSedes(); }
+  // Restaurar barrio y coords si existen
+  if (dpDir?.barrio) barrioSeleccionado = dpDir.barrio;
+  if (dpDir?.lat)    { userLat = dpDir.lat; userLng = dpDir.lng; renderSedes(); }
 
   const nombreSede = displayNombre(sede);
-  const addrLine   = dpDir?.direccion ? `<span class="pw-dir-card-addr">${dpDir.direccion}</span>` : '';
+  const addrLine   = dpDir?.barrio ? `<span class="pw-dir-card-addr">${dpDir.barrio}</span>` : '';
 
   dirSelectedCard.innerHTML = `
     <div class="pw-dir-card-top">
@@ -268,11 +293,13 @@ function restoreState() {
         Sede seleccionada
       </span>
     </div>`;
+
   dirSelectedCard.hidden = false;
   if (dirWrapper) dirWrapper.hidden = true;
   if (sedesTitle) sedesTitle.textContent = 'Sedes cercanas';
 
   dirSelectedCard.querySelector('#btn-cambiar-dir')?.addEventListener('click', () => {
+    barrioSeleccionado = '';
     dirSelectedCard.hidden = true;
     if (dirWrapper) dirWrapper.hidden = false;
     const dirField = document.getElementById('dir-inicio');
@@ -283,48 +310,47 @@ function restoreState() {
   }, { once: true });
 }
 
-// ── AUTOCOMPLETE ─────────────────────────────────────────────
+// ── AUTOCOMPLETE DE BARRIO (búsqueda local) ───────────────────
 function setupAddressSearch() {
   const dirField = document.getElementById('dir-inicio');
   const dirSug   = document.getElementById('dir-suggestions');
   const gpsBtn   = document.getElementById('home-gps-btn');
   if (!dirField) return;
 
-  let dirTimer;
-  const CIUDADES_AMB = ['bucaramanga', 'floridablanca', 'girón', 'giron', 'piedecuesta', 'santander'];
-
-  async function fetchSug(q) {
-    try {
-      const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=co&format=json&limit=8&addressdetails=1&viewbox=-73.25,7.20,-72.95,6.95&bounded=1`;
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
-      const data = await res.json();
-      const filtrados = data.filter(r => CIUDADES_AMB.some(c => r.display_name.toLowerCase().includes(c)));
-      if (!filtrados.length) { hideSug(); return; }
-      dirSug.innerHTML = filtrados.map(r => {
-        const label = r.display_name.split(',').slice(0, 3).join(',').trim();
-        return `<button class="pw-dir-sug-item" data-value="${label}" data-lat="${r.lat}" data-lon="${r.lon}">${label}</button>`;
-      }).join('');
-      dirSug.hidden = false;
-      dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          dirField.value = btn.dataset.value;
-          userLat = parseFloat(btn.dataset.lat);
-          userLng = parseFloat(btn.dataset.lon);
-          hideSug();
-          renderSedes();
-          renderDirCard(dirField.value);
-        });
-      });
-    } catch { hideSug(); }
-  }
-
   function hideSug() { if (dirSug) { dirSug.innerHTML = ''; dirSug.hidden = true; } }
 
+  function fetchSug(q) {
+    const ql      = q.toLowerCase();
+    const matches = todosLosBarrios
+      .filter(b => b.toLowerCase().includes(ql))
+      .sort((a, b) => {
+        const aS = a.toLowerCase().startsWith(ql);
+        const bS = b.toLowerCase().startsWith(ql);
+        if (aS !== bS) return aS ? -1 : 1;
+        return a.localeCompare(b, 'es');
+      })
+      .slice(0, 8);
+
+    if (!matches.length || !dirSug) { hideSug(); return; }
+
+    dirSug.innerHTML = matches.map(b =>
+      `<button class="pw-dir-sug-item" data-barrio="${b}">${b}</button>`
+    ).join('');
+    dirSug.hidden = false;
+
+    dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dirField.value = btn.dataset.barrio;
+        hideSug();
+        renderDirCard(btn.dataset.barrio);
+      });
+    });
+  }
+
   dirField.addEventListener('input', () => {
-    clearTimeout(dirTimer);
     const q = dirField.value.trim();
-    if (q.length < 3) { hideSug(); return; }
-    dirTimer = setTimeout(() => fetchSug(q), 350);
+    if (q.length < 2) { hideSug(); return; }
+    fetchSug(q);
   });
 
   document.addEventListener('click', e => {
@@ -343,9 +369,19 @@ function setupAddressSearch() {
           const url  = `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`;
           const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
           const data = await res.json();
-          dirField.value = data.display_name.split(',').slice(0, 3).join(',').trim();
-          renderSedes();
-          renderDirCard(dirField.value);
+
+          // Intentar match del barrio GPS contra nuestro índice local
+          const suburb    = data.address?.suburb || data.address?.neighbourhood || data.address?.quarter || '';
+          const barrioGPS = todosLosBarrios.find(b => b.toLowerCase() === suburb.toLowerCase())
+                         || todosLosBarrios.find(b => suburb.toLowerCase().includes(b.toLowerCase()));
+
+          if (barrioGPS) {
+            dirField.value = barrioGPS;
+            renderDirCard(barrioGPS);
+          } else {
+            dirField.value = suburb || data.display_name.split(',').slice(0, 2).join(',').trim();
+            renderSedes();
+          }
         } catch {
           alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
         } finally {
@@ -370,7 +406,18 @@ export async function initHomeView({ onSedeSelected } = {}) {
     initBanner();
     setupAddressSearch();
     try {
-      sedesData = await cargarSedes();
+      const [domicilios] = await Promise.all([
+        cargarTodosBarrios(),
+        cargarSedes().then(s => { sedesData = s; }),
+      ]);
+      Object.entries(domicilios).forEach(([sedeName, barrios]) => {
+        Object.keys(barrios).forEach(barrio => {
+          if (!barrioIndex[barrio]) barrioIndex[barrio] = new Set();
+          barrioIndex[barrio].add(sedeName);
+        });
+      });
+      todosLosBarrios = Object.keys(barrioIndex).sort((a, b) => a.localeCompare(b, 'es'));
+      barrioCoords    = getBarrioCoordsMap();
     } catch { sedesData = []; }
     renderSedes();
   }

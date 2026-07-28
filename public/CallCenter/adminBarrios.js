@@ -100,12 +100,28 @@ document.getElementById('admin-barrios-search').addEventListener('input', e => {
     _renderTabla();
 });
 
+// ── Geocodificación (Nominatim) ───────────────────────────────────────────────
+async function _geocodificarBarrio(barrio) {
+    try {
+        const q   = encodeURIComponent(`${barrio}, Bucaramanga, Santander, Colombia`);
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`,
+            { headers: { 'User-Agent': 'EverestCentral/1.0' } }
+        );
+        const data = await res.json();
+        if (data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    } catch (e) {
+        console.warn('Geocodificación fallida para:', barrio, e);
+    }
+    return { lat: null, lng: null };
+}
+
 // ── Cargar sede ───────────────────────────────────────────────────────────────
 async function _cargarSede(sede) {
     _setStatus('Cargando...', '');
     const { data, error } = await supabase
         .from('barrios_domicilio')
-        .select('id, barrio, valor')
+        .select('id, barrio, valor, lat, lng')
         .eq('sede', sede)
         .order('barrio');
 
@@ -132,6 +148,8 @@ function _renderTabla() {
             <td class="td-barrio">${_esc(b.barrio)}</td>
             <td class="td-valor">$${b.valor.toLocaleString('es-CO')}</td>
             <td class="td-accion">
+                <span class="td-coords-icon ${b.lat != null ? 'has-coords' : 'no-coords'}"
+                      title="${b.lat != null ? `${b.lat.toFixed(5)}, ${b.lng?.toFixed(5)}` : 'Sin coordenadas'}">📍</span>
                 <button class="btn-edit"   data-action="edit">Editar</button>
                 <button class="btn-delete" data-action="delete">Eliminar</button>
             </td>
@@ -151,13 +169,51 @@ function _editarFila(tr, id) {
     if (!item) return;
 
     tr.innerHTML = `
-        <td class="td-barrio"><input class="input-edit" id="edit-barrio-${id}" value="${_esc(item.barrio)}"></td>
-        <td class="td-valor"><input class="input-edit" id="edit-valor-${id}" value="${item.valor}" type="number" min="0"></td>
-        <td class="td-accion">
-            <button class="btn-save"   id="save-${id}">Guardar</button>
-            <button class="btn-cancel" id="cancel-${id}">Cancelar</button>
+        <td colspan="3" class="td-edit-form">
+            <div class="ab-edit-grid">
+                <div class="ab-edit-field">
+                    <label class="ab-edit-label">Barrio</label>
+                    <input class="input-edit" id="edit-barrio-${id}" value="${_esc(item.barrio)}">
+                </div>
+                <div class="ab-edit-field">
+                    <label class="ab-edit-label">Domicilio</label>
+                    <input class="input-edit" id="edit-valor-${id}" value="${item.valor}" type="number" min="0">
+                </div>
+                <div class="ab-edit-field ab-edit-field--coords">
+                    <label class="ab-edit-label">Latitud</label>
+                    <input class="input-edit" id="edit-lat-${id}" value="${item.lat ?? ''}" type="number" step="0.000001" placeholder="Ej: 7.11929">
+                </div>
+                <div class="ab-edit-field ab-edit-field--coords">
+                    <label class="ab-edit-label">Longitud</label>
+                    <input class="input-edit" id="edit-lng-${id}" value="${item.lng ?? ''}" type="number" step="0.000001" placeholder="Ej: -73.12456">
+                </div>
+                <div>
+                    <label class="ab-edit-label">&nbsp;</label>
+                    <button class="btn-geo" id="geo-${id}">📍 Geocodificar</button>
+                </div>
+            </div>
+            <div class="ab-edit-actions">
+                <button class="btn-save"   id="save-${id}">Guardar</button>
+                <button class="btn-cancel" id="cancel-${id}">Cancelar</button>
+            </div>
         </td>
     `;
+
+    document.getElementById(`geo-${id}`).addEventListener('click', async () => {
+        const barrio = document.getElementById(`edit-barrio-${id}`).value.trim() || item.barrio;
+        const btn    = document.getElementById(`geo-${id}`);
+        btn.disabled    = true;
+        btn.textContent = 'Buscando...';
+        const { lat, lng } = await _geocodificarBarrio(barrio);
+        if (lat !== null) {
+            document.getElementById(`edit-lat-${id}`).value = lat;
+            document.getElementById(`edit-lng-${id}`).value = lng;
+        } else {
+            alert(`No se encontraron coordenadas para "${barrio}".\nPuedes ingresarlas manualmente.`);
+        }
+        btn.disabled    = false;
+        btn.textContent = '📍 Geocodificar';
+    });
 
     document.getElementById(`save-${id}`).addEventListener('click', () => _guardarEdicion(id));
     document.getElementById(`cancel-${id}`).addEventListener('click', () => _renderTabla());
@@ -172,17 +228,27 @@ async function _guardarEdicion(id) {
     if (isNaN(valor) || valor < 4000) { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
     if (valor > 50000)               { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
+    const latVal    = document.getElementById(`edit-lat-${id}`).value.trim();
+    const lngVal    = document.getElementById(`edit-lng-${id}`).value.trim();
+
+    const item      = _barrios.find(b => b.id === id);
+    const updateObj = {
+        barrio, valor,
+        lat: latVal ? parseFloat(latVal) : null,
+        lng: lngVal ? parseFloat(lngVal) : null,
+    };
+
     _setStatus('Guardando...', '');
     const { error } = await supabase
         .from('barrios_domicilio')
-        .update({ barrio, valor })
+        .update(updateObj)
         .eq('id', id);
 
     if (error) { _setStatus('Error al guardar.', 'error'); return; }
 
-    const valorAnterior = _barrios.find(b => b.id === id)?.valor;
+    const valorAnterior = item?.valor;
     const idx = _barrios.findIndex(b => b.id === id);
-    if (idx >= 0) _barrios[idx] = { id, barrio, valor };
+    if (idx >= 0) _barrios[idx] = { ...item, ...updateObj, id };
     invalidarCacheBarrios(_sede);
     _registrarLog('editar', _sede, barrio, valorAnterior, valor);
     _toast(`✓ "${barrio}" actualizado correctamente`);
@@ -252,11 +318,14 @@ async function _guardarNuevo() {
 
     const btnGuardar = document.getElementById('btn-guardar-modal-barrio');
     btnGuardar.disabled = true;
+    _setStatus('Geocodificando...', '');
+
+    const { lat, lng } = await _geocodificarBarrio(barrio);
 
     const { data, error } = await supabase
         .from('barrios_domicilio')
-        .insert({ sede: _sede, barrio, valor })
-        .select('id, barrio, valor')
+        .insert({ sede: _sede, barrio, valor, lat, lng })
+        .select('id, barrio, valor, lat, lng')
         .single();
 
     btnGuardar.disabled = false;

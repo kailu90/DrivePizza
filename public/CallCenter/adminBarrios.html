@@ -312,6 +312,64 @@
         .log-badge.editar   { background: #fff8e1; color: #c07800; }
         .log-badge.eliminar { background: #fdecea; color: #c0392b; }
 
+        /* ── Indicador coords ──────────────────────────────────── */
+        .td-coords-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            margin-right: 4px;
+            cursor: default;
+            opacity: 0.2;
+            vertical-align: middle;
+        }
+        .td-coords-icon.has-coords { opacity: 1; }
+
+        /* ── Fila edición (colspan=3) ──────────────────────────── */
+        .td-edit-form { padding: 12px 14px !important; background: #fafaf8; }
+
+        .ab-edit-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: flex-end;
+        }
+        .ab-edit-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 130px;
+        }
+        .ab-edit-field--coords { max-width: 170px; }
+        .ab-edit-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #888;
+        }
+        .btn-geo {
+            background: #f0f7ff;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-geo:hover    { background: #e3f2fd; border-color: #1565c0; }
+        .btn-geo:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ab-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
         /* ── Responsive ────────────────────────────────────────── */
         @media (max-width: 768px) {
             .logout-text { display: none; }

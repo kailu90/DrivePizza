@@ -5,13 +5,15 @@
 import { supabase } from '../../Api/supabaseConfig.js';
 import { getSedeActual, displayNombre } from './sede.js';
 import { getCarrito, getTotal, getTotalAdiciones, quitarItem, vaciarCarrito, formatPrecio } from './carrito.js';
-import { domicilios } from '../../CallCenter/domicilios.js';
+import { cargarBarriosSede } from '../../CallCenter/barriosService.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
 let tipoEntrega  = 'domicilio';
 let pagoActivo   = 'Efectivo';
 let domicilioFee = 0;
 let sede         = null;
+let barrioActual = '';
+let barriosCache = {}; // barrios cargados para la sede activa { nombre: valor }
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede       = document.getElementById('header-sede');
@@ -23,7 +25,15 @@ const summaryTotalPrev = document.getElementById('summary-total-preview');
 const inpNombre        = document.getElementById('inp-nombre');
 const inpTel           = document.getElementById('inp-tel');
 const inpDir           = document.getElementById('inp-dir');
-const selBarrio        = document.getElementById('sel-barrio');
+const inpTorre         = document.getElementById('inp-torre');
+const inpApto          = document.getElementById('inp-apto');
+const inpBarrio        = document.getElementById('inp-barrio');
+const barrioSuggs      = document.getElementById('barrio-suggs');
+const barrioSelecc     = document.getElementById('barrio-selecc');
+const barrioNombreEl   = document.getElementById('barrio-selecc-nombre');
+const barrioFeeEl      = document.getElementById('barrio-selecc-fee');
+const barrioAcWrap     = document.getElementById('barrio-ac-wrap');
+const dirWrap          = document.getElementById('dir-wrap');
 const domicilioFeeDiv  = document.getElementById('domicilio-fee');
 const domicilioFeeVal  = document.getElementById('domicilio-fee-val');
 const seccionDomicilio = document.getElementById('seccion-domicilio');
@@ -48,7 +58,7 @@ function init() {
   headerSede.textContent = displayNombre(sede);
 
   renderResumen();
-  cargarBarrios();
+  initBarrioAC();
   renderTotales();
   setupListeners();
 }
@@ -96,33 +106,98 @@ function renderResumen() {
   });
 }
 
-// ── BARRIOS ───────────────────────────────────────────────────
-function cargarBarrios() {
+// ── BARRIO AUTOCOMPLETE ────────────────────────────────────────
+async function initBarrioAC() {
   const sedeName = sede?.name || '';
-  const barrios  = domicilios[sedeName];
 
-  if (!barrios || !Object.keys(barrios).length) {
-    // Sede sin tarifas de barrio: ocultar selector, dejar dirección libre
-    selBarrio.closest('.pw-form-group').style.display = 'none';
+  // Cargar barrios de Supabase para esta sede
+  let barrios = {};
+  try {
+    const rows = await cargarBarriosSede(sedeName); // [{ barrio, valor }]
+    barrios = Object.fromEntries(rows.map(r => [r.barrio, r.valor]));
+  } catch (err) {
+    console.error('Error cargando barrios:', err);
+  }
+
+  barriosCache = barrios; // disponible para validar() y setupListeners()
+
+  if (!Object.keys(barrios).length) {
+    // Sede sin tarifas de barrio: mostrar solo dirección directamente
+    barrioAcWrap.style.display = 'none';
+    dirWrap.style.display      = '';
     return;
   }
 
-  const sorted = Object.keys(barrios).sort((a, b) => a.localeCompare(b, 'es'));
-  selBarrio.innerHTML = '<option value="">Selecciona tu barrio</option>' +
-    sorted.map(b => `<option value="${b}" data-fee="${barrios[b]}">${b} — ${formatPrecio(barrios[b])}</option>`).join('');
+  const sortedBarrios = Object.keys(barrios).sort((a, b) => a.localeCompare(b, 'es'));
 
-  selBarrio.addEventListener('change', () => {
-    const opt = selBarrio.options[selBarrio.selectedIndex];
-    if (opt.value) {
-      domicilioFee = Number(opt.dataset.fee);
-      domicilioFeeDiv.style.display = 'flex';
-      domicilioFeeVal.textContent = formatPrecio(domicilioFee);
-    } else {
-      domicilioFee = 0;
-      domicilioFeeDiv.style.display = 'none';
-    }
-    renderTotales();
+  // Precargar desde localStorage si el usuario ya eligió barrio en index.html
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('dp_direccion')); } catch { return null; } })();
+  if (saved?.barrio && barrios[saved.barrio] !== undefined) {
+    seleccionarBarrio(saved.barrio, barrios[saved.barrio]);
+    if (saved.direccion) inpDir.value = saved.direccion;
+  }
+
+  // Input autocomplete
+  inpBarrio.addEventListener('input', () => {
+    const q = inpBarrio.value.trim().toLowerCase();
+    if (!q) { hideSuggs(); return; }
+
+    const matches = sortedBarrios
+      .filter(b => b.toLowerCase().includes(q))
+      .slice(0, 8);
+
+    if (!matches.length) { hideSuggs(); return; }
+
+    barrioSuggs.innerHTML = matches.map(b =>
+      `<li class="pw-ac-item" data-barrio="${b}" data-fee="${barrios[b]}">
+        ${b}<span class="pw-ac-item-fee"> — ${formatPrecio(barrios[b])}</span>
+      </li>`
+    ).join('');
+    barrioSuggs.hidden = false;
+
+    barrioSuggs.querySelectorAll('.pw-ac-item').forEach(li => {
+      li.addEventListener('mousedown', e => {
+        e.preventDefault(); // evita que el blur cierre las sugerencias antes del click
+        seleccionarBarrio(li.dataset.barrio, Number(li.dataset.fee));
+        hideSuggs();
+      });
+    });
   });
+
+  inpBarrio.addEventListener('blur', () => setTimeout(hideSuggs, 150));
+
+  // "Cambiar barrio"
+  document.getElementById('btn-cambiar-barrio').addEventListener('click', () => {
+    barrioActual              = '';
+    domicilioFee              = 0;
+    barrioSelecc.style.display    = 'none';
+    barrioAcWrap.style.display    = '';
+    dirWrap.style.display         = 'none';
+    domicilioFeeDiv.style.display = 'none';
+    inpBarrio.value = '';
+    renderTotales();
+    inpBarrio.focus();
+  });
+}
+
+function seleccionarBarrio(nombre, fee) {
+  barrioActual = nombre;
+  domicilioFee = fee;
+
+  barrioNombreEl.textContent    = nombre;
+  barrioFeeEl.textContent       = formatPrecio(fee);
+  barrioSelecc.style.display    = '';
+  barrioAcWrap.style.display    = 'none';
+  dirWrap.style.display         = '';
+  domicilioFeeDiv.style.display = 'flex';
+  domicilioFeeVal.textContent   = formatPrecio(fee);
+
+  renderTotales();
+}
+
+function hideSuggs() {
+  barrioSuggs.innerHTML = '';
+  barrioSuggs.hidden    = true;
 }
 
 // ── TOTALES ───────────────────────────────────────────────────
@@ -130,13 +205,13 @@ function renderTotales() {
   const subtotal = getTotal();
   const total    = subtotal + (tipoEntrega === 'domicilio' ? domicilioFee : 0);
 
-  totalSubtotal.textContent  = formatPrecio(subtotal);
-  totalFinal.textContent     = formatPrecio(total);
+  totalSubtotal.textContent    = formatPrecio(subtotal);
+  totalFinal.textContent       = formatPrecio(total);
   summaryTotalPrev.textContent = formatPrecio(total);
 
   if (tipoEntrega === 'domicilio' && domicilioFee > 0) {
-    rowDomicilio.style.display    = '';
-    totalDomicilio.textContent    = formatPrecio(domicilioFee);
+    rowDomicilio.style.display = '';
+    totalDomicilio.textContent = formatPrecio(domicilioFee);
   } else {
     rowDomicilio.style.display = 'none';
   }
@@ -165,6 +240,10 @@ function setupListeners() {
       if (tipoEntrega === 'domicilio') {
         seccionDomicilio.style.display = '';
         seccionRecoger.style.display   = 'none';
+        // Restaurar fee si el barrio ya estaba seleccionado
+        if (barrioActual) {
+          domicilioFee = barriosCache[barrioActual] ?? 0;
+        }
       } else {
         seccionDomicilio.style.display = 'none';
         seccionRecoger.style.display   = '';
@@ -210,11 +289,14 @@ function validar() {
   if (!tel || tel.length < 7) { mostrarError('Ingresa un número de teléfono válido.'); inpTel.focus(); return false; }
 
   if (tipoEntrega === 'domicilio') {
-    const dir    = inpDir.value.trim();
-    const barrio = selBarrio.value;
-    const tieneBarrios = selBarrio.closest('.pw-form-group').style.display !== 'none';
-    if (!dir) { mostrarError('Ingresa tu dirección.'); inpDir.focus(); return false; }
-    if (tieneBarrios && !barrio) { mostrarError('Selecciona tu barrio.'); selBarrio.focus(); return false; }
+    const tieneBarrios = Object.keys(barriosCache).length > 0;
+    if (tieneBarrios && !barrioActual) {
+      mostrarError('Selecciona tu barrio para calcular el domicilio.');
+      inpBarrio?.focus();
+      return false;
+    }
+    const dir = inpDir?.value.trim() || '';
+    if (!dir) { mostrarError('Ingresa tu dirección.'); inpDir?.focus(); return false; }
   }
 
   return true;
@@ -236,11 +318,11 @@ async function confirmarPedido() {
     const obs      = inpObs.value.trim();
     const sedeName = sede.name;
 
-    // Obtener número de pedido
+    // Número de pedido
     const { data: nPedido, error: rpcError } = await supabase.rpc('siguiente_n_pedido_callcenter');
     if (rpcError) throw new Error('Error obteniendo número de pedido: ' + rpcError.message);
 
-    // Armar productos en formato compatible con pedidos_callcenter
+    // Productos
     const productos = carrito.map(item => {
       const prod = {
         nombre: item.opcion ? `${item.nombre} (${item.opcion})` : item.nombre,
@@ -254,17 +336,20 @@ async function confirmarPedido() {
       return prod;
     });
 
-    // Armar domicilio
+    // Dirección completa (base + complementos)
+    const dirBase   = inpDir?.value.trim() || '';
+    const torre     = inpTorre?.value.trim() || '';
+    const apto      = inpApto?.value.trim() || '';
+    const direccion = [dirBase, torre, apto].filter(Boolean).join(', ');
+
+    // Domicilio
     let domicilioObj;
-    let direccion = '';
     if (tipoEntrega === 'recoger') {
       domicilioObj = { tipo: 'recoger', valor: 0 };
     } else {
-      const barrio = selBarrio.value || null;
-      domicilioObj = barrio
-        ? { barrio, valor: domicilioFee }
+      domicilioObj = barrioActual
+        ? { barrio: barrioActual, valor: domicilioFee }
         : { valor: domicilioFee };
-      direccion = inpDir.value.trim();
     }
 
     const total = subtotal + (tipoEntrega === 'domicilio' ? domicilioFee : 0);

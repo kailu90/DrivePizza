@@ -12,12 +12,13 @@
 import { supabase } from '../Api/supabaseConfig.js';
 
 const _cache = {};
+let _coordsCache = null; // { barrio: { lat, lng } } — primer resultado con coords gana
 
 export async function cargarBarriosSede(sede) {
     if (_cache[sede]) return _cache[sede];
     const { data, error } = await supabase
         .from('barrios_domicilio')
-        .select('barrio, valor')
+        .select('barrio, valor, lat, lng')
         .eq('sede', sede)
         .order('barrio');
     if (error) throw error;
@@ -28,17 +29,21 @@ export async function cargarBarriosSede(sede) {
 export async function cargarTodosBarrios() {
     const { data, error } = await supabase
         .from('barrios_domicilio')
-        .select('sede, barrio, valor')
+        .select('sede, barrio, valor, lat, lng')
         .order('barrio');
     if (error) throw error;
 
     const result  = {};
     const bySede  = {};
+    _coordsCache  = {};
 
-    for (const { sede, barrio, valor } of (data ?? [])) {
+    for (const { sede, barrio, valor, lat, lng } of (data ?? [])) {
         if (!result[sede]) { result[sede] = {}; bySede[sede] = []; }
         result[sede][barrio] = valor;
-        bySede[sede].push({ barrio, valor });
+        bySede[sede].push({ barrio, valor, lat, lng });
+        if (lat != null && !_coordsCache[barrio]) {
+            _coordsCache[barrio] = { lat, lng };
+        }
     }
 
     // Poblar caché por sede al mismo tiempo
@@ -46,7 +51,13 @@ export async function cargarTodosBarrios() {
     return result;
 }
 
+/** Devuelve un mapa { barrio: { lat, lng } } con las coords geocodificadas. */
+export function getBarrioCoordsMap() {
+    return _coordsCache ?? {};
+}
+
 export function invalidarCacheBarrios(sede) {
     if (sede) delete _cache[sede];
     else Object.keys(_cache).forEach(k => delete _cache[k]);
+    _coordsCache = null;
 }

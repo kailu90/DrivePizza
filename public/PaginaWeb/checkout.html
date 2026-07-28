@@ -60,21 +60,55 @@
             </button>
           </div>
           <div id="seccion-domicilio">
-            <div class="pw-form-group">
-              <label class="pw-form-label" for="inp-dir">Dirección *</label>
-              <input class="pw-form-input" id="inp-dir" type="text"
-                     placeholder="Ej: Cra 27 # 45-10, Apto 302" autocomplete="street-address">
+
+            <!-- Card: barrio ya seleccionado -->
+            <div class="pw-barrio-selecc" id="barrio-selecc" style="display:none">
+              <div class="pw-barrio-selecc-left">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+                </svg>
+                <div>
+                  <span class="pw-barrio-selecc-nombre" id="barrio-selecc-nombre"></span>
+                  <span class="pw-barrio-selecc-fee" id="barrio-selecc-fee"></span>
+                </div>
+              </div>
+              <button class="pw-barrio-selecc-btn" id="btn-cambiar-barrio">Cambiar →</button>
             </div>
-            <div class="pw-form-group">
-              <label class="pw-form-label" for="sel-barrio">Barrio *</label>
-              <select class="pw-form-input pw-form-select" id="sel-barrio">
-                <option value="">Selecciona tu barrio</option>
-              </select>
+
+            <!-- Autocomplete de barrio -->
+            <div class="pw-ac-wrap" id="barrio-ac-wrap">
+              <div class="pw-form-group">
+                <label class="pw-form-label" for="inp-barrio">Barrio *</label>
+                <input class="pw-form-input" id="inp-barrio" type="text"
+                       placeholder="Busca tu barrio o sector..." autocomplete="off">
+              </div>
+              <ul class="pw-ac-suggs" id="barrio-suggs" hidden></ul>
             </div>
+
+            <!-- Dirección completa (se despliega tras elegir barrio) -->
+            <div id="dir-wrap" style="display:none">
+              <div class="pw-form-group">
+                <label class="pw-form-label" for="inp-dir">Dirección *</label>
+                <input class="pw-form-input" id="inp-dir" type="text"
+                       placeholder="Ej: Cra 27 # 45-12" autocomplete="street-address">
+              </div>
+              <div class="pw-dir-extras pw-form-group">
+                <div>
+                  <label class="pw-form-label" for="inp-torre">Torre / Bloque <span class="pw-label-optional">(opcional)</span></label>
+                  <input class="pw-form-input" id="inp-torre" type="text" placeholder="Torre 3">
+                </div>
+                <div>
+                  <label class="pw-form-label" for="inp-apto">Apto / Casa <span class="pw-label-optional">(opcional)</span></label>
+                  <input class="pw-form-input" id="inp-apto" type="text" placeholder="Apto 401">
+                </div>
+              </div>
+            </div>
+
             <div class="pw-domicilio-fee" id="domicilio-fee" style="display:none">
               <span>Domicilio</span>
               <span id="domicilio-fee-val"></span>
             </div>
+
           </div>
           <div id="seccion-recoger" style="display:none">
             <div class="pw-recoger-info" id="recoger-info"></div>

@@ -4,7 +4,7 @@
 import { supabase }        from '../../Api/supabaseConfig.js';
 import { displayNombre }   from './sede.js';
 import { getCarrito, getTotal, getTotalAdiciones, actualizarCantidad, quitarItem, vaciarCarrito, formatPrecio } from './carrito.js';
-import { domicilios }      from '../../CallCenter/domicilios.js';
+import { cargarBarriosSede } from '../../CallCenter/barriosService.js';
 import { PRODUCT_IMAGES }  from './menuData.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ export function initCheckoutSheet({ onCarritoChange }) {
 }
 
 // ── OPEN (cada vez que se abre el sheet) ─────────────────────
-export function openCheckoutSheet(sede) {
+export async function openCheckoutSheet(sede) {
   _sede         = sede;
   _tipoEntrega  = null;
   _pagoActivo   = null;
@@ -57,7 +57,7 @@ export function openCheckoutSheet(sede) {
   document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p => p.classList.remove('active'));
 
   renderItems();
-  cargarBarrios();
+  await cargarBarrios();
   preLlenarDireccion();
   renderTotales();
 }
@@ -156,19 +156,24 @@ export function renderItems() {
 }
 
 // ── BARRIOS ───────────────────────────────────────────────────
-function cargarBarrios() {
-  const barrios = domicilios[_sede?.name || ''];
-  if (!barrios || !Object.keys(barrios).length) {
-    coBarrioGroup.style.display = 'none';
+async function cargarBarrios() {
+  try {
+    const rows = await cargarBarriosSede(_sede?.name || '');
+    _barriosData = Object.fromEntries(rows.map(r => [r.barrio, r.valor]));
+  } catch (err) {
+    console.error('Error cargando barrios:', err);
     _barriosData = {};
+  }
+
+  if (!Object.keys(_barriosData).length) {
+    coBarrioGroup.style.display = 'none';
     return;
   }
-  _barriosData = barrios;
   coBarrioGroup.style.display = '';
-  coBarrio.value      = '';
-  coBarrioInput.value = '';
+  coBarrio.value          = '';
+  coBarrioInput.value     = '';
   coBarrioSuggs.innerHTML = '';
-  _domicilioFee = 0;
+  _domicilioFee           = 0;
 }
 
 function filtrarBarrios(query) {
@@ -192,7 +197,7 @@ function getDirHistorial() {
   catch { return []; }
 }
 
-export function guardarDirHistorial(dir) {
+function guardarDirHistorial(dir) {
   if (!dir) return;
   const hist = getDirHistorial().filter(d => d !== dir);
   hist.unshift(dir);
@@ -406,7 +411,7 @@ async function confirmarPedido() {
 
   } catch (err) {
     console.error(err);
-    mostrarError('No pudimos procesar tu pedido. Intenta de nuevo.');
+    mostrarErrorCampo(btnConfirmar, 'No pudimos procesar tu pedido. Intenta de nuevo.');
     btnConfirmar.disabled    = false;
     btnConfirmar.textContent = 'Confirmar pedido';
   }
