@@ -11,12 +11,16 @@ import { openBarriosModal }                 from './modalBarrios.js';
 import { domicilios as domiciliosLocal }    from './domicilios.js';
 import { invalidarCacheBarrios }            from './barriosService.js';
 
-const ROLES_PERMITIDOS = ['admin', 'callcenter-admin'];
+const ROLES_PERMITIDOS = ['admin', 'callcenter-admin', 'callcenter'];
+const ROLES_EDITOR     = ['admin', 'callcenter-admin'];
 
-let _sede    = 'cabecera';
-let _barrios = [];
-let _query   = '';
-let _usuario = '';    // username del usuario activo
+let _sede           = 'cabecera';
+let _barrios        = [];
+let _query          = '';
+let _soloSinCoords  = false;
+let _usuario        = '';
+let _esEditor       = false; // true solo para admin y callcenter-admin
+let _modalDetalleId = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 mostrarSkeleton('historial');
@@ -38,7 +42,9 @@ mostrarSkeleton('historial');
             return;
         }
 
-        _usuario = usuario.username || '';
+        _usuario  = usuario.username || '';
+        _esEditor = ROLES_EDITOR.includes(usuario.rol);
+
         document.getElementById('username').textContent = _usuario;
         document.getElementById('btn-home').onclick = () => { window.location.href = './callcenter.html'; };
         document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -49,6 +55,14 @@ mostrarSkeleton('historial');
         });
 
         initNavButtons('adminBarrios', { onBarrios: openBarriosModal });
+
+        // Solo editores ven controles de escritura
+        if (!_esEditor) {
+            ['btn-agregar-barrio', 'btn-filtro-sin-coords'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
 
         if (usuario.rol !== 'admin') {
             document.getElementById('migration-banner').style.display = 'none';
@@ -82,6 +96,8 @@ document.getElementById('admin-sede-nav').querySelectorAll('.sede-btn').forEach(
         document.getElementById('ab-titulo').textContent = btn.textContent;
         document.getElementById('admin-barrios-search').value = '';
         _query = '';
+        _soloSinCoords = false;
+        document.getElementById('btn-filtro-sin-coords').classList.replace('btn-save', 'btn-edit');
         _mostrarVista('barrios');
         _cargarSede(_sede);
     });
@@ -97,6 +113,14 @@ document.getElementById('btn-ver-log').addEventListener('click', () => {
 // ── Búsqueda ──────────────────────────────────────────────────────────────────
 document.getElementById('admin-barrios-search').addEventListener('input', e => {
     _query = e.target.value.toLowerCase().trim();
+    _renderTabla();
+});
+
+document.getElementById('btn-filtro-sin-coords').addEventListener('click', () => {
+    _soloSinCoords = !_soloSinCoords;
+    const btn = document.getElementById('btn-filtro-sin-coords');
+    btn.classList.toggle('btn-save',   _soloSinCoords);
+    btn.classList.toggle('btn-edit',  !_soloSinCoords);
     _renderTabla();
 });
 
@@ -135,101 +159,74 @@ async function _cargarSede(sede) {
 function _renderTabla() {
     const tbody = document.getElementById('barrios-tbody');
     const filtrados = _barrios.filter(b =>
-        !_query || b.barrio.toLowerCase().includes(_query)
+        (!_query || b.barrio.toLowerCase().includes(_query)) &&
+        (!_soloSinCoords || b.lat == null)
     );
 
     if (!filtrados.length) {
-        tbody.innerHTML = `<tr><td colspan="3" class="barrios-empty">Sin resultados</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="barrios-empty">Sin resultados</td></tr>`;
         return;
     }
 
     tbody.innerHTML = filtrados.map(b => `
         <tr data-id="${b.id}">
-            <td class="td-barrio">${_esc(b.barrio)}</td>
+            <td class="td-barrio td-barrio--clickable">${_esc(b.barrio)}</td>
             <td class="td-valor">$${b.valor.toLocaleString('es-CO')}</td>
-            <td class="td-accion">
-                <span class="td-coords-icon ${b.lat != null ? 'has-coords' : 'no-coords'}"
-                      title="${b.lat != null ? `${b.lat.toFixed(5)}, ${b.lng?.toFixed(5)}` : 'Sin coordenadas'}">📍</span>
-                <button class="btn-edit"   data-action="edit">Editar</button>
-                <button class="btn-delete" data-action="delete">Eliminar</button>
-            </td>
+            <td class="td-coord">${b.lat != null ? b.lat.toFixed(5) : '<span style="color:#ccc;">—</span>'}</td>
+            <td class="td-coord">${b.lng != null ? b.lng.toFixed(5) : '<span style="color:#ccc;">—</span>'}</td>
         </tr>
     `).join('');
 
     tbody.querySelectorAll('tr[data-id]').forEach(tr => {
         const id = Number(tr.dataset.id);
-        tr.querySelector('[data-action="edit"]').addEventListener('click', () => _editarFila(tr, id));
-        tr.querySelector('[data-action="delete"]').addEventListener('click', () => _eliminar(id, tr));
+        tr.addEventListener('click', () => _abrirModalDetalle(id));
     });
 }
 
-// ── Editar fila inline ────────────────────────────────────────────────────────
-function _editarFila(tr, id) {
+// ── Modal detalle / edición ───────────────────────────────────────────────────
+function _abrirModalDetalle(id) {
     const item = _barrios.find(b => b.id === id);
     if (!item) return;
+    _modalDetalleId = id;
 
-    tr.innerHTML = `
-        <td colspan="3" class="td-edit-form">
-            <div class="ab-edit-grid">
-                <div class="ab-edit-field">
-                    <label class="ab-edit-label">Barrio</label>
-                    <input class="input-edit" id="edit-barrio-${id}" value="${_esc(item.barrio)}">
-                </div>
-                <div class="ab-edit-field">
-                    <label class="ab-edit-label">Domicilio</label>
-                    <input class="input-edit" id="edit-valor-${id}" value="${item.valor}" type="number" min="0">
-                </div>
-                <div class="ab-edit-field ab-edit-field--coords">
-                    <label class="ab-edit-label">Latitud</label>
-                    <input class="input-edit" id="edit-lat-${id}" value="${item.lat ?? ''}" type="number" step="0.000001" placeholder="Ej: 7.11929">
-                </div>
-                <div class="ab-edit-field ab-edit-field--coords">
-                    <label class="ab-edit-label">Longitud</label>
-                    <input class="input-edit" id="edit-lng-${id}" value="${item.lng ?? ''}" type="number" step="0.000001" placeholder="Ej: -73.12456">
-                </div>
-                <div>
-                    <label class="ab-edit-label">&nbsp;</label>
-                    <button class="btn-geo" id="geo-${id}">📍 Geocodificar</button>
-                </div>
-            </div>
-            <div class="ab-edit-actions">
-                <button class="btn-save"   id="save-${id}">Guardar</button>
-                <button class="btn-cancel" id="cancel-${id}">Cancelar</button>
-            </div>
-        </td>
-    `;
+    document.getElementById('modal-det-sede').textContent  = _sede;
+    document.getElementById('modal-det-barrio').value       = item.barrio;
+    document.getElementById('modal-det-valor').value        = item.valor;
+    document.getElementById('modal-det-lat').value          = item.lat ?? '';
+    document.getElementById('modal-det-lng').value          = item.lng ?? '';
 
-    document.getElementById(`geo-${id}`).addEventListener('click', async () => {
-        const barrio = document.getElementById(`edit-barrio-${id}`).value.trim() || item.barrio;
-        const btn    = document.getElementById(`geo-${id}`);
-        btn.disabled    = true;
-        btn.textContent = 'Buscando...';
-        const { lat, lng } = await _geocodificarBarrio(barrio);
-        if (lat !== null) {
-            document.getElementById(`edit-lat-${id}`).value = lat;
-            document.getElementById(`edit-lng-${id}`).value = lng;
-        } else {
-            alert(`No se encontraron coordenadas para "${barrio}".\nPuedes ingresarlas manualmente.`);
-        }
-        btn.disabled    = false;
-        btn.textContent = '📍 Geocodificar';
+    // Controles de edición: visibles solo para editores
+    ['modal-det-maps-url', 'modal-det-maps-parse', 'modal-det-eliminar',
+     'modal-det-guardar', 'modal-det-cancelar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = _esEditor ? '' : 'none';
     });
 
-    document.getElementById(`save-${id}`).addEventListener('click', () => _guardarEdicion(id));
-    document.getElementById(`cancel-${id}`).addEventListener('click', () => _renderTabla());
-    document.getElementById(`edit-barrio-${id}`).focus();
+    // Inputs de solo lectura para no editores
+    ['modal-det-barrio', 'modal-det-valor', 'modal-det-lat', 'modal-det-lng'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.readOnly = !_esEditor;
+    });
+
+    document.getElementById('modal-detalle-barrio').style.display = 'flex';
+    if (_esEditor) document.getElementById('modal-det-barrio').focus();
 }
 
-async function _guardarEdicion(id) {
-    const barrio = document.getElementById(`edit-barrio-${id}`).value.trim();
-    const valor  = parseInt(document.getElementById(`edit-valor-${id}`).value, 10);
+function _cerrarModalDetalle() {
+    document.getElementById('modal-detalle-barrio').style.display = 'none';
+    _modalDetalleId = null;
+}
+
+async function _guardarModalDetalle() {
+    const id     = _modalDetalleId;
+    const barrio = document.getElementById('modal-det-barrio').value.trim();
+    const valor  = parseInt(document.getElementById('modal-det-valor').value, 10);
+    const latVal = document.getElementById('modal-det-lat').value.trim();
+    const lngVal = document.getElementById('modal-det-lng').value.trim();
 
     if (!barrio)                      { alert('El nombre del barrio no puede estar vacío.'); return; }
     if (isNaN(valor) || valor < 4000) { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
-    if (valor > 50000)               { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
-
-    const latVal    = document.getElementById(`edit-lat-${id}`).value.trim();
-    const lngVal    = document.getElementById(`edit-lng-${id}`).value.trim();
+    if (valor > 50000)                { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
     const item      = _barrios.find(b => b.id === id);
     const updateObj = {
@@ -251,10 +248,51 @@ async function _guardarEdicion(id) {
     if (idx >= 0) _barrios[idx] = { ...item, ...updateObj, id };
     invalidarCacheBarrios(_sede);
     _registrarLog('editar', _sede, barrio, valorAnterior, valor);
+    _cerrarModalDetalle();
     _toast(`✓ "${barrio}" actualizado correctamente`);
     _setStatus('Guardado.', 'ok');
     _renderTabla();
 }
+
+// Listeners del modal de detalle (se registran una sola vez al cargar)
+document.getElementById('btn-cerrar-modal-detalle').addEventListener('click', _cerrarModalDetalle);
+document.getElementById('modal-det-cancelar').addEventListener('click', _cerrarModalDetalle);
+document.getElementById('modal-det-guardar').addEventListener('click', _guardarModalDetalle);
+document.getElementById('modal-detalle-barrio').addEventListener('click', e => {
+    if (e.target.id === 'modal-detalle-barrio') _cerrarModalDetalle();
+});
+document.getElementById('modal-det-barrio').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('modal-det-valor').focus();
+});
+document.getElementById('modal-det-valor').addEventListener('keydown', e => {
+    if (e.key === 'Enter') _guardarModalDetalle();
+});
+document.getElementById('modal-det-ir-maps').addEventListener('click', () => {
+    const lat = document.getElementById('modal-det-lat').value.trim();
+    const lng = document.getElementById('modal-det-lng').value.trim();
+    if (!lat || !lng) { alert('Ingresa las coordenadas primero.'); return; }
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+});
+
+document.getElementById('modal-det-maps-parse').addEventListener('click', () => {
+    const url   = document.getElementById('modal-det-maps-url').value.trim();
+    const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (match) {
+        document.getElementById('modal-det-lat').value      = match[1];
+        document.getElementById('modal-det-lng').value      = match[2];
+        document.getElementById('modal-det-maps-url').value = '';
+    } else {
+        alert('No se encontraron coordenadas en la URL.\nAsegúrate de copiar la URL completa desde la barra del navegador en Google Maps.');
+    }
+});
+document.getElementById('modal-det-eliminar').addEventListener('click', async () => {
+    const id   = _modalDetalleId;
+    const item = _barrios.find(b => b.id === id);
+    if (!item || !confirm(`¿Eliminar "${item.barrio}"?`)) return;
+    const tr = document.querySelector(`tr[data-id="${id}"]`);
+    _cerrarModalDetalle();
+    await _eliminar(id, tr);
+});
 
 // ── Eliminar ──────────────────────────────────────────────────────────────────
 async function _eliminar(id, tr) {
