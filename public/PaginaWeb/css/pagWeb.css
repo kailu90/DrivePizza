@@ -2004,11 +2004,6 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-mist);
   transition: var(--dp-transition);
 }
-.pw-entrega-pill.active {
-  border-color: var(--dp-green);
-  color: var(--dp-green);
-  background: rgba(49,75,39,.06);
-}
 
 /* ── ERROR INLINE DE CAMPO ────────────────────────────────── */
 .pw-field-error {
@@ -2136,29 +2131,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-recoger-info strong { font-weight: 700; }
 
-/* Pago pills */
-.pw-pago-pills { display: flex; gap: .35rem; flex-wrap: wrap; }
-.pw-pago-pill {
-  display: flex;
-  align-items: center;
-  gap: .25rem;
-  padding: .25rem .6rem;
-  border: 1.5px solid rgba(0,0,0,.14);
-  border-radius: 99px;
-  font-size: .7rem;
-  font-weight: 600;
-  color: #888;
-  background: var(--dp-mist);
-  transition: var(--dp-transition);
-}
-.pw-pago-pill.active {
-  background: var(--dp-green);
-  color: var(--dp-sand);
-  border-color: var(--dp-green);
-}
-
-/* Topping pills (multi-selección) */
+/* Pago pills + Topping pills — estilos compartidos */
+.pw-pago-pills,
 .pw-topping-pills { display: flex; gap: .35rem; flex-wrap: wrap; }
+.pw-pago-pill,
 .pw-topping-pill {
   display: flex;
   align-items: center;
@@ -2172,10 +2148,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-mist);
   transition: var(--dp-transition);
 }
+.pw-entrega-pill.active,
+.pw-pago-pill.active,
 .pw-topping-pill.active {
+  background: var(--dp-green);
+  color: var(--dp-sand);
   border-color: var(--dp-green);
-  color: var(--dp-green);
-  background: rgba(49,75,39,.06);
 }
 
 /* Totales */

@@ -150,10 +150,63 @@ function filtrarBarrios(query) {
 
 // ── TELÉFONO ──────────────────────────────────────────────────
 function normalizarTel(val) {
-  let t = val.replace(/[\s\-().]/g, ''); // quitar espacios, guiones, paréntesis
+  let t = val.replace(/[\s\-().]/g, '');
   if (t.startsWith('+57')) t = t.slice(3);
   else if (t.startsWith('57') && t.length > 10) t = t.slice(2);
   return t;
+}
+
+// ── TORRE / APTO ──────────────────────────────────────────────
+function normalizarTorre(val) {
+  const s = val.trim();
+  if (!s) return s;
+  const m = s.match(/^(bloque|bloq|bl|piso|pis|ps|torre|t)\s*[-.]?\s*([\w\s]*)/i);
+  if (m) {
+    const raw  = m[1].toLowerCase();
+    const tipo = raw.startsWith('bl') ? 'Bloque' : raw.startsWith('p') ? 'Piso' : 'Torre';
+    const num  = m[2].trim().toUpperCase();
+    return num ? `${tipo} ${num}` : tipo;
+  }
+  return `Torre ${s.toUpperCase()}`;
+}
+
+function normalizarApto(val) {
+  const s = val.trim();
+  if (!s) return s;
+  const m = s.match(/^(apartamento|apto|apt|ap|casa|cs|piso|ps)\s*[.\s-]?\s*(.+)/i);
+  if (m) {
+    const raw = m[1].toLowerCase();
+    const tipo = raw.startsWith('c') ? 'Casa' : raw.startsWith('p') ? 'Piso' : 'Apto';
+    return `${tipo} ${m[2].trim().toUpperCase()}`;
+  }
+  return `Apto ${s.toUpperCase()}`;
+}
+
+// ── DIRECCIÓN ─────────────────────────────────────────────────
+const _VIA_MAP = {
+  cra: 'Carrera', kr: 'Carrera',
+  cl: 'Calle',
+  dg: 'Diagonal',
+  tv: 'Transversal', trs: 'Transversal',
+  av: 'Avenida',
+};
+
+function normalizarDireccion(val) {
+  const s = val.trim();
+  if (!s) return s;
+
+  const m = s.match(
+    /^(carrera|cra|kr|calle|cl|diagonal|dg|transversal|tv|trs|avenida|av|autopista)\s+(\d+[a-z]?)\s*#?\s*(\d+[a-z]?)\s*[-–]?\s*(\d+[a-z]?)/i
+  );
+  if (!m) return s; // patrón no reconocido → dejar intacto
+
+  const viaKey = m[1].toLowerCase();
+  const via    = _VIA_MAP[viaKey] ?? (m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase());
+  const n1     = m[2].toUpperCase();
+  const n2     = m[3];
+  const n3     = m[4];
+
+  return `${via} ${n1} # ${n2}-${n3}`;
 }
 
 // ── HISTORIAL DIRECCIÓN ───────────────────────────────────────
@@ -209,6 +262,21 @@ function setupFormListeners() {
   coTel.addEventListener('blur', () => {
     const norm = normalizarTel(coTel.value);
     if (norm) coTel.value = norm;
+  });
+
+  coDir.addEventListener('blur', () => {
+    const norm = normalizarDireccion(coDir.value);
+    if (norm) coDir.value = norm;
+  });
+
+  coTorre.addEventListener('blur', () => {
+    const norm = normalizarTorre(coTorre.value);
+    if (norm) coTorre.value = norm;
+  });
+
+  coApto.addEventListener('blur', () => {
+    const norm = normalizarApto(coApto.value);
+    if (norm) coApto.value = norm;
   });
 
   coDir.addEventListener('focus', () => mostrarDirSuggs(coDir.value.trim()));
@@ -301,29 +369,49 @@ function mostrarErrorCampo(anchorEl, msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
+const _VIAS_CONOCIDAS = /^(carrera|cra|kr|calle|cl|diagonal|dg|transversal|tv|trs|avenida|av|autopista)/i;
+
 function validar() {
   if (!coNombre.value.trim()) {
     mostrarErrorCampo(coNombre, 'Por favor ingresa tu nombre.');
     coNombre.focus(); return false;
   }
-  if (!coTel.value.trim() || coTel.value.trim().length < 7) {
-    mostrarErrorCampo(coTel, 'Ingresa un número de teléfono válido.');
+
+  const tel = normalizarTel(coTel.value);
+  if (!tel || tel.length !== 10 || !/^\d{10}$/.test(tel)) {
+    mostrarErrorCampo(coTel, 'Ingresa un celular colombiano de 10 dígitos (sin indicativo).');
     coTel.focus(); return false;
   }
+
   if (!_tipoEntrega) {
     mostrarErrorCampo(document.getElementById('co-entrega-pills'), 'Selecciona cómo quieres recibir tu pedido.');
     return false;
   }
+
   if (_tipoEntrega === 'domicilio') {
-    if (!coDir.value.trim()) {
+    // Normalizar antes de validar (por si el usuario no salió del campo)
+    const normDir = normalizarDireccion(coDir.value);
+    coDir.value   = normDir;
+    const dir     = normDir.trim();
+
+    if (!dir) {
       mostrarErrorCampo(coDir, 'Ingresa tu dirección.');
       coDir.focus(); return false;
     }
+    if (_VIAS_CONOCIDAS.test(dir) && (!dir.includes('#') || !dir.includes('-'))) {
+      mostrarErrorCampo(coDir, 'La dirección parece incompleta. Ej: Carrera 25 # 50-48');
+      coDir.focus(); return false;
+    }
+    if (coTorre.value.trim() && !coApto.value.trim()) {
+      mostrarErrorCampo(coApto, 'Indica el Apto o Casa para la Torre / Bloque / Piso ingresado.');
+      coApto.focus(); return false;
+    }
     if (coBarrioGroup.style.display !== 'none' && !coBarrio.value) {
-      mostrarErrorCampo(coBarrio, 'Selecciona tu barrio.');
-      coBarrio.focus(); return false;
+      mostrarErrorCampo(coBarrioInput, 'Selecciona tu barrio de la lista.');
+      coBarrioInput.focus(); return false;
     }
   }
+
   if (!_pagoActivo) {
     mostrarErrorCampo(document.getElementById('co-pago-pills'), 'Selecciona el método de pago.');
     return false;
@@ -363,7 +451,7 @@ async function confirmarPedido() {
     } else {
       const barrio = coBarrio.value || null;
       domicilioObj = barrio ? { barrio, valor: _domicilioFee } : { valor: _domicilioFee };
-      const partes = [coDir.value.trim()];
+      const partes = [normalizarDireccion(coDir.value)];
       if (coTorre.value.trim()) partes.push(coTorre.value.trim());
       if (coApto.value.trim())  partes.push(coApto.value.trim());
       direccion = partes.join(', ');
