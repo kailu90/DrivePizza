@@ -3,9 +3,8 @@
    ============================================================ */
 import { supabase }        from '../../Api/supabaseConfig.js';
 import { displayNombre }   from './sede.js';
-import { getCarrito, getTotal, getTotalAdiciones, actualizarCantidad, quitarItem, vaciarCarrito, formatPrecio } from './carrito.js';
+import { getCarrito, getTotal, getTotalAdiciones, actualizarCantidad, quitarItem, vaciarCarrito, formatPrecio, renderItemHTML } from './carrito.js';
 import { cargarBarriosSede } from '../../CallCenter/barriosService.js';
-import { PRODUCT_IMAGES }  from './menuData.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
 let _sede            = null;
@@ -13,6 +12,7 @@ let _tipoEntrega     = null;
 let _pagoActivo      = null;
 let _domicilioFee    = 0;
 let _onCarritoChange = null;
+let _toppings        = new Set();
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const coResumen      = document.getElementById('co-resumen-items');
@@ -49,7 +49,9 @@ export async function openCheckoutSheet(sede) {
   _tipoEntrega  = null;
   _pagoActivo   = null;
   _domicilioFee = 0;
+  _toppings     = new Set();
 
+  document.querySelectorAll('#co-topping-pills .pw-topping-pill').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => p.classList.remove('active'));
   coDomSec.style.display     = 'none';
   coRecogerSec.style.display = 'none';
@@ -91,50 +93,7 @@ function preLlenarDireccion() {
 // ── RENDER ITEMS ──────────────────────────────────────────────
 export function renderItems() {
   const carrito = getCarrito();
-  coResumen.innerHTML = carrito.map((item, idx) => {
-    const esMezcla = item.nombre.includes(' y mitad ');
-    let thumbHTML, thumbClass;
-    if (esMezcla) {
-      const [n1, n2] = item.nombre.split(' y mitad ');
-      const src1 = PRODUCT_IMAGES[n1] || '';
-      const src2 = PRODUCT_IMAGES[n2] || '';
-      thumbClass = 'pw-cart-item-thumb pw-cart-item-thumb--mezcla';
-      thumbHTML  = `
-        ${src1 ? `<img class="pw-cart-thumb-main" src="${src1}" alt="${n1}" loading="lazy">` : ''}
-        ${src2 ? `<img class="pw-cart-thumb-secondary" src="${src2}" alt="${n2}" loading="lazy">` : ''}`;
-    } else {
-      const src  = PRODUCT_IMAGES[item.nombre] || '';
-      thumbClass = `pw-cart-item-thumb${src ? '' : ' pw-cart-item-thumb--empty'}`;
-      thumbHTML  = src ? `<img src="${src}" alt="${item.nombre}" loading="lazy">` : '';
-    }
-    return `
-    <div class="pw-cart-item">
-      <div class="pw-cart-item-body">
-        <div class="${thumbClass}">${thumbHTML}</div>
-        <div class="pw-cart-item-info">
-          <span class="pw-cart-item-nombre">${item.nombre}</span>
-          <div class="pw-cart-item-row">
-            <span class="pw-cart-item-opcion">${item.opcion}</span>
-            <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
-          </div>
-          ${item.adiciones?.length ? item.adiciones.map(a => `
-          <div class="pw-cart-item-adicion">
-            <span>${a.nombre}</span>
-            <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
-          </div>`).join('') : ''}
-          ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
-          <div class="pw-cart-item-bottom">
-            <div class="pw-cart-item-qty">
-              <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
-              <span class="pw-cart-qty-num">${item.cantidad}</span>
-              <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
-            </div>
-            <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">Eliminar</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  coResumen.innerHTML = carrito.map((item, idx) => renderItemHTML(item, idx)).join('');
 
   coResumen.querySelectorAll('.pw-cart-qty-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -189,6 +148,14 @@ function filtrarBarrios(query) {
     .join('');
 }
 
+// ── TELÉFONO ──────────────────────────────────────────────────
+function normalizarTel(val) {
+  let t = val.replace(/[\s\-().]/g, ''); // quitar espacios, guiones, paréntesis
+  if (t.startsWith('+57')) t = t.slice(3);
+  else if (t.startsWith('57') && t.length > 10) t = t.slice(2);
+  return t;
+}
+
 // ── HISTORIAL DIRECCIÓN ───────────────────────────────────────
 const DIR_HIST_KEY = 'dp_dir_historial';
 
@@ -239,6 +206,11 @@ function renderTotales() {
 
 // ── LISTENERS (una vez) ───────────────────────────────────────
 function setupFormListeners() {
+  coTel.addEventListener('blur', () => {
+    const norm = normalizarTel(coTel.value);
+    if (norm) coTel.value = norm;
+  });
+
   coDir.addEventListener('focus', () => mostrarDirSuggs(coDir.value.trim()));
   coDir.addEventListener('input', () => mostrarDirSuggs(coDir.value.trim()));
   coDirSuggs.addEventListener('mousedown', e => {
@@ -294,6 +266,19 @@ function setupFormListeners() {
       document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       _pagoActivo = pill.dataset.pago;
+    });
+  });
+
+  document.querySelectorAll('#co-topping-pills .pw-topping-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const t = pill.dataset.topping;
+      if (_toppings.has(t)) {
+        _toppings.delete(t);
+        pill.classList.remove('active');
+      } else {
+        _toppings.add(t);
+        pill.classList.add('active');
+      }
     });
   });
 
@@ -386,14 +371,18 @@ async function confirmarPedido() {
 
     const total = subtotal + (_tipoEntrega === 'domicilio' ? _domicilioFee : 0);
 
+    const obsCliente   = coObs.value.trim();
+    const obsToppings  = _toppings.size ? `Acompañamientos: ${[..._toppings].join(', ')}` : '';
+    const obsFinal     = [obsCliente, obsToppings].filter(Boolean).join(' | ');
+
     const { error: insertError } = await supabase.from('pedidos_callcenter').insert({
       n_pedido: nPedido,
       nombre:   coNombre.value.trim(),
-      telefono: coTel.value.trim(),
+      telefono: normalizarTel(coTel.value),
       direccion,
       sede:     _sede.name,
       pago:     _pagoActivo,
-      obs:      coObs.value.trim(),
+      obs:      obsFinal,
       asesor:   'web',
       canal:    'web',
       impreso:  false,

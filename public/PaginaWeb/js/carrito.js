@@ -2,6 +2,7 @@
    Drive Pizza — Carrito de compras
    Estado persistido en localStorage
    ============================================================ */
+import { PRODUCT_IMAGES } from './menuData.js';
 
 const KEY = 'dp_carrito';
 
@@ -105,4 +106,52 @@ export function getConteo() {
 /** Formatea un número como precio colombiano: $32.000 */
 export function formatPrecio(n) {
   return '$' + Number(n).toLocaleString('es-CO');
+}
+
+// ── RENDER COMPARTIDO ─────────────────────────────────────────
+
+/** Genera el HTML de un ítem del carrito. Usado en cart sheet y checkout sheet. */
+export function renderItemHTML(item, idx) {
+  const esMezcla = item.nombre.includes(' y mitad ');
+  let thumbHTML, thumbClass;
+  if (esMezcla) {
+    const [n1, n2] = item.nombre.split(' y mitad ');
+    const src1 = PRODUCT_IMAGES[n1] || '';
+    const src2 = PRODUCT_IMAGES[n2] || '';
+    thumbClass = 'pw-cart-item-thumb pw-cart-item-thumb--mezcla';
+    thumbHTML  = `
+      ${src1 ? `<img class="pw-cart-thumb-main" src="${src1}" alt="${n1}" loading="lazy">` : ''}
+      ${src2 ? `<img class="pw-cart-thumb-secondary" src="${src2}" alt="${n2}" loading="lazy">` : ''}`;
+  } else {
+    const src  = PRODUCT_IMAGES[item.nombre] || '';
+    thumbClass = `pw-cart-item-thumb${src ? '' : ' pw-cart-item-thumb--empty'}`;
+    thumbHTML  = src ? `<img src="${src}" alt="${item.nombre}" loading="lazy">` : '';
+  }
+  return `
+  <div class="pw-cart-item">
+    <div class="pw-cart-item-body">
+      <div class="${thumbClass}">${thumbHTML}</div>
+      <div class="pw-cart-item-info">
+        <span class="pw-cart-item-nombre">${item.nombre}</span>
+        <div class="pw-cart-item-row">
+          <span class="pw-cart-item-opcion">${item.opcion}</span>
+          <span class="pw-cart-item-base-precio">${formatPrecio(item.precio)}</span>
+        </div>
+        ${item.adiciones?.length ? item.adiciones.map(a => `
+        <div class="pw-cart-item-adicion">
+          <span>${a.nombre}</span>
+          <span class="pw-cart-adicion-precio">+${formatPrecio(a.precio)}</span>
+        </div>`).join('') : ''}
+        ${item.obs ? `<div class="pw-cart-item-obs">"${item.obs}"</div>` : ''}
+        <div class="pw-cart-item-bottom">
+          <div class="pw-cart-item-qty">
+            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
+            <span class="pw-cart-qty-num">${item.cantidad}</span>
+            <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+          </div>
+          <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
