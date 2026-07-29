@@ -122,7 +122,9 @@ function renderSedes() {
     return 0;
   });
 
-  const iCercana = tieneUbicacion ? sedes.findIndex(s => s._dist !== null && !s._fueraZona) : -1;
+  const iCercana = tieneUbicacion
+    ? sedes.findIndex(s => s._dist !== null && s._dist <= GPS_RADIO_KM && !s._fueraZona)
+    : -1;
 
   grid.innerHTML = sedes.map((sede, idx) => {
     const abierta      = estaAbierta(sede);
@@ -150,8 +152,8 @@ function renderSedes() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             Más cercana</span>` : ''}
         </div>
-        <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}${!disponible && !fueraZona ? ' pw-sede-btn--horarios' : ''}" ${!disponible && fueraZona ? 'disabled' : ''}>
-          ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios →')}
+        <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}${!disponible ? ' pw-sede-btn--horarios' : ''}">
+          ${disponible ? 'Ver menú →' : 'Ver horarios →'}
         </button>
       </div>`;
   }).join('');
