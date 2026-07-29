@@ -521,6 +521,19 @@
         .btn-reactivar-hist:hover { background: #e67e22; color: white; }
         .hist-row-clickable { cursor: pointer; }
         .hist-row-clickable:hover td { background: #f4f1ec; }
+        .btn-filtrar-hist {
+            margin-left: auto;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid #c8bfb0;
+            background: var(--color-secundario);
+            color: var(--color-terciario);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .btn-filtrar-hist:hover { background: var(--color-primario); color: #fff; border-color: var(--color-primario); }
         .badge-reactivado {
             display: inline-block;
             margin-left: 6px;
@@ -701,51 +714,51 @@
             gap: 8px;
             width: 100%;
             padding: 9px 12px;
-            background: var(--color-quinto);
-            border: 1.5px solid #e0d8cc;
+            background: var(--color-secundario);
+            border: none;
             border-radius: 8px;
             font-size: 1.3rem;
             font-weight: 600;
-            color: var(--color-secundario);
+            color: var(--color-terciario);
             cursor: pointer;
             font-family: inherit;
             transition: all .2s;
             margin-top: 4px;
             box-sizing: border-box;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10), inset 0 0 0 1px #d4cbbf;
         }
-        .btn-reactivaciones:hover,
-        .btn-reactivaciones.active { background: var(--color-primario); color: white; border-color: var(--color-primario); }
+        .btn-reactivaciones:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.14), inset 0 0 0 1px #a89880; }
+        .btn-reactivaciones.active { background: var(--color-primario); color: #fff; box-shadow: none; }
         #historial-react-paginacion { display: flex; gap: 8px; margin-top: 12px; padding: 4px 0; }
 
-        /* Toggle Activados / Por reactivar */
+        /* Toggle Reactivar / Reactivados */
         .hist-toggle-wrap {
             display: flex;
-            background: #ede8e0;
-            border-radius: 8px;
-            padding: 3px;
-            gap: 2px;
+            flex-direction: row;
+            gap: 3px;
             margin-top: 4px;
+            background: var(--color-secundario);
+            border-radius: 10px;
+            padding: 3px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10), inset 0 0 0 1px #d4cbbf;
         }
         .hist-toggle-btn {
             flex: 1;
-            padding: 6px 4px;
+            padding: 7px 6px;
             border: none;
-            border-radius: 6px;
+            border-radius: 7px;
+            background: transparent;
             font-size: 1.2rem;
-            font-weight: 500;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            background: transparent;
-            color: #888;
-            transition: all .18s;
+            color: var(--color-terciario);
+            transition: all .2s;
             white-space: nowrap;
+            text-align: center;
         }
-        .hist-toggle-btn.active {
-            background: white;
-            color: var(--color-primario);
-            font-weight: 700;
-            box-shadow: 0 1px 4px rgba(0,0,0,.12);
-        }
+        .hist-toggle-btn:hover { background: rgba(0,0,0,0.06); }
+        .hist-toggle-btn.active { background: var(--color-primario); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
     </style>
 </head>
 <body data-skeleton="historial">
@@ -807,7 +820,7 @@
 
                 <div class="hist-toggle-wrap">
                     <button class="hist-toggle-btn active" data-estado="pendiente">Reactivar</button>
-                    <button class="hist-toggle-btn" data-estado="exitosa">Activados</button>
+                    <button class="hist-toggle-btn" data-estado="exitosa">Reactivados</button>
                 </div>
 
                 <div class="filtro-sidebar-label">Sede</div>
@@ -821,16 +834,7 @@
                     <option value="unico">Único</option>
                 </select>
 
-                <div class="filtro-sidebar-label">Agente</div>
-                <input id="hist-filtro-agente" type="text" class="hist-input" placeholder="Nombre del agente...">
-
-                <div class="filtro-sidebar-label">Desde</div>
-                <input id="hist-filtro-desde" type="date" class="hist-input">
-
-                <div class="filtro-sidebar-label">Hasta</div>
-                <input id="hist-filtro-hasta" type="date" class="hist-input">
-
-                <button class="btn-buscar-cliente" id="btn-buscar-historial" style="width:100%;margin-top:12px;">Buscar</button>
+                <button class="btn-buscar-cliente" id="btn-buscar-historial" style="width:100%;margin-top:12px;display:none;">Buscar</button>
             </div>
 
         </aside>
@@ -890,6 +894,7 @@
                 <span class="tag-chip dias-filtro-hist" data-dias="30">+30 días</span>
                 <span class="tag-chip dias-filtro-hist" data-dias="60">+60 días</span>
                 <span class="tag-chip dias-filtro-hist" data-dias="90">+90 días</span>
+                <button class="btn-filtrar-hist" id="btn-abrir-filtros-hist">&#9878; Filtrar</button>
             </div>
 
             <!-- Vista historial reactivaciones -->
@@ -1029,6 +1034,31 @@
             <button class="btn-guardar-cli" id="btn-crear-cliente">Crear cliente</button>
         </div>
 
+    </div>
+</div>
+
+<!-- Modal filtros historial -->
+<div class="modal-overlay" id="modal-filtros-hist" style="display:none;">
+    <div class="modal-cliente-content" style="max-width:360px;">
+        <div class="modal-cli-header">
+            <span class="modal-cli-title">Filtros</span>
+            <button class="mpedido-close" id="cerrar-modal-filtros-hist">&times;</button>
+        </div>
+        <div class="modal-cli-body" style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+                <div class="filtro-sidebar-label" style="margin-top:0;">Agente</div>
+                <input id="hist-filtro-agente" type="text" class="hist-input" placeholder="Nombre del agente...">
+            </div>
+            <div>
+                <div class="filtro-sidebar-label" style="margin-top:0;">Desde</div>
+                <input id="hist-filtro-desde" type="date" class="hist-input">
+            </div>
+            <div>
+                <div class="filtro-sidebar-label" style="margin-top:0;">Hasta</div>
+                <input id="hist-filtro-hasta" type="date" class="hist-input">
+            </div>
+            <button class="btn-buscar-cliente" id="btn-buscar-historial" style="width:100%;margin-top:4px;">Buscar</button>
+        </div>
     </div>
 </div>
 

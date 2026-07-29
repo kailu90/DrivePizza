@@ -1175,7 +1175,19 @@ document.getElementById('btn-ir-reactivaciones').addEventListener('click', () =>
     _actualizarConteosPills();
 });
 
+document.getElementById('btn-abrir-filtros-hist').addEventListener('click', () => {
+    document.getElementById('modal-filtros-hist').style.display = 'flex';
+});
+document.getElementById('cerrar-modal-filtros-hist').addEventListener('click', () => {
+    document.getElementById('modal-filtros-hist').style.display = 'none';
+});
+document.getElementById('modal-filtros-hist').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-filtros-hist'))
+        document.getElementById('modal-filtros-hist').style.display = 'none';
+});
+
 document.getElementById('btn-buscar-historial').addEventListener('click', () => {
+    document.getElementById('modal-filtros-hist').style.display = 'none';
     cargarHistorial(1);
     if (_histFiltroEstado === 'pendiente') _actualizarConteosPills();
 });
