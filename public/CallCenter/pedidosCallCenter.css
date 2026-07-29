@@ -839,6 +839,33 @@ body {
     color: var(--color-secundario);
 }
 
+/* ── ACOMPAÑAMIENTOS GRATUITOS ────────────────────────────────── */
+.acomp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.acomp-pill {
+    padding: 6px 14px;
+    border: 2px solid #ddd;
+    border-radius: 20px;
+    background: transparent;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-terciario);
+}
+
+.acomp-pill:hover { border-color: var(--color-primario); }
+
+.acomp-pill.active {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
+}
+
 /* ── ENTREGA TOGGLE ───────────────────────────────────────────── */
 .entrega-toggle {
     display: flex;

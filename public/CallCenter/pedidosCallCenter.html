@@ -258,6 +258,15 @@
                 <button type="button" class="pago-btn" data-pago="Transferencia">📲 Transferencia</button>
                 <button type="button" class="pago-btn" data-pago="Datafono">💳 Datáfono</button>
             </div>
+            <!-- Acompañamientos gratuitos -->
+            <div class="full-width" id="acomp-section">
+                <p class="form-label" style="margin-bottom:6px;">Acompañamientos gratuitos</p>
+                <div id="acomp-pills" class="acomp-pills">
+                    <button type="button" class="acomp-pill" data-topping="Salsa Tártara">Salsa Tártara</button>
+                    <button type="button" class="acomp-pill" data-topping="Orégano">Orégano</button>
+                    <button type="button" class="acomp-pill" data-topping="Sal de Ajo">Sal de Ajo</button>
+                </div>
+            </div>
             <textarea id="observaciones" placeholder="Observaciones..." class="full-width"></textarea>
         </div>
         <!-- Total checkout — solo visual -->
@@ -437,6 +446,15 @@
     });
 
     let asesorActual = "";
+
+    // ── TOGGLE ACOMPAÑAMIENTOS ────────────────────────────────────
+    document.querySelectorAll('#acomp-pills .acomp-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            const t = pill.dataset.topping;
+            if (_toppingsCC.has(t)) { _toppingsCC.delete(t); pill.classList.remove('active'); }
+            else                    { _toppingsCC.add(t);    pill.classList.add('active'); }
+        });
+    });
 
     // ── TOGGLE PAGO ───────────────────────────────────────────────
     document.querySelectorAll(".pago-btn").forEach(btn => {

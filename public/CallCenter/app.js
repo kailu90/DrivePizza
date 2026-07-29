@@ -1,6 +1,7 @@
 //********FUNCION DE RENDERIZADO DE TODOS LOS PRODUCTOS DISPONIBLE*******/
 let carrito = [];
 let _modoReserva = false;
+let _toppingsCC = new Set();
 
 // Sedes donde aplican las promos especiales (65K, Pepperoni, Lasaña)
 const SEDES_PROMO_ESPECIAL = new Set(['acropolis', 'megamall', 'unico']);
@@ -1041,6 +1042,8 @@ function limpiarFormularioCheckout() {
     document.querySelectorAll('.canal-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.entrega-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.pago-btn').forEach(b => b.classList.remove('active'));
+    _toppingsCC = new Set();
+    document.querySelectorAll('#acomp-pills .acomp-pill').forEach(p => p.classList.remove('active'));
     document.getElementById('direccion-section').style.display = 'none';
     document.getElementById('domicilio-precio').textContent = '';
     const _dc = document.getElementById('dir-chips');
@@ -1100,7 +1103,11 @@ async function procesarPedidoFinal() {
         nombre: document.getElementById('clienteNombre').value,
         direccion: document.getElementById('clienteDireccion').value,
         pago: document.querySelector('.pago-btn.active')?.dataset.pago || '',
-        obs: document.getElementById('observaciones').value,
+        obs: (() => {
+            const obsCliente  = document.getElementById('observaciones').value.trim();
+            const obsToppings = _toppingsCC.size ? `Acompañamientos: ${[..._toppingsCC].join(', ')}` : '';
+            return [obsCliente, obsToppings].filter(Boolean).join(' | ');
+        })(),
         sede: document.querySelector('.sede-btn.active')?.dataset.sede || '',
         canal: document.querySelector('.canal-btn.active')?.dataset.canal || '',
         productos: carrito
