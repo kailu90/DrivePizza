@@ -174,18 +174,26 @@ function _setVistaActiva(vista) {
     _disconnectObserver();
     _vista = vista;
 
+    const esHistorial    = vista === 'historial';
     const esReactivacion = vista === 'reactivacion';
     const esFrecuentes   = vista === 'frecuentes';
 
-    document.getElementById('th-pedidos').style.display = '';
-    document.getElementById('th-pedidos').firstChild.textContent =
-        esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días sin ordenar ';
-    document.querySelector('.col-fecha-th').firstChild.textContent =
-        esReactivacion ? 'Último pedido ' : 'Última actividad ';
+    document.getElementById('cli-vista-clientes').style.display        = esHistorial ? 'none' : '';
+    document.getElementById('historial-react-section').style.display   = esHistorial ? 'flex' : 'none';
+    document.getElementById('sidebar-filtros-normales').style.display  = esHistorial ? 'none' : '';
+    document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? '' : 'none';
 
-    document.getElementById('buscar-cliente-input').value = '';
-    document.querySelector('.clientes-search-wrap').style.display   = vista === 'todos' ? '' : 'none';
-    document.getElementById('btn-nuevo-cliente').style.display      = vista === 'todos' ? '' : 'none';
+    if (!esHistorial) {
+        document.getElementById('th-pedidos').style.display = '';
+        document.getElementById('th-pedidos').firstChild.textContent =
+            esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días sin ordenar ';
+        document.querySelector('.col-fecha-th').firstChild.textContent =
+            esReactivacion ? 'Último pedido ' : 'Última actividad ';
+
+        document.getElementById('buscar-cliente-input').value = '';
+        document.querySelector('.clientes-search-wrap').style.display = vista === 'todos' ? '' : 'none';
+        document.getElementById('btn-nuevo-cliente').style.display    = vista === 'todos' ? '' : 'none';
+    }
 }
 
 // ── RENDER HELPERS ────────────────────────────────────────────────────────────
@@ -748,6 +756,9 @@ async function registrarReactivacion() {
     btn.textContent = 'Registrando...';
     btn.disabled    = true;
 
+    const sede      = document.getElementById('reactivar-sede').value || null;
+    const resultado = document.getElementById('reactivar-resultado').value || 'pendiente';
+
     const { error } = await supabase.from('reactivaciones').insert({
         cliente_id:     _reactivarCli.id,
         telefono:       _reactivarCli.telefono,
@@ -755,6 +766,8 @@ async function registrarReactivacion() {
         dias_inactivo:  _reactivarDias,
         agente:         _usuarioActual,
         notas:          notas || null,
+        sede,
+        resultado,
     });
 
     if (error) {
@@ -1009,5 +1022,106 @@ document.getElementById('modal-reactivar').addEventListener('click', e => {
     }
 });
 
+// ── HISTORIAL REACTIVACIONES ──────────────────────────────────────────────────
+let _histPagina  = 1;
+let _histHasMore = false;
+const HIST_POR_PAGINA = 20;
+
+const RESULTADO_LABELS = {
+    pendiente: 'Pendiente', exitosa: 'Exitosa',
+    no_contesta: 'No contesta', rechaza: 'Rechaza',
+};
+
+async function _fetchHistorialPage(pagina) {
+    const sede      = document.getElementById('hist-filtro-sede').value;
+    const resultado = document.getElementById('hist-filtro-resultado').value;
+    const agente    = document.getElementById('hist-filtro-agente').value.trim();
+    const desde     = document.getElementById('hist-filtro-desde').value;
+    const hasta     = document.getElementById('hist-filtro-hasta').value;
+    const offset    = (pagina - 1) * HIST_POR_PAGINA;
+
+    let req = supabase
+        .from('reactivaciones')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + HIST_POR_PAGINA - 1);
+
+    if (sede)      req = req.eq('sede', sede);
+    if (resultado) req = req.eq('resultado', resultado);
+    if (agente)    req = req.ilike('agente', `%${agente}%`);
+    if (desde)     req = req.gte('created_at', desde);
+    if (hasta)     req = req.lte('created_at', hasta + 'T23:59:59');
+
+    const { data, error } = await req;
+    if (error) { console.error('Historial error:', error); return []; }
+    return data || [];
+}
+
+function _rowHistorialHtml(r) {
+    const fecha = r.created_at
+        ? new Date(r.created_at).toLocaleString('es-CO', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit' })
+        : '—';
+    const sede     = SEDE_LABELS[r.sede] || r.sede || '—';
+    const res      = r.resultado || 'pendiente';
+    const resLabel = RESULTADO_LABELS[res] || res;
+    const diasCls  = (r.dias_inactivo || 0) >= 90 ? 'critico' : 'moderado';
+    const notas    = (r.notas || '').replace(/</g, '&lt;');
+    return `<tr class="inventory-management__row">
+        <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
+        <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
+        <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
+        <td class="inventory-management__cell">${r.agente || '—'}</td>
+        <td class="inventory-management__cell">${sede}</td>
+        <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
+        <td class="inventory-management__cell"><span class="badge-resultado ${res}">${resLabel}</span></td>
+        <td class="inventory-management__cell" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${notas}">${notas || '—'}</td>
+    </tr>`;
+}
+
+async function cargarHistorial(pagina = 1) {
+    _histPagina = pagina;
+    const tbody = document.getElementById('historial-react-tbody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">Cargando...</td></tr>';
+
+    const data = await _fetchHistorialPage(pagina);
+    _histHasMore = data.length === HIST_POR_PAGINA;
+
+    tbody.innerHTML = data.length
+        ? data.map(_rowHistorialHtml).join('')
+        : '<tr><td colspan="8" style="text-align:center;padding:30px;color:#999;">No hay reactivaciones registradas.</td></tr>';
+
+    const pag = document.getElementById('historial-react-paginacion');
+    pag.innerHTML = '';
+    if (pagina > 1) {
+        const prev = document.createElement('button');
+        prev.className   = 'btn-buscar-cliente';
+        prev.textContent = '← Anterior';
+        prev.addEventListener('click', () => cargarHistorial(pagina - 1));
+        pag.appendChild(prev);
+    }
+    if (_histHasMore) {
+        const next = document.createElement('button');
+        next.className   = 'btn-buscar-cliente';
+        next.textContent = 'Siguiente →';
+        next.addEventListener('click', () => cargarHistorial(pagina + 1));
+        pag.appendChild(next);
+    }
+}
+
+document.getElementById('btn-ir-reactivaciones').addEventListener('click', () => {
+    _setVistaActiva('historial');
+    cargarHistorial(1);
+});
+
+document.getElementById('btn-volver-clientes').addEventListener('click', () => {
+    _setVistaActiva('todos');
+    ejecutarBusqueda(1);
+});
+
+document.getElementById('btn-buscar-historial').addEventListener('click', () => cargarHistorial(1));
+
+// ─────────────────────────────────────────────────────────────────────────────
 initNavButtons('clientes', { onBarrios: openBarriosModal });
 if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
