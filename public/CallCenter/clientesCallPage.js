@@ -176,15 +176,20 @@ function _setVistaActiva(vista) {
     _vista = vista;
 
     const esHistorial = vista === 'historial';
+    const esLog       = vista === 'log';
+    const esClientes  = !esHistorial && !esLog;
 
-    document.getElementById('cli-vista-clientes').style.display        = esHistorial ? 'none' : '';
+    document.getElementById('cli-vista-clientes').style.display        = esClientes  ? ''     : 'none';
     document.getElementById('historial-dias-bar').style.display        = esHistorial ? 'flex' : 'none';
     document.getElementById('historial-react-section').style.display   = esHistorial ? 'flex' : 'none';
-    document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? '' : 'none';
-    document.getElementById('btn-ir-clientes').classList.toggle('active', !esHistorial);
-    document.getElementById('btn-ir-reactivaciones').classList.toggle('active', esHistorial);
+    document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? ''     : 'none';
+    document.getElementById('cli-vista-log').style.display             = esLog       ? 'flex' : 'none';
 
-    if (!esHistorial) {
+    document.getElementById('btn-ir-clientes').classList.toggle('active',       esClientes);
+    document.getElementById('btn-ir-reactivaciones').classList.toggle('active', esHistorial);
+    document.getElementById('btn-ir-log').classList.toggle('active',            esLog);
+
+    if (esClientes) {
         document.getElementById('buscar-cliente-input').value = '';
         document.querySelector('.clientes-search-wrap').style.display = vista === 'todos' ? '' : 'none';
         document.getElementById('btn-nuevo-cliente').style.display    = vista === 'todos' ? '' : 'none';
@@ -368,11 +373,27 @@ function cerrarModal() {
     clienteActual = null;
 }
 
+function _logCambio(clienteId, telefono, nombreCliente, accion, detalle = {}) {
+    supabase.from('clientes_log').insert({
+        cliente_id:     clienteId,
+        telefono,
+        nombre_cliente: nombreCliente || telefono,
+        accion,
+        detalle,
+        asesor:         _usuarioActual,
+    }).then(({ error }) => { if (error) console.warn('Log error:', error.message); });
+}
+
 async function eliminarCliente() {
     if (!clienteActual) return;
     if (!confirm(`¿Eliminar a "${clienteActual.nombre || clienteActual.telefono}"? Se borrarán también sus direcciones.`)) return;
 
     const id = clienteActual.id;
+    _logCambio(id, clienteActual.telefono, clienteActual.nombre, 'eliminar_cliente', {
+        nombre: clienteActual.nombre,
+        notas:  clienteActual.notas,
+        tags:   clienteActual.tags,
+    });
     await supabase.from('direcciones_cliente').delete().eq('cliente_id', id);
     const { error } = await supabase.from('clientes').delete().eq('id', id);
     if (error) { alert('Error al eliminar.'); return; }
@@ -418,7 +439,8 @@ function renderDirecciones(dirs) {
     // Predeterminada
     container.querySelectorAll('.btn-dir-pred').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const dirId = btn.dataset.dirId;
+            const dirId  = btn.dataset.dirId;
+            const dirData = clienteActual.direcciones_cliente?.find(d => d.id === dirId);
             // Quitar predeterminada a todas
             await supabase.from('direcciones_cliente')
                 .update({ predeterminada: false })
@@ -427,6 +449,8 @@ function renderDirecciones(dirs) {
             await supabase.from('direcciones_cliente')
                 .update({ predeterminada: true })
                 .eq('id', dirId);
+            _logCambio(clienteActual.id, clienteActual.telefono, clienteActual.nombre,
+                'marcar_predeterminada', { direccion: dirData?.direccion, barrio: dirData?.barrio });
             // Refrescar
             const updated = clienteActual.direcciones_cliente.map(d =>
                 ({ ...d, predeterminada: d.id === dirId })
@@ -440,8 +464,11 @@ function renderDirecciones(dirs) {
     container.querySelectorAll('.btn-dir-del').forEach(btn => {
         btn.addEventListener('click', async () => {
             if (!confirm('¿Eliminar esta dirección?')) return;
-            const dirId = btn.dataset.dirId;
+            const dirId   = btn.dataset.dirId;
+            const dirData = clienteActual.direcciones_cliente?.find(d => d.id === dirId);
             await supabase.from('direcciones_cliente').delete().eq('id', dirId);
+            _logCambio(clienteActual.id, clienteActual.telefono, clienteActual.nombre,
+                'eliminar_direccion', { direccion: dirData?.direccion, barrio: dirData?.barrio });
             clienteActual.direcciones_cliente = clienteActual.direcciones_cliente.filter(d => d.id !== dirId);
             renderDirecciones(clienteActual.direcciones_cliente);
             _actualizarConteoDir(clienteActual.id, -1);
@@ -475,6 +502,9 @@ async function guardarNuevaDireccion() {
     btn.disabled = false;
 
     if (error) { alert('Error al guardar: ' + error.message); return; }
+
+    _logCambio(clienteActual.id, clienteActual.telefono, clienteActual.nombre,
+        'agregar_direccion', { direccion, barrio, sede_id });
 
     // Recargar datos del cliente
     const { data } = await supabase
@@ -525,9 +555,9 @@ async function crearCliente() {
     btn.textContent = 'Creando...';
     btn.disabled = true;
 
-    const { error } = await supabase.from('clientes').insert({
+    const { data: nuevoCli, error } = await supabase.from('clientes').insert({
         telefono, nombre, notas, tags, updated_at: new Date().toISOString()
-    });
+    }).select('id').single();
 
     btn.textContent = 'Crear cliente';
     btn.disabled = false;
@@ -537,6 +567,7 @@ async function crearCliente() {
         else alert('Error al crear: ' + error.message);
         return;
     }
+    _logCambio(nuevoCli?.id, telefono, nombre, 'crear_cliente', { nombre, notas, tags });
     cerrarModalNuevo();
     ejecutarBusqueda(1);
 }
@@ -547,6 +578,12 @@ async function guardarCliente() {
     const nombre = document.getElementById('cli-nombre').value.trim();
     const notas  = document.getElementById('cli-notas').value.trim();
     const tags   = [...document.querySelectorAll('#modal-cliente-detalle .tag-chip.active')].map(c => c.dataset.tag);
+
+    const antes = {
+        nombre: clienteActual.nombre || '',
+        notas:  clienteActual.notas  || '',
+        tags:   [...(clienteActual.tags || [])].sort(),
+    };
 
     const btn = document.getElementById('btn-guardar-cli');
     btn.textContent = 'Guardando...';
@@ -560,6 +597,18 @@ async function guardarCliente() {
     btn.disabled = false;
 
     if (error) { alert('Error al guardar: ' + error.message); return; }
+
+    const campos = [];
+    if (antes.nombre !== nombre) campos.push('nombre');
+    if (antes.notas  !== notas)  campos.push('notas');
+    if (JSON.stringify(antes.tags) !== JSON.stringify([...tags].sort())) campos.push('tags');
+    if (campos.length) {
+        _logCambio(clienteActual.id, clienteActual.telefono, nombre, 'editar_datos', {
+            campos,
+            antes:   { nombre: antes.nombre, notas: antes.notas, tags: clienteActual.tags || [] },
+            despues: { nombre, notas, tags },
+        });
+    }
 
     // Actualizar fila en el DOM sin recargar la lista (preserva orden y vista actual)
     const idx = _clientesData.findIndex(c => String(c.id) === String(clienteActual.id));
@@ -804,6 +853,81 @@ async function registrarReactivacion() {
     _reactivarId  = null;
 }
 
+// ── LOG CLIENTES ──────────────────────────────────────────────────────────────
+const LOG_POR_PAGINA = 30;
+
+const LOG_ACCION_LABEL = {
+    crear_cliente:       { txt: 'Crear cliente',      cls: 'crear'       },
+    editar_datos:        { txt: 'Editar datos',        cls: 'editar'      },
+    eliminar_cliente:    { txt: 'Eliminar cliente',    cls: 'eliminar-c'  },
+    agregar_direccion:   { txt: 'Agregar dirección',   cls: 'agregar-dir' },
+    eliminar_direccion:  { txt: 'Eliminar dirección',  cls: 'eliminar-d'  },
+    marcar_predeterminada: { txt: 'Dir. predeterminada', cls: 'pred'      },
+};
+
+function _formatLogDetalle(accion, detalle = {}) {
+    if (accion === 'editar_datos')
+        return `Campos: ${(detalle.campos || []).join(', ')}`;
+    if (accion === 'agregar_direccion' || accion === 'eliminar_direccion' || accion === 'marcar_predeterminada')
+        return [detalle.direccion, detalle.barrio].filter(Boolean).join(' — ') || '—';
+    if (accion === 'crear_cliente')
+        return detalle.nombre ? `Nombre: ${detalle.nombre}` : '—';
+    return '—';
+}
+
+function _rowLogHtml(r) {
+    const fecha = r.created_at
+        ? new Date(r.created_at).toLocaleString('es-CO', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit' })
+        : '—';
+    const accionInfo = LOG_ACCION_LABEL[r.accion] || { txt: r.accion, cls: 'editar' };
+    const detalle    = _formatLogDetalle(r.accion, r.detalle || {});
+    return `<tr class="inventory-management__row">
+        <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.15rem;">${fecha}</td>
+        <td class="inventory-management__cell">${r.asesor || '—'}</td>
+        <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
+        <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
+        <td class="inventory-management__cell"><span class="log-accion-badge ${accionInfo.cls}">${accionInfo.txt}</span></td>
+        <td class="inventory-management__cell" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detalle}</td>
+    </tr>`;
+}
+
+async function cargarLog(pagina = 1) {
+    const tbody = document.getElementById('log-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999;">Cargando...</td></tr>';
+
+    const offset = (pagina - 1) * LOG_POR_PAGINA;
+    const { data, error } = await supabase
+        .from('clientes_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + LOG_POR_PAGINA - 1);
+
+    if (error) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999;">Error al cargar.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.length
+        ? data.map(_rowLogHtml).join('')
+        : '<tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">Sin registros.</td></tr>';
+
+    // Paginación simple
+    const pag = document.getElementById('log-paginacion');
+    pag.innerHTML = `
+        <button class="pag-btn" id="log-pag-prev" ${pagina <= 1 ? 'disabled' : ''}>← Anterior</button>
+        <span class="pag-info">Página ${pagina}</span>
+        <button class="pag-btn" id="log-pag-next" ${data.length < LOG_POR_PAGINA ? 'disabled' : ''}>Siguiente →</button>`;
+    pag.querySelector('#log-pag-prev')?.addEventListener('click', () => cargarLog(pagina - 1));
+    pag.querySelector('#log-pag-next')?.addEventListener('click', () => cargarLog(pagina + 1));
+}
+
+document.getElementById('btn-ir-log').addEventListener('click', () => {
+    _setVistaActiva('log');
+    cargarLog(1);
+});
+
 // ── REALTIME ──────────────────────────────────────────────────────────────────
 function _iniciarRealtime() {
     supabase.channel('rt-clientes')
@@ -917,7 +1041,7 @@ function _updateSortIcons() {
             icon.textContent = '▲▼';
             th.classList.remove('sort-active');
             // Primera vez: muestra la dirección por defecto que se aplicará
-            const defaultDesc = col === 'pedidos' || col === 'fecha' || col === 'total_pedidos';
+            const defaultDesc = col === 'pedidos' || col === 'fecha' || col === 'total_pedidos' || col === 'dirs';
             th.dataset.tooltip = defaultDesc
                 ? 'Ordenar de mayor a menor'
                 : isText ? 'Ordenar A → Z' : 'Ordenar de menor a mayor';
@@ -935,6 +1059,11 @@ function _sortClienteData() {
             va = (a.nombre || '').toLowerCase(); vb = (b.nombre || '').toLowerCase();
         } else if (_sortCol === 'total_pedidos') {
             va = a.total_pedidos ?? 0; vb = b.total_pedidos ?? 0;
+        } else if (_sortCol === 'tags') {
+            va = (a.tags || []).length; vb = (b.tags || []).length;
+        } else if (_sortCol === 'dirs') {
+            va = a.direcciones_cliente?.[0]?.count ?? 0;
+            vb = b.direcciones_cliente?.[0]?.count ?? 0;
         } else if (_sortCol === 'pedidos') {
             va = new Date(a.updated_at || 0); vb = new Date(b.updated_at || 0);
         } else { // fecha
@@ -959,12 +1088,13 @@ document.querySelectorAll('#clientes-thead-row .sort-th').forEach(th => {
             _sortDir = _sortDir === 'asc' ? 'desc' : 'asc';
         } else {
             _sortCol = col;
-            // Por defecto: desc para pedidos/fecha, asc para texto
-            _sortDir = (col === 'pedidos' || col === 'fecha') ? 'desc' : 'asc';
+            // Por defecto: desc para pedidos/fecha/dirs, asc para texto
+            _sortDir = (col === 'pedidos' || col === 'fecha' || col === 'dirs') ? 'desc' : 'asc';
         }
         _updateSortIcons();
 
-        if (_vista === 'todos') {
+        const supabaseSortable = ['telefono', 'nombre', 'total_pedidos', 'fecha'];
+        if (_vista === 'todos' && supabaseSortable.includes(col)) {
             _todosCache.clear();
             ejecutarBusqueda(1);
         } else {

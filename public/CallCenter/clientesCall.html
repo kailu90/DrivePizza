@@ -546,6 +546,22 @@
             vertical-align: middle;
         }
 
+        /* Badges acción log */
+        .log-accion-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .log-accion-badge.crear       { background: #e8f8f0; color: #27ae60; }
+        .log-accion-badge.editar      { background: #eaf3fb; color: #2980b9; }
+        .log-accion-badge.eliminar-c  { background: #fdecea; color: #c0392b; }
+        .log-accion-badge.agregar-dir { background: #f0faf4; color: #1e8449; }
+        .log-accion-badge.eliminar-d  { background: #fff4e5; color: var(--color-quinto); }
+        .log-accion-badge.pred        { background: #f4f0fb; color: #7d3c98; }
+
         /* Badge días inactivo */
         .dias-badge {
             display: inline-block;
@@ -816,6 +832,11 @@
                 Reactivaciones
             </button>
 
+            <button class="btn-reactivaciones" id="btn-ir-log" style="margin-top:auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Log Clientes
+            </button>
+
             <!-- Filtros historial (solo en vista reactivaciones) -->
             <div id="sidebar-historial-filtros" style="display:none;">
                 <div class="cli-sidebar-divider" style="margin-top:12px;"></div>
@@ -866,9 +887,9 @@
                             <tr class="inventory-management__row" id="clientes-thead-row">
                                 <th class="inventory-management__heading col-tel sort-th" data-sort="telefono">Teléfono <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-nombre sort-th" data-sort="nombre">Nombre <span class="sort-icon">▲▼</span></th>
-                                <th class="inventory-management__heading col-tags-th">Tags</th>
+                                <th class="inventory-management__heading col-tags-th sort-th" data-sort="tags">Tags <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
-                                <th class="inventory-management__heading col-dirs-th" style="text-align:center;">Dirs</th>
+                                <th class="inventory-management__heading col-dirs-th sort-th" data-sort="dirs" style="text-align:center;">Dirs <span class="sort-icon">▲▼</span></th>
                             </tr>
                         </thead>
                         <tbody id="clientes-tbody">
@@ -921,6 +942,28 @@
                 </div>
                 <div id="historial-react-paginacion"></div>
             </div><!-- /historial-react-section -->
+
+            <!-- Vista Log Clientes -->
+            <div id="cli-vista-log" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+                <div class="clientes-table-wrap">
+                    <table class="inventory-management__table">
+                        <thead class="inventory-management__thead">
+                            <tr class="inventory-management__row">
+                                <th class="inventory-management__heading">Fecha</th>
+                                <th class="inventory-management__heading">Asesor</th>
+                                <th class="inventory-management__heading">Cliente</th>
+                                <th class="inventory-management__heading">Teléfono</th>
+                                <th class="inventory-management__heading">Acción</th>
+                                <th class="inventory-management__heading">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-tbody">
+                            <tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="log-paginacion" class="historial-paginacion"></div>
+            </div>
 
         </div>
     </div>
