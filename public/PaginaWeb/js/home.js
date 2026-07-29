@@ -108,9 +108,11 @@ function renderSedes() {
 
   const sedes = sedesData.map(s => {
     const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (barrioSeleccionado && barrioIndex[barrioSeleccionado])
-      ? !barrioIndex[barrioSeleccionado].has(s.name || '')
-      : (userLat !== null && dist !== null ? dist > GPS_RADIO_KM : false);
+    const fueraZona = (tieneUbicacion && dist !== null)
+      ? dist > GPS_RADIO_KM
+      : (barrioSeleccionado && barrioIndex[barrioSeleccionado])
+        ? !barrioIndex[barrioSeleccionado].has(s.name || '')
+        : false;
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
 
@@ -123,7 +125,7 @@ function renderSedes() {
   });
 
   const iCercana = tieneUbicacion
-    ? sedes.findIndex(s => s._dist !== null && s._dist <= GPS_RADIO_KM && !s._fueraZona)
+    ? sedes.findIndex(s => s._dist !== null && s._dist <= GPS_RADIO_KM && !s._fueraZona && estaAbierta(s))
     : -1;
 
   grid.innerHTML = sedes.map((sede, idx) => {
@@ -142,8 +144,8 @@ function renderSedes() {
            ${disponible ? `tabindex="0" role="button" aria-label="Pedir en ${nombre}"` : 'aria-disabled="true"'}>
         <div class="pw-sede-card-h-img"><img src="${sedeImg}" alt="${nombre}"></div>
         <div class="pw-sede-card-h-info">
-          <span class="pw-sede-status pw-sede-status--${fueraZona ? 'fuera' : (abierta ? 'abierta' : 'cerrada')}">
-            ${fueraZona ? 'Fuera de zona' : (abierta ? 'Abierto' : 'Cerrado')}
+          <span class="pw-sede-status pw-sede-status--${!abierta ? 'cerrada' : (fueraZona ? 'fuera' : 'abierta')}">
+            ${!abierta ? 'Cerrado' : (fueraZona ? 'Fuera de zona' : 'Abierto')}
           </span>
           <div class="pw-sede-nombre">${nombre}</div>
           ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
@@ -194,9 +196,11 @@ function renderDirCard(barrio) {
   const refLng    = userLng ?? barCoords?.lng ?? null;
   const sedesCalc = sedesData.map(s => {
     const dist      = (refLat && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = barrioIndex[barrio]
-      ? !barrioIndex[barrio].has(s.name || '')
-      : (userLat !== null && dist !== null ? dist > GPS_RADIO_KM : false);
+    const fueraZona = (refLat !== null && dist !== null)
+      ? dist > GPS_RADIO_KM
+      : (barrioIndex[barrio]
+        ? !barrioIndex[barrio].has(s.name || '')
+        : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
   sedesCalc.sort((a, b) => {
