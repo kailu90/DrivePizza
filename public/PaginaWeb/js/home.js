@@ -149,11 +149,19 @@ function renderSedes() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             Más cercana</span>` : ''}
         </div>
-        <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}" ${!disponible ? 'disabled' : ''}>
-          ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios')}
+        <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}${!disponible && !fueraZona ? ' pw-sede-btn--horarios' : ''}" ${!disponible && fueraZona ? 'disabled' : ''}>
+          ${disponible ? 'Ver menú →' : (fueraZona ? 'Fuera de zona' : 'Ver horarios →')}
         </button>
       </div>`;
   }).join('');
+
+  grid.querySelectorAll('.pw-sede-btn--horarios').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const sede = JSON.parse(btn.closest('[data-sede]').dataset.sede);
+      abrirModalHorarios(sede);
+    });
+  });
 
   grid.querySelectorAll('.pw-sede-card-h:not(.pw-sede-card-h--cerrada)').forEach(card => {
     const abrir = () => {
@@ -399,6 +407,52 @@ function setupAddressSearch() {
       { timeout: 10000 }
     );
   });
+}
+
+// ── MODAL HORARIOS ───────────────────────────────────────────
+let _overlayListenerSet = false;
+
+function abrirModalHorarios(sede) {
+  const overlay = document.getElementById('pw-horarios-overlay');
+  if (!overlay) return;
+
+  document.getElementById('pw-horarios-titulo').textContent = displayNombre(sede);
+  const lista = document.getElementById('pw-horarios-lista');
+
+  const horarios = sede.horarios_display;
+  let horariosHtml = '';
+  if (Array.isArray(horarios) && horarios.length) {
+    horariosHtml = horarios.map(h => `
+      <div class="pw-horarios-fila">
+        <span class="pw-horarios-dia">${h.dia}</span>
+        <span class="pw-horarios-hora">${h.horario}</span>
+      </div>`).join('');
+  } else {
+    horariosHtml = `<p class="pw-horarios-empty">Horarios no disponibles por el momento.</p>`;
+  }
+
+  const lineas = Array.isArray(sede.lineas_domicilio) ? sede.lineas_domicilio : [];
+  const wa = sede.whatsapp;
+  const contactoHtml = (wa || lineas.length) ? `
+    <div class="pw-horarios-contacto">
+      <p class="pw-horarios-contacto-label">¿Necesitas ayuda? Contáctanos</p>
+      <div class="pw-horarios-contacto-btns">
+        ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="pw-horarios-btn pw-horarios-btn--wa">WhatsApp</a>` : ''}
+        ${lineas.map(n => `<a href="tel:${n}" class="pw-horarios-btn pw-horarios-btn--tel">${n}</a>`).join('')}
+      </div>
+    </div>` : '';
+
+  lista.innerHTML = horariosHtml + contactoHtml;
+  overlay.classList.add('open');
+
+  if (!_overlayListenerSet) {
+    _overlayListenerSet = true;
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay || e.target.closest('#pw-horarios-close')) {
+        overlay.classList.remove('open');
+      }
+    });
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────────

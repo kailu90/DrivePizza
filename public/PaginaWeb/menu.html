@@ -536,6 +536,22 @@
     </div>
   </div>
 
+  <!-- MODAL HORARIOS (usado por home view en SPA) -->
+  <div class="pw-horarios-overlay" id="pw-horarios-overlay" role="dialog" aria-modal="true" aria-labelledby="pw-horarios-titulo">
+    <div class="pw-horarios-modal">
+      <div class="pw-horarios-header">
+        <div>
+          <p class="pw-horarios-label">Horarios de atención</p>
+          <h3 class="pw-horarios-titulo" id="pw-horarios-titulo"></h3>
+        </div>
+        <button class="pw-horarios-close" id="pw-horarios-close" aria-label="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="pw-horarios-lista" id="pw-horarios-lista"></div>
+    </div>
+  </div>
+
   <script type="module" src="js/menu.js"></script>
 </body>
 </html>
