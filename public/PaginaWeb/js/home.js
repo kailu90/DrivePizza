@@ -84,6 +84,9 @@ function initBanner() {
   if (BANNERS.length > 1) startAuto();
 }
 
+// Radio GPS máximo (km) cuando el barrio no está en BD
+const GPS_RADIO_KM = 10;
+
 // ── HAVERSINE ────────────────────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
   const R    = 6371;
@@ -105,11 +108,9 @@ function renderSedes() {
 
   const sedes = sedesData.map(s => {
     const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (userLat !== null)
-      ? (dist !== null && s.radio_km ? dist > s.radio_km : false)
-      : (barrioSeleccionado && barrioIndex[barrioSeleccionado])
-        ? !barrioIndex[barrioSeleccionado].has(s.name || '')
-        : false;
+    const fueraZona = (barrioSeleccionado && barrioIndex[barrioSeleccionado])
+      ? !barrioIndex[barrioSeleccionado].has(s.name || '')
+      : (userLat !== null && dist !== null ? dist > GPS_RADIO_KM : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
 
@@ -191,11 +192,9 @@ function renderDirCard(barrio) {
   const refLng    = userLng ?? barCoords?.lng ?? null;
   const sedesCalc = sedesData.map(s => {
     const dist      = (refLat && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (userLat !== null)
-      ? (dist !== null && s.radio_km ? dist > s.radio_km : false)
-      : barrioIndex[barrio]
-        ? !barrioIndex[barrio].has(s.name || '')
-        : (dist !== null && s.radio_km ? dist > s.radio_km : false);
+    const fueraZona = barrioIndex[barrio]
+      ? !barrioIndex[barrio].has(s.name || '')
+      : (userLat !== null && dist !== null ? dist > GPS_RADIO_KM : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
   sedesCalc.sort((a, b) => {
@@ -387,13 +386,9 @@ function setupAddressSearch() {
           const barrioGPS = todosLosBarrios.find(b => b.toLowerCase() === suburb.toLowerCase())
                          || todosLosBarrios.find(b => suburb.toLowerCase().includes(b.toLowerCase()));
 
-          if (barrioGPS) {
-            dirField.value = barrioGPS;
-            renderDirCard(barrioGPS);
-          } else {
-            dirField.value = suburb || data.display_name.split(',').slice(0, 2).join(',').trim();
-            renderSedes();
-          }
+          const label = barrioGPS || suburb || data.display_name.split(',').slice(0, 2).join(',').trim();
+          dirField.value = label;
+          renderDirCard(label);
         } catch {
           alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
         } finally {
