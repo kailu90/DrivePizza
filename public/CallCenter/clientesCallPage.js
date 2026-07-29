@@ -37,7 +37,7 @@ async function buscarClientes(query = '', pagina = 1) {
 
     let req = supabase
         .from('clientes')
-        .select('id, telefono, nombre, tags, updated_at, total_pedidos, fecha_ultima_reactivacion')
+        .select('id, telefono, nombre, tags, updated_at, total_pedidos, fecha_ultima_reactivacion, direcciones_cliente(count)')
         .order(supabaseCol, { ascending: _sortDir === 'asc' })
         .range(offset, offset + POR_PAGINA - 1);
 
@@ -98,7 +98,7 @@ async function ejecutarReactivacion(pagina = 1) {
     if (pagina === 1) {
         document.getElementById('clientes-count').textContent = 'Cargando...';
         document.getElementById('clientes-tbody').innerHTML =
-            `<tr><td class="inventory-management__cell" colspan="6"
+            `<tr><td class="inventory-management__cell" colspan="5"
                 style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
         document.getElementById('clientes-paginacion').innerHTML = '';
     }
@@ -150,7 +150,7 @@ async function ejecutarFrecuentes(pagina = 1) {
     if (pagina === 1) {
         document.getElementById('clientes-count').textContent = 'Cargando...';
         document.getElementById('clientes-tbody').innerHTML =
-            `<tr><td class="inventory-management__cell" colspan="6"
+            `<tr><td class="inventory-management__cell" colspan="5"
                 style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
         document.getElementById('clientes-paginacion').innerHTML = '';
     }
@@ -198,37 +198,24 @@ function _rowHtml(c) {
     const tags = (c.tags || []).map(t =>
         `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
     ).join(' ');
-    const dias   = c.updated_at ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000) : 0;
-    const nombre = (c.nombre || '').replace(/"/g, '&quot;');
+    const nombre  = (c.nombre || '').replace(/"/g, '&quot;');
+    const numDirs = c.direcciones_cliente?.[0]?.count ?? '—';
 
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
         <td class="inventory-management__cell col-nombre">${c.nombre || '—'}</td>
         <td class="inventory-management__cell col-tags-td">${tags || '—'}</td>
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
-        <td class="inventory-management__cell" style="text-align:center;">
-            <button class="btn-reactivar-cli"
-                data-id="${c.id}" data-nombre="${nombre}"
-                data-tel="${c.telefono}" data-dias="${dias}">Reactivar</button>
-        </td>
+        <td class="inventory-management__cell col-dirs-td" style="text-align:center;">${numDirs}</td>
     </tr>`;
 }
 
 function _bindRows(rows) {
     rows.forEach(tr => {
-        tr.addEventListener('click', e => {
-            if (e.target.closest('.btn-reactivar-cli')) return;
+        tr.addEventListener('click', () => {
             const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
             if (cli) abrirModal(cli);
         });
-        const btnReactivar = tr.querySelector('.btn-reactivar-cli');
-        if (btnReactivar) {
-            btnReactivar.addEventListener('click', e => {
-                e.stopPropagation();
-                const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
-                if (cli) abrirModalReactivar(cli, Number(btnReactivar.dataset.dias), '', null);
-            });
-        }
     });
 }
 
@@ -243,7 +230,7 @@ function renderTabla(clientes) {
     _actualizarCount();
 
     if (!clientes.length) {
-        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="6"
+        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="5"
             style="text-align:center;padding:30px;color:#aaa;">
             No se encontraron clientes.</td></tr>`;
         document.getElementById('clientes-count').textContent = '';
@@ -395,6 +382,16 @@ async function eliminarCliente() {
     _clientesData = _clientesData.filter(c => c.id !== id);
 }
 
+function _actualizarConteoDir(clienteId, delta) {
+    const idx = _clientesData.findIndex(c => String(c.id) === String(clienteId));
+    if (idx === -1) return;
+    const actual = _clientesData[idx].direcciones_cliente?.[0]?.count ?? 0;
+    const nuevo  = Math.max(0, actual + delta);
+    _clientesData[idx] = { ..._clientesData[idx], direcciones_cliente: [{ count: nuevo }] };
+    const cell = document.querySelector(`tr[data-id="${clienteId}"] .col-dirs-td`);
+    if (cell) cell.textContent = nuevo;
+}
+
 function renderDirecciones(dirs) {
     const container = document.getElementById('cli-dirs');
     if (!dirs.length) {
@@ -447,6 +444,7 @@ function renderDirecciones(dirs) {
             await supabase.from('direcciones_cliente').delete().eq('id', dirId);
             clienteActual.direcciones_cliente = clienteActual.direcciones_cliente.filter(d => d.id !== dirId);
             renderDirecciones(clienteActual.direcciones_cliente);
+            _actualizarConteoDir(clienteActual.id, -1);
         });
     });
 }
@@ -491,6 +489,7 @@ async function guardarNuevaDireccion() {
             new Date(b.created_at) - new Date(a.created_at)
         );
         renderDirecciones(data.direcciones_cliente || []);
+        _actualizarConteoDir(clienteActual.id, +1);
     }
 
     document.getElementById('nueva-dir-form').style.display = 'none';
@@ -615,6 +614,7 @@ async function obtenerUsuarioCC() {
 
         // Carga inicial
         await Promise.all([cargarTags(), ejecutarBusqueda()]);
+        _iniciarRealtime();
         _scheduleMidnightRefresh();
     } catch (err) {
         console.error('Error auth clientes:', err);
@@ -804,6 +804,43 @@ async function registrarReactivacion() {
     _reactivarId  = null;
 }
 
+// ── REALTIME ──────────────────────────────────────────────────────────────────
+function _iniciarRealtime() {
+    supabase.channel('rt-clientes')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clientes' }, ({ new: nuevo }) => {
+            const idx = _clientesData.findIndex(c => String(c.id) === String(nuevo.id));
+            if (idx === -1) return;
+            // Preservar conteo de direcciones (no viene en el evento)
+            const dirs = _clientesData[idx].direcciones_cliente;
+            _clientesData[idx] = { ..._clientesData[idx], ...nuevo, direcciones_cliente: dirs };
+            const oldRow = document.querySelector(`tr[data-id="${nuevo.id}"]`);
+            if (!oldRow) return;
+            const tpl = document.createElement('template');
+            tpl.innerHTML = _rowHtml(_clientesData[idx]);
+            const newRow = tpl.content.firstElementChild;
+            _bindRows([newRow]);
+            oldRow.replaceWith(newRow);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clientes' }, ({ old }) => {
+            _clientesData = _clientesData.filter(c => String(c.id) !== String(old.id));
+            document.querySelector(`tr[data-id="${old.id}"]`)?.remove();
+            _todosCache.clear();
+            _actualizarCount();
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clientes' }, () => {
+            _todosCache.clear();
+            if (_vista === 'todos') ejecutarBusqueda(1);
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direcciones_cliente' }, ({ new: nueva }) => {
+            if (nueva?.cliente_id) _actualizarConteoDir(nueva.cliente_id, +1);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'direcciones_cliente' }, ({ old }) => {
+            // old.cliente_id disponible solo si la tabla tiene REPLICA IDENTITY FULL
+            if (old?.cliente_id) _actualizarConteoDir(old.cliente_id, -1);
+        })
+        .subscribe();
+}
+
 // ── REFRESCO MEDIANOCHE ───────────────────────────────────────────────────────
 function _scheduleMidnightRefresh() {
     const ahora   = new Date();
@@ -839,7 +876,7 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
 
     if (!_todosCache.has(`${q}:${pagina}`)) {
         document.getElementById('clientes-tbody').innerHTML =
-            `<tr><td class="inventory-management__cell" colspan="6"
+            `<tr><td class="inventory-management__cell" colspan="5"
                 style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
     }
 
