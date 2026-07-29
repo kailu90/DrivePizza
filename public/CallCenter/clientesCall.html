@@ -886,6 +886,7 @@
             <!-- Pills días sin actividad — solo visible en vista historial -->
             <div class="dias-pills-bar" id="historial-dias-bar" style="display:none;">
                 <span class="tag-chip dias-filtro-hist active" data-dias="">Todos</span>
+                <span class="tag-chip dias-filtro-hist" data-dias="1">1-29 días</span>
                 <span class="tag-chip dias-filtro-hist" data-dias="30">+30 días</span>
                 <span class="tag-chip dias-filtro-hist" data-dias="60">+60 días</span>
                 <span class="tag-chip dias-filtro-hist" data-dias="90">+90 días</span>
@@ -1035,7 +1036,7 @@
 <div class="modal-overlay" id="modal-reactivar">
     <div class="modal-cliente-content" style="max-width:420px;">
         <div class="modal-cli-header">
-            <span class="modal-cli-title">Registrar reactivación</span>
+            <span class="modal-cli-title" id="modal-reactivar-titulo">Registrar reactivación</span>
             <button class="mpedido-close" id="cerrar-modal-reactivar">&times;</button>
         </div>
         <div class="modal-cli-body">

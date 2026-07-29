@@ -708,6 +708,8 @@ function abrirModalReactivar(cli, dias, sedePreset = '', id = null) {
     _reactivarId   = id;
     _reactivarCli  = cli;
     _reactivarDias = dias;
+    const sedeLabel = SEDE_LABELS[sedePreset] || sedePreset || 'Reactivación';
+    document.getElementById('modal-reactivar-titulo').textContent = sedeLabel;
     document.getElementById('reactivar-nombre').textContent  = cli.nombre || cli.telefono;
     document.getElementById('reactivar-tel').textContent     = cli.telefono;
     document.getElementById('reactivar-dias').textContent    = `${dias} días sin ordenar`;
@@ -1034,18 +1036,21 @@ async function _fetchHistorialPage(pagina) {
     const hasta  = document.getElementById('hist-filtro-hasta').value;
     const offset = (pagina - 1) * HIST_POR_PAGINA;
 
-    // "Por reactivar" — consulta pedidos_callcenter via RPC
+    // "Por reactivar" — consulta pedidos_callcenter via RPC (sin LIMIT interno)
     if (_histFiltroEstado === 'pendiente') {
-        const diasMax = _histFiltroDias === 30 ? 60
+        const pDias   = _histFiltroDias || 1;
+        const diasMax = _histFiltroDias === 1  ? 30
+                      : _histFiltroDias === 30 ? 60
                       : _histFiltroDias === 60 ? 90
                       : null;
-        const { data, error } = await supabase.rpc('clientes_por_reactivar', {
-            p_dias:       _histFiltroDias || 1,
-            p_dias_max:   diasMax,
-            p_sede:       sede || null,
-            p_pagina:     pagina,
-            p_por_pagina: HIST_POR_PAGINA
-        });
+        const { data, error } = await supabase
+            .rpc('clientes_por_reactivar', {
+                p_dias:     pDias,
+                p_dias_max: diasMax,
+                p_sede:     sede || null,
+                p_pagina:   pagina,
+                p_limite:   HIST_POR_PAGINA,
+            });
         if (error) { console.error('Por reactivar error:', error); return []; }
         return (data || []).map(r => ({ ...r, _desde_rpc: true }));
     }
@@ -1191,21 +1196,18 @@ document.querySelectorAll('.hist-toggle-btn').forEach(btn => {
 
 async function _actualizarConteosPills() {
     const sede = document.getElementById('hist-filtro-sede').value || null;
-    const { data, error } = await supabase.rpc('clientes_por_reactivar', {
-        p_dias: 30, p_dias_max: null, p_sede: sede, p_pagina: 1, p_por_pagina: 9999
-    });
-    if (error) { console.error('Pills RPC error:', error); return; }
-    const rows = data || [];
-
     const rangos = [
-        { dias: 30, min: 30, max: 59 },
-        { dias: 60, min: 60, max: 89 },
-        { dias: 90, min: 90, max: Infinity },
+        { dias: '',  p_dias: 1,  p_dias_max: null },  // Todos: 1+
+        { dias: 1,   p_dias: 1,  p_dias_max: 30  },   // 1-29 días
+        { dias: 30,  p_dias: 30, p_dias_max: 60  },   // +30: 30–59 días
+        { dias: 60,  p_dias: 60, p_dias_max: 90  },   // +60: 60–89 días
+        { dias: 90,  p_dias: 90, p_dias_max: null },  // +90: 90+ días
     ];
 
-    rangos.forEach(({ dias, min, max }) => {
-        const count = rows.filter(r => r.dias_inactivo >= min && r.dias_inactivo <= max).length;
-        const chip  = document.querySelector(`.dias-filtro-hist[data-dias="${dias}"]`);
+    await Promise.all(rangos.map(async ({ dias, p_dias, p_dias_max }) => {
+        const { data, error } = await supabase
+            .rpc('clientes_por_reactivar_count', { p_dias, p_dias_max, p_sede: sede });
+        const chip = document.querySelector(`.dias-filtro-hist[data-dias="${dias}"]`);
         if (!chip) return;
         let badge = chip.querySelector('.pill-count');
         if (!badge) {
@@ -1213,8 +1215,8 @@ async function _actualizarConteosPills() {
             badge.className = 'pill-count';
             chip.appendChild(badge);
         }
-        badge.textContent = count;
-    });
+        badge.textContent = error ? '' : (data ?? 0);
+    }));
 }
 
 document.querySelectorAll('.dias-filtro-hist').forEach(chip => {
