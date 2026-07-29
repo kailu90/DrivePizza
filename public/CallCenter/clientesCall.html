@@ -519,6 +519,8 @@
             white-space: nowrap;
         }
         .btn-reactivar-hist:hover { background: #e67e22; color: white; }
+        .hist-row-clickable { cursor: pointer; }
+        .hist-row-clickable:hover td { background: #f4f1ec; }
         .badge-reactivado {
             display: inline-block;
             margin-left: 6px;
@@ -901,12 +903,11 @@
                                 <th class="inventory-management__heading">Agente</th>
                                 <th class="inventory-management__heading">Sede</th>
                                 <th class="inventory-management__heading" style="text-align:center;">Días inactivo</th>
-                                <th class="inventory-management__heading">Resultado</th>
                                 <th class="inventory-management__heading">Notas</th>
                             </tr>
                         </thead>
                         <tbody id="historial-react-tbody">
-                            <tr><td colspan="8" style="text-align:center;padding:30px;color:#999;">Cargando...</td></tr>
+                            <tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>

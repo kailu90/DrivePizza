@@ -1080,18 +1080,16 @@ function _rowHistorialHtml(r) {
             : '—';
         const sede   = SEDE_LABELS[r.ultima_sede] || r.ultima_sede || '—';
         const nombre = (r.nombre_cliente || '').replace(/"/g, '&quot;');
-        const btn    = `<button class="btn-reactivar-hist"
+        return `<tr class="inventory-management__row hist-row-clickable"
             data-id="" data-cliente-id="${r.cliente_id || ''}"
             data-nombre="${nombre}" data-tel="${r.telefono || ''}"
-            data-sede="${r.ultima_sede || ''}" data-dias="${r.dias_inactivo || 0}">Registrar</button>`;
-        return `<tr class="inventory-management__row">
+            data-sede="${r.ultima_sede || ''}" data-dias="${r.dias_inactivo || 0}">
             <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
             <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
             <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
             <td class="inventory-management__cell">—</td>
             <td class="inventory-management__cell">${sede}</td>
             <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
-            <td class="inventory-management__cell">${btn}</td>
             <td class="inventory-management__cell">—</td>
         </tr>`;
     }
@@ -1103,17 +1101,18 @@ function _rowHistorialHtml(r) {
             hour: '2-digit', minute: '2-digit' })
         : '—';
     const sede     = SEDE_LABELS[r.sede] || r.sede || '—';
-    const res      = r.resultado || 'exitosa';
-    const resLabel = RESULTADO_LABELS[res] || res;
     const notas    = (r.notas || '').replace(/</g, '&lt;');
-    return `<tr class="inventory-management__row">
+    const nombre   = (r.nombre_cliente || '').replace(/"/g, '&quot;');
+    return `<tr class="inventory-management__row hist-row-clickable"
+        data-id="${r.id}" data-cliente-id="${r.cliente_id || ''}"
+        data-nombre="${nombre}" data-tel="${r.telefono || ''}"
+        data-sede="${r.sede || ''}" data-dias="${r.dias_inactivo || 0}">
         <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
         <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
         <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
         <td class="inventory-management__cell">${r.agente || '—'}</td>
         <td class="inventory-management__cell">${sede}</td>
         <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
-        <td class="inventory-management__cell"><span class="badge-resultado ${res}">${resLabel}</span></td>
         <td class="inventory-management__cell" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${notas}">${notas || '—'}</td>
     </tr>`;
 }
@@ -1121,14 +1120,14 @@ function _rowHistorialHtml(r) {
 async function cargarHistorial(pagina = 1) {
     _histPagina = pagina;
     const tbody = document.getElementById('historial-react-tbody');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">Cargando...</td></tr>';
 
     const data = await _fetchHistorialPage(pagina);
     _histHasMore = data.length === HIST_POR_PAGINA;
 
     tbody.innerHTML = data.length
         ? data.map(_rowHistorialHtml).join('')
-        : '<tr><td colspan="8" style="text-align:center;padding:30px;color:#999;">No hay reactivaciones registradas.</td></tr>';
+        : '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">No hay reactivaciones registradas.</td></tr>';
 
     const pag = document.getElementById('historial-react-paginacion');
     pag.innerHTML = '';
@@ -1148,14 +1147,15 @@ async function cargarHistorial(pagina = 1) {
     }
 }
 
+
 document.getElementById('historial-react-tbody').addEventListener('click', e => {
-    const btn = e.target.closest('.btn-reactivar-hist');
-    if (!btn) return;
+    const tr = e.target.closest('.hist-row-clickable');
+    if (!tr) return;
     abrirModalReactivar(
-        { id: btn.dataset.clienteId, nombre: btn.dataset.nombre, telefono: btn.dataset.tel },
-        parseInt(btn.dataset.dias) || 0,
-        btn.dataset.sede,
-        btn.dataset.id
+        { id: tr.dataset.clienteId, nombre: tr.dataset.nombre, telefono: tr.dataset.tel },
+        parseInt(tr.dataset.dias) || 0,
+        tr.dataset.sede,
+        tr.dataset.id || null
     );
 });
 
