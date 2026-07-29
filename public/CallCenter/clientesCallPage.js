@@ -19,8 +19,12 @@ let _filtroDias   = null;     // null | 30 | 60 | 90
 let _sortCol      = 'fecha';  // 'telefono' | 'nombre' | 'pedidos' | 'fecha'
 let _sortDir      = 'desc';   // 'asc' | 'desc'
 
-const POR_PAGINA  = 20;
-let   paginaActual = 1;
+function _calcPorPagina() {
+    return Math.max(15, Math.floor((window.innerHeight - 250) / 46));
+}
+let POR_PAGINA  = _calcPorPagina();
+let paginaActual = 1;
+window.addEventListener('resize', () => { POR_PAGINA = _calcPorPagina(); });
 
 // ── BÚSQUEDA ──────────────────────────────────────────────────────────────────
 async function buscarClientes(query = '', pagina = 1) {
@@ -373,15 +377,16 @@ function cerrarModal() {
     clienteActual = null;
 }
 
-function _logCambio(clienteId, telefono, nombreCliente, accion, detalle = {}) {
-    supabase.from('clientes_log').insert({
+async function _logCambio(clienteId, telefono, nombreCliente, accion, detalle = {}) {
+    const { error } = await supabase.from('clientes_log').insert({
         cliente_id:     clienteId,
         telefono,
         nombre_cliente: nombreCliente || telefono,
         accion,
         detalle,
         asesor:         _usuarioActual,
-    }).then(({ error }) => { if (error) console.warn('Log error:', error.message); });
+    });
+    if (error) console.error('[clientes_log] Error al insertar:', error.message, error);
 }
 
 async function eliminarCliente() {
@@ -1006,21 +1011,29 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
 
     const { data } = await _fetchTodosPagina(q, pagina);
 
-    _infPage    = pagina;
-    _infQuery   = q;
-    _infHasMore = data.length === POR_PAGINA;
+    _infPage  = pagina;
+    _infQuery = q;
 
     renderTabla(data);
-    document.getElementById('clientes-paginacion').innerHTML = '';
+
+    // Paginación prev/next
+    const pag = document.getElementById('clientes-paginacion');
+    const hasNext = data.length === POR_PAGINA;
+    if (pagina <= 1 && !hasNext) {
+        pag.innerHTML = '';
+    } else {
+        pag.innerHTML = `
+            <button class="pag-btn" id="pag-prev" ${pagina <= 1 ? 'disabled' : ''}>← Anterior</button>
+            <span class="pag-info">Página ${pagina}</span>
+            <button class="pag-btn" id="pag-next" ${!hasNext ? 'disabled' : ''}>Siguiente →</button>`;
+        pag.querySelector('#pag-prev')?.addEventListener('click', () => ejecutarBusqueda(pagina - 1));
+        pag.querySelector('#pag-next')?.addEventListener('click', () => ejecutarBusqueda(pagina + 1));
+    }
 
     if (fromSearch) {
         btnBuscar.textContent = 'Buscar';
         btnBuscar.disabled = false;
     }
-
-    // Captura q en el closure — el observer siempre buscará con esta query
-    const queryCapturada = q;
-    _initScrollObserver(p => _fetchTodosPagina(queryCapturada, p).then(r => r.data));
 }
 
 // ── Ordenamiento de tabla ─────────────────────────────────────────────────────
