@@ -12,6 +12,7 @@ let clienteActual      = null;
 let _usuarioActual     = '';
 let _reactivarCli      = null;
 let _reactivarDias     = 0;
+let _reactivarId       = null; // null = INSERT nuevo, string = UPDATE existente
 let _vista        = 'todos';  // 'todos' | 'frecuentes' | 'reactivacion'
 let _filtroTags   = [];       // [] | ['frecuente', 'vip', ...]  (multi-select)
 let _filtroDias   = null;     // null | 30 | 60 | 90
@@ -177,9 +178,11 @@ function _setVistaActiva(vista) {
     const esHistorial = vista === 'historial';
 
     document.getElementById('cli-vista-clientes').style.display        = esHistorial ? 'none' : '';
+    document.getElementById('historial-dias-bar').style.display        = esHistorial ? 'flex' : 'none';
     document.getElementById('historial-react-section').style.display   = esHistorial ? 'flex' : 'none';
-    document.getElementById('sidebar-filtros-normales').style.display  = esHistorial ? 'none' : '';
     document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? '' : 'none';
+    document.getElementById('btn-ir-clientes').classList.toggle('active', !esHistorial);
+    document.getElementById('btn-ir-reactivaciones').classList.toggle('active', esHistorial);
 
     if (!esHistorial) {
         document.getElementById('buscar-cliente-input').value = '';
@@ -195,12 +198,19 @@ function _rowHtml(c) {
     const tags = (c.tags || []).map(t =>
         `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
     ).join(' ');
+    const dias   = c.updated_at ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000) : 0;
+    const nombre = (c.nombre || '').replace(/"/g, '&quot;');
 
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
         <td class="inventory-management__cell col-nombre">${c.nombre || '—'}</td>
         <td class="inventory-management__cell col-tags-td">${tags || '—'}</td>
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
+        <td class="inventory-management__cell" style="text-align:center;">
+            <button class="btn-reactivar-cli"
+                data-id="${c.id}" data-nombre="${nombre}"
+                data-tel="${c.telefono}" data-dias="${dias}">Reactivar</button>
+        </td>
     </tr>`;
 }
 
@@ -216,7 +226,7 @@ function _bindRows(rows) {
             btnReactivar.addEventListener('click', e => {
                 e.stopPropagation();
                 const cli = _clientesData.find(c => String(c.id) === tr.dataset.id);
-                if (cli) abrirModalReactivar(cli, Number(btnReactivar.dataset.dias));
+                if (cli) abrirModalReactivar(cli, Number(btnReactivar.dataset.dias), '', null);
             });
         }
     });
@@ -694,27 +704,61 @@ async function _crearTag(nombre) {
 }
 
 // ── REACTIVACIÓN ──────────────────────────────────────────────────────────────
-function abrirModalReactivar(cli, dias) {
+function abrirModalReactivar(cli, dias, sedePreset = '', id = null) {
+    _reactivarId   = id;
     _reactivarCli  = cli;
     _reactivarDias = dias;
-    document.getElementById('reactivar-nombre').textContent = cli.nombre || cli.telefono;
-    document.getElementById('reactivar-tel').textContent    = cli.telefono;
-    document.getElementById('reactivar-dias').textContent   = `${dias} días sin ordenar`;
-    document.getElementById('reactivar-notas').value        = '';
+    document.getElementById('reactivar-nombre').textContent  = cli.nombre || cli.telefono;
+    document.getElementById('reactivar-tel').textContent     = cli.telefono;
+    document.getElementById('reactivar-dias').textContent    = `${dias} días sin ordenar`;
+    document.getElementById('reactivar-sede').value          = sedePreset || '';
+    document.getElementById('reactivar-resultado').value     = 'pendiente';
+    document.getElementById('reactivar-notas').value         = '';
     document.getElementById('modal-reactivar').style.display = 'flex';
     document.getElementById('reactivar-notas').focus();
 }
 
 async function registrarReactivacion() {
     if (!_reactivarCli) return;
-    const notas = document.getElementById('reactivar-notas').value.trim();
-    const btn   = document.getElementById('btn-confirmar-reactivar');
+    const notas     = document.getElementById('reactivar-notas').value.trim();
+    const sede      = document.getElementById('reactivar-sede').value || null;
+    const resultado = document.getElementById('reactivar-resultado').value || 'pendiente';
+    const btn       = document.getElementById('btn-confirmar-reactivar');
+
+    if (!sede) { alert('⚠️ Selecciona una sede.'); return; }
+
     btn.textContent = 'Registrando...';
     btn.disabled    = true;
 
-    const sede      = document.getElementById('reactivar-sede').value || null;
-    const resultado = document.getElementById('reactivar-resultado').value || 'pendiente';
+    // ── UPDATE registro existente (desde historial "Por reactivar") ──
+    if (_reactivarId) {
+        const { error } = await supabase.from('reactivaciones')
+            .update({ sede, resultado, notas: notas || null, agente: _usuarioActual })
+            .eq('id', _reactivarId);
 
+        if (error) {
+            alert('Error al actualizar: ' + error.message);
+            btn.textContent = 'Confirmar reactivación';
+            btn.disabled = false;
+            return;
+        }
+
+        if (resultado === 'exitosa' && _reactivarCli.id) {
+            await supabase.from('clientes')
+                .update({ fecha_ultima_reactivacion: new Date().toISOString() })
+                .eq('id', _reactivarCli.id);
+        }
+
+        btn.textContent = 'Confirmar reactivación';
+        btn.disabled    = false;
+        document.getElementById('modal-reactivar').style.display = 'none';
+        _reactivarCli = null;
+        _reactivarId  = null;
+        cargarHistorial(_histPagina);
+        return;
+    }
+
+    // ── INSERT nuevo registro (desde tabla de clientes) ──
     const { error } = await supabase.from('reactivaciones').insert({
         cliente_id:     _reactivarCli.id,
         telefono:       _reactivarCli.telefono,
@@ -738,7 +782,6 @@ async function registrarReactivacion() {
         .update({ fecha_ultima_reactivacion: ahora })
         .eq('id', _reactivarCli.id);
 
-    // Actualizar fila en el DOM
     const idx = _clientesData.findIndex(c => String(c.id) === String(_reactivarCli.id));
     if (idx !== -1) {
         _clientesData[idx] = { ..._clientesData[idx], fecha_ultima_reactivacion: ahora };
@@ -756,6 +799,7 @@ async function registrarReactivacion() {
     btn.disabled    = false;
     document.getElementById('modal-reactivar').style.display = 'none';
     _reactivarCli = null;
+    _reactivarId  = null;
 }
 
 // ── REFRESCO MEDIANOCHE ───────────────────────────────────────────────────────
@@ -919,18 +963,6 @@ document.querySelectorAll('.dias-filtro').forEach(chip => {
     });
 });
 
-document.getElementById('btn-limpiar-filtros').addEventListener('click', () => {
-    _filtroTags = [];
-    _filtroDias = null;
-    document.querySelectorAll('.tag-filtro').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.dias-filtro').forEach(c => c.classList.remove('active'));
-    document.querySelector('.dias-filtro[data-dias=""]')?.classList.add('active');
-    _todosCache.clear();
-    _frecuentesCache.clear();
-    _reactivacionCache.clear();
-    _setVistaActiva('todos');
-    ejecutarBusqueda(1);
-});
 
 let debounceTimer = null;
 
@@ -966,22 +998,29 @@ document.getElementById('modal-nuevo-cliente').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-nuevo-cliente')) cerrarModalNuevo();
 });
 
-document.getElementById('cerrar-modal-reactivar').addEventListener('click', () => {
+function _cerrarModalReactivar() {
     document.getElementById('modal-reactivar').style.display = 'none';
     _reactivarCli = null;
-});
+    _reactivarId  = null;
+}
+document.getElementById('cerrar-modal-reactivar').addEventListener('click', _cerrarModalReactivar);
 document.getElementById('btn-confirmar-reactivar').addEventListener('click', registrarReactivacion);
 document.getElementById('modal-reactivar').addEventListener('click', e => {
-    if (e.target === document.getElementById('modal-reactivar')) {
-        document.getElementById('modal-reactivar').style.display = 'none';
-        _reactivarCli = null;
-    }
+    if (e.target === document.getElementById('modal-reactivar')) _cerrarModalReactivar();
 });
 
 // ── HISTORIAL REACTIVACIONES ──────────────────────────────────────────────────
-let _histPagina  = 1;
-let _histHasMore = false;
-const HIST_POR_PAGINA = 20;
+let _histPagina     = 1;
+let _histHasMore    = false;
+let _histFiltroDias  = null;        // null | 30 | 60 | 90
+let _histFiltroEstado = 'pendiente'; // 'pendiente' | 'exitosa'
+// Filas que caben en pantalla: altura disponible / altura aprox por fila (46px)
+// Overhead: header 54px + padding cli-main 48px + pills 40px + thead 46px + paginacion 44px
+function _calcHistPorPagina() {
+    return Math.max(15, Math.floor((window.innerHeight - 232) / 46));
+}
+let HIST_POR_PAGINA = _calcHistPorPagina();
+window.addEventListener('resize', () => { HIST_POR_PAGINA = _calcHistPorPagina(); });
 
 const RESULTADO_LABELS = {
     pendiente: 'Pendiente', exitosa: 'Exitosa',
@@ -989,24 +1028,40 @@ const RESULTADO_LABELS = {
 };
 
 async function _fetchHistorialPage(pagina) {
-    const sede      = document.getElementById('hist-filtro-sede').value;
-    const resultado = document.getElementById('hist-filtro-resultado').value;
-    const agente    = document.getElementById('hist-filtro-agente').value.trim();
-    const desde     = document.getElementById('hist-filtro-desde').value;
-    const hasta     = document.getElementById('hist-filtro-hasta').value;
-    const offset    = (pagina - 1) * HIST_POR_PAGINA;
+    const sede   = document.getElementById('hist-filtro-sede').value;
+    const agente = document.getElementById('hist-filtro-agente').value.trim();
+    const desde  = document.getElementById('hist-filtro-desde').value;
+    const hasta  = document.getElementById('hist-filtro-hasta').value;
+    const offset = (pagina - 1) * HIST_POR_PAGINA;
 
+    // "Por reactivar" — consulta pedidos_callcenter via RPC
+    if (_histFiltroEstado === 'pendiente') {
+        const diasMax = _histFiltroDias === 30 ? 60
+                      : _histFiltroDias === 60 ? 90
+                      : null;
+        const { data, error } = await supabase.rpc('clientes_por_reactivar', {
+            p_dias:       _histFiltroDias || 1,
+            p_dias_max:   diasMax,
+            p_sede:       sede || null,
+            p_pagina:     pagina,
+            p_por_pagina: HIST_POR_PAGINA
+        });
+        if (error) { console.error('Por reactivar error:', error); return []; }
+        return (data || []).map(r => ({ ...r, _desde_rpc: true }));
+    }
+
+    // "Activados" — consulta tabla reactivaciones
     let req = supabase
         .from('reactivaciones')
         .select('*')
+        .eq('resultado', 'exitosa')
         .order('created_at', { ascending: false })
         .range(offset, offset + HIST_POR_PAGINA - 1);
 
-    if (sede)      req = req.eq('sede', sede);
-    if (resultado) req = req.eq('resultado', resultado);
-    if (agente)    req = req.ilike('agente', `%${agente}%`);
-    if (desde)     req = req.gte('created_at', desde);
-    if (hasta)     req = req.lte('created_at', hasta + 'T23:59:59');
+    if (sede)   req = req.eq('sede', sede);
+    if (agente) req = req.ilike('agente', `%${agente}%`);
+    if (desde)  req = req.gte('created_at', desde);
+    if (hasta)  req = req.lte('created_at', hasta + 'T23:59:59');
 
     const { data, error } = await req;
     if (error) { console.error('Historial error:', error); return []; }
@@ -1014,15 +1069,42 @@ async function _fetchHistorialPage(pagina) {
 }
 
 function _rowHistorialHtml(r) {
-    const fecha = r.created_at
+    const diasCls = (r.dias_inactivo || 0) >= 90 ? 'critico' : 'moderado';
+
+    // Fila desde RPC clientes_por_reactivar ("Por reactivar")
+    if (r._desde_rpc) {
+        const fecha  = r.ultimo_pedido
+            ? new Date(r.ultimo_pedido).toLocaleString('es-CO', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit' })
+            : '—';
+        const sede   = SEDE_LABELS[r.ultima_sede] || r.ultima_sede || '—';
+        const nombre = (r.nombre_cliente || '').replace(/"/g, '&quot;');
+        const btn    = `<button class="btn-reactivar-hist"
+            data-id="" data-cliente-id="${r.cliente_id || ''}"
+            data-nombre="${nombre}" data-tel="${r.telefono || ''}"
+            data-sede="${r.ultima_sede || ''}" data-dias="${r.dias_inactivo || 0}">Registrar</button>`;
+        return `<tr class="inventory-management__row">
+            <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
+            <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
+            <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
+            <td class="inventory-management__cell">—</td>
+            <td class="inventory-management__cell">${sede}</td>
+            <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
+            <td class="inventory-management__cell">${btn}</td>
+            <td class="inventory-management__cell">—</td>
+        </tr>`;
+    }
+
+    // Fila desde tabla reactivaciones ("Activados")
+    const fecha    = r.created_at
         ? new Date(r.created_at).toLocaleString('es-CO', {
             day: '2-digit', month: 'short', year: 'numeric',
             hour: '2-digit', minute: '2-digit' })
         : '—';
     const sede     = SEDE_LABELS[r.sede] || r.sede || '—';
-    const res      = r.resultado || 'pendiente';
+    const res      = r.resultado || 'exitosa';
     const resLabel = RESULTADO_LABELS[res] || res;
-    const diasCls  = (r.dias_inactivo || 0) >= 90 ? 'critico' : 'moderado';
     const notas    = (r.notas || '').replace(/</g, '&lt;');
     return `<tr class="inventory-management__row">
         <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
@@ -1066,17 +1148,83 @@ async function cargarHistorial(pagina = 1) {
     }
 }
 
-document.getElementById('btn-ir-reactivaciones').addEventListener('click', () => {
-    _setVistaActiva('historial');
-    cargarHistorial(1);
+document.getElementById('historial-react-tbody').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-reactivar-hist');
+    if (!btn) return;
+    abrirModalReactivar(
+        { id: btn.dataset.clienteId, nombre: btn.dataset.nombre, telefono: btn.dataset.tel },
+        parseInt(btn.dataset.dias) || 0,
+        btn.dataset.sede,
+        btn.dataset.id
+    );
 });
 
-document.getElementById('btn-volver-clientes').addEventListener('click', () => {
+document.getElementById('btn-ir-clientes').addEventListener('click', () => {
     _setVistaActiva('todos');
     ejecutarBusqueda(1);
 });
 
-document.getElementById('btn-buscar-historial').addEventListener('click', () => cargarHistorial(1));
+document.getElementById('btn-ir-reactivaciones').addEventListener('click', () => {
+    _setVistaActiva('historial');
+    cargarHistorial(1);
+    _actualizarConteosPills();
+});
+
+document.getElementById('btn-buscar-historial').addEventListener('click', () => {
+    cargarHistorial(1);
+    if (_histFiltroEstado === 'pendiente') _actualizarConteosPills();
+});
+
+document.getElementById('hist-filtro-sede').addEventListener('change', () => {
+    cargarHistorial(1);
+    if (_histFiltroEstado === 'pendiente') _actualizarConteosPills();
+});
+
+document.querySelectorAll('.hist-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.hist-toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _histFiltroEstado = btn.dataset.estado;
+        cargarHistorial(1);
+    });
+});
+
+async function _actualizarConteosPills() {
+    const sede = document.getElementById('hist-filtro-sede').value || null;
+    const { data, error } = await supabase.rpc('clientes_por_reactivar', {
+        p_dias: 30, p_dias_max: null, p_sede: sede, p_pagina: 1, p_por_pagina: 9999
+    });
+    if (error) { console.error('Pills RPC error:', error); return; }
+    const rows = data || [];
+
+    const rangos = [
+        { dias: 30, min: 30, max: 59 },
+        { dias: 60, min: 60, max: 89 },
+        { dias: 90, min: 90, max: Infinity },
+    ];
+
+    rangos.forEach(({ dias, min, max }) => {
+        const count = rows.filter(r => r.dias_inactivo >= min && r.dias_inactivo <= max).length;
+        const chip  = document.querySelector(`.dias-filtro-hist[data-dias="${dias}"]`);
+        if (!chip) return;
+        let badge = chip.querySelector('.pill-count');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'pill-count';
+            chip.appendChild(badge);
+        }
+        badge.textContent = count;
+    });
+}
+
+document.querySelectorAll('.dias-filtro-hist').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.dias-filtro-hist').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        _histFiltroDias = chip.dataset.dias ? Number(chip.dataset.dias) : null;
+        cargarHistorial(1);
+    });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 initNavButtons('clientes', { onBarrios: openBarriosModal });

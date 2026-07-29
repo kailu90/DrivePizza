@@ -27,6 +27,7 @@
             gap: 1rem;
             margin-bottom: 1.6rem;
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
         .clientes-search-wrap {
             display: flex;
@@ -377,8 +378,6 @@
             margin-top: 12px;
             padding: 0 4px;
         }
-        .sidebar-tags { flex-direction: column; gap: 5px; }
-        .sidebar-tags .tag-chip { text-align: center; font-size: 1.25rem; }
         .cli-sidebar .btn-buscar-cliente,
         .cli-sidebar .btn-ver-historial { padding: 10px; flex: none; }
 
@@ -441,7 +440,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 20px 24px;
+            padding: 28px 24px 20px;
         }
 
         /* Mobile */
@@ -466,7 +465,6 @@
                 padding: 12px 16px;
             }
             .cli-sidebar .cli-sidebar-divider { display: none; }
-            .sidebar-tags { flex-direction: row; }
             .cli-sidebar .filtro-sidebar-label:first-of-type { margin-top: 0; }
             .cli-main {
                 height: auto;
@@ -504,6 +502,23 @@
             vertical-align: middle;
         }
         .btn-reactivar-cli:hover { background: var(--color-primario); color: white; }
+        .col-acciones-th { width: 90px; }
+        .btn-reactivar-hist {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1.5px solid #e67e22;
+            background: white;
+            color: #e67e22;
+            font-family: inherit;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .btn-reactivar-hist:hover { background: #e67e22; color: white; }
         .badge-reactivado {
             display: inline-block;
             margin-left: 6px;
@@ -527,12 +542,54 @@
         .dias-badge.moderado { background: #fff8e1; color: #f39c12; }
         .dias-badge.critico  { background: #fff0f0; color: #e74c3c; }
 
+        /* Pills días sin actividad (bajo el buscador) */
+        .dias-pills-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            overflow: visible;
+        }
+        .dias-pills-bar .tag-chip { font-size: 1.25rem; position: relative; overflow: visible; }
+        .dias-pills-bar .tag-chip {
+            background: var(--color-secundario);
+            color: var(--color-terciario);
+            border-color: #c8bfb0;
+        }
+        .dias-pills-bar .tag-chip:hover,
+        .dias-pills-bar .tag-chip.active {
+            background: var(--color-primario);
+            color: #fff;
+            border-color: var(--color-primario);
+        }
+        .pill-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--color-quinto);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 1rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            line-height: 18px;
+            text-align: center;
+            padding: 0 4px;
+            box-sizing: border-box;
+            border: 2px solid var(--color-quinto);
+            pointer-events: none;
+        }
+
         /* Barra de tags bajo el buscador */
         .clientes-tags-bar {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
             margin-bottom: 1rem;
+            flex-shrink: 0;
         }
         .clientes-tags-bar .tag-chip { font-size: 1.25rem; }
         .btn-add-tag {
@@ -606,6 +663,8 @@
             min-height: 0;
         }
         #historial-react-section {
+            display: flex;
+            flex-direction: column;
             flex: 1;
             min-height: 0;
             overflow: hidden;
@@ -655,6 +714,36 @@
         .btn-reactivaciones:hover,
         .btn-reactivaciones.active { background: var(--color-primario); color: white; border-color: var(--color-primario); }
         #historial-react-paginacion { display: flex; gap: 8px; margin-top: 12px; padding: 4px 0; }
+
+        /* Toggle Activados / Por reactivar */
+        .hist-toggle-wrap {
+            display: flex;
+            background: #ede8e0;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 2px;
+            margin-top: 4px;
+        }
+        .hist-toggle-btn {
+            flex: 1;
+            padding: 6px 4px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            background: transparent;
+            color: #888;
+            transition: all .18s;
+            white-space: nowrap;
+        }
+        .hist-toggle-btn.active {
+            background: white;
+            color: var(--color-primario);
+            font-weight: 700;
+            box-shadow: 0 1px 4px rgba(0,0,0,.12);
+        }
     </style>
 </head>
 <body data-skeleton="historial">
@@ -697,35 +786,27 @@
         <!-- ── Filtros sidebar (fijo) ── -->
         <aside class="cli-sidebar">
 
-            <!-- Estado normal (filtros clientes) -->
-            <div id="sidebar-filtros-normales">
-                <div class="cli-sidebar-title">Filtros</div>
-                <div class="cli-sidebar-divider"></div>
+            <!-- Nav: siempre visible -->
+            <div class="cli-sidebar-title">Vistas</div>
+            <div class="cli-sidebar-divider"></div>
 
-                <div class="filtro-sidebar-label">Días sin actividad</div>
-                <div class="tags-wrap sidebar-tags">
-                    <span class="tag-chip dias-filtro active" data-dias="">Todos</span>
-                    <span class="tag-chip dias-filtro" data-dias="30">Más de 30d</span>
-                    <span class="tag-chip dias-filtro" data-dias="60">Más de 60d</span>
-                    <span class="tag-chip dias-filtro" data-dias="90">Más de 90d</span>
-                </div>
+            <button class="btn-reactivaciones active" id="btn-ir-clientes">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Clientes
+            </button>
+            <button class="btn-reactivaciones" id="btn-ir-reactivaciones">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Reactivaciones
+            </button>
 
-                <div class="cli-sidebar-divider" style="margin-top:16px;"></div>
-                <button class="btn-ver-historial" id="btn-limpiar-filtros" style="width:100%;margin-top:6px;text-align:center;">Limpiar filtros</button>
-
-                <div class="cli-sidebar-divider" style="margin-top:16px;"></div>
-                <button class="btn-reactivaciones" id="btn-ir-reactivaciones">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                    Reactivaciones
-                </button>
-            </div>
-
-            <!-- Estado historial reactivaciones -->
+            <!-- Filtros historial (solo en vista reactivaciones) -->
             <div id="sidebar-historial-filtros" style="display:none;">
-                <div class="cli-sidebar-title">Reactivaciones</div>
-                <div class="cli-sidebar-divider"></div>
+                <div class="cli-sidebar-divider" style="margin-top:12px;"></div>
 
-                <button class="btn-ver-historial" id="btn-volver-clientes" style="width:100%;margin-bottom:8px;text-align:center;">← Volver a clientes</button>
+                <div class="hist-toggle-wrap">
+                    <button class="hist-toggle-btn active" data-estado="pendiente">Reactivar</button>
+                    <button class="hist-toggle-btn" data-estado="exitosa">Activados</button>
+                </div>
 
                 <div class="filtro-sidebar-label">Sede</div>
                 <select id="hist-filtro-sede" class="hist-select">
@@ -736,15 +817,6 @@
                     <option value="piedecuesta">Piedecuesta</option>
                     <option value="megamall">Megamall</option>
                     <option value="unico">Único</option>
-                </select>
-
-                <div class="filtro-sidebar-label">Resultado</div>
-                <select id="hist-filtro-resultado" class="hist-select">
-                    <option value="">Todos</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="exitosa">Exitosa</option>
-                    <option value="no_contesta">No contesta</option>
-                    <option value="rechaza">Rechaza</option>
                 </select>
 
                 <div class="filtro-sidebar-label">Agente</div>
@@ -788,11 +860,12 @@
                                 <th class="inventory-management__heading col-nombre sort-th" data-sort="nombre">Nombre <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-tags-th">Tags</th>
                                 <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
+                                <th class="inventory-management__heading col-acciones-th"></th>
                             </tr>
                         </thead>
                         <tbody id="clientes-tbody">
                             <tr>
-                                <td class="inventory-management__cell" colspan="4"
+                                <td class="inventory-management__cell" colspan="5"
                                     style="text-align:center; padding:30px;">
                                     Cargando clientes...
                                 </td>
@@ -807,6 +880,14 @@
                 <div id="clientes-paginacion" class="clientes-paginacion"></div>
 
             </div><!-- /cli-vista-clientes -->
+
+            <!-- Pills días sin actividad — solo visible en vista historial -->
+            <div class="dias-pills-bar" id="historial-dias-bar" style="display:none;">
+                <span class="tag-chip dias-filtro-hist active" data-dias="">Todos</span>
+                <span class="tag-chip dias-filtro-hist" data-dias="30">+30 días</span>
+                <span class="tag-chip dias-filtro-hist" data-dias="60">+60 días</span>
+                <span class="tag-chip dias-filtro-hist" data-dias="90">+90 días</span>
+            </div>
 
             <!-- Vista historial reactivaciones -->
             <div id="historial-react-section" style="display:none;">
