@@ -687,13 +687,15 @@
         .hist-select, .hist-input {
             width: 100%;
             padding: 7px 10px;
-            border: 1.5px solid #ddd;
+            border: none;
             border-radius: 8px;
             font-size: 1.3rem;
             font-family: inherit;
             box-sizing: border-box;
-            background: white;
+            background: var(--color-secundario);
+            color: var(--color-terciario);
             margin-top: 2px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08), inset 0 0 0 1px #d4cbbf;
         }
         .hist-select:focus, .hist-input:focus { outline: none; border-color: var(--color-primario); }
         .badge-resultado {
@@ -903,12 +905,12 @@
                     <table class="inventory-management__table" id="historial-react-table">
                         <thead class="inventory-management__thead">
                             <tr class="inventory-management__row">
-                                <th class="inventory-management__heading">Fecha</th>
                                 <th class="inventory-management__heading">Cliente</th>
                                 <th class="inventory-management__heading">Teléfono</th>
                                 <th class="inventory-management__heading">Agente</th>
                                 <th class="inventory-management__heading">Sede</th>
                                 <th class="inventory-management__heading" style="text-align:center;">Días inactivo</th>
+                                <th class="inventory-management__heading">Fecha</th>
                                 <th class="inventory-management__heading">Notas</th>
                             </tr>
                         </thead>

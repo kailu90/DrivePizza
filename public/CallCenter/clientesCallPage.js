@@ -1089,17 +1089,17 @@ function _rowHistorialHtml(r) {
             data-id="" data-cliente-id="${r.cliente_id || ''}"
             data-nombre="${nombre}" data-tel="${r.telefono || ''}"
             data-sede="${r.ultima_sede || ''}" data-dias="${r.dias_inactivo || 0}">
-            <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
             <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
             <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
             <td class="inventory-management__cell">—</td>
             <td class="inventory-management__cell">${sede}</td>
             <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
+            <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
             <td class="inventory-management__cell">—</td>
         </tr>`;
     }
 
-    // Fila desde tabla reactivaciones ("Activados")
+    // Fila desde tabla reactivaciones ("Reactivados")
     const fecha    = r.created_at
         ? new Date(r.created_at).toLocaleString('es-CO', {
             day: '2-digit', month: 'short', year: 'numeric',
@@ -1112,12 +1112,12 @@ function _rowHistorialHtml(r) {
         data-id="${r.id}" data-cliente-id="${r.cliente_id || ''}"
         data-nombre="${nombre}" data-tel="${r.telefono || ''}"
         data-sede="${r.sede || ''}" data-dias="${r.dias_inactivo || 0}">
-        <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
         <td class="inventory-management__cell">${r.nombre_cliente || '—'}</td>
         <td class="inventory-management__cell" style="font-weight:700;">${r.telefono || '—'}</td>
         <td class="inventory-management__cell">${r.agente || '—'}</td>
         <td class="inventory-management__cell">${sede}</td>
         <td class="inventory-management__cell" style="text-align:center;"><span class="dias-badge ${diasCls}">${r.dias_inactivo ?? '—'}d</span></td>
+        <td class="inventory-management__cell" style="white-space:nowrap;font-size:1.2rem;">${fecha}</td>
         <td class="inventory-management__cell" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${notas}">${notas || '—'}</td>
     </tr>`;
 }
