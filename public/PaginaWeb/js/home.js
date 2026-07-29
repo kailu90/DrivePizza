@@ -105,9 +105,11 @@ function renderSedes() {
 
   const sedes = sedesData.map(s => {
     const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (barrioSeleccionado && barrioIndex[barrioSeleccionado])
-      ? !barrioIndex[barrioSeleccionado].has(s.name || '')
-      : (tieneUbicacion && dist !== null && s.radio_km ? dist > s.radio_km : false);
+    const fueraZona = (userLat !== null)
+      ? (dist !== null && s.radio_km ? dist > s.radio_km : false)
+      : (barrioSeleccionado && barrioIndex[barrioSeleccionado])
+        ? !barrioIndex[barrioSeleccionado].has(s.name || '')
+        : false;
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
 
@@ -181,9 +183,11 @@ function renderDirCard(barrio) {
   const refLng    = userLng ?? barCoords?.lng ?? null;
   const sedesCalc = sedesData.map(s => {
     const dist      = (refLat && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = barrioIndex[barrio]
-      ? !barrioIndex[barrio].has(s.name || '')
-      : (dist !== null && s.radio_km ? dist > s.radio_km : false);
+    const fueraZona = (userLat !== null)
+      ? (dist !== null && s.radio_km ? dist > s.radio_km : false)
+      : barrioIndex[barrio]
+        ? !barrioIndex[barrio].has(s.name || '')
+        : (dist !== null && s.radio_km ? dist > s.radio_km : false);
     return { ...s, _dist: dist, _fueraZona: fueraZona };
   });
   sedesCalc.sort((a, b) => {
