@@ -942,6 +942,7 @@ function abrirModalReserva() {
     document.getElementById('modal-checkout-titulo').textContent = 'NUEVA RESERVA';
     document.getElementById('entrega-toggle-section').style.display = 'none';
     document.getElementById('pago-section').style.display = 'none';
+    document.getElementById('acomp-section').style.display = 'none';
     document.getElementById('personas-section').style.display = 'block';
     document.getElementById('btn-enviar-pedido').style.display = 'none';
     document.getElementById('btn-crear-reserva').style.display = 'block';
@@ -1018,6 +1019,7 @@ function _restaurarModoNormal() {
     document.getElementById('modal-checkout-titulo').textContent = 'DATOS CLIENTE';
     document.getElementById('entrega-toggle-section').style.display = '';
     document.getElementById('pago-section').style.display = '';
+    document.getElementById('acomp-section').style.display = '';
     document.getElementById('personas-section').style.display = 'none';
     document.getElementById('btn-enviar-pedido').style.display = '';
     document.getElementById('btn-crear-reserva').style.display = 'none';

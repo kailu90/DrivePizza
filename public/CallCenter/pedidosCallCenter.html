@@ -413,6 +413,13 @@
         _clienteDirs = cliente.direcciones_cliente || [];
         const chipsEl = document.getElementById('dir-chips');
 
+        const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
+        if (enModoReserva) {
+            chipsEl.style.display = 'none';
+            chipsEl.innerHTML = '';
+            return;
+        }
+
         if (!_clienteDirs.length) {
             chipsEl.style.display = 'none';
             chipsEl.innerHTML = '';
