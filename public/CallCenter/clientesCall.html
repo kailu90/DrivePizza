@@ -482,7 +482,6 @@
             .col-pedidos-th, .col-pedidos-td { display: none; }
         }
         @media (max-width: 680px) {
-            .col-fecha-th, .col-fecha-td { display: none; }
             .btn-eliminar-cli span { display: none; }
         }
 
@@ -789,13 +788,11 @@
                                 <th class="inventory-management__heading col-nombre sort-th" data-sort="nombre">Nombre <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-tags-th">Tags</th>
                                 <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
-                                <th class="inventory-management__heading sort-th" id="th-pedidos" data-sort="pedidos">Días sin ordenar <span class="sort-icon">▲▼</span></th>
-                                <th class="inventory-management__heading col-fecha-th sort-th sort-active" data-sort="fecha">Última actividad <span class="sort-icon">▼</span></th>
                             </tr>
                         </thead>
                         <tbody id="clientes-tbody">
                             <tr>
-                                <td class="inventory-management__cell" colspan="6"
+                                <td class="inventory-management__cell" colspan="4"
                                     style="text-align:center; padding:30px;">
                                     Cargando clientes...
                                 </td>

@@ -174,9 +174,7 @@ function _setVistaActiva(vista) {
     _disconnectObserver();
     _vista = vista;
 
-    const esHistorial    = vista === 'historial';
-    const esReactivacion = vista === 'reactivacion';
-    const esFrecuentes   = vista === 'frecuentes';
+    const esHistorial = vista === 'historial';
 
     document.getElementById('cli-vista-clientes').style.display        = esHistorial ? 'none' : '';
     document.getElementById('historial-react-section').style.display   = esHistorial ? 'flex' : 'none';
@@ -184,12 +182,6 @@ function _setVistaActiva(vista) {
     document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? '' : 'none';
 
     if (!esHistorial) {
-        document.getElementById('th-pedidos').style.display = '';
-        document.getElementById('th-pedidos').firstChild.textContent =
-            esReactivacion ? 'Días sin pedir ' : esFrecuentes ? 'Pedidos ' : 'Días sin ordenar ';
-        document.querySelector('.col-fecha-th').firstChild.textContent =
-            esReactivacion ? 'Último pedido ' : 'Última actividad ';
-
         document.getElementById('buscar-cliente-input').value = '';
         document.querySelector('.clientes-search-wrap').style.display = vista === 'todos' ? '' : 'none';
         document.getElementById('btn-nuevo-cliente').style.display    = vista === 'todos' ? '' : 'none';
@@ -200,51 +192,15 @@ function _setVistaActiva(vista) {
 let _clientesData = []; // acumula todos los clientes visibles en scroll
 
 function _rowHtml(c) {
-    const esFrecuentes   = _vista === 'frecuentes';
-    const esReactivacion = _vista === 'reactivacion';
-
-    const fechaMostrar = esReactivacion ? c.ultimo_pedido : c.updated_at;
-
     const tags = (c.tags || []).map(t =>
         `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
     ).join(' ');
-
-    // Días inactivo (siempre numérico)
-    const diasNum = esReactivacion
-        ? (c.dias_inactivo ?? 0)
-        : c.updated_at
-            ? Math.floor((Date.now() - new Date(c.updated_at)) / 86_400_000)
-            : 0;
-
-    // Botón reactivar — se inserta dentro de la celda de días
-    let btnReactivarHtml = '';
-    if (diasNum >= 30) {
-        const diasDesdeReact = c.fecha_ultima_reactivacion
-            ? Math.floor((Date.now() - new Date(c.fecha_ultima_reactivacion)) / 86_400_000)
-            : 999;
-        btnReactivarHtml = diasDesdeReact <= 7
-            ? `<span class="badge-reactivado">✓ Reactivado</span>`
-            : `<button class="btn-reactivar-cli" data-id="${c.id}" data-dias="${diasNum}">Reactivar</button>`;
-    }
-
-    let colPedidos = '';
-    if (esFrecuentes) {
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>`;
-    } else if (esReactivacion) {
-        const cls = diasNum >= 90 ? 'critico' : 'moderado';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;white-space:nowrap;"><span class="dias-badge ${cls}">${diasNum}d</span>${btnReactivarHtml}</td>`;
-    } else {
-        const cls = diasNum >= 90 ? 'critico' : diasNum >= 30 ? 'moderado' : '';
-        colPedidos = `<td class="inventory-management__cell" style="text-align:center;white-space:nowrap;"><span class="${cls ? `dias-badge ${cls}` : ''}">${diasNum}d</span>${btnReactivarHtml}</td>`;
-    }
 
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
         <td class="inventory-management__cell col-nombre">${c.nombre || '—'}</td>
         <td class="inventory-management__cell col-tags-td">${tags || '—'}</td>
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
-        ${colPedidos}
-        <td class="inventory-management__cell col-fecha-td">${formatFecha(fechaMostrar)}</td>
     </tr>`;
 }
 
