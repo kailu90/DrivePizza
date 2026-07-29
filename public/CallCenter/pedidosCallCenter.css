@@ -840,9 +840,17 @@ body {
 }
 
 /* ── ACOMPAÑAMIENTOS GRATUITOS ────────────────────────────────── */
+.acomp-titulo {
+    font-size: 1.6rem;
+    font-weight: bold;
+    margin: 10px 0 8px;
+    text-align: center;
+}
+
 .acomp-pills {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 6px;
     margin-bottom: 4px;
 }
