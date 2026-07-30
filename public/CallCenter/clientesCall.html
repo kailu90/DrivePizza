@@ -653,6 +653,10 @@
             overflow-x: auto;
         }
 
+        /* Skeleton filas tabla clientes */
+        .sk-td { padding: 10px 12px; }
+        .sk-td .sk-block { height: 20px; border-radius: 4px; }
+
         /* Infinite scroll sentinel */
         #clientes-sentinel {
             height: 56px;
@@ -909,6 +913,14 @@
                 <div id="clientes-paginacion" class="clientes-paginacion"></div>
 
             </div><!-- /cli-vista-clientes -->
+
+            <!-- Topbar búsqueda reactivaciones — solo visible en vista historial -->
+            <div class="clientes-topbar" id="historial-topbar" style="display:none;">
+                <div class="clientes-search-wrap">
+                    <input id="hist-filtro-busqueda" type="text"
+                           placeholder="Buscar por nombre o teléfono..." autocomplete="off">
+                </div>
+            </div>
 
             <!-- Pills días sin actividad — solo visible en vista historial -->
             <div class="dias-pills-bar" id="historial-dias-bar" style="display:none;">

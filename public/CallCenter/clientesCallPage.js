@@ -183,7 +183,8 @@ function _setVistaActiva(vista) {
     const esLog       = vista === 'log';
     const esClientes  = !esHistorial && !esLog;
 
-    document.getElementById('cli-vista-clientes').style.display        = esClientes  ? ''     : 'none';
+    document.getElementById('cli-vista-clientes').style.display        = esClientes  ? 'flex' : 'none';
+    document.getElementById('historial-topbar').style.display          = esHistorial ? 'flex' : 'none';
     document.getElementById('historial-dias-bar').style.display        = esHistorial ? 'flex' : 'none';
     document.getElementById('historial-react-section').style.display   = esHistorial ? 'flex' : 'none';
     document.getElementById('sidebar-historial-filtros').style.display = esHistorial ? ''     : 'none';
@@ -197,6 +198,9 @@ function _setVistaActiva(vista) {
         document.getElementById('buscar-cliente-input').value = '';
         document.querySelector('.clientes-search-wrap').style.display = vista === 'todos' ? '' : 'none';
         document.getElementById('btn-nuevo-cliente').style.display    = vista === 'todos' ? '' : 'none';
+    }
+    if (!esHistorial) {
+        document.getElementById('hist-filtro-busqueda').value = '';
     }
 }
 
@@ -987,6 +991,39 @@ function _scheduleMidnightRefresh() {
     }, ms);
 }
 
+// ── SKELETON FILAS ────────────────────────────────────────────────────────────
+function _skeletonFilasClientes(n) {
+    // Variantes de ancho para nombre y tags para que no sean todas iguales
+    const nombresW = ['55%', '70%', '45%', '80%', '60%'];
+    const tagsCols = [
+        '<div class="sk-block" style="width:52px;height:20px;border-radius:10px;display:inline-block;"></div>',
+        '<div class="sk-block" style="width:52px;height:20px;border-radius:10px;display:inline-block;"></div><div class="sk-block" style="width:40px;height:20px;border-radius:10px;display:inline-block;margin-left:4px;"></div>',
+        '',
+        '<div class="sk-block" style="width:44px;height:20px;border-radius:10px;display:inline-block;"></div>',
+        '',
+    ];
+    return Array.from({ length: n }, (_, i) => {
+        const idx = i % 5;
+        return `<tr class="inventory-management__row">
+            <td class="inventory-management__cell col-tel sk-td">
+                <div class="sk-block" style="width:90%;"></div>
+            </td>
+            <td class="inventory-management__cell col-nombre sk-td">
+                <div class="sk-block" style="width:${nombresW[idx]};"></div>
+            </td>
+            <td class="inventory-management__cell col-tags-td sk-td">
+                ${tagsCols[idx]}
+            </td>
+            <td class="inventory-management__cell col-pedidos-td sk-td" style="text-align:center;">
+                <div class="sk-block" style="width:32px;margin:0 auto;"></div>
+            </td>
+            <td class="inventory-management__cell col-dirs-td sk-td" style="text-align:center;">
+                <div class="sk-block" style="width:24px;margin:0 auto;"></div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
 // ── EVENTOS ───────────────────────────────────────────────────────────────────
 const searchInput = document.getElementById('buscar-cliente-input');
 const btnBuscar   = document.getElementById('btn-buscar-cliente');
@@ -1004,9 +1041,7 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
     }
 
     if (!_todosCache.has(`${q}:${pagina}`)) {
-        document.getElementById('clientes-tbody').innerHTML =
-            `<tr><td class="inventory-management__cell" colspan="5"
-                style="text-align:center;padding:30px;color:#aaa;">Cargando...</td></tr>`;
+        document.getElementById('clientes-tbody').innerHTML = _skeletonFilasClientes(POR_PAGINA);
     }
 
     const { data } = await _fetchTodosPagina(q, pagina);
@@ -1210,11 +1245,12 @@ const RESULTADO_LABELS = {
 };
 
 async function _fetchHistorialPage(pagina) {
-    const sede   = document.getElementById('hist-filtro-sede').value;
-    const agente = document.getElementById('hist-filtro-agente').value.trim();
-    const desde  = document.getElementById('hist-filtro-desde').value;
-    const hasta  = document.getElementById('hist-filtro-hasta').value;
-    const offset = (pagina - 1) * HIST_POR_PAGINA;
+    const sede     = document.getElementById('hist-filtro-sede').value;
+    const agente   = document.getElementById('hist-filtro-agente').value.trim();
+    const desde    = document.getElementById('hist-filtro-desde').value;
+    const hasta    = document.getElementById('hist-filtro-hasta').value;
+    const busqueda = document.getElementById('hist-filtro-busqueda').value.trim();
+    const offset   = (pagina - 1) * HIST_POR_PAGINA;
 
     // "Por reactivar" — consulta pedidos_callcenter via RPC (sin LIMIT interno)
     if (_histFiltroEstado === 'pendiente') {
@@ -1225,11 +1261,12 @@ async function _fetchHistorialPage(pagina) {
                       : null;
         const { data, error } = await supabase
             .rpc('clientes_por_reactivar', {
-                p_dias:     pDias,
-                p_dias_max: diasMax,
-                p_sede:     sede || null,
-                p_pagina:   pagina,
-                p_limite:   HIST_POR_PAGINA,
+                p_dias:      pDias,
+                p_dias_max:  diasMax,
+                p_sede:      sede || null,
+                p_busqueda:  busqueda || null,
+                p_pagina:    pagina,
+                p_limite:    HIST_POR_PAGINA,
             });
         if (error) { console.error('Por reactivar error:', error); return []; }
         return (data || []).map(r => ({ ...r, _desde_rpc: true }));
@@ -1243,10 +1280,11 @@ async function _fetchHistorialPage(pagina) {
         .order('created_at', { ascending: false })
         .range(offset, offset + HIST_POR_PAGINA - 1);
 
-    if (sede)   req = req.eq('sede', sede);
-    if (agente) req = req.ilike('agente', `%${agente}%`);
-    if (desde)  req = req.gte('created_at', desde);
-    if (hasta)  req = req.lte('created_at', hasta + 'T23:59:59');
+    if (sede)     req = req.eq('sede', sede);
+    if (agente)   req = req.ilike('agente', `%${agente}%`);
+    if (desde)    req = req.gte('created_at', desde);
+    if (hasta)    req = req.lte('created_at', hasta + 'T23:59:59');
+    if (busqueda) req = req.or(`nombre_cliente.ilike.%${busqueda}%,telefono.ilike.%${busqueda}%`);
 
     const { data, error } = await req;
     if (error) { console.error('Historial error:', error); return []; }
@@ -1345,6 +1383,7 @@ document.getElementById('historial-react-tbody').addEventListener('click', e => 
 });
 
 document.getElementById('btn-ir-clientes').addEventListener('click', () => {
+    _todosCache.clear();
     _setVistaActiva('todos');
     ejecutarBusqueda(1);
 });
@@ -1418,6 +1457,12 @@ document.querySelectorAll('.dias-filtro-hist').forEach(chip => {
         _histFiltroDias = chip.dataset.dias ? Number(chip.dataset.dias) : null;
         cargarHistorial(1);
     });
+});
+
+let _histBusquedaTimer = null;
+document.getElementById('hist-filtro-busqueda').addEventListener('input', () => {
+    clearTimeout(_histBusquedaTimer);
+    _histBusquedaTimer = setTimeout(() => cargarHistorial(1), 400);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
