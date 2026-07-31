@@ -1554,7 +1554,7 @@ async function _actualizarResumenRapido() {
         supabase.from('reactivaciones')
             .select('*', { count: 'exact', head: true })
             .eq('resultado', 'exitosa')
-            .gte('created_at', hoyInicio.toISOString()),
+            .gte('fecha', hoyInicio.toISOString()),
     ]);
 
     document.getElementById('resumen-pendientes').textContent =
@@ -1637,6 +1637,7 @@ document.getElementById('btn-ir-reactivaciones').addEventListener('click', () =>
     _setVistaActiva('historial');
     cargarHistorial(1);
     _actualizarConteosPills();
+    _actualizarResumenRapido();
 });
 
 document.getElementById('hist-filtro-sede').addEventListener('change', () => {
