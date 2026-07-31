@@ -69,6 +69,121 @@
             white-space: nowrap;
         }
 
+        /* ── Stats cards ── */
+        .cli-stats-row {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .cli-stat-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 140px;
+            background: white;
+            border: 1.5px solid #ede8e0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.05);
+        }
+        .cli-stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .cli-stat-icon--clientes   { background: #e8f4fd; color: #2980b9; }
+        .cli-stat-icon--frecuentes { background: #fef9e7; color: #f39c12; }
+        .cli-stat-icon--reactivados{ background: #eafaf1; color: #27ae60; }
+        .cli-stat-icon--pedidos    { background: #f4ecff; color: #8e44ad; }
+        .cli-stat-label {
+            font-size: 1.1rem;
+            color: #999;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            margin-bottom: 2px;
+        }
+        .cli-stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #222;
+            line-height: 1.1;
+        }
+
+        /* ── Filter tabs ── */
+        .cli-filter-tabs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .cli-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border: 1.5px solid #e0d8cc;
+            border-radius: 20px;
+            background: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #666;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .cli-tab:hover { border-color: var(--color-primario); color: var(--color-primario); }
+        .cli-tab.active {
+            background: var(--color-primario);
+            border-color: var(--color-primario);
+            color: white;
+        }
+        .cli-tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: rgba(0,0,0,.12);
+            color: inherit;
+        }
+        .cli-tab.active .cli-tab-badge { background: rgba(255,255,255,.3); }
+
+        /* ── Último pedido + Acciones ── */
+        .col-ultimo-th  { min-width: 130px; }
+        .col-acciones-th{ min-width: 100px; text-align: center; }
+        .cli-ultimo-wrap { display: flex; flex-direction: column; gap: 1px; }
+        .cli-ultimo-fecha { font-size: 1.3rem; font-weight: 600; color: #444; }
+        .cli-ultimo-prod  { font-size: 1.1rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+        .btn-ver-detalle {
+            padding: 5px 12px;
+            background: transparent;
+            border: 1.5px solid var(--color-primario);
+            border-radius: 6px;
+            color: var(--color-primario);
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .15s;
+        }
+        .btn-ver-detalle:hover { background: var(--color-primario); color: white; }
+
         /* ── Modal cliente ── */
         #modal-cliente-detalle {
             align-items: center;
@@ -1212,6 +1327,46 @@
             <!-- Vista clientes (normal) -->
             <div id="cli-vista-clientes">
 
+                <!-- Stats -->
+                <div class="cli-stats-row">
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon cli-stat-icon--clientes">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div class="cli-stat-info">
+                            <div class="cli-stat-label">Clientes</div>
+                            <div class="cli-stat-value" id="stat-total-clientes">—</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon cli-stat-icon--frecuentes">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <div class="cli-stat-info">
+                            <div class="cli-stat-label">Frecuentes</div>
+                            <div class="cli-stat-value" id="stat-frecuentes">—</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon cli-stat-icon--reactivados">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        </div>
+                        <div class="cli-stat-info">
+                            <div class="cli-stat-label">Reactivados</div>
+                            <div class="cli-stat-value" id="stat-reactivados-total">—</div>
+                        </div>
+                    </div>
+                    <div class="cli-stat-card">
+                        <div class="cli-stat-icon cli-stat-icon--pedidos">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        </div>
+                        <div class="cli-stat-info">
+                            <div class="cli-stat-label">Pedidos totales</div>
+                            <div class="cli-stat-value" id="stat-pedidos-total">—</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="clientes-topbar">
                     <div class="clientes-search-wrap">
                         <input type="text" id="buscar-cliente-input"
@@ -1223,7 +1378,13 @@
                     <button class="btn-nuevo-cliente" id="btn-nuevo-cliente">+ Nuevo cliente</button>
                 </div>
 
-                <div class="clientes-tags-bar"></div>
+                <!-- Filter tabs (reemplaza clientes-tags-bar) -->
+                <div class="cli-filter-tabs" id="cli-filter-tabs">
+                    <button class="cli-tab active" data-filter="todos">Todos</button>
+                    <button class="cli-tab" data-filter="frecuentes">
+                        Frecuentes <span class="cli-tab-badge" id="tab-badge-frecuentes">—</span>
+                    </button>
+                </div>
 
                 <div class="clientes-table-wrap">
                     <table class="inventory-management__table" id="clientes-table">
@@ -1233,12 +1394,14 @@
                                 <th class="inventory-management__heading col-nombre sort-th" data-sort="nombre">Nombre <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-tags-th sort-th" data-sort="tags">Tags <span class="sort-icon">▲▼</span></th>
                                 <th class="inventory-management__heading col-pedidos-th sort-th" data-sort="total_pedidos">Pedidos <span class="sort-icon">▲▼</span></th>
-                                <th class="inventory-management__heading col-dirs-th sort-th" data-sort="dirs" style="text-align:center;">Dirs <span class="sort-icon">▲▼</span></th>
+                                <th class="inventory-management__heading col-dirs-th" style="text-align:center;">Dirs</th>
+                                <th class="inventory-management__heading col-ultimo-th">Último pedido <span class="sort-icon" style="font-size:.7rem;color:#bbb;">▲▼</span></th>
+                                <th class="inventory-management__heading col-acciones-th">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="clientes-tbody">
                             <tr>
-                                <td class="inventory-management__cell" colspan="5"
+                                <td class="inventory-management__cell" colspan="7"
                                     style="text-align:center; padding:30px;">
                                     Cargando clientes...
                                 </td>

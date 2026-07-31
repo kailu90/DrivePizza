@@ -16,7 +16,8 @@ let _reactivarSede     = '';
 let _tagsReactivacion  = [];   // lista de tags cargados de BD
 let _tagReactivarSel   = null; // tag seleccionado en el modal
 let _vista        = 'todos';  // 'todos' | 'historial' | 'log' | 'motivos' | 'hist-react'
-let _filtroTags   = [];       // [] | ['frecuente', 'vip', ...]  (multi-select)
+let _filtroTags   = [];       // [] | ['frecuente', 'vip', ...]
+let _tabActivo    = 'todos';  // 'todos' | 'frecuentes' | nombre_tag
 let _filtroDias   = null;     // null | 30 | 60 | 90
 let _sortCol      = 'fecha';  // 'telefono' | 'nombre' | 'pedidos' | 'fecha'
 let _sortDir      = 'desc';   // 'asc' | 'desc'
@@ -53,7 +54,11 @@ async function buscarClientes(query = '', pagina = 1) {
         req = req.ilike('nombre', `%${q}%`);
     }
 
-    if (_filtroTags.length) req = req.overlaps('tags', _filtroTags);
+    if (_tabActivo === 'frecuentes') {
+        req = req.gte('total_pedidos', 3);
+    } else if (_tabActivo !== 'todos' && _filtroTags.length) {
+        req = req.overlaps('tags', _filtroTags);
+    }
     if (_filtroDias) {
         const corte = new Date();
         corte.setDate(corte.getDate() - _filtroDias);
@@ -137,8 +142,8 @@ function _rowHtml(c) {
     const tags = (c.tags || []).map(t =>
         `<span style="background:#f0e8ff;color:#6c3d8f;padding:2px 8px;border-radius:10px;font-size:1.1rem;margin:1px;">${t}</span>`
     ).join(' ');
-    const nombre  = (c.nombre || '').replace(/"/g, '&quot;');
-    const numDirs = c.direcciones_cliente?.[0]?.count ?? '—';
+    const numDirs      = c.direcciones_cliente?.[0]?.count ?? '—';
+    const ultimaFecha  = c.updated_at ? formatFecha(c.updated_at) : '—';
 
     return `<tr class="inventory-management__row fila-cliente" style="cursor:pointer;" data-id="${c.id}">
         <td class="inventory-management__cell col-tel" style="font-weight:700;">${c.telefono}</td>
@@ -146,6 +151,14 @@ function _rowHtml(c) {
         <td class="inventory-management__cell col-tags-td">${tags || '—'}</td>
         <td class="inventory-management__cell col-pedidos-td" style="text-align:center;font-weight:700;color:var(--color-primario);">${c.total_pedidos ?? 0}</td>
         <td class="inventory-management__cell col-dirs-td" style="text-align:center;">${numDirs}</td>
+        <td class="inventory-management__cell col-ultimo-td">
+            <div class="cli-ultimo-wrap">
+                <span class="cli-ultimo-fecha">${ultimaFecha}</span>
+            </div>
+        </td>
+        <td class="inventory-management__cell col-acciones-td" style="text-align:center;">
+            <button class="btn-ver-detalle">Ver detalle</button>
+        </td>
     </tr>`;
 }
 
@@ -169,7 +182,7 @@ function renderTabla(clientes) {
     _actualizarCount();
 
     if (!clientes.length) {
-        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="5"
+        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="7"
             style="text-align:center;padding:30px;color:#aaa;">
             No se encontraron clientes.</td></tr>`;
         document.getElementById('clientes-count').textContent = '';
@@ -601,6 +614,7 @@ async function obtenerUsuarioCC() {
 
         // Carga inicial
         await Promise.all([cargarTags(), _cargarTagsReactivacion(), ejecutarBusqueda()]);
+        _cargarStats();
         _iniciarRealtime();
         _scheduleMidnightRefresh();
     } catch (err) {
@@ -609,20 +623,76 @@ async function obtenerUsuarioCC() {
     }
 })();
 
+// ── STATS CLIENTES ────────────────────────────────────────────────────────────
+async function _cargarStats() {
+    const [
+        { count: total },
+        { count: frecuentes },
+        { count: reactivados },
+    ] = await Promise.all([
+        supabase.from('clientes').select('*', { count: 'exact', head: true }),
+        supabase.from('clientes').select('*', { count: 'exact', head: true }).gte('total_pedidos', 3),
+        supabase.from('reactivaciones').select('*', { count: 'exact', head: true }),
+    ]);
+
+    const fmt = n => n != null ? Number(n).toLocaleString('es-CO') : '—';
+    document.getElementById('stat-total-clientes').textContent   = fmt(total);
+    document.getElementById('stat-frecuentes').textContent       = fmt(frecuentes);
+    document.getElementById('stat-reactivados-total').textContent= fmt(reactivados);
+
+    // Pedidos totales: suma de total_pedidos en clientes
+    const { data: pData } = await supabase.from('clientes').select('total_pedidos').not('total_pedidos', 'is', null);
+    const pedidosTot = (pData || []).reduce((s, r) => s + (r.total_pedidos || 0), 0);
+    document.getElementById('stat-pedidos-total').textContent = fmt(pedidosTot);
+
+    // Badge frecuentes en tab
+    document.getElementById('tab-badge-frecuentes').textContent = fmt(frecuentes);
+}
+
+// ── FILTER TABS (Todos / Frecuentes) ──────────────────────────────────────────
+document.querySelector('#cli-filter-tabs .cli-tab[data-filter="todos"]').addEventListener('click', function () {
+    _tabActivo = 'todos';
+    _filtroTags = [];
+    _activarTab(this);
+    _aplicarFiltros();
+});
+document.querySelector('#cli-filter-tabs .cli-tab[data-filter="frecuentes"]').addEventListener('click', function () {
+    _tabActivo = 'frecuentes';
+    _filtroTags = [];
+    _activarTab(this);
+    _aplicarFiltros();
+});
+
 // ── TAGS DINÁMICOS ────────────────────────────────────────────────────────────
 let _todosLosTags = [];
 const _capTag = t => t.charAt(0).toUpperCase() + t.slice(1);
 
 function _renderTagsFiltro() {
-    const bar = document.querySelector('.clientes-tags-bar');
-    bar.innerHTML = _todosLosTags.map(t =>
-        `<span class="tag-chip tag-filtro" data-tag="${t}">${_capTag(t)}</span>`
-    ).join('') + `<button class="btn-add-tag" id="btn-add-tag">+ Tag</button>`;
+    const tabs = document.getElementById('cli-filter-tabs');
+    // Preserva los botones fijos (Todos + Frecuentes) y agrega los tags dinámicos antes del botón + Tag
+    // Elimina tabs de tags anteriores
+    tabs.querySelectorAll('.cli-tab[data-filter="tag"]').forEach(el => el.remove());
+    tabs.querySelector('#btn-add-tag')?.remove();
 
-    bar.querySelectorAll('.tag-filtro').forEach(chip => {
-        chip.addEventListener('click', () => { chip.classList.toggle('active'); _aplicarFiltros(); });
+    const tagTabs = _todosLosTags.map(t =>
+        `<button class="cli-tab${_tabActivo === t ? ' active' : ''}" data-filter="tag" data-tag="${t}">${_capTag(t)}</button>`
+    ).join('');
+    tabs.insertAdjacentHTML('beforeend', tagTabs + `<button class="btn-add-tag" id="btn-add-tag">+ Tag</button>`);
+
+    tabs.querySelectorAll('.cli-tab[data-filter="tag"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            _tabActivo = btn.dataset.tag;
+            _filtroTags = [btn.dataset.tag];
+            _activarTab(btn);
+            _aplicarFiltros();
+        });
     });
     document.getElementById('btn-add-tag').addEventListener('click', _abrirCrearTag);
+}
+
+function _activarTab(btnActivo) {
+    document.querySelectorAll('#cli-filter-tabs .cli-tab').forEach(b => b.classList.remove('active'));
+    btnActivo.classList.add('active');
 }
 
 function _renderTagsModal() {
@@ -656,7 +726,7 @@ async function cargarTags() {
 }
 
 function _abrirCrearTag() {
-    const bar = document.querySelector('.clientes-tags-bar');
+    const bar = document.getElementById('cli-filter-tabs');
     document.getElementById('btn-add-tag').style.display = 'none';
     const inp = document.createElement('input');
     inp.type = 'text';
@@ -1134,6 +1204,10 @@ function _skeletonFilasClientes(n) {
             <td class="inventory-management__cell col-dirs-td sk-td" style="text-align:center;">
                 <div class="sk-block" style="width:24px;margin:0 auto;"></div>
             </td>
+            <td class="inventory-management__cell col-ultimo-td sk-td">
+                <div class="sk-block" style="width:80px;"></div>
+            </td>
+            <td class="inventory-management__cell col-acciones-td sk-td"></td>
         </tr>`;
     }).join('');
 }
