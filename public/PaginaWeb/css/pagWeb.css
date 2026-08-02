@@ -1159,6 +1159,15 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   color: var(--dp-sand);
   border-color: var(--dp-green);
 }
+.pw-proteina-btn:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.pw-opciones-proteinas {
+  gap: .5rem;
+  flex-wrap: wrap;
+}
 .pw-opcion-precio {
   font-size: .72rem;
   opacity: .7;

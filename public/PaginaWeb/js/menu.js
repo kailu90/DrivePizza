@@ -150,6 +150,7 @@ let adicionesSeleccionadas = [];
 let bordeSeleccionado      = null;
 let mezclaState            = null; // { saboresDisponibles, sabor1, tamano, precio1 }
 let saborCalzone           = null;
+let proteinasSeleccionadas = []; // para pastas Mixto
 
 // ── ELEMENTOS ─────────────────────────────────────────────────
 const headerSede        = document.getElementById('sede-bar'); // franja debajo del header
@@ -426,6 +427,58 @@ function initImgLoadListeners() {
   });
 }
 
+// ── PASTAS MIXTO — selector de 2 proteínas ────────────────────
+function renderProteinasSelector() {
+  const proteinas = [...new Set(
+    Object.keys(productoActivo.opciones).flatMap(k => k.split('/'))
+  )];
+  sheetOpciones.className = 'pw-opciones pw-opciones-proteinas';
+  sheetOpciones.innerHTML = proteinas.map(p =>
+    `<button class="pw-opcion-btn pw-proteina-btn" data-proteina="${p}">
+       ${p.charAt(0).toUpperCase() + p.slice(1)}
+     </button>`
+  ).join('');
+  sheetOpciones.querySelectorAll('.pw-proteina-btn').forEach(btn =>
+    btn.addEventListener('click', () => toggleProteina(btn.dataset.proteina))
+  );
+}
+
+function toggleProteina(proteina) {
+  const idx = proteinasSeleccionadas.indexOf(proteina);
+  if (idx >= 0) {
+    proteinasSeleccionadas.splice(idx, 1);
+  } else if (proteinasSeleccionadas.length < 2) {
+    proteinasSeleccionadas.push(proteina);
+  }
+
+  sheetOpciones.querySelectorAll('.pw-proteina-btn').forEach(btn => {
+    const p   = btn.dataset.proteina;
+    const sel = proteinasSeleccionadas.includes(p);
+    btn.classList.toggle('active', sel);
+    btn.disabled = !sel && proteinasSeleccionadas.length >= 2;
+  });
+
+  if (proteinasSeleccionadas.length === 2) {
+    const key = Object.keys(productoActivo.opciones).find(k => {
+      const partes = k.split('/');
+      return proteinasSeleccionadas.every(p => partes.includes(p));
+    });
+    if (key) {
+      opcionActiva = { nombre: key, precio: productoActivo.opciones[key] };
+      const valEl  = document.getElementById('tamano-selecc-val');
+      if (valEl) valEl.textContent =
+        `${proteinasSeleccionadas.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ')} · ${formatPrecio(opcionActiva.precio)}`;
+      document.getElementById('tamano-opts').style.display   = 'none';
+      document.getElementById('tamano-selecc').style.display = '';
+    }
+  } else {
+    opcionActiva = null;
+  }
+
+  actualizarEstadoPasos();
+  actualizarBtnAgregar();
+}
+
 function initActiveCatTitle() {
   const titleEl = document.getElementById('active-cat-title');
   if (!titleEl) return;
@@ -526,6 +579,7 @@ function abrirProductSheet(producto) {
   bordeSeleccionado      = null;
   mezclaState            = null;
   saborCalzone           = null;
+  proteinasSeleccionadas = [];
   sheetObs.value         = '';
 
   const stepSaborEl = document.getElementById('step-sabor');
@@ -563,13 +617,25 @@ function abrirProductSheet(producto) {
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
 
-  const CATS_BEBIDAS = ['Refrescos', 'Jugos Naturales', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'];
-  const esBebida = CATS_BEBIDAS.includes(producto.categoria);
-  document.getElementById('step-tamano-title').textContent = esBebida ? 'Elige un sabor' : 'Elige un tamaño';
+  const CATS_BEBIDAS    = ['Refrescos', 'Jugos Naturales', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'];
+  const esBebida        = CATS_BEBIDAS.includes(productoActivo.categoria);
+  const esPastaMixta    = productoActivo.categoria === 'Pastas' &&
+                          Object.keys(productoActivo.opciones).every(k => k.includes('/'));
+  const esPastaSencilla = productoActivo.categoria === 'Pastas' &&
+                          Object.keys(productoActivo.opciones).every(k => !k.includes('/') && k !== 'Unidad');
+
+  document.getElementById('step-tamano-title').textContent =
+    esBebida         ? 'Elige un sabor'
+    : esPastaMixta   ? 'Elige 2 proteínas'
+    : esPastaSencilla ? 'Elige 1 proteína'
+    : 'Elige un tamaño';
 
   const opciones = Object.entries(productoActivo.opciones);
 
-  if (opciones.length === 1) {
+  if (esPastaMixta) {
+    sheetOpcionesWrap.style.display = '';
+    renderProteinasSelector();
+  } else if (opciones.length === 1) {
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
     sheetOpcionesWrap.style.display = 'none';
     if (productoActivo.sabores) renderSaborStep();
@@ -1220,6 +1286,14 @@ function setupListeners() {
     const seleccEl = document.getElementById('tamano-selecc');
     if (optsEl)   optsEl.style.display   = '';
     if (seleccEl) seleccEl.style.display = 'none';
+    // Pasta mixta: resetea proteínas y re-renderiza botones limpios
+    if (proteinasSeleccionadas.length > 0) {
+      proteinasSeleccionadas = [];
+      opcionActiva           = null;
+      renderProteinasSelector();
+      actualizarEstadoPasos();
+      actualizarBtnAgregar();
+    }
   });
 
   // Cambiar adiciones seleccionadas

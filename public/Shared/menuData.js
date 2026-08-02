@@ -20,14 +20,14 @@ export const preciosPizzas = {
 // ── PRECIOS PASTAS ────────────────────────────────────────────
 export const preciosPastas = {
     spaguettiSencillo:  { "pollo": 28000, "carne": 28000, "champiñones": 28000 },
-    spaguettiMixto:     { "pollo/champiñon": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
+    spaguettiMixto:     { "pollo/champiñones": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
     spaguettiRemix:     { "Unidad": 28000 },
     macaroniSencillo:   { "pollo": 28000, "carne": 28000, "champiñones": 28000 },
-    macaroniMixto:      { "pollo/champiñon": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
+    macaroniMixto:      { "pollo/champiñones": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
     macaroniRemix:      { "Unidad": 28000 },
     fetuccine:          { "Unidad": 28000 },
     fetuccineSencillo:  { "pollo": 28000, "carne": 28000, "champiñones": 28000 },
-    fetuccineMixto:     { "pollo/champiñon": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
+    fetuccineMixto:     { "pollo/champiñones": 28000, "pollo/carne": 28000, "carne/champiñones": 28000 },
     fetuccineRemix:     { "Unidad": 28000 },
     carbonara:          { "Unidad": 30000 },
     alfredo:            { "Unidad": 29000 },
