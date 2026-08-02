@@ -361,6 +361,7 @@ function renderProductos() {
           <div class="pw-product-info">
             <div class="pw-product-nombre">${p.nombre}</div>
             ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
+            ${cat === 'Hamburguesas' ? '<span class="pw-papas-chip">🍟 Papas incluidas</span>' : ''}
             <div class="pw-product-footer">
               <div class="pw-product-price">
                 ${tieneVariantes ? '<span class="pw-product-desde">Desde </span>' : ''}
@@ -623,6 +624,8 @@ function abrirProductSheet(producto) {
 
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
+  const papasBanner = document.getElementById('sheet-papas-banner');
+  if (papasBanner) papasBanner.style.display = productoActivo.categoria === 'Hamburguesas' ? '' : 'none';
 
   const CATS_BEBIDAS    = ['Refrescos', 'Jugos Naturales', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'];
   const esBebida        = CATS_BEBIDAS.includes(productoActivo.categoria);
