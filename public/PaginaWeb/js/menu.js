@@ -361,7 +361,7 @@ function renderProductos() {
           <div class="pw-product-info">
             <div class="pw-product-nombre">${p.nombre}</div>
             ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
-            ${cat === 'Hamburguesas' ? '<span class="pw-papas-chip">🍟 Papas incluidas</span>' : ''}
+            ${cat === 'Hamburguesas' ? `<span class="pw-incluye-badge"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="#314B27"/><polyline points="4.5,8.5 7,11 11.5,5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Incluye papas a la francesa</span>` : ''}
             <div class="pw-product-footer">
               <div class="pw-product-price">
                 ${tieneVariantes ? '<span class="pw-product-desde">Desde </span>' : ''}
