@@ -464,7 +464,7 @@ export const PRODUCT_IMAGES = {
   'Cerveza Heineken':                 '../Imagenes/productos/CervezaHeineken.jpeg',
   'Cerveza Sol':                      '../Imagenes/productos/CervezaSol.jpeg',
   'Gaseosa 1.5 lts':                  '../Imagenes/productos/Gaseosa1.5Lts.jpg',
-  'Gaseosa 400 ml':                   '../Imagenes/productos/Gaseosa400ml.jpg',
+  'Gaseosa 400 ml':                   '../Imagenes/productos/Gaseosa400ml.jpeg',
   'H2OH':                             '../Imagenes/productos/H2OH.jpeg',
   'Hatsu':                            '../Imagenes/productos/Hatsu.jpg',
   'Hatsu Soda':                       '../Imagenes/productos/Hatsu.jpg',
