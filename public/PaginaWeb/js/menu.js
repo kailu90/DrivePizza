@@ -90,11 +90,25 @@ const TAMANOS_MIXABLES = TAMANOS_CON_BORDE; // Pequeña, Mediana, Grande, Jumbo
 // Info visual para tarjetas de tamaño de pizza
 const PIZZA_SIZES = {
   'Porción': { cms: 'Triangular', porciones: '1 porción' },
+  'Pizzeta': { cms: '22 Cms', porciones: 'Personal' },
   'Pequeña': { cms: '30 Cms', porciones: '4 porciones' },
   'Mediana':  { cms: '35 Cms', porciones: '6 porciones' },
   'Grande':   { cms: '40 Cms', porciones: '8 porciones' },
   'Jumbo':    { cms: '50 Cms', porciones: '10 porciones' },
 };
+
+// Sedes donde "Porción" → "Pizzeta" en pizzas clásicas/típicas/especiales
+const SEDES_PIZZETA  = new Set(['megamall', 'acropolis', 'unico', 'piedecuesta']);
+const CATS_PIZZETA   = new Set(['Pizzas Clásicas', 'Pizzas Típicas', 'Pizzas Especiales']);
+
+function adaptarProductoParaSede(producto) {
+  const sedeNombre = (getSedeActual()?.name || '').toLowerCase().trim();
+  if (!SEDES_PIZZETA.has(sedeNombre)) return producto;
+  if (!CATS_PIZZETA.has(producto.categoria)) return producto;
+  if (!producto.opciones?.['Porción']) return producto;
+  const { 'Porción': precioPorcion, ...resto } = producto.opciones;
+  return { ...producto, opciones: { 'Pizzeta': precioPorcion, ...resto } };
+}
 
 // Info visual para tarjetas de tamaño de calzone
 const CALZONE_SIZES = {
@@ -505,7 +519,7 @@ function renderStepLabels() {
 
 // ── PRODUCT SHEET ─────────────────────────────────────────────
 function abrirProductSheet(producto) {
-  productoActivo         = producto;
+  productoActivo         = adaptarProductoParaSede(producto);
   cantActual             = 1;
   opcionActiva           = null;
   adicionesSeleccionadas = [];
@@ -553,12 +567,12 @@ function abrirProductSheet(producto) {
   const esBebida = CATS_BEBIDAS.includes(producto.categoria);
   document.getElementById('step-tamano-title').textContent = esBebida ? 'Elige un sabor' : 'Elige un tamaño';
 
-  const opciones = Object.entries(producto.opciones);
+  const opciones = Object.entries(productoActivo.opciones);
 
   if (opciones.length === 1) {
     opcionActiva = { nombre: opciones[0][0], precio: opciones[0][1] };
     sheetOpcionesWrap.style.display = 'none';
-    if (producto.sabores) renderSaborStep();
+    if (productoActivo.sabores) renderSaborStep();
   } else {
     sheetOpcionesWrap.style.display = '';
     const esCalzone = ['Calzones', 'Stromboli'].includes(productoActivo.categoria);
