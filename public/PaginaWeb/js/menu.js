@@ -213,6 +213,7 @@ function init() {
 
   renderCategorias();
   renderProductos();
+  initImgLoadListeners();
   renderCarrito();
   setupListeners();
 
@@ -336,7 +337,7 @@ function renderProductos() {
       const imgSrc         = PRODUCT_IMAGES[p.nombre];
       const emoji          = CAT_EMOJI[cat] || '🍽️';
       const imgHTML        = imgSrc
-        ? `<img src="${imgSrc}" alt="${p.nombre}" loading="lazy">`
+        ? `<img src="${imgSrc}" alt="${p.nombre}">`
         : `<span class="pw-product-img-emoji">${emoji}</span>`;
       return `
         <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
@@ -392,6 +393,23 @@ function renderProductos() {
   menuBody.querySelectorAll('.pw-cat-section').forEach(sec => observer.observe(sec));
 
   initActiveCatTitle();
+}
+
+function initImgLoadListeners() {
+  menuBody.querySelectorAll('.pw-product-img img').forEach(img => {
+    const c = img.parentElement;
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('pw-img-loaded');
+    } else {
+      c.classList.add('pw-img-loading');
+      const done = () => {
+        img.classList.add('pw-img-loaded');
+        c.classList.remove('pw-img-loading');
+      };
+      img.addEventListener('load',  done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    }
+  });
 }
 
 function initActiveCatTitle() {
@@ -1294,10 +1312,26 @@ function setupListeners() {
 // ── ARRANCAR ──────────────────────────────────────────────────
 init();
 
-// Revelar página una vez que el menú está pintado en el DOM
-requestAnimationFrame(() => {
+// Revelar overlay: espera mínimo 1.5s (slogan) + que las primeras imágenes carguen (máx 3s)
+(async function revealPage() {
   const t = document.getElementById('pw-page-transition');
   if (!t) return;
+
+  await new Promise(r => requestAnimationFrame(r));
+
+  const minWait = new Promise(r => setTimeout(r, 1500));
+  const imgs = [...menuBody.querySelectorAll('.pw-product-img img')].slice(0, 8);
+  const imgWait = Promise.all(imgs.map(img => new Promise(r => {
+    if (img.complete) return r();
+    img.addEventListener('load',  r, { once: true });
+    img.addEventListener('error', r, { once: true });
+  })));
+
+  await Promise.race([
+    Promise.all([minWait, imgWait]),
+    new Promise(r => setTimeout(r, 3000)),
+  ]);
+
   t.classList.add('pw-page-transition--reveal');
   t.addEventListener('animationend', () => t.remove(), { once: true });
-});
+})();

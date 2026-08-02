@@ -1003,7 +1003,21 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform .35s ease;
+  opacity: 0;
+  transition: transform .35s ease, opacity .4s ease;
+}
+.pw-product-img img.pw-img-loaded { opacity: 1; }
+@keyframes pw-img-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pw-product-img.pw-img-loading {
+  background: linear-gradient(90deg,
+    rgba(49,75,39,.05) 25%,
+    rgba(49,75,39,.14) 50%,
+    rgba(49,75,39,.05) 75%);
+  background-size: 200% 100%;
+  animation: pw-img-shimmer 1.4s ease-in-out infinite;
 }
 .pw-product-img--placeholder {
   display: flex;
