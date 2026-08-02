@@ -603,16 +603,23 @@ function abrirProductSheet(producto) {
   if (mezclaSelecc) mezclaSelecc.style.display = 'none';
 
   // Imagen del producto
-  const sheetImgWrap = document.getElementById('sheet-img-wrap');
-  const sheetImg     = document.getElementById('sheet-img');
-  const imgSrc       = PRODUCT_IMAGES[producto.nombre];
+  const sheetImgWrap  = document.getElementById('sheet-img-wrap');
+  const sheetImg      = document.getElementById('sheet-img');
+  const sheetImgEmoji = document.getElementById('sheet-img-emoji');
+  const imgSrc        = PRODUCT_IMAGES[productoActivo.nombre];
   if (imgSrc) {
-    sheetImg.src = imgSrc;
-    sheetImgWrap.classList.add('has-img');
+    sheetImg.src              = imgSrc;
+    sheetImg.style.display    = '';
+    if (sheetImgEmoji) sheetImgEmoji.style.display = 'none';
   } else {
-    sheetImgWrap.classList.remove('has-img');
-    sheetImg.src = '';
+    sheetImg.src              = '';
+    sheetImg.style.display    = 'none';
+    if (sheetImgEmoji) {
+      sheetImgEmoji.textContent  = CAT_EMOJI[productoActivo.categoria] || '🍽️';
+      sheetImgEmoji.style.display = '';
+    }
   }
+  sheetImgWrap.classList.add('has-img');
 
   sheetNombre.textContent = producto.nombre;
   sheetDesc.textContent   = producto.descripcion || '';
