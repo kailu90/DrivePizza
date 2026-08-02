@@ -268,16 +268,16 @@ function init() {
 // ── NAVEGACIÓN AGRUPADA ────────────────────────────────────────
 const GRUPOS_NAV = [
   { label: 'Pizzas',       cats: ['Pizzas Estofadas', 'Pizzas Super Estofadas', 'Pizzas Especiales', 'Pizzas Clásicas', 'Pizzas Típicas', 'Pizzetas Premium'] },
-  { label: 'Bebidas',      cats: ['Jugos Naturales', 'Refrescos', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'] },
   { label: 'Calzones',     cats: ['Calzones'] },
   { label: 'Stromboli',    cats: ['Stromboli'] },
   { label: 'Hamburguesas', cats: ['Hamburguesas'] },
   { label: 'Sandwiches',   cats: ['Sandwiches'] },
-  { label: 'Ensaladas',    cats: ['Ensaladas'] },
-  { label: 'Lasañas',      cats: ['Lasañas'] },
   { label: 'Pastas',       cats: ['Pastas'] },
+  { label: 'Lasañas',      cats: ['Lasañas'] },
   { label: 'Maicitos',     cats: ['Maicitos'] },
   { label: 'Entradas',     cats: ['Entradas/Adición'] },
+  { label: 'Ensaladas',    cats: ['Ensaladas'] },
+  { label: 'Bebidas',      cats: ['Jugos Naturales', 'Refrescos', 'Limonadas', 'Sodas', 'Cervezas', 'Otros'] },
 ];
 
 const CAT_ICONS = {
