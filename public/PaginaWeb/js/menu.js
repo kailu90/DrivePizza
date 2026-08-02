@@ -267,7 +267,7 @@ function init() {
 
 // ── NAVEGACIÓN AGRUPADA ────────────────────────────────────────
 const GRUPOS_NAV = [
-  { label: 'Pizzas',       cats: ['Pizzas Estofadas', 'Pizzas Super Estofadas', 'Pizzas Especiales', 'Pizzas Clásicas', 'Pizzas Típicas', 'Pizzetas Premium'] },
+  { label: 'Pizzas',       cats: ['Pizzas Super Estofadas', 'Pizzas Estofadas', 'Pizzetas Premium', 'Pizzas Especiales', 'Pizzas Clásicas', 'Pizzas Típicas'] },
   { label: 'Calzones',     cats: ['Calzones'] },
   { label: 'Stromboli',    cats: ['Stromboli'] },
   { label: 'Hamburguesas', cats: ['Hamburguesas'] },
