@@ -236,6 +236,18 @@ async function procesarPedido(rawPedido) {
         horaReserva:      rawPedido.hora_reserva,
         cantidadPersonas: rawPedido.cantidad_personas,
     };
+
+    // Compatibilidad con pedidos anteriores: si acompanamientos viene en obs, separarlo
+    if (!pedido.acompanamientos && pedido.obs?.includes('Acompañamientos:')) {
+        const partes = pedido.obs.split(' | ');
+        const idx = partes.findIndex(p => p.startsWith('Acompañamientos:'));
+        if (idx !== -1) {
+            pedido.acompanamientos = partes[idx].replace('Acompañamientos:', '').trim();
+            partes.splice(idx, 1);
+            pedido.obs = partes.join(' | ');
+        }
+    }
+
     const id = rawPedido.id;
     const esReserva = pedido.tipo === 'reserva';
 
