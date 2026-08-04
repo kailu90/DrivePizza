@@ -28,6 +28,14 @@ async function init() {
   const pedido = await cargarPedido(nPedido);
   if (pedido) {
     actualizarTracker(pedido.estado, pedido.domicilio);
+    // Meta Pixel — Purchase
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'Purchase', {
+        value:        pedido.total ?? 0,
+        currency:     'COP',
+        content_type: 'product',
+      });
+    }
     escucharCambios(pedido.id, pedido.domicilio);
   }
 }
@@ -35,7 +43,7 @@ async function init() {
 async function cargarPedido(nPedido) {
   const { data, error } = await supabase
     .from('pedidos_callcenter')
-    .select('id, estado, domicilio')
+    .select('id, estado, domicilio, total')
     .eq('n_pedido', nPedido)
     .single();
 

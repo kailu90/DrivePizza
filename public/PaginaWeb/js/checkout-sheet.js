@@ -51,6 +51,15 @@ export async function openCheckoutSheet(sede) {
   _domicilioFee = 0;
   _toppings     = new Set();
 
+  // Meta Pixel — InitiateCheckout
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'InitiateCheckout', {
+      value:     getTotal(),
+      currency:  'COP',
+      num_items: getCarrito().length,
+    });
+  }
+
   document.querySelectorAll('#co-topping-pills .pw-topping-pill').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => p.classList.remove('active'));
   coDomSec.style.display     = 'none';

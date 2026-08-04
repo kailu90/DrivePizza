@@ -583,6 +583,18 @@ function abrirProductSheet(producto) {
   proteinasSeleccionadas = [];
   sheetObs.value         = '';
 
+  // Meta Pixel — ViewContent
+  if (typeof fbq !== 'undefined') {
+    const _precios    = Object.values(productoActivo.opciones).map(o => o.precio);
+    const _precioMin  = _precios.length ? Math.min(..._precios) : 0;
+    fbq('track', 'ViewContent', {
+      content_name:     productoActivo.nombre,
+      content_category: productoActivo.categoria,
+      value:            _precioMin,
+      currency:         'COP',
+    });
+  }
+
   const stepSaborEl = document.getElementById('step-sabor');
   if (stepSaborEl) stepSaborEl.style.display = 'none';
   const saborOptsEl   = document.getElementById('sabor-opts');
@@ -1348,6 +1360,20 @@ function setupListeners() {
         adiciones:    todasAdiciones,
         esAdicionable: CATS_PIZZAS.includes(productoActivo.categoria) || !!CATEGORIAS_ADICIONABLES[productoActivo.categoria],
         esEstofada:   !!productoActivo.esEstofada,
+      });
+    }
+    // Meta Pixel — AddToCart
+    if (typeof fbq !== 'undefined') {
+      const _precioBase     = mezclaState?.sabor2 ? mezclaState.precioFinal : opcionActiva.precio;
+      const _adicionesTotal = adicionesSeleccionadas.reduce((s, a) => s + a.precio, 0)
+                            + (bordeSeleccionado ? bordeSeleccionado.precio : 0);
+      fbq('track', 'AddToCart', {
+        content_name:     mezclaState?.sabor2
+                            ? `${mezclaState.sabor1.nombre} y mitad ${mezclaState.sabor2.nombre}`
+                            : productoActivo.nombre,
+        content_category: productoActivo?.categoria ?? mezclaState?.sabor1?.categoria,
+        value:            (_precioBase + _adicionesTotal) * cantActual,
+        currency:         'COP',
       });
     }
     cerrarSheet(productSheet);
