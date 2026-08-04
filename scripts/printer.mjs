@@ -122,8 +122,6 @@ function generarHTML(pedido) {
                 ${productosHTML}
             </div>
 
-            ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
-
             ${pedido.acompanamientos ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>ACOMPAÑAMIENTOS:</strong> ${pedido.acompanamientos}</p></div>` : ''}
             ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
 
