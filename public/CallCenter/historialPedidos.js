@@ -289,7 +289,7 @@ function renderTabla(pedidos) {
         const totalDisplay = esReserva
             ? `<span style="color:#6c3d8f;font-weight:bold;">👥 ${p.cantidadPersonas ?? "—"} pers.</span>`
             : `$${formatPrecio(p.total)}`
-        const canalLabel = p.canal === "whatsapp" ? "📱 WhatsApp" : p.canal === "ivr" ? "📞 IVR" : p.canal ?? "—"
+        const canalLabel = p.canal === "whatsapp" ? "📱 WhatsApp" : p.canal === "ivr" ? "📞 IVR" : p.canal === "gastrofusion" ? "🎪 Gastrofusión" : p.canal === "web" ? "🌐 Web" : p.canal ?? "—"
 
         // Timer de demora solo para pizzería y callcenter, pedidos en preparacion
         const esPizzeria = true
@@ -547,8 +547,9 @@ function abrirDetalle(p) {
         document.getElementById("modal-total-final").textContent       = `$${formatPrecio(p.total + valDom)}`;
     }
 
-    document.getElementById("modal-obs").innerHTML = p.obs
-        ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : "";
+    document.getElementById("modal-obs").innerHTML =
+        (p.acompanamientos ? `<div class="mpedido-obs">🥗 <strong>Acompañamientos:</strong> ${p.acompanamientos}</div>` : "") +
+        (p.obs ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : "");
 
     document.getElementById("modal-stepper").innerHTML = renderStepper(p, esActivo);
 
@@ -930,13 +931,33 @@ async function obtenerUsuarioCC() {
 (async () => {
     try {
         const usuario = await obtenerUsuarioCC();
-        const ROLES_HISTORIAL = ['callcenter', 'callcenter-admin', 'admin', 'pizzeria'];
+        const ROLES_HISTORIAL = ['callcenter', 'callcenter-admin', 'admin', 'pizzeria', 'gastrofusion'];
         if (!usuario?.rol || !ROLES_HISTORIAL.includes(usuario.rol)) { window.top.location.href = "../index.html"; return; }
 
         const { sede, rol } = usuario;
         rolUsuario = rol;
         document.getElementById('username').textContent = usuario.username || '';
-        const homeUrl = rol === 'pizzeria' ? '../Pizzerias/pizzerias.html' : './callcenter.html';
+        if (rol !== 'gastrofusion') {
+            initNavButtons('historial', { onBarrios: openBarriosModal });
+        } else {
+            const logout = document.getElementById('btn-logout');
+            if (logout) {
+                const btn = document.createElement('button');
+                btn.className       = 'btn-historial with-tooltip';
+                btn.dataset.tooltip = 'Tomar Pedidos';
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                </svg>`;
+                btn.addEventListener('click', () => window.location.href = '../Gastrofusion/gastrofusion.html');
+                logout.parentElement.insertBefore(btn, logout);
+            }
+        }
+        const homeUrl = rol === 'pizzeria' ? '../Pizzerias/pizzerias.html'
+                      : rol === 'gastrofusion' ? '../Gastrofusion/gastrofusion.html'
+                      : './callcenter.html';
         document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
@@ -955,6 +976,17 @@ async function obtenerUsuarioCC() {
             const selectSede = document.getElementById("filtro-sede");
             selectSede.value    = sede;
             selectSede.disabled = true;
+        }
+
+        if (rol === "gastrofusion") {
+            sedeUsuario = 'gastrofusion';
+            const selectSede = document.getElementById("filtro-sede");
+            selectSede.value    = 'gastrofusion';
+            selectSede.disabled = true;
+            ['panel-wa', 'panel-pbx', 'btn-open-wa', 'btn-open-pbx'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
         }
 
         // Ajustes visuales si estamos en modo reservas
@@ -1126,5 +1158,4 @@ window.addEventListener('message', e => {
     pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
 });
 
-initNavButtons('historial', { onBarrios: openBarriosModal });
 if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
