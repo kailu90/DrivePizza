@@ -468,18 +468,17 @@ async function confirmarPedido() {
 
     const total = subtotal + (_tipoEntrega === 'domicilio' ? _domicilioFee : 0);
 
-    const obsCliente   = coObs.value.trim();
-    const obsToppings  = _toppings.size ? `Acompañamientos: ${[..._toppings].join(', ')}` : '';
-    const obsFinal     = [obsCliente, obsToppings].filter(Boolean).join(' | ');
+    const obsCliente = coObs.value.trim();
 
     const { error: insertError } = await supabase.from('pedidos_callcenter').insert({
-      n_pedido: nPedido,
-      nombre:   coNombre.value.trim(),
-      telefono: normalizarTel(coTel.value),
+      n_pedido:        nPedido,
+      nombre:          coNombre.value.trim(),
+      telefono:        normalizarTel(coTel.value),
       direccion,
-      sede:     _sede.name,
-      pago:     _pagoActivo,
-      obs:      obsFinal,
+      sede:            _sede.name,
+      pago:            _pagoActivo,
+      obs:             obsCliente,
+      acompanamientos: _toppings.size ? [..._toppings].join(', ') : null,
       asesor:   'web',
       canal:    'web',
       impreso:  false,

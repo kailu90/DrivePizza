@@ -122,6 +122,9 @@ function generarHTML(pedido) {
 
             ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
 
+            ${pedido.acompanamientos ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>ACOMPAÑAMIENTOS:</strong> ${pedido.acompanamientos}</p></div>` : ''}
+            ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
+
             <div style="border-top:3px solid black; margin-top:10px; padding-top:5px; text-align:right;">
                 <span style="font-size:16pt; font-weight:bold;">TOTAL: $${formatearPrecio(pedido.total)}</span>
                 ${pedido.domicilio

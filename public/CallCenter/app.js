@@ -1105,11 +1105,8 @@ async function procesarPedidoFinal() {
         nombre: document.getElementById('clienteNombre').value,
         direccion: document.getElementById('clienteDireccion').value,
         pago: document.querySelector('.pago-btn.active')?.dataset.pago || '',
-        obs: (() => {
-            const obsCliente  = document.getElementById('observaciones').value.trim();
-            const obsToppings = _toppingsCC.size ? `Acompañamientos: ${[..._toppingsCC].join(', ')}` : '';
-            return [obsCliente, obsToppings].filter(Boolean).join(' | ');
-        })(),
+        obs: document.getElementById('observaciones').value.trim(),
+        acompanamientos: _toppingsCC.size ? [..._toppingsCC].join(', ') : null,
         sede: document.querySelector('.sede-btn.active')?.dataset.sede || '',
         canal: document.querySelector('.canal-btn.active')?.dataset.canal || '',
         productos: carrito
