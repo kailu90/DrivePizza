@@ -91,7 +91,9 @@ function generarHTML(pedido) {
         </div>`;
     }).join('');
 
-    const barrio = '';
+    const barrio = (pedido.domicilio?.tipo !== 'recoger' && pedido.domicilio?.barrio)
+        ? `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>BARRIO:</strong> ${pedido.domicilio.barrio}</p>`
+        : '';
 
     return `<!DOCTYPE html>
 <html>
