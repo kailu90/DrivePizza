@@ -1739,10 +1739,10 @@ async function _actualizarConteosPills() {
     const chips = [
         { id: 'chip-count-todos', p_dias: 1,   p_dias_max: null },
         { id: 'chip-count-lt30',  p_dias: 1,   p_dias_max: 30   },
-        { id: 'chip-count-30',    p_dias: 30,  p_dias_max: null },
-        { id: 'chip-count-60',    p_dias: 60,  p_dias_max: null },
-        { id: 'chip-count-90',    p_dias: 90,  p_dias_max: null },
-        { id: 'chip-count-120',   p_dias: 120, p_dias_max: null },
+        { id: 'chip-count-30',    p_dias: 30,  p_dias_max: 60   },
+        { id: 'chip-count-60',    p_dias: 60,  p_dias_max: 90   },
+        { id: 'chip-count-90',    p_dias: 90,  p_dias_max: 120  },
+        { id: 'chip-count-120',   p_dias: 120, p_dias_max: 180  },
         { id: 'chip-count-180',   p_dias: 180, p_dias_max: null },
     ];
     await Promise.all(chips.map(async ({ id, p_dias, p_dias_max }) => {
@@ -1754,12 +1754,14 @@ async function _actualizarConteosPills() {
     }));
 }
 
+const _DIAS_MAX_MAP = { 'lt30': 30, '30': 60, '60': 90, '90': 120, '120': 180 };
+
 document.querySelectorAll('.react-chip').forEach(chip => {
     chip.addEventListener('click', () => {
         document.querySelectorAll('.react-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
-        _histPDias    = parseInt(chip.dataset.pDias)    || 1;
-        _histPDiasMax = parseInt(chip.dataset.pDiasMax) || null;
+        _histPDias    = parseInt(chip.dataset.pDias) || 1;
+        _histPDiasMax = _DIAS_MAX_MAP[chip.dataset.dias] ?? null;
         cargarHistorial(1);
     });
 });
