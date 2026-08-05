@@ -166,7 +166,7 @@
         if (e.data?.type === 'frame-ready')       postToFrame(_sipState);
         if (e.data?.type === 'sip-reconnect')     sipReconnect();
         if (e.data?.type === 'reactivacion-hecha') {
-            if (_ws?.readyState === 1) _ws.send(JSON.stringify({ tipo: 'reactivacion' }));
+            if (_ws?.readyState === 1) _ws.send(JSON.stringify({ tipo: 'reactivacion', clienteId: e.data.clienteId || null }));
         }
         if (e.data?.type === 'sip-hangup')  { if (_session) _session.terminate(); hidePanel(); }
         if (e.data?.type === 'sip-answer') {
@@ -380,7 +380,7 @@
                 }
                 if (msg.tipo === 'reactivacion') {
                     const frame = document.getElementById('cc-frame');
-                    frame?.contentWindow?.postMessage({ type: 'ws-reactivacion' }, '*');
+                    frame?.contentWindow?.postMessage({ type: 'ws-reactivacion', clienteId: msg.clienteId || null }, '*');
                 }
                 if (msg.tipo === 'nueva-version') {
                     document.getElementById('banner-nueva-version').style.display = 'block';

@@ -921,7 +921,7 @@ async function registrarReactivacion() {
         .update({ fecha_ultima_reactivacion: new Date().toISOString() })
         .eq('id', _reactivarCli.id);
 
-    window.parent.postMessage({ type: 'reactivacion-hecha' }, '*');
+    window.parent.postMessage({ type: 'reactivacion-hecha', clienteId: _reactivarCli?.id || null }, '*');
 
     document.getElementById('modal-reactivar').style.display = 'none';
 
@@ -1772,6 +1772,9 @@ document.getElementById('hist-filtro-busqueda').addEventListener('input', () => 
 
 window.addEventListener('message', (e) => {
     if (e.data?.type === 'ws-reactivacion' && _vista === 'historial') {
+        if (e.data.clienteId) {
+            document.querySelector(`.hist-row-clickable[data-cliente-id="${e.data.clienteId}"]`)?.remove();
+        }
         _actualizarConteosPills();
         _actualizarResumenRapido();
     }
