@@ -928,6 +928,7 @@ async function registrarReactivacion() {
 
     _reactivarCli = null;
     _actualizarResumenRapido();
+    _actualizarConteosPills();
     cargarHistorial(_histPagina);
 }
 
