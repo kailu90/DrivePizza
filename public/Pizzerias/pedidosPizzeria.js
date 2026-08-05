@@ -103,7 +103,7 @@ async function cargarPedidosActivos() {
         const estadosStr = [...ESTADOS_ACTIVOS].join(',');
         const { data: rawPedidos, error } = await supabase
             .from('pedidos_callcenter')
-            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas, obs')
+            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas, obs, acompanamientos')
             .eq('sede', sedeActual)
             .in('estado', [...ESTADOS_ACTIVOS])
             .or(`and(fecha.gte.${colFechaToUTC(hoy, 'inicio')},fecha.lte.${colFechaToUTC(hoy, 'fin')}),tipo.eq.reserva`);
@@ -125,6 +125,7 @@ async function cargarPedidosActivos() {
                 estado:           r.estado,
                 tsRecibido:       r.ts_recibido,
                 obs:              r.obs,
+                acompanamientos:  r.acompanamientos,
                 tipo:             r.tipo,
                 fechaReserva:     r.fecha_reserva,
                 horaReserva:      r.hora_reserva,
@@ -286,6 +287,10 @@ function poblarModal(p) {
     document.getElementById('mp-total').textContent = `$${(p.total || 0).toLocaleString()}`;
     document.getElementById('mp-domicilio').textContent =
         esDomicilio && p.domicilio?.valor ? `+ Dom $${p.domicilio.valor.toLocaleString()}` : '';
+
+    document.getElementById('mp-obs').innerHTML =
+        (p.acompanamientos ? `<div class="mpedido-obs">🥗 <strong>Acompañamientos:</strong> ${p.acompanamientos}</div>` : '') +
+        (p.obs ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : '');
 
     document.getElementById('mp-stepper').innerHTML     = renderStepper(p);
     document.getElementById('mp-cancel-area').innerHTML = p.estado === 'en preparacion'
