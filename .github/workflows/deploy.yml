@@ -26,3 +26,9 @@ jobs:
       - name: Fijar permisos y verificar deploy
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@65.109.225.149 "chown -R caddy:caddy /var/www/frontend && echo 'Archivos: $(ls /var/www/frontend/ | wc -l)'"
+
+      - name: Notificar nueva versión a clientes conectados
+        run: |
+          curl -s -X POST https://api.everest-central.com/deploy/notify \
+            -H "Content-Type: application/json" \
+            -d "{\"token\":\"${{ secrets.DEPLOY_SECRET }}\"}" || true
