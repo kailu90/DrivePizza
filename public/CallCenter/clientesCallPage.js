@@ -10,6 +10,7 @@ const SEDE_LABELS = {
 
 let clienteActual      = null;
 let _usuarioActual     = '';
+let _rtChannel         = null;  // canal Supabase Realtime (broadcast)
 let _reactivarCli      = null;
 let _reactivarDias     = 0;
 let _reactivarSede     = '';
@@ -920,6 +921,8 @@ async function registrarReactivacion() {
         .update({ fecha_ultima_reactivacion: new Date().toISOString() })
         .eq('id', _reactivarCli.id);
 
+    _rtChannel?.send({ type: 'broadcast', event: 'reactivacion', payload: {} });
+
     document.getElementById('modal-reactivar').style.display = 'none';
 
     // Quitar la fila del DOM de inmediato
@@ -1130,7 +1133,13 @@ document.getElementById('motivo-input').addEventListener('keydown', e => {
 
 // ── REALTIME ──────────────────────────────────────────────────────────────────
 function _iniciarRealtime() {
-    supabase.channel('rt-clientes')
+    _rtChannel = supabase.channel('rt-clientes')
+        .on('broadcast', { event: 'reactivacion' }, () => {
+            if (_vista === 'historial') {
+                _actualizarConteosPills();
+                _actualizarResumenRapido();
+            }
+        })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clientes' }, ({ new: nuevo }) => {
             const idx = _clientesData.findIndex(c => String(c.id) === String(nuevo.id));
             if (idx === -1) return;
@@ -1161,12 +1170,6 @@ function _iniciarRealtime() {
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'direcciones_cliente' }, ({ old }) => {
             // old.cliente_id disponible solo si la tabla tiene REPLICA IDENTITY FULL
             if (old?.cliente_id) _actualizarConteoDir(old.cliente_id, -1);
-        })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactivaciones' }, () => {
-            if (_vista === 'historial') {
-                _actualizarConteosPills();
-                _actualizarResumenRapido();
-            }
         })
         .subscribe();
 }
