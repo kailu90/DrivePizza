@@ -1,4 +1,43 @@
 import { supabase } from '../Api/supabaseConfig.js'
+import { WS_URL } from '../Api/config.js'
+
+// ── Banner nueva versión (singleton) ─────────────────────────────────────────
+function _initVersionBanner() {
+    if (document.getElementById('dp-version-banner')) return;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        #dp-version-banner { display:none; position:fixed; top:0; left:0; right:0;
+            background:#1e40af; color:#fff; padding:10px 20px; text-align:center;
+            font-family:sans-serif; font-size:14px; z-index:99999;
+            box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+        #dp-version-banner button { margin-left:16px; background:#fff; color:#1e40af;
+            border:none; border-radius:6px; padding:4px 14px; font-size:13px;
+            font-weight:600; cursor:pointer; }
+    `;
+    document.head.appendChild(style);
+
+    const banner = document.createElement('div');
+    banner.id = 'dp-version-banner';
+    banner.innerHTML = '🚀 Hay una nueva versión disponible. <button onclick="location.reload()">Recargar ahora</button>';
+    document.body.appendChild(banner);
+
+    function connect() {
+        const ws = new WebSocket(WS_URL);
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.tipo === 'nueva-version') {
+                    document.getElementById('dp-version-banner').style.display = 'block';
+                }
+            } catch {}
+        };
+        ws.onclose = () => setTimeout(connect, 5000);
+    }
+    connect();
+}
+
+export function initVersionBanner() { _initVersionBanner(); }
 
 export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
@@ -18,6 +57,7 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
             </svg>
         </button>` : '';
 
+    _initVersionBanner();
     headerContainer.innerHTML = `
         <header class="header">
             <div class="sidebar_img">

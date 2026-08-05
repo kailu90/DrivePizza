@@ -1,6 +1,8 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
+import { initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
 const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparacion', 'despachado']);
 
 let sedeActual = '';

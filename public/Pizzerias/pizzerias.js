@@ -1,3 +1,6 @@
+import { initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
+
 //Escucha evento click de botón pedidos planta direcciona al archivo products.html
 const btnPedidosPlanta = document.getElementById("btn_pedidos_sedes");
 
