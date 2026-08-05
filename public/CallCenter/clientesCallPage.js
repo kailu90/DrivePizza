@@ -885,6 +885,10 @@ function abrirModalReactivar(cli, dias, sedePreset = '') {
 
 async function registrarReactivacion() {
     if (!_reactivarCli) return;
+    if (!_reactivarCli.id) {
+        alert('⚠️ No se encontró un registro de cliente para este número en el CRM. Ve a la pestaña Clientes, créalo con el número ' + (_reactivarCli.telefono || '') + ' y vuelve a intentarlo.');
+        return;
+    }
     if (!_tagReactivarSel) {
         alert('⚠️ Selecciona un motivo antes de confirmar.');
         return;
