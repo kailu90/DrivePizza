@@ -1161,6 +1161,12 @@ function _iniciarRealtime() {
             // old.cliente_id disponible solo si la tabla tiene REPLICA IDENTITY FULL
             if (old?.cliente_id) _actualizarConteoDir(old.cliente_id, -1);
         })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactivaciones' }, () => {
+            if (_vista === 'historial') {
+                _actualizarConteosPills();
+                _actualizarResumenRapido();
+            }
+        })
         .subscribe();
 }
 
