@@ -921,7 +921,7 @@ async function registrarReactivacion() {
         .update({ fecha_ultima_reactivacion: new Date().toISOString() })
         .eq('id', _reactivarCli.id);
 
-    _rtChannel?.send({ type: 'broadcast', event: 'reactivacion', payload: {} });
+    window.parent.postMessage({ type: 'reactivacion-hecha' }, '*');
 
     document.getElementById('modal-reactivar').style.display = 'none';
 
@@ -1768,6 +1768,13 @@ let _histBusquedaTimer = null;
 document.getElementById('hist-filtro-busqueda').addEventListener('input', () => {
     clearTimeout(_histBusquedaTimer);
     _histBusquedaTimer = setTimeout(() => cargarHistorial(1), 400);
+});
+
+window.addEventListener('message', (e) => {
+    if (e.data?.type === 'ws-reactivacion' && _vista === 'historial') {
+        _actualizarConteosPills();
+        _actualizarResumenRapido();
+    }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

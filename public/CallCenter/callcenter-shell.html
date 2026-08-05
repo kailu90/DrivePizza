@@ -138,9 +138,12 @@
 
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
-        if (e.data?.type === 'nav-loading')   _overlay.classList.add('visible');
-        if (e.data?.type === 'frame-ready')   postToFrame(_sipState);
-        if (e.data?.type === 'sip-reconnect') sipReconnect();
+        if (e.data?.type === 'nav-loading')       _overlay.classList.add('visible');
+        if (e.data?.type === 'frame-ready')       postToFrame(_sipState);
+        if (e.data?.type === 'sip-reconnect')     sipReconnect();
+        if (e.data?.type === 'reactivacion-hecha') {
+            if (_ws?.readyState === 1) _ws.send(JSON.stringify({ tipo: 'reactivacion' }));
+        }
         if (e.data?.type === 'sip-hangup')  { if (_session) _session.terminate(); hidePanel(); }
         if (e.data?.type === 'sip-answer') {
             if (!_session) return;
@@ -326,9 +329,10 @@
     // Si el backend se reinicia con SIP ya registrado, el WS se reconecta
     // y llamamos /pbx/queue/connect para restaurar el estado en el nuevo proceso.
     let _wsShellFirst = true;
+    let _ws = null;
     function initShellWs() {
-        const ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
+        _ws = new WebSocket(WS_URL);
+        _ws.onopen = () => {
             if (_wsShellFirst) { _wsShellFirst = false; return; }
             // Reconexión = backend reiniciado → re-anunciar si SIP registrado
             const u = window._usuarioCC;
@@ -340,7 +344,7 @@
                 }).catch(() => {});
             }
         };
-        ws.onmessage = (e) => {
+        _ws.onmessage = (e) => {
             try {
                 const msg = JSON.parse(e.data);
                 if (msg.tipo === 'pbx:sede' && msg.numero && msg.sede) {
@@ -350,9 +354,13 @@
                         _mostrarSede(msg.numero);
                     }
                 }
+                if (msg.tipo === 'reactivacion') {
+                    const frame = document.getElementById('cc-frame');
+                    frame?.contentWindow?.postMessage({ type: 'ws-reactivacion' }, '*');
+                }
             } catch {}
         };
-        ws.onclose = () => setTimeout(initShellWs, 5000);
+        _ws.onclose = () => setTimeout(initShellWs, 5000);
     }
     initShellWs();
 
