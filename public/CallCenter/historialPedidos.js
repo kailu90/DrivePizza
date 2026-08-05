@@ -80,6 +80,7 @@ function normalizarPedido(row) {
         sede:             row.sede,
         pago:             row.pago,
         obs:              row.obs,
+        acompanamientos:  row.acompanamientos || null,
         productos:        row.productos || [],
         total:            row.total,
         impreso:          row.impreso,
