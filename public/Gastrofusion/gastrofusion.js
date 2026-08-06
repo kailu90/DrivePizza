@@ -83,6 +83,11 @@ mostrarSkeleton('pedidos');
     document.getElementById('cart-bar-btn')?.addEventListener('click', () => abrirCartPanel());
     document.getElementById('cart-overlay')?.addEventListener('click', () => cerrarCartPanel());
 
+    // ── Home ──────────────────────────────────────────────────────────────────
+    document.getElementById('btn-home').addEventListener('click', () => {
+        window.location.href = '../Pizzerias/pizzerias.html';
+    });
+
     // ── Logout ────────────────────────────────────────────────────────────
     document.getElementById('btn-logout').addEventListener('click', async () => {
         if (confirm('¿Cerrar sesión?')) {
