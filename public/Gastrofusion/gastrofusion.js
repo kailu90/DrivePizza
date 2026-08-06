@@ -1,6 +1,7 @@
 import { supabase }                                    from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton }            from '../Shared/skeleton.js';
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js';
+import { initVersionBanner }                           from '../Shared/components.js';
 
 mostrarSkeleton('pedidos');
 
@@ -17,6 +18,9 @@ mostrarSkeleton('pedidos');
         window.location.href = '../index.html';
         return;
     }
+
+    // ── Banner nueva versión ──────────────────────────────────────────────
+    initVersionBanner();
 
     // ── Exponer helpers de overlay para gastrofusion-app.js ───────────────
     window.mostrarOverlay    = mostrarOverlay;
