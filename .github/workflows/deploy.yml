@@ -3,6 +3,7 @@ name: Deploy frontend → app.everest-central.com
 on:
   push:
     branches: [main, feature/pruebas]
+  workflow_dispatch:
 
 jobs:
   deploy:
