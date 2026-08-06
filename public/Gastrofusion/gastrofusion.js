@@ -41,8 +41,9 @@ mostrarSkeleton('pedidos');
         if (!menuDataGF[cat]) menuDataGF[cat] = [];
         menuDataGF[cat].push({
             nombre,
-            descripcion: row.descripcion || '',
-            opciones:    row.opciones || { 'Unidad': Number(row.precio_evento) },
+            descripcion:  row.descripcion || '',
+            opciones:     row.opciones || { 'Unidad': Number(row.precio_evento) },
+            esAdicionable: cat.toLowerCase() !== 'adiciones',
         });
     });
 

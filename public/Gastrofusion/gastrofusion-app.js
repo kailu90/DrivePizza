@@ -7,7 +7,8 @@ var _toppingsGF = new Set();
 function initGF(categorias) {
     crearBuscador();
     renderCategoriasGF(categorias);
-    if (categorias.length > 0) seleccionarCategoriaGF(categorias[0]);
+    const primera = categorias.find(c => c.toLowerCase() !== 'adiciones');
+    if (primera) seleccionarCategoriaGF(primera);
 }
 
 // ── Buscador ──────────────────────────────────────────────────────
@@ -35,9 +36,10 @@ function ejecutarFiltro() {
 function renderCategoriasGF(categorias) {
     const nav = document.getElementById('categoryNav');
     if (!nav) return;
-    nav.innerHTML = categorias.map(c =>
-        `<button class="cat-btn" onclick="seleccionarCategoriaGF('${c.replace(/'/g, "\\'")}')">${c}</button>`
-    ).join('');
+    nav.innerHTML = categorias
+        .filter(c => c.toLowerCase() !== 'adiciones')
+        .map(c => `<button class="cat-btn" onclick="seleccionarCategoriaGF('${c.replace(/'/g, "\\'")}')">${c}</button>`)
+        .join('');
 }
 
 function seleccionarCategoriaGF(categoria) {
@@ -82,7 +84,7 @@ function prepararSeleccionGF(producto) {
     const opciones = Object.keys(producto.opciones || {});
     if (opciones.length === 1) {
         const tam = opciones[0];
-        confirmarAgregar(producto.nombre, tam, producto.opciones[tam]);
+        confirmarAgregar(producto.nombre, tam, producto.opciones[tam], producto.esAdicionable);
         return;
     }
     const modal  = document.getElementById('modal-seleccion');
@@ -98,7 +100,7 @@ function prepararSeleccionGF(producto) {
 
     grid.querySelectorAll('.btn-tamano').forEach(btn => {
         btn.addEventListener('click', () => {
-            confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre));
+            confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), producto.esAdicionable);
             cerrarModal();
         });
     });
@@ -116,12 +118,14 @@ window.addEventListener('click', e => {
 });
 
 // ── Agregar al carrito ─────────────────────────────────────────────
-function confirmarAgregar(nombre, tamano, precio) {
+function confirmarAgregar(nombre, tamano, precio, esAdicionable = false) {
     carrito.push({
-        id:     Date.now(),
-        nombre: tamano ? `${nombre} (${tamano})` : nombre,
-        precio: Number(precio),
-        qty:    1,
+        id:           Date.now(),
+        nombre:       (tamano && tamano !== 'Unidad') ? `${nombre} (${tamano})` : nombre,
+        precio:       Number(precio),
+        qty:          1,
+        esAdicionable,
+        tamanoRaw:    tamano || 'Unidad',
     });
     actualizarComanda();
 }
@@ -140,7 +144,12 @@ function actualizarComanda() {
     }
     if (btnVaciar) btnVaciar.style.display = 'inline-flex';
 
-    container.innerHTML = carrito.map(item => {
+    const principales = carrito.filter(i => !i.pizzaId);
+    container.innerHTML = principales.map(item => {
+        const adicionesItem = carrito.filter(a => a.pizzaId === item.id);
+        const botonAdicion  = item.esAdicionable
+            ? `<button class="btn-add-adicion" onclick="abrirAdicionesModalGF(${item.id})" title="Agregar adición">⊕</button>`
+            : '';
         const tieneObs = item.obs && item.obs.trim();
         const botonObs = `<button class="btn-obs ${tieneObs ? 'btn-obs--activo' : ''}" onclick="toggleObsItem(${item.id})" title="Agregar nota">✏️</button>`;
         const obsPreview = tieneObs && !item._obsOpen
@@ -154,7 +163,7 @@ function actualizarComanda() {
                        onblur="cerrarObsIfEmpty(${item.id})"
                        maxlength="120">
             </div>`;
-        return `
+        const rowPrincipal = `
             <div class="item-grupo ${item._obsOpen ? 'item-grupo--obs-open' : ''}">
                 <div class="item-row" data-id="${item.id}">
                     <div class="item-nombre-wrap">
@@ -162,6 +171,7 @@ function actualizarComanda() {
                         ${obsPreview}
                     </div>
                     <div class="item-controls">
+                        ${botonAdicion}
                         ${botonObs}
                         <div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
@@ -174,6 +184,15 @@ function actualizarComanda() {
                 </div>
                 ${obsInput}
             </div>`;
+        const rowsAdiciones = adicionesItem.map(a => `
+            <div class="item-row adicion-row" data-id="${a.id}">
+                <span class="item-nombre adicion-nombre">↳ ${a.nombre}</span>
+                <div class="item-controls">
+                    <strong class="item-precio">$${(a.precio * a.qty).toLocaleString()}</strong>
+                    <button onclick="eliminarItem(${a.id})" class="btn-delete">🗑️</button>
+                </div>
+            </div>`).join('');
+        return rowPrincipal + rowsAdiciones;
     }).join('');
 
     const total = carrito.reduce((sum, i) => sum + i.precio * i.qty, 0);
@@ -195,10 +214,14 @@ function decrementarQty(id) {
 }
 
 function eliminarItem(id) {
-    const fila = document.querySelector(`.item-row[data-id="${id}"]`);
-    if (fila) fila.classList.add('item-removing');
+    const adicionIds = carrito.filter(a => a.pizzaId === id).map(a => a.id);
+    const todosIds   = [id, ...adicionIds];
+    todosIds.forEach(fId => {
+        const fila = document.querySelector(`.item-row[data-id="${fId}"]`);
+        if (fila) fila.classList.add('item-removing');
+    });
     setTimeout(() => {
-        carrito = carrito.filter(i => i.id !== id);
+        carrito = carrito.filter(i => i.id !== id && i.pizzaId !== id);
         actualizarComanda();
     }, 300);
 }
@@ -241,11 +264,12 @@ function actualizarCartBar() {
     const bar = document.getElementById('cart-bar');
     if (!bar) return;
     if (document.querySelector('.order-panel')?.classList.contains('order-panel--open')) return;
+    const principales = carrito.filter(i => !i.pizzaId);
     const total = carrito.reduce((sum, i) => sum + i.precio * i.qty, 0);
-    if (carrito.length === 0) { bar.classList.remove('cart-bar--visible'); return; }
+    if (principales.length === 0) { bar.classList.remove('cart-bar--visible'); return; }
     bar.classList.add('cart-bar--visible');
     document.getElementById('cart-bar-count').textContent =
-        `${carrito.length} ${carrito.length === 1 ? 'producto' : 'productos'}`;
+        `${principales.length} ${principales.length === 1 ? 'producto' : 'productos'}`;
     document.getElementById('cart-bar-total').textContent = `$${total.toLocaleString()}`;
 }
 
@@ -259,6 +283,68 @@ function cerrarCartPanel() {
     document.querySelector('.order-panel')?.classList.remove('order-panel--open');
     document.getElementById('cart-overlay')?.classList.remove('cart-overlay--visible');
     actualizarCartBar();
+}
+
+// ── Modal de adiciones ─────────────────────────────────────────────
+function abrirAdicionesModalGF(itemId) {
+    const itemPadre = carrito.find(i => i.id === itemId);
+    if (!itemPadre) return;
+
+    const modal  = document.getElementById('modal-seleccion');
+    const titulo = document.getElementById('modal-titulo');
+    const grid   = document.getElementById('opciones-tamano');
+
+    titulo.innerHTML = `⊕ Adición<br>
+        <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
+    grid.className = 'opciones-grid opciones-adiciones';
+
+    const tamanoRaw   = itemPadre.tamanoRaw || 'Unidad';
+    const adicionesKey = Object.keys(menuDataGF).find(k => k.toLowerCase() === 'adiciones');
+    const todasAdiciones = adicionesKey ? menuDataGF[adicionesKey] : [];
+    // Filtra las que tienen precio para ese tamaño; si ninguna aplica, muestra todas
+    let adiciones = todasAdiciones.filter(a => a.opciones[tamanoRaw] !== undefined);
+    if (adiciones.length === 0) adiciones = todasAdiciones;
+
+    if (adiciones.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay adiciones disponibles.</p>';
+        modal.style.display = 'flex';
+        return;
+    }
+
+    const renderBtn = (prod) => {
+        const precio = prod.opciones[tamanoRaw] ?? Object.values(prod.opciones)[0];
+        return `
+            <button class="btn-adicion" data-nombre="${prod.nombre}" data-precio="${precio}">
+                <span class="adicion-nombre">${prod.nombre}</span>
+                <span class="adicion-precio">$${Number(precio).toLocaleString()}</span>
+                <span class="adicion-badge" style="display:none;">0</span>
+            </button>`;
+    };
+
+    grid.innerHTML = `
+        <div class="adicion-section-title">Adiciones</div>
+        ${adiciones.map(renderBtn).join('')}
+        <button class="btn-listo-adiciones" onclick="cerrarModal()">✓ Listo</button>
+    `;
+
+    grid.querySelectorAll('.btn-adicion').forEach(btn => {
+        btn.addEventListener('click', () => {
+            carrito.push({
+                id:      Date.now(),
+                nombre:  btn.dataset.nombre,
+                precio:  Number(btn.dataset.precio),
+                qty:     1,
+                pizzaId: itemId,
+            });
+            const badge = btn.querySelector('.adicion-badge');
+            badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+            badge.style.display = 'inline-block';
+            btn.classList.add('adicion-agregada');
+            actualizarComanda();
+        });
+    });
+
+    modal.style.display = 'flex';
 }
 
 // ── Checkout ───────────────────────────────────────────────────────
