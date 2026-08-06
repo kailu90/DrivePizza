@@ -23,7 +23,7 @@ verificarAccesoPlanta(async ({ username, sede, rol }) => {
     console.error("Error cargando datos:", error);
     document.body.classList.add('loaded');
   }
-}, ['planta', 'admin', 'planta-admin', 'pizzeria']);
+}, ['planta', 'admin', 'planta-admin', 'pizzeria', 'gastrofusion']);
 
 const productForm = document.getElementById('form');
 const dayDeliveryInput = document.getElementById('day_delivery');
@@ -574,8 +574,10 @@ document.getElementById('mc-enviar').addEventListener('click', async () => {
     setTimeout(() => {
       document.getElementById('modal-confirm').close();
       window.location.href = (rolUsuario === 'planta' || rolUsuario === 'admin' || rolUsuario === 'planta-admin')
-      ? './dashboard.html'
-      : '../Pizzerias/pizzerias.html';
+        ? './dashboard.html'
+        : rolUsuario === 'gastrofusion'
+          ? '../Gastrofusion/gastrofusion.html'
+          : '../Pizzerias/pizzerias.html';
     }, 2500);
 
   } catch (error) {
