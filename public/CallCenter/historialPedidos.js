@@ -956,8 +956,8 @@ async function obtenerUsuarioCC() {
                 logout.parentElement.insertBefore(btn, logout);
             }
         }
-        const homeUrl = rol === 'pizzeria' ? '../Pizzerias/pizzerias.html'
-                      : rol === 'gastrofusion' ? '../Gastrofusion/gastrofusion.html'
+        const homeUrl = rol === 'pizzeria' || rol === 'gastrofusion'
+                      ? '../Pizzerias/pizzerias.html'
                       : './callcenter.html';
         document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
         document.getElementById('btn-logout').addEventListener('click', async () => {

@@ -23,7 +23,7 @@ const REDIRECT_ROL = {
     callcenter:       'CallCenter/callcenter-shell.html',
     'callcenter-admin': 'CallCenter/callcenter-shell.html',
     pizzeria:         'Pizzerias/pizzerias.html',
-    gastrofusion:     'Gastrofusion/gastrofusion.html',
+    gastrofusion:     'Pizzerias/pizzerias.html',
 }
 
 

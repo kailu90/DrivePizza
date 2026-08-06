@@ -45,7 +45,7 @@ const totalCount       = document.getElementById('total-orders');
     if (!user) { window.top.location.href = '../index.html'; return; }
 
     const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
-    if (!data || !['pizzeria', 'planta', 'admin'].includes(data.rol)) {
+    if (!data || !['pizzeria', 'planta', 'admin', 'gastrofusion'].includes(data.rol)) {
         window.top.location.href = '../index.html'; return;
     }
 
