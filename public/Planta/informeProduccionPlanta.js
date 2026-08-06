@@ -293,7 +293,7 @@ verificarAccesoPlanta(async ({ sede }) => {
     await cargarInforme();
 
     document.getElementById('iprod-prev').addEventListener('click', () => { offsetDias--; cargarInforme(); });
-    document.getElementById('iprod-next').addEventListener('click', () => { if (offsetDias < 0) { offsetDias++; cargarInforme(); } });
+    document.getElementById('iprod-next').addEventListener('click', () => { offsetDias++; cargarInforme(); });
     document.getElementById('iprod-hoy').addEventListener('click',    () => { offsetDias = 0; cargarInforme(); });
     document.getElementById('iprod-refresh').addEventListener('click', cargarInforme);
     document.getElementById('iprod-print').addEventListener('click',   () => window.print());
