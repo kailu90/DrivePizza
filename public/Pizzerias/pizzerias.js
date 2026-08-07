@@ -24,6 +24,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         const btnTomarGF = document.getElementById('btn_tomar_gf');
         if (btnTomarGF) btnTomarGF.style.display = '';
+        const btnCierreGF = document.getElementById('btn_cierre_gf');
+        if (btnCierreGF) btnCierreGF.style.display = '';
         const cardHistorial = document.querySelector('#btn_historial_cc .card__text');
         if (cardHistorial) cardHistorial.textContent = 'Historial Pedidos';
     }
@@ -75,6 +77,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (btnTomarGF) {
         btnTomarGF.addEventListener("click", () => {
             window.location.href = '../Gastrofusion/gastrofusion.html';
+        });
+    }
+
+    const btnCierreGF = document.getElementById("btn_cierre_gf");
+    if (btnCierreGF) {
+        btnCierreGF.addEventListener("click", () => {
+            window.location.href = '../Gastrofusion/cierreCaja.html';
         });
     }
 });
