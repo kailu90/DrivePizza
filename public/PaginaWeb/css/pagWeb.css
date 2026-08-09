@@ -176,11 +176,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-checkout-sheet {
 }
+.pw-checkout-sheet {
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pw-checkout-sheet.open { z-index: 10002; }
 .pw-checkout-sheet .pw-sheet-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: .35rem;
-  padding: .5rem .75rem .75rem;
+  padding: .5rem .75rem 1rem;
   background: var(--dp-sand);
 }
 
@@ -1760,10 +1769,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   border-top: 1px solid rgba(0,0,0,.06);
 }
 .pw-co-footer {
+  flex-shrink: 0;
   gap: 0;
   background: #fff;
-  padding: .9rem 1.1rem calc(.9rem + env(safe-area-inset-bottom, 0px));
+  padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(0,0,0,.07);
+  box-shadow: 0 -4px 16px rgba(0,0,0,.08);
 }
 .pw-co-totales { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .75rem; }
 .pw-co-total-row { display: flex; justify-content: space-between; align-items: baseline; font-size: .875rem; color: #555; }
@@ -1916,17 +1927,29 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   flex-shrink: 0;
   padding: 0 1.25rem 1.25rem;
 }
-.pw-cart-total-row {
+.pw-cart-footer-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: .8rem 0;
-  border-top: 2px solid var(--dp-dark);
-  margin: .25rem 0 1.1rem;
-  font-weight: 700;
-  font-size: 1rem;
+  justify-content: space-between;
+  padding: .6rem 0;
+  border-top: 1.5px solid rgba(0,0,0,.1);
+  margin-bottom: .7rem;
 }
-.pw-cart-total-count { font-size: .72rem; font-weight: 400; color: #888; margin-left: .35rem; }
+.pw-cart-footer-left { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; }
+.pw-cart-footer-label { font-size: .9rem; font-weight: 700; color: var(--dp-dark); }
+.pw-cart-footer-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--dp-green);
+  background: rgba(49,75,39,.1);
+  border-radius: 99px;
+  padding: .2rem .65rem;
+}
+.pw-cart-footer-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--dp-dark);
+}
 .pw-cart-empty {
   text-align: center;
   color: #aaa;
@@ -2025,20 +2048,20 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 /* Secciones */
 .pw-checkout-section {
   background: #fff;
-  border-radius: 14px;
-  padding: .75rem .9rem;
+  border-radius: 12px;
+  padding: .6rem .75rem;
   box-shadow: 0 1px 6px rgba(0,0,0,.07);
 }
 .pw-checkout-section-title {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  font-size: .92rem;
+  gap: .35rem;
+  font-size: .84rem;
   font-weight: 700;
   text-transform: none;
   letter-spacing: 0;
   color: var(--dp-dark);
-  margin-bottom: .55rem;
+  margin-bottom: .4rem;
 }
 .pw-checkout-section-title svg { color: var(--dp-green); flex-shrink: 0; }
 
@@ -2492,14 +2515,14 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* ¿Cuándo lo quieres? */
-.pw-cuando-pills { display: flex; flex-direction: row; gap: .4rem; }
+.pw-cuando-pills { display: flex; flex-direction: row; gap: .3rem; }
 .pw-cuando-pill {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  padding: .65rem .6rem;
+  gap: .4rem;
+  padding: .45rem .5rem;
   border: 1.5px solid rgba(0,0,0,.15);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fff;
   cursor: pointer;
   text-align: left;
@@ -2514,7 +2537,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: rgba(49,75,39,.04);
 }
 .pw-cuando-radio {
-  width: 18px; height: 18px;
+  width: 15px; height: 15px;
   border: 2px solid rgba(0,0,0,.25);
   border-radius: 50%;
   flex-shrink: 0;
@@ -2526,7 +2549,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: var(--dp-green);
 }
 .pw-cuando-radio-dot {
-  width: 7px; height: 7px;
+  width: 6px; height: 6px;
   border-radius: 50%;
   background: #fff;
   display: none;
@@ -2535,16 +2558,16 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cuando-text { flex: 1; min-width: 0; }
 .pw-cuando-title {
   display: block;
-  font-size: .84rem;
+  font-size: .78rem;
   font-weight: 700;
   color: var(--dp-dark);
   line-height: 1.2;
 }
 .pw-cuando-sub {
   display: block;
-  font-size: .7rem;
+  font-size: .65rem;
   color: #999;
-  margin-top: .1rem;
+  margin-top: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2559,7 +2582,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   gap: .3rem;
 }
 .pw-cuando-cambiar {
-  font-size: .68rem;
+  font-size: .63rem;
   font-weight: 700;
   color: var(--dp-green);
   flex-shrink: 0;
@@ -2568,12 +2591,12 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-cuando-info {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  margin-top: .45rem;
-  padding: .4rem .6rem;
+  gap: .35rem;
+  margin-top: .3rem;
+  padding: .3rem .5rem;
   background: rgba(49,75,39,.07);
-  border-radius: 10px;
-  font-size: .73rem;
+  border-radius: 8px;
+  font-size: .68rem;
   color: var(--dp-green);
   font-weight: 500;
 }

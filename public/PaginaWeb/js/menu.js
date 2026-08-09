@@ -1239,11 +1239,14 @@ function renderCarrito() {
 
   const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
   footer.innerHTML = `
-    <div class="pw-cart-total-row">
-      <span>Total <span class="pw-cart-total-count">${totalUnidades} producto${totalUnidades !== 1 ? 's' : ''}</span></span>
-      <span>${formatPrecio(total)}</span>
+    <div class="pw-cart-footer-meta">
+      <div class="pw-cart-footer-left">
+        <strong class="pw-cart-footer-label">Total</strong>
+        <span class="pw-cart-footer-badge">${totalUnidades} ${totalUnidades === 1 ? 'producto' : 'productos'}</span>
+      </div>
+      <span class="pw-cart-footer-total">${formatPrecio(total)}</span>
     </div>
-    <button class="pw-btn-primary" id="btn-checkout">Proceder al pago</button>`;
+    <button class="pw-btn-primary" id="btn-checkout">Continuar con el pedido</button>`;
 
   list.querySelectorAll('.pw-cart-qty-btn').forEach(btn => {
     btn.addEventListener('click', () => {
