@@ -62,16 +62,23 @@ export function estaAbierta(sede) {
   return ahoraMin >= apertura && ahoraMin < cierre;
 }
 
+/** Formatea una hora HH:MM(:SS) → "3:15 pm" */
+function fmtHora(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 /** Devuelve el horario formateado: "3:15 pm – 11:00 pm" */
 export function formatHorario(sede) {
-  const fmt = t => {
-    if (!t) return '';
-    const [h, m] = t.split(':').map(Number);
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const h12  = h % 12 || 12;
-    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-  };
-  return `${fmt(sede.horario_apertura)} – ${fmt(sede.horario_cierre)}`;
+  return `${fmtHora(sede.horario_apertura)} – ${fmtHora(sede.horario_cierre)}`;
+}
+
+/** Devuelve solo la hora de apertura formateada: "11:00 am" */
+export function formatApertura(sede) {
+  return fmtHora(sede.horario_apertura);
 }
 
 // ── SEDE ACTIVA (localStorage) ─────────────────────────────────

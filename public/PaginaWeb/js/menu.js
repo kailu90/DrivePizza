@@ -2,7 +2,7 @@
    Drive Pizza — Menú y carrito
    ============================================================ */
 
-import { getSedeActual, setSedeActual, cargarSedes, estaAbierta, formatHorario, displayNombre } from './sede.js';
+import { getSedeActual, setSedeActual, cargarSedes, estaAbierta, formatHorario, formatApertura, displayNombre } from './sede.js';
 import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem, vaciarCarrito, renderItemHTML } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES, SABORES_CLASICOS, SABORES_TIPICOS_ESPECIALES } from './menuData.js';
 import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
@@ -10,48 +10,62 @@ import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 import { initHeader } from './header.js';
 import { initHomeView } from './home.js';
+import { initCuentaView } from './cuenta.js';
 
 // ── CAMBIO DE VISTA (SPA) ─────────────────────────────────────
-let currentView    = 'menu';
-let menuScrollY    = 0;
+const ALL_VIEWS = ['home', 'menu', 'cuenta'];
+let currentView  = 'menu';
+let menuScrollY  = 0;
 
 function switchView(toView) {
   if (toView === currentView) return;
-  const isGoHome = toView === 'home';
+  const toHome = toView === 'home';
+  const toMenu = toView === 'menu';
 
   const t = document.createElement('div');
-  t.className = `pw-page-transition pw-page-transition--${isGoHome ? 'cover-left' : 'cover'}`;
+  t.className = `pw-page-transition pw-page-transition--${toHome ? 'cover-left' : 'cover'}`;
   t.innerHTML = '<img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza"><span class="pw-page-transition-slogan"><span class="pw-pts-left">HECHA PARA</span><span class="pw-pts-right">COMPARTIR</span></span>';
   document.body.appendChild(t);
 
   t.addEventListener('animationend', async () => {
-    // Guardar/restaurar scroll
-    if (!isGoHome) menuScrollY = window.scrollY;
+    // Guardar scroll del menú al salir de él
+    if (currentView === 'menu') menuScrollY = window.scrollY;
 
-    document.getElementById('view-home').style.display   = isGoHome ? '' : 'none';
-    document.getElementById('view-menu').style.display   = isGoHome ? 'none' : '';
-    document.getElementById('main-footer').style.display = isGoHome ? 'none' : '';
-
-    // Sede-bar: solo visible en menú
+    // Mostrar/ocultar vistas
+    ALL_VIEWS.forEach(v => {
+      const el = document.getElementById(`view-${v}`);
+      if (el) el.style.display = v === toView ? '' : 'none';
+    });
+    document.getElementById('main-footer').style.display = toMenu ? '' : 'none';
     const sedeBar = document.getElementById('sede-bar');
-    if (sedeBar) sedeBar.style.display = isGoHome ? 'none' : '';
+    if (sedeBar) sedeBar.style.display = toMenu ? '' : 'none';
 
-    if (isGoHome) {
+    if (toHome) {
       window.scrollTo(0, 0);
       await initHomeView({ onSedeSelected: () => switchView('menu') });
-    } else {
+    } else if (toMenu) {
       window.scrollTo(0, menuScrollY);
+    } else {
+      window.scrollTo(0, 0);
+      if (toView === 'cuenta') {
+        initCuentaView({
+          onIrAlMenu:       () => switchView('menu'),
+          onMisPedidos:     () => { /* próximo: switchView('pedidos') */ },
+          onMisDirecciones: () => { /* próximo: switchView('direcciones') */ },
+          onFavoritos:      () => { /* próximo: switchView('favoritos') */ },
+        });
+      }
     }
 
     currentView = toView;
 
-    // Actualizar active en bottom nav
-    document.getElementById('bottom-nav-inicio')?.classList.toggle('pw-bottom-nav-btn--active', isGoHome);
-    document.querySelector('.pw-bottom-nav-btn:not(#bottom-nav-inicio):not(#bottom-nav-cart-btn)')
-      ?.classList.toggle('pw-bottom-nav-btn--active', !isGoHome);
+    // Actualizar botón activo en bottom nav
+    document.getElementById('bottom-nav-inicio')?.classList.toggle('pw-bottom-nav-btn--active', toHome);
+    document.getElementById('bottom-nav-menu')?.classList.toggle('pw-bottom-nav-btn--active', toMenu);
+    document.getElementById('bottom-nav-cuenta')?.classList.toggle('pw-bottom-nav-btn--active', toView === 'cuenta');
 
     // Revelar
-    t.className = `pw-page-transition pw-page-transition--${isGoHome ? 'reveal-right' : 'reveal'}`;
+    t.className = `pw-page-transition pw-page-transition--${toHome ? 'reveal-right' : 'reveal'}`;
     t.addEventListener('animationend', () => t.remove(), { once: true });
   }, { once: true });
 }
@@ -59,6 +73,24 @@ function switchView(toView) {
 // Conectar listeners comunes
 initHeader();
 const SHEET_TRANSITION_MS = 280; // coincide con --dp-transition (0.28s)
+
+// ── MODAL ¿SALIR SIN FINALIZAR? ───────────────────────────────
+let _salirCb = null;
+function mostrarModalSalir(onConfirmar) {
+  _salirCb = onConfirmar;
+  document.getElementById('pw-salir-overlay').classList.add('open');
+}
+function cerrarModalSalir() {
+  document.getElementById('pw-salir-overlay').classList.remove('open');
+  _salirCb = null;
+}
+document.getElementById('pw-salir-quedar')?.addEventListener('click', cerrarModalSalir);
+document.getElementById('pw-salir-salir')?.addEventListener('click', () => {
+  const cb = _salirCb;
+  cerrarModalSalir();
+  cb?.();
+});
+
 
 initBottomNav({
   onInicio: () => {
@@ -71,7 +103,14 @@ initBottomNav({
       switchView('home');
     }
   },
-  onMenu: () => switchView('menu'),
+  onMenu: () => {
+    const sheets = [productSheet, cartSheet, checkoutSheet, promoSheet, sabor2Sheet];
+    const openSheet = sheets.find(s => s?.classList.contains('open'));
+    if (openSheet) { cerrarSheet(openSheet); return; }
+    switchView('menu');
+  },
+  onCuenta:  () => switchView('cuenta'),
+  onFavoritos: () => { /* próximo: switchView('favoritos') */ },
 });
 
 // Exponer altura real del nav como variable CSS
@@ -214,7 +253,7 @@ function init() {
   if (sede.tiktok)    document.querySelector('.pw-footer-social-link[aria-label="TikTok"]').href    = sede.tiktok;
 
   if (!estaAbierta(sede)) {
-    closedMsg.textContent = `Esta sede está cerrada ahora. Horario: ${formatHorario(sede)}.`;
+    closedMsg.innerHTML = `En este momento abrimos hoy a las ${formatApertura(sede)}. Puedes explorar el menú y <strong>programar tu pedido</strong>.`;
     closedBanner.style.display = '';
   }
 
@@ -1094,6 +1133,89 @@ function actualizarBtnAgregar() {
   btnAgregar.textContent = `Agregar · ${formatPrecio(total)}`;
 }
 
+// ── SLOTS DE HORARIO ──────────────────────────────────────────
+function generarSlots(sede) {
+  const toMin = t => { const [h, m] = (t || '00:00').split(':').map(Number); return h * 60 + (m || 0); };
+  const fmt   = total => {
+    const h = Math.floor(total / 60), m = total % 60;
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}`;
+  };
+  const start = toMin(sede.horario_apertura || '11:00') + 30;
+  const end   = toMin(sede.horario_cierre   || '22:00');
+  const slots = [];
+  for (let min = start; min <= end; min += 30) slots.push(fmt(min));
+  return slots;
+}
+
+// ── PICKER DE HORA AGENDADA ───────────────────────────────────
+// onConfirmar(slot) — onCancelar() opcional (si no se pasa, cierra modal)
+function mostrarPickerHora(sede, { onConfirmar, onCancelar, cancelLabel = 'Cancelar' } = {}) {
+  const modal = document.getElementById('modal-sede-cerrada');
+  const inner = modal.querySelector('.pw-modal');
+  const slots = generarSlots(sede);
+
+  inner.innerHTML = `
+    <p class="pw-modal-titulo">¿A qué hora quieres recibirlo?</p>
+    <p class="pw-modal-msg">Selecciona el horario en que te gustaría recibir tu pedido.</p>
+    <div class="pw-slots-grid">
+      ${slots.map(s => `<button class="pw-slot-btn" data-slot="${s}">${s}</button>`).join('')}
+    </div>
+    <div class="pw-modal-btns pw-modal-btns--col" style="margin-top:.85rem">
+      <button class="pw-modal-btn-confirm" id="btn-slot-confirmar" disabled>Confirmar horario</button>
+      <button class="pw-modal-btn-cancel"  id="btn-slot-cancelar">${cancelLabel}</button>
+    </div>`;
+
+  // Preseleccionar hora actual si existe
+  const horaActual = localStorage.getItem('dp_hora_agendada');
+  let slotElegido  = horaActual || null;
+  if (horaActual) {
+    const pre = inner.querySelector(`[data-slot="${horaActual}"]`);
+    if (pre) { pre.classList.add('active'); inner.querySelector('#btn-slot-confirmar').disabled = false; }
+  }
+
+  inner.querySelectorAll('.pw-slot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.querySelectorAll('.pw-slot-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      slotElegido = btn.dataset.slot;
+      inner.querySelector('#btn-slot-confirmar').disabled = false;
+    });
+  });
+
+  inner.querySelector('#btn-slot-cancelar').onclick = () => {
+    onCancelar ? onCancelar() : (modal.style.display = 'none');
+  };
+  inner.querySelector('#btn-slot-confirmar').onclick = () => {
+    localStorage.setItem('dp_hora_agendada', slotElegido);
+    modal.style.display = 'none';
+    onConfirmar?.(slotElegido);
+  };
+
+  modal.style.display = 'flex';
+}
+
+// Listener: cambiar hora desde el chip del checkout
+document.addEventListener('dp:cambiar-hora', ({ detail: { sede } }) => {
+  mostrarPickerHora(sede, {
+    onConfirmar: (slot) => {
+      const valEl = document.getElementById('co-hora-val');
+      if (valEl) valEl.textContent = `Entrega ${slot}`;
+    },
+  });
+});
+
+// ── EDITAR ITEM DESDE CHECKOUT ────────────────────────────────
+let _editIdx = null;
+
+document.addEventListener('dp:editar-item', ({ detail: { idx, item } }) => {
+  _editIdx = idx;
+  const nombreBase = item.nombre.replace(/ \([^)]+\)$/, '').split(' y mitad ')[0].trim();
+  const producto = Object.values(menuData).flat().find(p => p.nombre === nombreBase);
+  if (!producto) { _editIdx = null; return; }
+  cerrarSheet(checkoutSheet);
+  setTimeout(() => abrirProductSheet(producto), SHEET_TRANSITION_MS);
+});
+
 // ── RENDER CARRITO ────────────────────────────────────────────
 function renderCarrito() {
   const carrito = getCarrito();
@@ -1139,8 +1261,64 @@ function renderCarrito() {
   });
 
   document.getElementById('btn-checkout')?.addEventListener('click', () => {
+    const sede = getSedeActual();
+    if (!estaAbierta(sede)) {
+      const nombre = displayNombre(sede);
+      const modal  = document.getElementById('modal-sede-cerrada');
+      const inner  = modal.querySelector('.pw-modal');
+
+      const mostrarPaso1 = () => {
+        inner.innerHTML = `
+          <p class="pw-modal-titulo">Esta sede aún está cerrada</p>
+          <p class="pw-modal-msg"><strong>${nombre}</strong> abre hoy a las <strong>${formatApertura(sede)}</strong>. Puedes dejar tu pedido programado para más tarde.</p>
+          <p class="pw-modal-pregunta">¿Qué quieres hacer?</p>
+          <div class="pw-modal-btns pw-modal-btns--col">
+            <button class="pw-modal-btn-confirm" id="btn-sede-cerrada-confirmar">Programar mi pedido</button>
+            <button class="pw-modal-btn-cancel"  id="btn-sede-cerrada-cancel">Seguir mirando</button>
+          </div>`;
+        inner.querySelector('#btn-sede-cerrada-cancel').onclick    = () => { modal.style.display = 'none'; };
+        inner.querySelector('#btn-sede-cerrada-confirmar').onclick = mostrarPaso2;
+      };
+
+      const mostrarPaso2 = () => {
+        const slots = generarSlots(sede);
+        inner.innerHTML = `
+          <p class="pw-modal-titulo">¿A qué hora quieres recibirlo?</p>
+          <p class="pw-modal-msg">Selecciona el horario en que te gustaría recibir tu pedido.</p>
+          <div class="pw-slots-grid">
+            ${slots.map(s => `<button class="pw-slot-btn" data-slot="${s}">${s}</button>`).join('')}
+          </div>
+          <div class="pw-modal-btns pw-modal-btns--col" style="margin-top:.85rem">
+            <button class="pw-modal-btn-confirm" id="btn-slot-confirmar" disabled>Confirmar horario</button>
+            <button class="pw-modal-btn-cancel"  id="btn-slot-volver">Volver</button>
+          </div>`;
+
+        let slotElegido = null;
+        inner.querySelectorAll('.pw-slot-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            inner.querySelectorAll('.pw-slot-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            slotElegido = btn.dataset.slot;
+            inner.querySelector('#btn-slot-confirmar').disabled = false;
+          });
+        });
+        inner.querySelector('#btn-slot-volver').onclick    = mostrarPaso1;
+        inner.querySelector('#btn-slot-confirmar').onclick = () => {
+          localStorage.setItem('dp_hora_agendada', slotElegido);
+          modal.style.display = 'none';
+          cerrarSheet(cartSheet);
+          openCheckoutSheet(sede);
+          abrirSheet(checkoutSheet);
+        };
+      };
+
+      mostrarPaso1();
+      modal.style.display = 'flex';
+      return;
+    }
+    localStorage.removeItem('dp_hora_agendada');
     cerrarSheet(cartSheet);
-    openCheckoutSheet(getSedeActual());
+    openCheckoutSheet(sede);
     abrirSheet(checkoutSheet);
   });
 }
@@ -1261,9 +1439,12 @@ async function abrirSedeSheet() {
       card.addEventListener('click', () => {
         const sede = JSON.parse(card.dataset.sede);
         if (getSedeActual()?.id === sede.id) { cerrarSheet(sedeSheet); return; }
-        setSedeActual(sede);
-        vaciarCarrito();
-        window.location.reload();
+        const doSeleccionar = () => {
+          setSedeActual(sede);
+          vaciarCarrito();
+          window.location.reload();
+        };
+        getConteo() > 0 ? mostrarModalSalir(doSeleccionar) : doSeleccionar();
       });
     });
   } catch {
@@ -1377,7 +1558,16 @@ function setupListeners() {
       });
     }
     cerrarSheet(productSheet);
-    renderCarrito();
+    if (_editIdx !== null) {
+      quitarItem(_editIdx);
+      _editIdx = null;
+      renderCarrito();
+      const sede = getSedeActual();
+      openCheckoutSheet(sede);
+      setTimeout(() => abrirSheet(checkoutSheet), SHEET_TRANSITION_MS);
+    } else {
+      renderCarrito();
+    }
   });
 
   // ½+½ mezcla

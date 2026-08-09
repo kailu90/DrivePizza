@@ -67,6 +67,19 @@ export async function openCheckoutSheet(sede) {
 
   document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p => p.classList.remove('active'));
 
+  // Chip de pedido programado
+  const horaAgendada = localStorage.getItem('dp_hora_agendada');
+  const chipEl = document.getElementById('co-hora-agendada');
+  const valEl  = document.getElementById('co-hora-val');
+  if (chipEl) chipEl.style.display = horaAgendada ? 'flex' : 'none';
+  if (valEl && horaAgendada) valEl.textContent = `Entrega ${horaAgendada}`;
+  if (chipEl && horaAgendada) {
+    chipEl.style.cursor = 'pointer';
+    chipEl.onclick = () => {
+      document.dispatchEvent(new CustomEvent('dp:cambiar-hora', { detail: { sede: _sede } }));
+    };
+  }
+
   renderItems();
   await cargarBarrios();
   preLlenarDireccion();
@@ -122,6 +135,14 @@ export function renderItems() {
       renderItems();
       renderTotales();
       _onCarritoChange?.();
+    });
+  });
+
+  coResumen.querySelectorAll('.pw-cart-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx  = Number(btn.dataset.idx);
+      const item = getCarrito()[idx];
+      document.dispatchEvent(new CustomEvent('dp:editar-item', { detail: { idx, item } }));
     });
   });
 }
@@ -266,6 +287,9 @@ function renderTotales() {
     coDomicilioVal.textContent   = formatPrecio(_domicilioFee);
   } else {
     coRowDomicilio.style.display = 'none';
+  }
+  if (btnConfirmar && btnConfirmar.textContent !== 'Enviando pedido...') {
+    btnConfirmar.textContent = `Confirmar pedido · ${formatPrecio(total)}`;
   }
 }
 
@@ -482,18 +506,21 @@ async function confirmarPedido() {
       pago:            _pagoActivo,
       obs:             obsCliente,
       acompanamientos: _toppings.size ? [..._toppings].join(', ') : null,
-      asesor:   'web',
-      canal:    'web',
-      impreso:  false,
-      estado:   'pendiente',
-      fecha:    new Date().toISOString(),
+      asesor:        'web',
+      canal:         'web',
+      impreso:       false,
+      estado:        'pendiente',
+      fecha:         new Date().toISOString(),
       productos,
       total,
-      domicilio: domicilioObj,
+      domicilio:     domicilioObj,
+      hora_agendada: localStorage.getItem('dp_hora_agendada') || null,
     });
     if (insertError) throw new Error(insertError.message);
 
     guardarDirHistorial(coDir.value.trim());
+    localStorage.setItem('dp_nombre', coNombre.value.trim());
+    localStorage.removeItem('dp_hora_agendada');
     vaciarCarrito();
     window.location.href = `confirmacion.html?n=${encodeURIComponent(nPedido)}`;
 

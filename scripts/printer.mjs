@@ -115,6 +115,12 @@ function generarHTML(pedido) {
                 <span style="font-size:24pt; font-weight:900;">#${pedido.nPedido || '---'}</span>
             </div>
 
+            ${pedido.hora_agendada ? `
+            <div style="border:3px solid black; background:#000; color:#fff; text-align:center; padding:8px 6px; margin:8px 0;">
+                <div style="font-size:10pt; font-weight:900; letter-spacing:1px;">⚠ PEDIDO PROGRAMADO</div>
+                <div style="font-size:15pt; font-weight:900; margin-top:3px;">🕐 ENTREGA: ${pedido.hora_agendada}</div>
+            </div>` : ''}
+
             <div style="border-top:2px dashed black; margin:10px 0;"></div>
             <p style="text-align:center; font-weight:bold; margin-bottom:10px; font-size:12pt;">DETALLE DEL PEDIDO</p>
 

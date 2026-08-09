@@ -148,7 +148,9 @@ export function renderItemHTML(item, idx) {
             <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="-1" aria-label="Quitar uno">−</button>
             <span class="pw-cart-qty-num">${item.cantidad}</span>
             <button class="pw-cart-qty-btn" data-idx="${idx}" data-delta="1" aria-label="Agregar uno">+</button>
+            <span class="pw-cart-qty-badge">${item.cantidad} ${item.cantidad === 1 ? 'unidad' : 'unidades'}</span>
           </div>
+          <button class="pw-cart-edit-btn"   data-idx="${idx}" aria-label="Editar producto">Editar</button>
           <button class="pw-cart-delete-btn" data-idx="${idx}" aria-label="Eliminar producto">Eliminar</button>
         </div>
       </div>
