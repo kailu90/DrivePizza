@@ -96,6 +96,9 @@ function preLlenarDireccion() {
     if (saved.barrio && _barriosData[saved.barrio] !== undefined) {
       seleccionarBarrio(saved.barrio, _barriosData[saved.barrio]);
     }
+
+    // Precargar dirección guardada
+    if (saved.direccion) coDir.value = saved.direccion;
   } catch { /* ignorar si localStorage falla */ }
 }
 
