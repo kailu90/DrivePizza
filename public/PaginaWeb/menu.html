@@ -486,31 +486,47 @@
       <!-- Productos -->
       <div id="co-resumen-items"></div>
 
-      <!-- Datos -->
+      <!-- Cuándo -->
       <section class="pw-checkout-section">
         <h4 class="pw-checkout-section-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
-          Tus datos
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ¿Cuándo lo quieres?
         </h4>
-        <div class="pw-form-group">
-          <label class="pw-form-label" for="co-nombre">Nombre *</label>
-          <input class="pw-form-input" id="co-nombre" type="text" placeholder="¿Cómo te llamamos?" autocomplete="name">
+        <div class="pw-cuando-pills" id="co-cuando-pills">
+          <button class="pw-cuando-pill" data-cuando="inmediato">
+            <span class="pw-cuando-radio"><span class="pw-cuando-radio-dot"></span></span>
+            <div class="pw-cuando-text">
+              <span class="pw-cuando-title">Lo antes posible</span>
+              <span class="pw-cuando-sub">45–60 min aprox.</span>
+            </div>
+            <svg class="pw-cuando-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </button>
+          <button class="pw-cuando-pill" data-cuando="programado">
+            <span class="pw-cuando-radio"><span class="pw-cuando-radio-dot"></span></span>
+            <div class="pw-cuando-text">
+              <span class="pw-cuando-title">Programado</span>
+              <div class="pw-cuando-sub-row">
+                <span class="pw-cuando-sub" id="co-cuando-hora">Elige una hora</span>
+                <span class="pw-cuando-cambiar" id="co-cuando-cambiar" style="display:none">Cambiar</span>
+              </div>
+            </div>
+          </button>
         </div>
-        <div class="pw-form-group">
-          <label class="pw-form-label" for="co-tel">Teléfono *</label>
-          <input class="pw-form-input" id="co-tel" type="tel" placeholder="Número de contacto" autocomplete="tel" inputmode="tel">
+        <div class="pw-cuando-info" id="co-cuando-info" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Puedes programar tu pedido en un horario de 30 min.
         </div>
       </section>
 
       <!-- Entrega -->
       <section class="pw-checkout-section">
         <h4 class="pw-checkout-section-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M8 17.5h7"/><path d="M15 6h2l3 5.5h-3.5"/><path d="M15 6l-3 5.5H8L6.5 15"/><path d="M10 11.5L9 6H6"/><path d="M14 6h1"/></svg>
           ¿Cómo lo recibes?
         </h4>
         <div class="pw-entrega-pills" id="co-entrega-pills">
           <button class="pw-entrega-pill" data-tipo="domicilio">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M8 17.5h7"/><path d="M15 6h2l3 5.5h-3.5"/><path d="M15 6l-3 5.5H8L6.5 15"/><path d="M10 11.5L9 6H6"/><path d="M14 6h1"/></svg>
             Domicilio
           </button>
           <button class="pw-entrega-pill" data-tipo="recoger">
@@ -519,36 +535,92 @@
           </button>
         </div>
         <div id="co-seccion-domicilio" style="display:none">
-          <div class="pw-form-group">
-            <label class="pw-form-label" for="co-dir">Dirección (Cra / Calle) *</label>
-            <div class="pw-ac-wrap">
-              <input class="pw-form-input" id="co-dir" type="text"
-                     placeholder="Ej: Cra 27 # 45-10" autocomplete="off">
-              <ul class="pw-ac-suggs" id="co-dir-suggs"></ul>
+          <div class="pw-input-group">
+            <!-- Dirección -->
+            <div class="pw-input-row pw-input-row--dir">
+              <span class="pw-input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </span>
+              <div class="pw-ac-wrap pw-field-wrap">
+                <input class="pw-group-input" id="co-dir" type="text" placeholder=" " autocomplete="new-password">
+                <div class="pw-field-ph" aria-hidden="true">
+                  <span class="pw-ph-main">Cra 27 # 45-10</span>
+                  <span class="pw-ph-sub">Dirección *</span>
+                </div>
+                <ul class="pw-ac-suggs" id="co-dir-suggs"></ul>
+              </div>
+              <div class="pw-dir-hint">
+                <strong>Escribe solo la dirección principal.</strong> Torre, bloque, piso o apartamento podrás indicarlos después.
+              </div>
             </div>
-          </div>
-          <div class="pw-form-group" id="co-barrio-group">
-            <label class="pw-form-label" for="co-barrio-input">Barrio *</label>
-            <div class="pw-ac-wrap">
-              <input class="pw-form-input" id="co-barrio-input" type="text"
-                     placeholder="Escribe las primeras letras..." autocomplete="off">
-              <ul class="pw-ac-suggs" id="co-barrio-suggs"></ul>
+            <div id="co-dir-feedback" class="pw-dir-feedback"></div>
+            <!-- Barrio -->
+            <div class="pw-input-row pw-input-row--barrio" id="co-barrio-group">
+              <span class="pw-input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </span>
+              <div class="pw-ac-wrap pw-field-wrap">
+                <input class="pw-group-input" id="co-barrio-input" type="text" placeholder=" " autocomplete="new-password">
+                <div class="pw-field-ph" aria-hidden="true">
+                  <span class="pw-ph-main">Escribe tu barrio</span>
+                  <span class="pw-ph-sub">Barrio *</span>
+                </div>
+                <ul class="pw-ac-suggs" id="co-barrio-suggs"></ul>
+              </div>
+              <input type="hidden" id="co-barrio">
+              <div class="pw-dir-hint">
+                <strong>Escribe y selecciona tu barrio.</strong> Esto nos ayuda a validar la zona de entrega.
+              </div>
             </div>
-            <input type="hidden" id="co-barrio">
-          </div>
-          <div class="pw-dir-extras">
-            <div class="pw-form-group">
-              <label class="pw-form-label" for="co-torre">Torre / Bloque / Piso <span class="pw-label-optional">(opcional)</span></label>
-              <input class="pw-form-input" id="co-torre" type="text" placeholder="Ej: Torre 3, Bloque B">
-            </div>
-            <div class="pw-form-group">
-              <label class="pw-form-label" for="co-apto">Apto / Casa <span class="pw-label-optional">(opcional)</span></label>
-              <input class="pw-form-input" id="co-apto" type="text" placeholder="Ej: Apto 302, Casa 5">
+            <!-- Torre y Apto -->
+            <div class="pw-input-row pw-input-row--half pw-input-row--torre">
+              <span class="pw-input-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </span>
+              <div class="pw-field-wrap">
+                <input class="pw-group-input" id="co-torre" type="text" placeholder=" " autocomplete="off">
+                <div class="pw-field-ph" aria-hidden="true">
+                  <span class="pw-ph-main">Torre / Bloque</span>
+                  <span class="pw-ph-sub">(opcional)</span>
+                </div>
+              </div>
+              <span class="pw-input-icon pw-input-icon--border-left">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </span>
+              <div class="pw-field-wrap">
+                <input class="pw-group-input" id="co-apto" type="text" placeholder=" " autocomplete="off">
+                <div class="pw-field-ph" aria-hidden="true">
+                  <span class="pw-ph-main">Apto / Casa</span>
+                  <span class="pw-ph-sub">(opcional)</span>
+                </div>
+              </div>
+              <div class="pw-dir-hint pw-dir-hint--torre">
+                <strong>¿Vives en conjunto o edificio?</strong> Indícanos torre, bloque o piso para encontrarte más fácil.
+              </div>
+              <div class="pw-dir-hint pw-dir-hint--apto">
+                <strong>Indica tu apartamento o número de casa.</strong> Así podremos ubicar exactamente dónde entregarte.
+              </div>
             </div>
           </div>
         </div>
         <div id="co-seccion-recoger" style="display:none">
           <div class="pw-recoger-info" id="co-recoger-info"></div>
+        </div>
+      </section>
+
+      <!-- Datos -->
+      <section class="pw-checkout-section">
+        <h4 class="pw-checkout-section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+          Tus datos
+        </h4>
+        <div class="pw-input-group">
+          <div class="pw-input-row">
+            <input class="pw-group-input" id="co-nombre" type="text" placeholder="Nombre *" autocomplete="name">
+          </div>
+          <div class="pw-input-row">
+            <input class="pw-group-input" id="co-tel" type="tel" placeholder="Teléfono *" autocomplete="tel" inputmode="tel">
+          </div>
         </div>
       </section>
 

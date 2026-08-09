@@ -5,10 +5,12 @@ import { supabase }        from '../../Api/supabaseConfig.js';
 import { displayNombre }   from './sede.js';
 import { getCarrito, getTotal, getTotalAdiciones, actualizarCantidad, quitarItem, vaciarCarrito, formatPrecio, renderItemHTML } from './carrito.js';
 import { cargarBarriosSede } from '../../CallCenter/barriosService.js';
+import { normalizarDireccion } from './normalizarDir.js';
 
 // ── ESTADO ────────────────────────────────────────────────────
 let _sede            = null;
 let _tipoEntrega     = null;
+let _tipoHorario     = null;
 let _pagoActivo      = null;
 let _domicilioFee    = 0;
 let _onCarritoChange = null;
@@ -47,6 +49,7 @@ export function initCheckoutSheet({ onCarritoChange }) {
 export async function openCheckoutSheet(sede) {
   _sede         = sede;
   _tipoEntrega  = null;
+  _tipoHorario  = null;
   _pagoActivo   = null;
   _domicilioFee = 0;
   _toppings     = new Set();
@@ -67,14 +70,16 @@ export async function openCheckoutSheet(sede) {
 
   document.querySelectorAll('#co-pago-pills .pw-pago-pill').forEach(p => p.classList.remove('active'));
 
-  // Chip de pedido programado
+  // Sección ¿Cuándo lo quieres?
   const horaAgendada = localStorage.getItem('dp_hora_agendada');
+  _actualizarCuando(horaAgendada ? 'programado' : 'inmediato', horaAgendada);
+
+  // Chip de pedido programado en header
   const chipEl = document.getElementById('co-hora-agendada');
   const valEl  = document.getElementById('co-hora-val');
   if (chipEl) chipEl.style.display = horaAgendada ? 'flex' : 'none';
   if (valEl && horaAgendada) valEl.textContent = `Entrega ${horaAgendada}`;
-  if (chipEl && horaAgendada) {
-    chipEl.style.cursor = 'pointer';
+  if (chipEl) {
     chipEl.onclick = () => {
       document.dispatchEvent(new CustomEvent('dp:cambiar-hora', { detail: { sede: _sede } }));
     };
@@ -215,32 +220,6 @@ function normalizarApto(val) {
   return `Apto ${s.toUpperCase()}`;
 }
 
-// ── DIRECCIÓN ─────────────────────────────────────────────────
-const _VIA_MAP = {
-  cra: 'Carrera', kr: 'Carrera',
-  cl: 'Calle',
-  dg: 'Diagonal',
-  tv: 'Transversal', trs: 'Transversal',
-  av: 'Avenida',
-};
-
-function normalizarDireccion(val) {
-  const s = val.trim();
-  if (!s) return s;
-
-  const m = s.match(
-    /^(carrera|cra|kr|calle|cl|diagonal|dg|transversal|tv|trs|avenida|av|autopista)\s+(\d+[a-z]?)\s*#?\s*(\d+[a-z]?)\s*[-–]?\s*(\d+[a-z]?)/i
-  );
-  if (!m) return s; // patrón no reconocido → dejar intacto
-
-  const viaKey = m[1].toLowerCase();
-  const via    = _VIA_MAP[viaKey] ?? (m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase());
-  const n1     = m[2].toUpperCase();
-  const n2     = m[3];
-  const n3     = m[4];
-
-  return `${via} ${n1} # ${n2}-${n3}`;
-}
 
 // ── HISTORIAL DIRECCIÓN ───────────────────────────────────────
 const DIR_HIST_KEY = 'dp_dir_historial';
@@ -276,6 +255,36 @@ function seleccionarBarrio(nombre, fee) {
   renderTotales();
 }
 
+// ── CUÁNDO ────────────────────────────────────────────────────
+function _actualizarCuando(tipo, hora = null) {
+  _tipoHorario = tipo;
+  document.querySelectorAll('#co-cuando-pills .pw-cuando-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.cuando === tipo);
+  });
+  const infoEl    = document.getElementById('co-cuando-info');
+  const horaEl    = document.getElementById('co-cuando-hora');
+  const cambiarEl = document.getElementById('co-cuando-cambiar');
+  if (tipo === 'programado') {
+    if (infoEl) infoEl.style.display = 'flex';
+    if (horaEl) horaEl.textContent = hora ? `Hoy · ${hora}` : 'Elige una hora';
+    if (cambiarEl) cambiarEl.style.display = hora ? 'inline' : 'none';
+  } else {
+    if (infoEl) infoEl.style.display = 'none';
+    if (horaEl) horaEl.textContent = 'Elige una hora';
+    if (cambiarEl) cambiarEl.style.display = 'none';
+  }
+  // Chip en header
+  const chipEl = document.getElementById('co-hora-agendada');
+  const valEl  = document.getElementById('co-hora-val');
+  if (chipEl) chipEl.style.display = (tipo === 'programado' && hora) ? 'flex' : 'none';
+  if (valEl && hora) valEl.textContent = `Entrega ${hora}`;
+}
+
+export function actualizarHoraCuando(hora) {
+  localStorage.setItem('dp_hora_agendada', hora);
+  _actualizarCuando('programado', hora);
+}
+
 // ── TOTALES ───────────────────────────────────────────────────
 function renderTotales() {
   const subtotal = getTotal();
@@ -300,9 +309,40 @@ function setupFormListeners() {
     if (norm) coTel.value = norm;
   });
 
+  const dirFeedback = document.getElementById('co-dir-feedback');
+  let _dirFeedbackTimer = null;
+
+  function _mostrarDirFeedback(tipo, texto) {
+    clearTimeout(_dirFeedbackTimer);
+    dirFeedback.textContent = texto;
+    dirFeedback.className = `pw-dir-feedback pw-dir-feedback--${tipo}`;
+    requestAnimationFrame(() => dirFeedback.classList.add('pw-dir-feedback--visible'));
+    if (tipo === 'ok') {
+      _dirFeedbackTimer = setTimeout(() => {
+        dirFeedback.classList.remove('pw-dir-feedback--visible');
+      }, 3000);
+    }
+  }
+
+  function _ocultarDirFeedback() {
+    clearTimeout(_dirFeedbackTimer);
+    dirFeedback.classList.remove('pw-dir-feedback--visible');
+  }
+
   coDir.addEventListener('blur', () => {
-    const norm = normalizarDireccion(coDir.value);
-    if (norm) coDir.value = norm;
+    const raw = coDir.value.trim();
+    if (!raw) { _ocultarDirFeedback(); return; }
+    const { valor, ok, sinVia, esLugar, incompleta } = normalizarDireccion(raw);
+    coDir.value = valor;
+    if (ok) {
+      _mostrarDirFeedback('ok', `✓ Se guardará como: ${valor}`);
+    } else if (esLugar || sinVia) {
+      _mostrarDirFeedback('warn', `¿Dónde queda "${raw}"? Agrega la calle o carrera. Ej: Calle 50 # 30 - 10, ${raw}`);
+    } else if (incompleta) {
+      _mostrarDirFeedback('warn', 'Parece incompleta. Ej: Carrera 29 # 50 - 54');
+    } else {
+      _ocultarDirFeedback();
+    }
   });
 
   coTorre.addEventListener('blur', () => {
@@ -315,7 +355,7 @@ function setupFormListeners() {
     if (norm) coApto.value = norm;
   });
 
-  coDir.addEventListener('focus', () => mostrarDirSuggs(coDir.value.trim()));
+  coDir.addEventListener('focus', () => { if (coDir.value.trim()) mostrarDirSuggs(coDir.value.trim()); });
   coDir.addEventListener('input', () => mostrarDirSuggs(coDir.value.trim()));
   coDirSuggs.addEventListener('mousedown', e => {
     const item = e.target.closest('.pw-ac-item');
@@ -323,12 +363,10 @@ function setupFormListeners() {
     coDir.value = item.dataset.dir;
     coDirSuggs.innerHTML = '';
   });
-  coDir.addEventListener('blur', () => {
-    setTimeout(() => { coDirSuggs.innerHTML = ''; }, 150);
-  });
+  coDir.addEventListener('blur', () => setTimeout(() => { coDirSuggs.innerHTML = ''; }, 150));
 
   coBarrioInput.addEventListener('input', () => {
-    coBarrio.value = ''; // limpiar selección al escribir de nuevo
+    coBarrio.value = '';
     _domicilioFee  = 0;
     filtrarBarrios(coBarrioInput.value.trim());
     renderTotales();
@@ -342,6 +380,24 @@ function setupFormListeners() {
 
   coBarrioInput.addEventListener('blur', () => {
     setTimeout(() => { coBarrioSuggs.innerHTML = ''; }, 150);
+  });
+
+  document.querySelectorAll('#co-cuando-pills .pw-cuando-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const tipo = pill.dataset.cuando;
+      if (tipo === 'inmediato') {
+        localStorage.removeItem('dp_hora_agendada');
+        _actualizarCuando('inmediato');
+      } else {
+        const horaActual = localStorage.getItem('dp_hora_agendada');
+        if (horaActual) {
+          _actualizarCuando('programado', horaActual);
+        } else {
+          _actualizarCuando('programado', null);
+          document.dispatchEvent(new CustomEvent('dp:cambiar-hora', { detail: { sede: _sede } }));
+        }
+      }
+    });
   });
 
   document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(pill => {
@@ -426,9 +482,9 @@ function validar() {
 
   if (_tipoEntrega === 'domicilio') {
     // Normalizar antes de validar (por si el usuario no salió del campo)
-    const normDir = normalizarDireccion(coDir.value);
-    coDir.value   = normDir;
-    const dir     = normDir.trim();
+    const { valor: normDir } = normalizarDireccion(coDir.value);
+    coDir.value = normDir;
+    const dir   = normDir.trim();
 
     if (!dir) {
       mostrarErrorCampo(coDir, 'Ingresa tu dirección.');
@@ -487,7 +543,7 @@ async function confirmarPedido() {
     } else {
       const barrio = coBarrio.value || null;
       domicilioObj = barrio ? { barrio, valor: _domicilioFee } : { valor: _domicilioFee };
-      const partes = [normalizarDireccion(coDir.value)];
+      const partes = [normalizarDireccion(coDir.value).valor];
       if (coTorre.value.trim()) partes.push(coTorre.value.trim());
       if (coApto.value.trim())  partes.push(coApto.value.trim());
       direccion = partes.join(', ');

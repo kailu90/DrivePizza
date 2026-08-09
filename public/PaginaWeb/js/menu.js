@@ -5,7 +5,7 @@
 import { getSedeActual, setSedeActual, cargarSedes, estaAbierta, formatHorario, formatApertura, displayNombre } from './sede.js';
 import { agregarItem, actualizarCantidad, quitarItem, getCarrito, getTotal, getConteo, getTotalAdiciones, formatPrecio, pushItem, vaciarCarrito, renderItemHTML } from './carrito.js';
 import { menuData, preciosBordes, CATEGORIAS_ADICIONABLES, TAMANOS_CON_BORDE, CATS_PIZZAS, PRODUCT_IMAGES, SABORES_CLASICOS, SABORES_TIPICOS_ESPECIALES } from './menuData.js';
-import { initCheckoutSheet, openCheckoutSheet } from './checkout-sheet.js';
+import { initCheckoutSheet, openCheckoutSheet, actualizarHoraCuando } from './checkout-sheet.js';
 import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 import { initHeader } from './header.js';
@@ -1198,8 +1198,7 @@ function mostrarPickerHora(sede, { onConfirmar, onCancelar, cancelLabel = 'Cance
 document.addEventListener('dp:cambiar-hora', ({ detail: { sede } }) => {
   mostrarPickerHora(sede, {
     onConfirmar: (slot) => {
-      const valEl = document.getElementById('co-hora-val');
-      if (valEl) valEl.textContent = `Entrega ${slot}`;
+      actualizarHoraCuando(slot);
     },
   });
 });

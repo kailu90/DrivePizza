@@ -2186,7 +2186,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Campos de formulario */
-.pw-form-group { margin-bottom: .55rem; }
+.pw-form-group { margin-bottom: .35rem; }
 .pw-form-group:last-child { margin-bottom: 0; }
 .pw-form-label {
   display: block;
@@ -2199,7 +2199,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 .pw-form-input {
   width: 100%;
-  padding: .5rem .75rem;
+  padding: .42rem .75rem;
   border: 1.5px solid rgba(0,0,0,.14);
   border-radius: 10px;
   font-size: .875rem;
@@ -2313,7 +2313,46 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 }
 
 /* Autocomplete compartido (dirección + barrio) */
-.pw-ac-wrap { position: relative; }
+.pw-ac-wrap { flex: 1; }
+.pw-input-row { position: relative; }
+.pw-input-row .pw-ac-suggs { left: 0; right: 0; width: auto; }
+
+/* Hint de dirección */
+.pw-dir-hint {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid rgba(49,75,39,.2);
+  border-radius: 10px;
+  padding: .55rem .75rem;
+  font-size: .75rem;
+  color: #666;
+  line-height: 1.45;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.pw-input-row--dir:focus-within .pw-dir-hint { display: block; }
+.pw-dir-feedback {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  font-size: .72rem;
+  padding: 0 .75rem;
+  border-radius: 0;
+  transition: max-height .35s ease, opacity .25s ease, padding .35s ease;
+}
+.pw-dir-feedback--visible {
+  max-height: 60px;
+  opacity: 1;
+  padding: .45rem .75rem;
+}
+.pw-dir-feedback--ok   { background: rgba(49,75,39,.1); color: var(--dp-green); }
+.pw-dir-feedback--warn { background: rgba(220,100,0,.08); color: #c05000; }
+.pw-input-row--barrio:focus-within:not(:has(#co-barrio-suggs li)) .pw-dir-hint { display: block; }
+.pw-input-row--torre:has(#co-torre:focus) .pw-dir-hint--torre { display: block; }
+.pw-input-row--torre:has(#co-apto:focus)  .pw-dir-hint--apto  { display: block; }
 .pw-ac-suggs {
   position: absolute;
   top: calc(100% + 2px);
@@ -2337,12 +2376,60 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-ac-item-fee { color: var(--dp-green); font-weight: 600; font-size: .75rem; }
 .pw-ac-suggs:empty { display: none; }
 
-/* Campos opcionales torre/apto — grid 2 columnas */
-.pw-dir-extras {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 .5rem;
+/* Grupo de inputs apilados (sin gap, solo borde divisor) */
+.pw-input-group {
+  border: 1.5px solid rgba(0,0,0,.14);
+  border-radius: 10px;
+  background: #fff;
 }
+.pw-input-row {
+  display: flex;
+  border-bottom: 1px solid rgba(0,0,0,.1);
+}
+.pw-input-row:last-child { border-bottom: none; }
+.pw-input-row--half { display: flex; flex-direction: row; }
+.pw-group-input {
+  flex: 1;
+  width: 100%;
+  padding: .5rem .75rem;
+  border: none;
+  background: transparent;
+  font-size: .875rem;
+  color: var(--dp-dark);
+  outline: none;
+}
+.pw-group-input::placeholder { color: transparent; }
+
+/* Placeholder visual de dos líneas */
+.pw-field-wrap { position: relative; flex: 1; }
+.pw-field-ph {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: .05rem;
+  padding: 0 .5rem 0 .75rem;
+}
+.pw-ph-main { font-size: .78rem; color: var(--dp-dark); opacity: .75; line-height: 1.2; }
+.pw-ph-sub  { font-size: .65rem; color: var(--dp-dark); opacity: .45; line-height: 1.2; }
+/* Ocultar placeholder al escribir o hacer focus */
+.pw-group-input:focus + .pw-field-ph,
+.pw-group-input:not(:placeholder-shown) + .pw-field-ph { display: none; }
+.pw-group-input--border-left { border-left: 1px solid rgba(0,0,0,.1); }
+.pw-input-row:focus-within { background: #fff; }
+.pw-input-icon {
+  display: flex;
+  align-items: center;
+  padding: 0 .5rem 0 .7rem;
+  color: var(--dp-green);
+  flex-shrink: 0;
+}
+.pw-input-icon--border-left { border-left: 1px solid rgba(0,0,0,.1); padding-left: .6rem; }
+
+/* Campos opcionales torre/apto */
 .pw-label-optional { font-weight: 400; color: #aaa; font-size: .7rem; }
 
 /* Info recogida */
@@ -2402,6 +2489,93 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   background: rgba(49,75,39,.07);
   color: var(--dp-green);
   border-color: var(--dp-green);
+}
+
+/* ¿Cuándo lo quieres? */
+.pw-cuando-pills { display: flex; flex-direction: row; gap: .4rem; }
+.pw-cuando-pill {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem .6rem;
+  border: 1.5px solid rgba(0,0,0,.15);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  transition: var(--dp-transition);
+}
+.pw-cuando-pill.active {
+  border-color: var(--dp-green);
+  border-width: 2px;
+  background: rgba(49,75,39,.04);
+}
+.pw-cuando-radio {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,0,0,.25);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--dp-transition);
+}
+.pw-cuando-pill.active .pw-cuando-radio {
+  border-color: var(--dp-green);
+  background: var(--dp-green);
+}
+.pw-cuando-radio-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  display: none;
+}
+.pw-cuando-pill.active .pw-cuando-radio-dot { display: block; }
+.pw-cuando-text { flex: 1; min-width: 0; }
+.pw-cuando-title {
+  display: block;
+  font-size: .84rem;
+  font-weight: 700;
+  color: var(--dp-dark);
+  line-height: 1.2;
+}
+.pw-cuando-sub {
+  display: block;
+  font-size: .7rem;
+  color: #999;
+  margin-top: .1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pw-cuando-pill.active .pw-cuando-sub { color: var(--dp-green); font-weight: 600; }
+.pw-cuando-icon { color: #ccc; flex-shrink: 0; transition: var(--dp-transition); }
+.pw-cuando-pill.active .pw-cuando-icon { color: var(--dp-green); }
+.pw-cuando-sub-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .3rem;
+}
+.pw-cuando-cambiar {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--dp-green);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.pw-cuando-info {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .45rem;
+  padding: .4rem .6rem;
+  background: rgba(49,75,39,.07);
+  border-radius: 10px;
+  font-size: .73rem;
+  color: var(--dp-green);
+  font-weight: 500;
 }
 
 /* Totales */
