@@ -3,6 +3,7 @@ import { RECARGO_SERVICIO } from './planta.config.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { getProductos } from '../Shared/productosService.js';
 import { registrarMovimiento } from './inventoryService.js';
+import { getSedes } from '../Shared/sedesService.js';
 
 // Estado del módulo
 let productsData = [];
@@ -65,33 +66,6 @@ function mostrarContexto(fechaTexto) {
   document.getElementById('instruccion-productos').style.display = 'block';
 }
 
-// ── Sedes ─────────────────────────────────────────────────────────────────────
-const CACHE_SEDES_KEY = 'planta_sedes_sup';
-const CACHE_SEDES_TTL = 60 * 60 * 1000; // 60 min
-
-async function fetchSedesFromSupabase() {
-  try {
-    const raw = sessionStorage.getItem(CACHE_SEDES_KEY);
-    if (raw) {
-      const { t, data } = JSON.parse(raw);
-      if (Date.now() - t < CACHE_SEDES_TTL) {
-        sedesData.push(...data);
-        return;
-      }
-      sessionStorage.removeItem(CACHE_SEDES_KEY);
-    }
-    const { data: rows, error } = await supabase
-      .from('sedes')
-      .select('*')
-      .order('name');
-    if (error) throw error;
-    sedesData.push(...rows);
-    sessionStorage.setItem(CACHE_SEDES_KEY, JSON.stringify({ t: Date.now(), data: rows }));
-  } catch (e) {
-    console.error("Error al obtener las sedes:", e);
-  }
-}
-
 // ── Inicializar formulario (sede + usuario) ───────────────────────────────────
 async function initializeForm({ username, sede, rol }) {
   const userSelect = document.getElementById('location');
@@ -100,7 +74,7 @@ async function initializeForm({ username, sede, rol }) {
   sedeAsignada    = esPlanta ? null : sede;
   usernameUsuario = username;
 
-  await fetchSedesFromSupabase();
+  sedesData = await getSedes();
 
   userSelect.innerHTML = '<option value="" disabled selected>Seleccionar</option>';
   sedesData.forEach(s => {

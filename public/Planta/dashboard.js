@@ -5,6 +5,7 @@ import { RECARGO_SERVICIO } from './planta.config.js'
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js'
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js'
 import { getProductos, invalidarProductos } from '../Shared/productosService.js'
+import { getSedes } from '../Shared/sedesService.js'
 
 const ordersContainer = document.getElementById('ordersContainer');
 
@@ -1464,15 +1465,27 @@ function invalidarCacheInventario() {
 // ── Modal Devoluciones ──────────────────────────────────────────────
 let devolucionProductoSeleccionado = null;
 
-function abrirModalDevolucion() {
+async function abrirModalDevolucion() {
     devolucionProductoSeleccionado = null;
-    document.getElementById('dev-sede').value = '';
     document.getElementById('dev-buscar-input').value = '';
     document.getElementById('dev-resultados').innerHTML = '';
     document.getElementById('dev-seleccionado').style.display = 'none';
     document.getElementById('dev-cantidad').value = 1;
     document.getElementById('dev-observacion').value = '';
     document.getElementById('dev-confirmar').disabled = true;
+
+    const selectSede = document.getElementById('dev-sede');
+    if (selectSede.children.length <= 1) {
+        const sedes = await getSedes();
+        sedes.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name.toLowerCase();
+            opt.textContent = s.name;
+            selectSede.appendChild(opt);
+        });
+    }
+    selectSede.value = '';
+
     document.getElementById('modal-devolucion').showModal();
     setTimeout(() => document.getElementById('dev-buscar-input').focus(), 100);
 }
@@ -1488,7 +1501,7 @@ document.getElementById('btn-nuevo-pedido')?.addEventListener('click', () => {
 
 document.getElementById('btn-devoluciones')?.addEventListener('click', async () => {
     await cargarProductosDisponibles();
-    abrirModalDevolucion();
+    await abrirModalDevolucion();
 });
 
 document.getElementById('dev-cancelar')?.addEventListener('click', () => cerrarModalDevolucion());

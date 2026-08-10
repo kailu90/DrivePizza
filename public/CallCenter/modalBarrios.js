@@ -10,6 +10,7 @@
 
 import { cargarBarriosSede } from './barriosService.js';
 import { supabase } from '../Api/supabaseConfig.js';
+import { getSedes } from '../Shared/sedesService.js';
 
 let _sede          = null;
 let _barriosSede   = [];   // [{ barrio, valor }] de la sede activa
@@ -28,14 +29,7 @@ const MODAL_HTML = `
                 <button id="btn-cerrar-barrios-shared" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;">&times;</button>
             </div>
         </div>
-        <div class="sede-toggle" id="barrios-sede-toggle" style="margin-bottom:12px;">
-            <button type="button" class="sede-btn" data-sede="cabecera">Cabecera</button>
-            <button type="button" class="sede-btn" data-sede="cañaveral">Cañaveral</button>
-            <button type="button" class="sede-btn" data-sede="acropolis">Acrópolis</button>
-            <button type="button" class="sede-btn" data-sede="piedecuesta">Piedecuesta</button>
-            <button type="button" class="sede-btn" data-sede="megamall">Megamall</button>
-            <button type="button" class="sede-btn" data-sede="unico">Único</button>
-        </div>
+        <div class="sede-toggle" id="barrios-sede-toggle" style="margin-bottom:12px;"></div>
         <input type="text" id="barrios-buscador"
             placeholder="\uD83D\uDD0D Escribe el barrio..."
             style="padding:10px 14px; border:2px solid #ddd; border-radius:8px; font-size:15px; width:100%; box-sizing:border-box; margin-bottom:10px;"
@@ -97,7 +91,7 @@ async function _verificarRolAdmin() {
     } catch (_) { /* silencioso */ }
 }
 
-function _init() {
+async function _init() {
     if (_initialized) return;
     _initialized = true;
 
@@ -105,35 +99,43 @@ function _init() {
     wrapper.innerHTML = MODAL_HTML.trim();
     document.body.appendChild(wrapper.firstElementChild);
 
+    const sedes  = await getSedes();
+    const toggle = document.getElementById('barrios-sede-toggle');
+    sedes.forEach(s => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sede-btn';
+        btn.dataset.sede = s.name.toLowerCase();
+        btn.textContent  = s.name;
+        toggle.appendChild(btn);
+    });
+
     document.getElementById('btn-cerrar-barrios-shared')
         .addEventListener('click', _close);
 
     document.getElementById('barrios-buscador')
         .addEventListener('input', _filtrar);
 
-    document.getElementById('barrios-sede-toggle')
-        .querySelectorAll('.sede-btn')
-        .forEach(btn => {
-            btn.addEventListener('click', async () => {
-                document.querySelectorAll('#barrios-sede-toggle .sede-btn')
-                    .forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                _sede = btn.dataset.sede;
+    toggle.addEventListener('click', async e => {
+        const btn = e.target.closest('.sede-btn');
+        if (!btn) return;
+        toggle.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _sede = btn.dataset.sede;
 
-                const contenedor = document.getElementById('barrios-resultados');
-                contenedor.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
-                document.getElementById('barrios-buscador').value = '';
+        const contenedor = document.getElementById('barrios-resultados');
+        contenedor.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
+        document.getElementById('barrios-buscador').value = '';
 
-                try {
-                    _barriosSede = await cargarBarriosSede(_sede);
-                } catch (e) {
-                    contenedor.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:20px;margin:0;">Error al cargar barrios</p>`;
-                    return;
-                }
-                _filtrar();
-                document.getElementById('barrios-buscador').focus();
-            });
-        });
+        try {
+            _barriosSede = await cargarBarriosSede(_sede);
+        } catch (e) {
+            contenedor.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:20px;margin:0;">Error al cargar barrios</p>`;
+            return;
+        }
+        _filtrar();
+        document.getElementById('barrios-buscador').focus();
+    });
 
     document.getElementById('modal-barrios-shared')
         .addEventListener('click', e => {
@@ -143,8 +145,8 @@ function _init() {
     _verificarRolAdmin();
 }
 
-export function openBarriosModal() {
-    _init();
+export async function openBarriosModal() {
+    await _init();
     const modal = document.getElementById('modal-barrios-shared');
     modal.style.display = 'flex';
     document.getElementById('barrios-buscador').value = '';

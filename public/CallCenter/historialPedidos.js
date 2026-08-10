@@ -6,6 +6,7 @@ import { initPbxPanel }  from "./pbxPanel.js";
 import { initNavButtons } from "./navCallCenter.js";
 import { openBarriosModal } from "./modalBarrios.js";
 import { PBX_URL, WS_URL } from "../Api/config.js";
+import { getSedes } from "../Shared/sedesService.js";
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
@@ -917,6 +918,20 @@ document.getElementById("modal-detalle").addEventListener("click", e => {
 // ── SKELETON + AUTH ────────────────────────────────────────────────────
 mostrarSkeleton("historial");
 
+async function poblarSelectsSedes() {
+    const sedes = await getSedes();
+    ['filtro-sede', 'cf-sede'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sedes.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name.toLowerCase();
+            opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
+    });
+}
+
 async function obtenerUsuarioCC() {
     if (window.parent !== window && window.parent._usuarioCCPromise) {
         return await window.parent._usuarioCCPromise;
@@ -971,6 +986,8 @@ async function obtenerUsuarioCC() {
             document.getElementById("btn-exportar").style.display = "";
             document.getElementById("btn-liquidacion").style.display = "";
         }
+
+        await poblarSelectsSedes();
 
         if (rol === "pizzeria") {
             sedeUsuario = sede;

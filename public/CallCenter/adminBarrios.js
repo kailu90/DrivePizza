@@ -10,11 +10,12 @@ import { initNavButtons }                   from './navCallCenter.js';
 import { openBarriosModal }                 from './modalBarrios.js';
 import { domicilios as domiciliosLocal }    from './domicilios.js';
 import { invalidarCacheBarrios }            from './barriosService.js';
+import { getSedes }                         from '../Shared/sedesService.js';
 
 const ROLES_PERMITIDOS = ['admin', 'callcenter-admin', 'callcenter'];
 const ROLES_EDITOR     = ['admin', 'callcenter-admin'];
 
-let _sede           = 'cabecera';
+let _sede           = '';
 let _barrios        = [];
 let _query          = '';
 let _soloSinCoords  = false;
@@ -68,6 +69,19 @@ mostrarSkeleton('historial');
             document.getElementById('migration-banner').style.display = 'none';
         }
 
+        const sedes = await getSedes();
+        const nav   = document.getElementById('admin-sede-nav');
+        sedes.forEach((s, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sede-btn' + (i === 0 ? ' active' : '');
+            btn.dataset.sede = s.name.toLowerCase();
+            btn.textContent  = s.name;
+            nav.appendChild(btn);
+        });
+        _sede = sedes[0]?.name.toLowerCase() || '';
+        document.getElementById('ab-titulo').textContent = sedes[0]?.name || '';
+
         document.body.classList.add('loaded');
         ocultarSkeleton('contenido-principal');
 
@@ -88,23 +102,23 @@ function _mostrarVista(vista) {
 }
 
 // ── Sede toggle ───────────────────────────────────────────────────────────────
-document.getElementById('admin-sede-nav').querySelectorAll('.sede-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#admin-sede-nav .sede-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _sede = btn.dataset.sede;
-        document.getElementById('ab-titulo').textContent = btn.textContent;
-        document.getElementById('admin-barrios-search').value = '';
-        _query = '';
-        _soloSinCoords = false;
-        document.getElementById('btn-filtro-sin-coords').classList.replace('btn-save', 'btn-edit');
-        _mostrarVista('barrios');
-        _cargarSede(_sede);
-    });
+document.getElementById('admin-sede-nav').addEventListener('click', e => {
+    const btn = e.target.closest('.sede-btn');
+    if (!btn) return;
+    document.querySelectorAll('#admin-sede-nav .sede-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _sede = btn.dataset.sede;
+    document.getElementById('ab-titulo').textContent = btn.textContent;
+    document.getElementById('admin-barrios-search').value = '';
+    _query = '';
+    _soloSinCoords = false;
+    document.getElementById('btn-filtro-sin-coords').classList.replace('btn-save', 'btn-edit');
+    _mostrarVista('barrios');
+    _cargarSede(_sede);
 });
 
 document.getElementById('btn-ver-log').addEventListener('click', () => {
-    document.querySelectorAll('#admin-sede-nav .cat-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#admin-sede-nav .sede-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('ab-titulo').textContent = 'Log de cambios';
     _mostrarVista('log');
     _cargarLog();

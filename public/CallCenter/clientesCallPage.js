@@ -2,11 +2,9 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { initNavButtons } from './navCallCenter.js';
 import { openBarriosModal } from './modalBarrios.js';
+import { getSedes } from '../Shared/sedesService.js';
 
-const SEDE_LABELS = {
-    cabecera: 'Cabecera', cañaveral: 'Cañaveral', acropolis: 'Acrópolis',
-    piedecuesta: 'Piedecuesta', megamall: 'Megamall', unico: 'Único',
-};
+let SEDE_LABELS = {};
 
 let clienteActual      = null;
 let _usuarioActual     = '';
@@ -607,6 +605,16 @@ async function obtenerUsuarioCC() {
                 await supabase.auth.signOut();
                 window.top.location.href = '../index.html';
             }
+        });
+
+        const sedes = await getSedes();
+        SEDE_LABELS = Object.fromEntries(sedes.map(s => [s.name.toLowerCase(), s.name]));
+        const selSede = document.getElementById('hist-filtro-sede');
+        sedes.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.name.toLowerCase();
+            opt.textContent = s.name;
+            selSede.appendChild(opt);
         });
 
         ocultarSkeleton('contenido-principal');
