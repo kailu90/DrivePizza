@@ -127,22 +127,26 @@ async function cargarInforme() {
                 </tr>
             `).join('');
 
-            // Sección devoluciones
+            // Sección devoluciones (colapsable)
             const seccionDev = devoluciones.length > 0 ? `
-                <tr class="liq-dev-header">
-                    <td colspan="4">↩ Devoluciones</td>
-                </tr>
-                ${devoluciones.map(d => `
-                    <tr class="liq-dev-row">
-                        <td colspan="2">${d.productoNombre} × ${d.cantidad} ${d.unidadMedida || 'uds.'}</td>
-                        <td class="col-precio">${d.precio ? formatPeso(d.precio) + '/u' : '—'}</td>
-                        <td class="col-total liq-dev-valor">-${formatPeso(d.valorTotal)}</td>
+                <tbody class="liq-dev-toggle-btn">
+                    <tr class="liq-dev-header">
+                        <td colspan="4">↩ Devoluciones · -${formatPeso(subtotalDev)} <span class="liq-dev-chevron">▲</span></td>
                     </tr>
-                `).join('')}
-                <tr class="liq-dev-subtotal">
-                    <td colspan="3">Subtotal devoluciones</td>
-                    <td class="col-total">-${formatPeso(subtotalDev)}</td>
-                </tr>
+                </tbody>
+                <tbody class="liq-dev-body">
+                    ${devoluciones.map(d => `
+                        <tr class="liq-dev-row">
+                            <td colspan="2">${d.productoNombre} × ${d.cantidad} ${d.unidadMedida || 'uds.'}</td>
+                            <td class="col-precio">${d.precio ? formatPeso(d.precio) + '/u' : '—'}</td>
+                            <td class="col-total liq-dev-valor">-${formatPeso(d.valorTotal)}</td>
+                        </tr>
+                    `).join('')}
+                    <tr class="liq-dev-subtotal">
+                        <td colspan="3">Subtotal devoluciones</td>
+                        <td class="col-total">-${formatPeso(subtotalDev)}</td>
+                    </tr>
+                </tbody>
             ` : '';
 
             const card = document.createElement('div');
@@ -160,8 +164,8 @@ async function cargarInforme() {
                     </thead>
                     <tbody>
                         ${rowsPedidos}
-                        ${seccionDev}
                     </tbody>
+                    ${seccionDev}
                 </table>
                 <div class="liq-card__footer">
                     <span class="liq-card__subtotal-label">${pedidos.length} pedido${pedidos.length !== 1 ? 's' : ''}${devoluciones.length ? ` · ${devoluciones.length} devolución${devoluciones.length !== 1 ? 'es' : ''}` : ''}</span>
@@ -181,6 +185,15 @@ async function cargarInforme() {
         content.innerHTML = '';
         content.appendChild(grid);
         content.appendChild(totalBar);
+
+        grid.addEventListener('click', e => {
+            const btn = e.target.closest('.liq-dev-toggle-btn');
+            if (!btn) return;
+            const body = btn.nextElementSibling;
+            if (!body?.classList.contains('liq-dev-body')) return;
+            const collapsed = body.classList.toggle('collapsed');
+            btn.querySelector('.liq-dev-chevron').textContent = collapsed ? '▼' : '▲';
+        });
 
     } catch (err) {
         console.error('Error cargando liquidación:', err);
