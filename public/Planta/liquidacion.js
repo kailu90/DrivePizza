@@ -148,7 +148,7 @@ async function cargarInforme() {
             const card = document.createElement('div');
             card.className = 'liq-card';
             card.innerHTML = `
-                <div class="liq-card__header">${sede}</div>
+                <div class="liq-card__header">${capitalizarSede(sede)}</div>
                 <table class="liq-card__table">
                     <thead>
                         <tr>

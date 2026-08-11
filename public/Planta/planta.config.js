@@ -34,6 +34,9 @@ export const PRODUCTOS_SIN_LIMITE_STOCK = [
   'POLLO',
 ];
 
+// Sedes que reciben masas CC (aparecen en el informe de producción)
+export const SEDES_MASA = ['megamall', 'acropolis', 'gastrofusion'];
+
 // Recargo de servicio (15%)
 export const RECARGO_SERVICIO = 0.15;
 

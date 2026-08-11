@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
+import { SEDES_MASA } from './planta.config.js';
 let offsetDias = 0;
 
 // ── Producción — productos a reportar (idProduct = String(id_product)) ────
@@ -23,7 +24,6 @@ const SIROPES_IDS = new Set(SIROPES_CONFIG.map(s => s.id));
 // Agrupado por idProduct para evitar inconsistencias de nombre entre pedidos
 const MASAS_LABEL = { '160': 'MASA x 140gr', '2': 'MASA x 350gr', '13': 'MASA x 450gr', '24': 'MASA x 700gr' };
 const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
-const SEDES_MASA = ['megamall', 'acropolis', 'gastrofusion'];
 
 // ── Carnes ─────────────────────────────────────────────────────────────────
 // 55=Carne para moler · 56=Carne para desmechar · 58=Carne para hamburguesa · 59=Pechuga Pollo
@@ -124,42 +124,39 @@ async function cargarInforme() {
                 (p.products || []).forEach(item => {
                     const id = String(item.idProduct || '');
                     if (!MASAS_IDS.has(id)) return;
-                    if (!masas[id]) masas[id] = { megamall: 0, acropolis: 0, gastrofusion: 0 };
-                    const cant = Number(item.quantity) || 0;
-                    if (sede === 'megamall')     masas[id].megamall     += cant;
-                    if (sede === 'acropolis')    masas[id].acropolis    += cant;
-                    if (sede === 'gastrofusion') masas[id].gastrofusion += cant;
+                    if (!masas[id]) masas[id] = Object.fromEntries(SEDES_MASA.map(s => [s, 0]));
+                    masas[id][sede] = (masas[id][sede] || 0) + (Number(item.quantity) || 0);
                 });
             });
 
         // Ordenar por ID numérico para mantener orden: 140gr, 350gr, 450gr, 700gr
         const tiposMasa = Object.keys(masas).sort((a, b) => Number(a) - Number(b));
-        let totalMM = 0, totalAC = 0, totalGF = 0;
+        const totalesMasa = Object.fromEntries(SEDES_MASA.map(s => [s, 0]));
+        const thMasas = SEDES_MASA.map(s => `<th class="col-center">${capitalizarSede(s)}</th>`).join('');
 
         let filasMasa;
         if (tiposMasa.length === 0) {
-            filasMasa = `<tr><td colspan="5" style="text-align:center;color:#999;padding:1.5rem">Sin masas para esta fecha</td></tr>`;
+            filasMasa = `<tr><td colspan="${SEDES_MASA.length + 2}" style="text-align:center;color:#999;padding:1.5rem">Sin masas para esta fecha</td></tr>`;
         } else {
             filasMasa = tiposMasa.map(id => {
-                const { megamall, acropolis, gastrofusion } = masas[id];
-                const total = megamall + acropolis + gastrofusion;
-                totalMM += megamall;
-                totalAC += acropolis;
-                totalGF += gastrofusion;
+                const celdas = SEDES_MASA.map(s => {
+                    const cant = masas[id][s] || 0;
+                    totalesMasa[s] += cant;
+                    return `<td class="inf-cantidad ${cant === 0 ? 'inf-cantidad--zero' : ''}">${cant || '—'}</td>`;
+                }).join('');
+                const total = SEDES_MASA.reduce((acc, s) => acc + (masas[id][s] || 0), 0);
                 return `<tr>
                     <td>${MASAS_LABEL[id] || id}</td>
-                    <td class="inf-cantidad ${megamall === 0 ? 'inf-cantidad--zero' : ''}">${megamall || '—'}</td>
-                    <td class="inf-cantidad ${acropolis === 0 ? 'inf-cantidad--zero' : ''}">${acropolis || '—'}</td>
-                    <td class="inf-cantidad ${gastrofusion === 0 ? 'inf-cantidad--zero' : ''}">${gastrofusion || '—'}</td>
+                    ${celdas}
                     <td class="inf-cantidad inf-col-total">${total}</td>
                 </tr>`;
             }).join('');
+            const celdasTotal = SEDES_MASA.map(s => `<td class="inf-cantidad">${totalesMasa[s]}</td>`).join('');
+            const granTotal = SEDES_MASA.reduce((acc, s) => acc + totalesMasa[s], 0);
             filasMasa += `<tr class="inf-total-row">
                 <td>Total</td>
-                <td class="inf-cantidad">${totalMM}</td>
-                <td class="inf-cantidad">${totalAC}</td>
-                <td class="inf-cantidad">${totalGF}</td>
-                <td class="inf-cantidad">${totalMM + totalAC + totalGF}</td>
+                ${celdasTotal}
+                <td class="inf-cantidad">${granTotal}</td>
             </tr>`;
         }
 
@@ -255,14 +252,12 @@ if (sedesOrdenadasSirope.length === 0) {
                     </table>
                 </div>
                 <div class="inf-card">
-                    <div class="inf-card__header">Masas CC del ${dia} (Megamall, Acrópolis)</div>
+                    <div class="inf-card__header">Masas CC del ${dia} (${SEDES_MASA.map(s => capitalizarSede(s)).join(', ')})</div>
                     <table class="inf-table">
                         <thead>
                             <tr>
                                 <th>Tipo</th>
-                                <th class="col-center">Megamall</th>
-                                <th class="col-center">Acrópolis</th>
-                                <th class="col-center">Gastrofusión</th>
+                                ${thMasas}
                                 <th class="col-center">Total</th>
                             </tr>
                         </thead>

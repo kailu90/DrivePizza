@@ -2,7 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js';
 import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 CargarSidebar();
@@ -12,7 +12,7 @@ let usuarioActual = 'Admin';
 const ROLES_AJUSTE = ['admin', 'planta-admin'];
 verificarAccesoPlanta(({ username, sede, rol }) => {
     usuarioActual = username;
-    CargarHeader(sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta');
+    CargarHeader(capitalizarSede(sede));
     if (ROLES_AJUSTE.includes(rol)) {
         document.getElementById('btn-ajuste-stock').style.display = '';
         document.getElementById('btn-sync-productos').style.display = '';
