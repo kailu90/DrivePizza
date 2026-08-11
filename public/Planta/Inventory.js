@@ -2,7 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js';
 import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 CargarSidebar();
@@ -17,6 +17,11 @@ verificarAccesoPlanta(({ username, sede, rol }) => {
         document.getElementById('btn-ajuste-stock').style.display = '';
         document.getElementById('btn-sync-productos').style.display = '';
     }
+    setTimeout(() => {
+        supabase.channel('inv-productos-ext')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, mostrarBannerRecarga)
+            .subscribe();
+    }, 5000);
 });
 
 // ── Caché genérica para modales ────────────────────────────────────────────

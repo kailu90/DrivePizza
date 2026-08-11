@@ -39,6 +39,11 @@ function _initVersionBanner() {
 
 export function initVersionBanner() { _initVersionBanner(); }
 
+export function mostrarBannerRecarga() {
+    const b = document.getElementById('dp-version-banner');
+    if (b) b.style.display = 'block';
+}
+
 export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
 }

@@ -4,6 +4,7 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { getProductos } from '../Shared/productosService.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { getSedes } from '../Shared/sedesService.js';
+import { mostrarBannerRecarga } from '../Shared/components.js';
 
 // Estado del módulo
 let productsData = [];
@@ -20,6 +21,11 @@ verificarAccesoPlanta(async ({ username, sede, rol }) => {
       fetchProductsFromFirestore()
     ]);
     document.body.classList.add('loaded');
+    setTimeout(() => {
+        supabase.channel('prod-catalog-ext')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, mostrarBannerRecarga)
+            .subscribe();
+    }, 5000);
   } catch (error) {
     console.error("Error cargando datos:", error);
     document.body.classList.add('loaded');

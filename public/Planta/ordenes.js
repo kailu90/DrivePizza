@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { getProductos } from '../Shared/productosService.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { ejecutarOrdenProduccion } from './inventoryService.js';
 
@@ -38,6 +38,11 @@ verificarAccesoPlanta(async ({ username, sede }) => {
     renderTable();
     setupEventListeners();
     document.body.classList.add('loaded');
+    setTimeout(() => {
+        supabase.channel('ord-ordenes-ext')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes_produccion' }, mostrarBannerRecarga)
+            .subscribe();
+    }, 5000);
 });
 
 // ── Supabase ──────────────────────────────────────────────────────────────────

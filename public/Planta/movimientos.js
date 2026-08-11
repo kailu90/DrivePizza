@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 
@@ -8,6 +8,11 @@ import { colFechaToUTC } from '../Shared/semanas.js';
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarSidebar();
+    setTimeout(() => {
+        supabase.channel('mv-movimientos-ext')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'movimientos' }, mostrarBannerRecarga)
+            .subscribe();
+    }, 5000);
 });
 
 
