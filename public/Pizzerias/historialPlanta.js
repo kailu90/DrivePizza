@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader } from '../Shared/components.js';
+import { CargarHeader, capitalizarSede } from '../Shared/components.js';
 import { RECARGO_SERVICIO } from '../Planta/planta.config.js';
 import { registrarMovimiento } from '../Planta/inventoryService.js';
 import { getProductos } from '../Shared/productosService.js';
@@ -51,7 +51,7 @@ const totalCount       = document.getElementById('total-orders');
 
     sedeUsuario   = data.sede;
     usuarioActual = data.username || data.sede;
-    CargarHeader(data.sede, '../Pizzerias/pizzerias.html');
+    CargarHeader(capitalizarSede(data.sede), '../Pizzerias/pizzerias.html');
     setQuickActive('btn-recientes');
     listenForOrders();
     document.body.classList.add('loaded');

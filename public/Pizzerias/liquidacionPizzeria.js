@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader } from '../Shared/components.js';
+import { CargarHeader, capitalizarSede } from '../Shared/components.js';
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 
 let sedeUsuario   = null;
@@ -160,7 +160,7 @@ async function cargarInforme() {
     }
 
     sedeUsuario = data.sede.toLowerCase();
-    CargarHeader(sedeUsuario, './pizzerias.html');
+    CargarHeader(capitalizarSede(sedeUsuario), './pizzerias.html');
     await cargarInforme();
     document.body.classList.add('loaded');
 
