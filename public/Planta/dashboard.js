@@ -17,7 +17,8 @@ let todosPedidosSup = [] // caché local de todos los pedidos de Planta
 function cerrarListenerModal() {
     if (unsubscribeModalDoc) { unsubscribeModalDoc(); unsubscribeModalDoc = null; }
 }
-let productosDisponibles = null;  // caché de la colección Productos
+let productosDisponibles = null;  // caché de la colección Productos (filtrada por stock > 0)
+let productosDevolucion  = null;  // caché para devoluciones (todos los activos, sin filtro de stock)
 const fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
 
 // Mapea columnas snake_case de Supabase al formato camelCase usado en todo el módulo
@@ -887,6 +888,12 @@ async function cargarProductosDisponibles() {
     })
 }
 
+async function cargarProductosDevolucion() {
+    if (productosDevolucion) return
+    const todos = await getProductos()
+    productosDevolucion = todos.filter(p => p.active == null ? true : Boolean(p.active))
+}
+
 async function guardarCambiosPedido() {
     if (!pedidoEnEdicion) return;
     const { docId, data: pedidoOriginal, productos } = pedidoEnEdicion;
@@ -1460,6 +1467,7 @@ window.addEventListener('load', () => {
 function invalidarCacheInventario() {
     invalidarProductos();
     productosDisponibles = null;
+    productosDevolucion  = null;
 }
 
 // ── Modal Devoluciones ──────────────────────────────────────────────
@@ -1500,7 +1508,7 @@ document.getElementById('btn-nuevo-pedido')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-devoluciones')?.addEventListener('click', async () => {
-    await cargarProductosDisponibles();
+    await cargarProductosDevolucion();
     await abrirModalDevolucion();
 });
 
@@ -1513,8 +1521,8 @@ document.getElementById('modal-devolucion')?.addEventListener('click', (e) => {
 document.getElementById('dev-buscar-input')?.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     const lista = document.getElementById('dev-resultados');
-    if (!q || !productosDisponibles) { lista.innerHTML = ''; return; }
-    const resultados = productosDisponibles.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
+    if (!q || !productosDevolucion) { lista.innerHTML = ''; return; }
+    const resultados = productosDevolucion.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
     lista.innerHTML = resultados.map(p =>
         `<div class="prod-result-item" data-id="${p.id}" data-name="${p.name}">
             <span class="prod-result-item__name">${p.name}</span>
@@ -1548,7 +1556,7 @@ document.getElementById('dev-confirmar')?.addEventListener('click', async () => 
     btn.textContent = 'Registrando...';
 
     try {
-        const producto = productosDisponibles.find(p => p.id === devolucionProductoSeleccionado.id);
+        const producto = productosDevolucion.find(p => p.id === devolucionProductoSeleccionado.id);
         await ejecutarTransaccionStock({
             productId:       devolucionProductoSeleccionado.id,
             name:            nombreProducto,
