@@ -1318,14 +1318,14 @@ document.getElementById('btn-consulta-domicilio').addEventListener('click', () =
     document.querySelectorAll('#domicilio-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
 });
 
-document.getElementById('domicilio-sede-toggle').querySelectorAll('.sede-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#domicilio-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _consultaSede = btn.dataset.sede;
-        filtrarConsultaDomicilio();
-        document.getElementById('domicilio-buscador').focus();
-    });
+document.getElementById('domicilio-sede-toggle').addEventListener('click', e => {
+    const btn = e.target.closest('.sede-btn');
+    if (!btn) return;
+    document.querySelectorAll('#domicilio-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _consultaSede = btn.dataset.sede;
+    filtrarConsultaDomicilio();
+    document.getElementById('domicilio-buscador').focus();
 });
 
 window.filtrarConsultaDomicilio = function() {
