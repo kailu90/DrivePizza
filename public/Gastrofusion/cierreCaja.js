@@ -1,6 +1,7 @@
 import { supabase }      from '../Api/supabaseConfig.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
-import { revelarSplash } from '../Shared/components.js';
+import { revelarSplash, initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
 
 function hoyEnColombia() {
     const col = new Date(Date.now() - 5 * 60 * 60 * 1000);

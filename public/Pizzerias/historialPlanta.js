@@ -1,5 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, capitalizarSede, revelarSplash } from '../Shared/components.js';
+import { CargarHeader, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
 import { RECARGO_SERVICIO } from '../Planta/planta.config.js';
 import { registrarMovimiento } from '../Planta/inventoryService.js';
 import { getProductos } from '../Shared/productosService.js';

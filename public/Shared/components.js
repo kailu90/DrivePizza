@@ -62,7 +62,6 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
             </svg>
         </button>` : '';
 
-    _initVersionBanner();
     headerContainer.innerHTML = `
         <header class="header">
             <div class="sidebar_img">
