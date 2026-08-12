@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
 import { colFechaToUTC } from "../Shared/semanas.js";
+import { revelarSplash } from '../Shared/components.js';
 
 // ── CONDICIONES DE VALIDEZ POR JORNADA ───────────────────────────────────
 // Un asesor entra al ranking si cumple AMBAS:
@@ -373,9 +374,11 @@ async function obtenerUsuarioCC() {
 
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
+        revelarSplash();
     } catch (err) {
         console.error('Error en auth reporte asesores:', err);
         document.body.classList.add('loaded');
+        revelarSplash();
     }
 })();
 

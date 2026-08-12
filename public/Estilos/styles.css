@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap');
 
 * {
   margin: 0;
@@ -2731,4 +2731,64 @@ html:has(body.loaded)::before {
 @keyframes page-bar-sweep {
     0%   { background-position:  200% 0; }
     100% { background-position: -200% 0; }
+}
+
+/* ── SPLASH / PAGE TRANSITION ────────────────────────────────────────────────── */
+@keyframes pw-logo-pulse {
+    0%, 100% { transform: scale(1);    opacity: .9; }
+    50%       { transform: scale(1.07); opacity: 1;  }
+}
+@keyframes pw-overlay-reveal {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+}
+@keyframes pw-slogan-left {
+    from { transform: translateX(-70px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes pw-slogan-right {
+    from { transform: translateX(70px);  opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+.pw-page-transition {
+    position: fixed;
+    inset: 0;
+    background: var(--color-secundario);
+    z-index: 99999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.pw-page-transition--reveal { animation: pw-overlay-reveal 400ms ease forwards; }
+.pw-page-transition-logo {
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
+    object-fit: cover;
+    animation: pw-logo-pulse 1.2s ease-in-out infinite;
+}
+.pw-page-transition-slogan {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin-top: .5rem;
+    line-height: 1;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+.pw-pts-left {
+    color: var(--color-primario);
+    text-shadow: 0 0 1px var(--color-primario), 1px 0 0 var(--color-primario);
+    animation: pw-slogan-left .4s .25s ease both;
+}
+.pw-pts-right {
+    color: var(--color-quinto);
+    text-shadow: 0 0 1px var(--color-quinto), 1px 0 0 var(--color-quinto);
+    animation: pw-slogan-right .4s .45s ease both;
 }

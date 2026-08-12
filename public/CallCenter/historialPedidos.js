@@ -7,6 +7,7 @@ import { initNavButtons } from "./navCallCenter.js";
 import { openBarriosModal } from "./modalBarrios.js";
 import { PBX_URL, WS_URL } from "../Api/config.js";
 import { getSedes } from "../Shared/sedesService.js";
+import { revelarSplash } from '../Shared/components.js';
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
@@ -1040,6 +1041,7 @@ async function obtenerUsuarioCC() {
         if (sedeUsuario) document.getElementById("filtro-sede").value = sedeUsuario;
 
         document.body.classList.add('loaded');
+        revelarSplash();
         await cargarPedidos({
             desde, hasta,
             ...(FILTRO_TELEFONO && { telefono: FILTRO_TELEFONO }),
@@ -1050,6 +1052,7 @@ async function obtenerUsuarioCC() {
     } catch (error) {
         console.error("Error en auth historial:", error);
         document.body.classList.add('loaded');
+        revelarSplash();
     }
 })();
 

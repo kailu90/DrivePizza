@@ -1,7 +1,7 @@
 import { supabase }                                    from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton }            from '../Shared/skeleton.js';
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js';
-import { initVersionBanner }                           from '../Shared/components.js';
+import { initVersionBanner, revelarSplash }            from '../Shared/components.js';
 import { colFechaToUTC }                               from '../Shared/semanas.js';
 
 mostrarSkeleton('pedidos');
@@ -186,6 +186,7 @@ mostrarSkeleton('pedidos');
     // ── Mostrar contenido ─────────────────────────────────────────────────
     ocultarSkeleton('contenido-principal');
     document.body.classList.add('loaded');
+    revelarSplash();
 })();
 
 // ── Cierre de Caja — helpers y lógica ────────────────────────────────────────

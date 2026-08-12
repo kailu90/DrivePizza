@@ -185,9 +185,18 @@ export function CargarSidebar(onReady = null) {
 
             if (onReady) onReady();
             document.body.classList.add('loaded');
+            revelarSplash();
         })
         .catch(err => {
             console.error('Error al cargar sidebar:', err);
             document.body.classList.add('loaded');
+            revelarSplash();
         });
+}
+
+export function revelarSplash() {
+    const splash = document.getElementById('pw-page-transition');
+    if (!splash) return;
+    splash.classList.add('pw-page-transition--reveal');
+    splash.addEventListener('animationend', () => splash.remove(), { once: true });
 }

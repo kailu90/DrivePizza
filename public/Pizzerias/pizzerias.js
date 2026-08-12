@@ -1,4 +1,4 @@
-import { initVersionBanner } from '../Shared/components.js';
+import { initVersionBanner, revelarSplash } from '../Shared/components.js';
 import { supabase } from '../Api/supabaseConfig.js';
 initVersionBanner();
 
@@ -86,4 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.location.href = '../Gastrofusion/cierreCaja.html';
         });
     }
+
+    document.body.classList.add('loaded');
+    revelarSplash();
 });

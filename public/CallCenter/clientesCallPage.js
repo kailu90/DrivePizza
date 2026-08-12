@@ -3,6 +3,7 @@ import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { initNavButtons } from './navCallCenter.js';
 import { openBarriosModal } from './modalBarrios.js';
 import { getSedes } from '../Shared/sedesService.js';
+import { revelarSplash } from '../Shared/components.js';
 
 let SEDE_LABELS = {};
 
@@ -619,6 +620,7 @@ async function obtenerUsuarioCC() {
 
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
+        revelarSplash();
         _updateSortIcons();
 
         // Carga inicial
@@ -629,6 +631,7 @@ async function obtenerUsuarioCC() {
     } catch (err) {
         console.error('Error auth clientes:', err);
         document.body.classList.add('loaded');
+        revelarSplash();
     }
 })();
 

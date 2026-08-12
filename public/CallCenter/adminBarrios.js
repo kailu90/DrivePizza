@@ -11,6 +11,7 @@ import { openBarriosModal }                 from './modalBarrios.js';
 import { domicilios as domiciliosLocal }    from './domicilios.js';
 import { invalidarCacheBarrios }            from './barriosService.js';
 import { getSedes }                         from '../Shared/sedesService.js';
+import { revelarSplash }                    from '../Shared/components.js';
 
 const ROLES_PERMITIDOS = ['admin', 'callcenter-admin', 'callcenter'];
 const ROLES_EDITOR     = ['admin', 'callcenter-admin'];
@@ -83,6 +84,7 @@ mostrarSkeleton('historial');
         document.getElementById('ab-titulo').textContent = sedes[0]?.name || '';
 
         document.body.classList.add('loaded');
+        revelarSplash();
         ocultarSkeleton('contenido-principal');
 
         _cargarSede(_sede);
@@ -90,6 +92,7 @@ mostrarSkeleton('historial');
     } catch (e) {
         console.error('Error auth adminBarrios:', e);
         document.body.classList.add('loaded');
+        revelarSplash();
     }
 })();
 

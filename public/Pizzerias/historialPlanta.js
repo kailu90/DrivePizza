@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, capitalizarSede, revelarSplash } from '../Shared/components.js';
 import { RECARGO_SERVICIO } from '../Planta/planta.config.js';
 import { registrarMovimiento } from '../Planta/inventoryService.js';
 import { getProductos } from '../Shared/productosService.js';
@@ -55,6 +55,7 @@ const totalCount       = document.getElementById('total-orders');
     setQuickActive('btn-recientes');
     listenForOrders();
     document.body.classList.add('loaded');
+    revelarSplash();
 })();
 
 // ── Paginación ────────────────────────────────────────────────────────────────

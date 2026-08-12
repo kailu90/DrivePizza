@@ -12,6 +12,14 @@
 </head>
 <body>
 
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
 <div id="skeleton" class="sk-page"></div>
 
 <div id="contenido-principal" style="display:none;">
@@ -555,6 +563,12 @@
 
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
+
+        const splash = document.getElementById('pw-page-transition');
+        if (splash) {
+            splash.classList.add('pw-page-transition--reveal');
+            splash.addEventListener('animationend', () => splash.remove(), { once: true });
+        }
     })();
 
     // ── Estado SIP desde el shell padre ──────────────────────────────────────

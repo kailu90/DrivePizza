@@ -1,5 +1,6 @@
 import { supabase }      from '../Api/supabaseConfig.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
+import { revelarSplash } from '../Shared/components.js';
 
 function hoyEnColombia() {
     const col = new Date(Date.now() - 5 * 60 * 60 * 1000);
@@ -39,6 +40,7 @@ let _username = '';
 
     _username = perfil.username;
     document.body.classList.add('loaded');
+    revelarSplash();
 
     // ── Date picker ───────────────────────────────────────────────────────
     const datePicker = document.getElementById('fecha-cierre');
