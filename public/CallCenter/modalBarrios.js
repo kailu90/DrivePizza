@@ -99,16 +99,23 @@ async function _init() {
     wrapper.innerHTML = MODAL_HTML.trim();
     document.body.appendChild(wrapper.firstElementChild);
 
-    const sedes  = await getSedes();
+    const [sedes, { data: sedesConBarrios }] = await Promise.all([
+        getSedes(),
+        supabase.from('barrios_domicilio').select('sede')
+    ]);
+    const sedesSet = new Set((sedesConBarrios ?? []).map(r => r.sede));
+
     const toggle = document.getElementById('barrios-sede-toggle');
-    sedes.forEach(s => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'sede-btn';
-        btn.dataset.sede = s.name.toLowerCase();
-        btn.textContent  = s.name;
-        toggle.appendChild(btn);
-    });
+    sedes
+        .filter(s => sedesSet.has(s.name.toLowerCase()))
+        .forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sede-btn';
+            btn.dataset.sede = s.name.toLowerCase();
+            btn.textContent  = s.name;
+            toggle.appendChild(btn);
+        });
 
     document.getElementById('btn-cerrar-barrios-shared')
         .addEventListener('click', _close);
