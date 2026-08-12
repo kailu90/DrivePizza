@@ -600,7 +600,10 @@ async function obtenerUsuarioCC() {
         if (['callcenter-admin', 'admin'].includes(usuario.rol)) {
             document.getElementById('btn-ir-motivos').style.display = '';
         }
-        document.getElementById('btn-home').onclick = () => window.location.href = './callcenter.html';
+        document.getElementById('btn-home').onclick = () => {
+            window.parent.postMessage({ type: 'nav-loading' }, '*');
+            window.location.href = './callcenter.html';
+        };
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
                 await supabase.auth.signOut();

@@ -351,7 +351,10 @@ async function obtenerUsuarioCC() {
         sedeUsuario = usuario.rol === 'pizzeria' ? usuario.sede : null;
         document.getElementById('username').textContent = usuario.username || '';
         const homeUrl = usuario.rol === 'pizzeria' ? '../Pizzerias/pizzerias.html' : './callcenter.html';
-        document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
+        document.getElementById('btn-home').onclick = () => {
+            window.parent.postMessage({ type: 'nav-loading' }, '*');
+            window.location.href = homeUrl;
+        };
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
                 await supabase.auth.signOut();

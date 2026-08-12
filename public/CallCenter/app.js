@@ -589,8 +589,8 @@ window.addEventListener('click', function(event) {
 const btnHome = document.getElementById('btn-home'); 
 
 function regresarHome() {
-    console.log("Regresando al panel principal...");
-    window.location.href = '../CallCenter/callcenter.html'; 
+    window.parent.postMessage({ type: 'nav-loading' }, '*');
+    window.location.href = '../CallCenter/callcenter.html';
 }
 
 if (btnHome) {

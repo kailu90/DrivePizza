@@ -14,30 +14,15 @@ import { supabase } from '../Api/supabaseConfig.js';
     }
 })();
 
-document.getElementById('btn_pedidos_sedes').addEventListener('click', () => {
-    window.location.href = './pedidosCallCenter.html';
-});
+function navTo(href) {
+    window.parent.postMessage({ type: 'nav-loading' }, '*');
+    window.location.href = href;
+}
 
-document.getElementById('btn_historial').addEventListener('click', () => {
-    window.location.href = './historialPedidos.html';
-});
-
-document.getElementById('btn_reporte_asesores').addEventListener('click', () => {
-    window.location.href = './reporteAsesores.html';
-});
-
-document.getElementById('btn_reservas').addEventListener('click', () => {
-    window.location.href = './historialPedidos.html?tipo=reserva';
-});
-
-document.getElementById('btn_pbx').addEventListener('click', () => {
-    window.location.href = './pbx.html';
-});
-
-document.getElementById('btn_clientes').addEventListener('click', () => {
-    window.location.href = './clientesCall.html';
-});
-
-document.getElementById('btn_admin_barrios').addEventListener('click', () => {
-    window.location.href = './adminBarrios.html';
-});
+document.getElementById('btn_pedidos_sedes').addEventListener('click', () => navTo('./pedidosCallCenter.html'));
+document.getElementById('btn_historial').addEventListener('click', () => navTo('./historialPedidos.html'));
+document.getElementById('btn_reporte_asesores').addEventListener('click', () => navTo('./reporteAsesores.html'));
+document.getElementById('btn_reservas').addEventListener('click', () => navTo('./historialPedidos.html?tipo=reserva'));
+document.getElementById('btn_pbx').addEventListener('click', () => navTo('./pbx.html'));
+document.getElementById('btn_clientes').addEventListener('click', () => navTo('./clientesCall.html'));
+document.getElementById('btn_admin_barrios').addEventListener('click', () => navTo('./adminBarrios.html'));

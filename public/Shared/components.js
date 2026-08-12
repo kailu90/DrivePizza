@@ -194,9 +194,17 @@ export function CargarSidebar(onReady = null) {
         });
 }
 
-export function revelarSplash() {
+export function revelarSplash(minMs = 1000) {
     const splash = document.getElementById('pw-page-transition');
     if (!splash) return;
-    splash.classList.add('pw-page-transition--reveal');
-    splash.addEventListener('animationend', () => splash.remove(), { once: true });
+    // Dentro del shell iframe el nav-overlay del shell ya cubre la transición
+    if (window.parent !== window) {
+        splash.remove();
+        return;
+    }
+    const wait = Math.max(0, minMs - performance.now());
+    setTimeout(() => {
+        splash.classList.add('pw-page-transition--reveal');
+        splash.addEventListener('animationend', () => splash.remove(), { once: true });
+    }, wait);
 }

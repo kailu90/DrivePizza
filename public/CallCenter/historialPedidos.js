@@ -975,7 +975,10 @@ async function obtenerUsuarioCC() {
         const homeUrl = rol === 'pizzeria' || rol === 'gastrofusion'
                       ? '../Pizzerias/pizzerias.html'
                       : './callcenter.html';
-        document.getElementById('btn-home').onclick = () => window.location.href = homeUrl;
+        document.getElementById('btn-home').onclick = () => {
+            window.parent.postMessage({ type: 'nav-loading' }, '*');
+            window.location.href = homeUrl;
+        };
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {
                 await supabase.auth.signOut();

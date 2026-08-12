@@ -79,21 +79,31 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(255,255,255,0.82);
+            background: #f4ecdf;
             z-index: 8000;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(2px);
+            gap: .5rem;
         }
         #nav-overlay.visible { display: flex; }
-        .nav-spinner {
-            width: 38px; height: 38px;
-            border: 3px solid #e8ddd0;
-            border-top-color: #c0392b;
-            border-radius: 50%;
-            animation: nav-spin 0.65s linear infinite;
+        .nav-logo {
+            width: 88px; height: 88px;
+            border-radius: 20px; object-fit: cover;
+            animation: nav-pulse 1.2s ease-in-out infinite;
         }
-        @keyframes nav-spin { to { transform: rotate(360deg); } }
+        .nav-slogan {
+            display: flex; flex-direction: column; align-items: center;
+            font-family: 'Manrope', 'Arial Black', 'Helvetica Neue', sans-serif;
+            font-size: 1.9rem; font-weight: 800;
+            letter-spacing: .06em; text-transform: uppercase;
+            line-height: 1;
+        }
+        .nav-slogan-left  { color: #284c22; animation: nav-slide-left  .4s .25s ease both; }
+        .nav-slogan-right { color: #e67e22; animation: nav-slide-right .4s .45s ease both; }
+        @keyframes nav-pulse      { 0%,100%{transform:scale(1);opacity:.9} 50%{transform:scale(1.07);opacity:1} }
+        @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
     </style>
 </head>
 <body>
@@ -105,7 +115,13 @@
 
 <iframe id="cc-frame" src="./callcenter.html"></iframe>
 <audio id="sip-audio" autoplay></audio>
-<div id="nav-overlay"><div class="nav-spinner"></div></div>
+<div id="nav-overlay" class="visible">
+    <img class="nav-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <div class="nav-slogan">
+        <span class="nav-slogan-left">HECHA PARA</span>
+        <span class="nav-slogan-right">COMPARTIR</span>
+    </div>
+</div>
 
 <!-- Panel llamada entrante / en curso -->
 <div id="sip-panel">
@@ -156,13 +172,26 @@
     }
     // ── Overlay de navegación ─────────────────────────────────────────────────
     const _overlay = document.getElementById('nav-overlay');
-    document.getElementById('cc-frame').addEventListener('load', () => {
-        _overlay.classList.remove('visible');
-    });
+    const MIN_OVERLAY_MS = 1800;
+    let _overlayShownAt = performance.now(); // cubre la primera carga
+    function hideOverlay() {
+        const elapsed = performance.now() - _overlayShownAt;
+        const wait = Math.max(0, MIN_OVERLAY_MS - elapsed);
+        setTimeout(() => _overlay.classList.remove('visible'), wait);
+    }
+    document.getElementById('cc-frame').addEventListener('load', hideOverlay);
 
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
-        if (e.data?.type === 'nav-loading')       _overlay.classList.add('visible');
+        if (e.data?.type === 'nav-loading') {
+            _overlayShownAt = performance.now();
+            _overlay.classList.add('visible');
+            _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {
+                el.style.animation = 'none';
+                el.offsetHeight; // fuerza reflow para resetear la animación
+                el.style.animation = '';
+            });
+        }
         if (e.data?.type === 'frame-ready')       postToFrame(_sipState);
         if (e.data?.type === 'sip-reconnect')     sipReconnect();
         if (e.data?.type === 'reactivacion-hecha') {
