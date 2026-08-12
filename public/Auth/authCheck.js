@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js'
-import { CargarHeader, MostrarBotonSelector } from '../Shared/components.js'
+import { CargarHeader, MostrarBotonSelector, revelarSplash } from '../Shared/components.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
 
 const skeletonType = document.body.dataset.skeleton
@@ -17,8 +17,10 @@ if (skeletonType) mostrarSkeleton(skeletonType)
         }
         ocultarSkeleton('contenido-principal')
         document.body.classList.add('loaded')
+        revelarSplash()
     } catch (error) {
         console.error("Error en authCheck:", error)
         document.body.classList.add('loaded')
+        revelarSplash()
     }
 })()
