@@ -4,7 +4,8 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { getProductos } from '../Shared/productosService.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { getSedes } from '../Shared/sedesService.js';
-import { mostrarBannerRecarga, revelarSplash } from '../Shared/components.js';
+import { mostrarBannerRecarga, revelarSplash, initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
 
 // Estado del módulo
 let productsData = [];
