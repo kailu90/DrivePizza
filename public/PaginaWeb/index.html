@@ -53,11 +53,11 @@
         <img src="../Imagenes/Isotipo.png" alt="DrivePizza" class="pw-bottom-nav-isotipo">
         <span>Pedir ahora</span>
       </button>
-      <button class="pw-top-nav-btn" aria-label="Favoritos">
+      <button class="pw-top-nav-btn" id="top-nav-favoritos" aria-label="Favoritos">
         <svg class="pw-bottom-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
         <span>Favoritos</span>
       </button>
-      <button class="pw-top-nav-btn" aria-label="Mi cuenta">
+      <button class="pw-top-nav-btn" id="top-nav-cuenta" aria-label="Mi cuenta">
         <svg class="pw-bottom-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
         <span>Mi cuenta</span>
       </button>
@@ -118,11 +118,11 @@
       <img src="../Imagenes/Isotipo.png" alt="DrivePizza" class="pw-bottom-nav-isotipo">
       <span>Pedido</span>
     </button>
-    <button class="pw-bottom-nav-btn" aria-label="Favoritos">
+    <button class="pw-bottom-nav-btn" id="bottom-nav-favoritos" aria-label="Favoritos">
       <svg class="pw-bottom-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
       <span>Favoritos</span>
     </button>
-    <button class="pw-bottom-nav-btn" aria-label="Cuenta">
+    <button class="pw-bottom-nav-btn" id="bottom-nav-cuenta" aria-label="Cuenta">
       <svg class="pw-bottom-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
       <span>Cuenta</span>
     </button>
@@ -659,6 +659,18 @@
         { timeout: 10000 }
       );
     });
+
+    // Botones Favoritos y Cuenta → ir a menu.html con ?open=X
+    function irAMenu(vista) {
+      const t2 = document.createElement('div');
+      t2.className = 'pw-page-transition pw-page-transition--cover';
+      document.body.appendChild(t2);
+      setTimeout(() => { window.location.href = `menu.html?open=${vista}`; }, 220);
+    }
+    document.getElementById('bottom-nav-favoritos')?.addEventListener('click', () => irAMenu('favoritos'));
+    document.getElementById('bottom-nav-cuenta')?.addEventListener('click',    () => irAMenu('cuenta'));
+    document.getElementById('top-nav-favoritos')?.addEventListener('click',    () => irAMenu('favoritos'));
+    document.getElementById('top-nav-cuenta')?.addEventListener('click',       () => irAMenu('cuenta'));
 
     // Botón "Menú" en bottom nav → ir al menú si hay sede seleccionada
     document.getElementById('bottom-nav-menu')?.addEventListener('click', () => {

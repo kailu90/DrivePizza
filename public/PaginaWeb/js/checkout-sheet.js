@@ -576,6 +576,7 @@ async function confirmarPedido() {
 
     guardarDirHistorial(coDir.value.trim());
     localStorage.setItem('dp_nombre', coNombre.value.trim());
+    localStorage.setItem('dp_telefono', coTel.value.replace(/\D/g, '').slice(-10));
     localStorage.removeItem('dp_hora_agendada');
     vaciarCarrito();
     window.location.href = `confirmacion.html?n=${encodeURIComponent(nPedido)}`;

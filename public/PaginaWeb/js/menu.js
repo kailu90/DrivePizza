@@ -10,15 +10,19 @@ import { getPromosHTML, setupPromoListeners, initPromos } from './promos.js';
 import { initBottomNav } from './bottomNav.js';
 import { initHeader } from './header.js';
 import { initHomeView } from './home.js';
-import { initCuentaView } from './cuenta.js';
+import { initCuentaView }       from './cuenta.js';
+import { initMisPedidosView }   from './misPedidos.js';
+import { initMisDireccionesView } from './misDirecciones.js';
+import { initMisFavoritosView, isFavorito, toggleFavorito } from './misFavoritos.js';
 
 // ── CAMBIO DE VISTA (SPA) ─────────────────────────────────────
-const ALL_VIEWS = ['home', 'menu', 'cuenta'];
+const ALL_VIEWS = ['home', 'menu', 'cuenta', 'pedidos', 'direcciones', 'favoritos'];
 let currentView  = 'menu';
 let menuScrollY  = 0;
 
 function switchView(toView) {
   if (toView === currentView) return;
+  const prev   = currentView;   // captura antes del async
   const toHome = toView === 'home';
   const toMenu = toView === 'menu';
 
@@ -50,9 +54,26 @@ function switchView(toView) {
       if (toView === 'cuenta') {
         initCuentaView({
           onIrAlMenu:       () => switchView('menu'),
-          onMisPedidos:     () => { /* próximo: switchView('pedidos') */ },
-          onMisDirecciones: () => { /* próximo: switchView('direcciones') */ },
-          onFavoritos:      () => { /* próximo: switchView('favoritos') */ },
+          onMisPedidos:     () => switchView('pedidos'),
+          onMisDirecciones: () => switchView('direcciones'),
+          onFavoritos:      () => switchView('favoritos'),
+        });
+      } else if (toView === 'pedidos') {
+        initMisPedidosView({
+          onVolver:   () => switchView(prev),
+          onIrAlMenu: () => switchView('menu'),
+        });
+      } else if (toView === 'direcciones') {
+        initMisDireccionesView({
+          onVolver: () => switchView(prev),
+        });
+      } else if (toView === 'favoritos') {
+        initMisFavoritosView({
+          onVolver: () => switchView(prev),
+          onAgregarProducto: producto => {
+            switchView('menu');
+            setTimeout(() => abrirProductSheet(producto), 400);
+          },
         });
       }
     }
@@ -62,7 +83,9 @@ function switchView(toView) {
     // Actualizar botón activo en bottom nav
     document.getElementById('bottom-nav-inicio')?.classList.toggle('pw-bottom-nav-btn--active', toHome);
     document.getElementById('bottom-nav-menu')?.classList.toggle('pw-bottom-nav-btn--active', toMenu);
-    document.getElementById('bottom-nav-cuenta')?.classList.toggle('pw-bottom-nav-btn--active', toView === 'cuenta');
+    document.getElementById('bottom-nav-favoritos')?.classList.toggle('pw-bottom-nav-btn--active', toView === 'favoritos');
+    document.getElementById('bottom-nav-cuenta')?.classList.toggle('pw-bottom-nav-btn--active',
+      ['cuenta', 'pedidos', 'direcciones'].includes(toView));
 
     // Revelar
     t.className = `pw-page-transition pw-page-transition--${toHome ? 'reveal-right' : 'reveal'}`;
@@ -109,8 +132,8 @@ initBottomNav({
     if (openSheet) { cerrarSheet(openSheet); return; }
     switchView('menu');
   },
-  onCuenta:  () => switchView('cuenta'),
-  onFavoritos: () => { /* próximo: switchView('favoritos') */ },
+  onCuenta:    () => switchView('cuenta'),
+  onFavoritos: () => switchView('favoritos'),
 });
 
 // Exponer altura real del nav como variable CSS
@@ -396,7 +419,7 @@ function renderProductos() {
       return `
         <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
              aria-label="Agregar ${p.nombre}">
-          <div class="pw-product-img${imgSrc ? '' : ' pw-product-img--placeholder'}">${imgHTML}</div>
+          <div class="pw-product-img${imgSrc ? '' : ' pw-product-img--placeholder'}">${imgHTML}<button class="pw-product-fav-btn" tabindex="-1" aria-label="Agregar a favoritos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button></div>
           <div class="pw-product-info">
             <div class="pw-product-nombre">${p.nombre}</div>
             ${p.descripcion ? `<div class="pw-product-desc">${p.descripcion}</div>` : ''}
@@ -420,14 +443,26 @@ function renderProductos() {
   }).join('');
 
   menuBody.querySelectorAll('.pw-product-card').forEach(card => {
-    const abrir = () => {
-      const producto = JSON.parse(decodeURIComponent(card.dataset.p));
-      abrirProductSheet(producto);
-    };
+    const producto = JSON.parse(decodeURIComponent(card.dataset.p));
+    const abrir = () => abrirProductSheet(producto);
     card.addEventListener('click', abrir);
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
     });
+
+    // Corazon favorito
+    const favBtn = card.querySelector('.pw-product-fav-btn');
+    if (favBtn) {
+      const isFav = isFavorito(producto.nombre);
+      favBtn.classList.toggle('pw-product-fav-btn--active', isFav);
+      if (isFav) favBtn.setAttribute('aria-label', 'Quitar de favoritos');
+      favBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const isNowFav = toggleFavorito(producto, producto.categoria);
+        favBtn.classList.toggle('pw-product-fav-btn--active', isNowFav);
+        favBtn.setAttribute('aria-label', isNowFav ? 'Quitar de favoritos' : 'Agregar a favoritos');
+      });
+    }
   });
 
   const observer = new IntersectionObserver(entries => {
@@ -1650,4 +1685,10 @@ init();
 
   t.classList.add('pw-page-transition--reveal');
   t.addEventListener('animationend', () => t.remove(), { once: true });
-})();
+})().then(() => {
+  // Si se llegó desde otra página con ?open=X (ej: index.html → menu.html?open=cuenta)
+  const openParam = new URLSearchParams(location.search).get('open');
+  if (openParam && ALL_VIEWS.includes(openParam) && openParam !== currentView) {
+    switchView(openParam);
+  }
+});

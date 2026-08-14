@@ -97,6 +97,21 @@
     <div id="cuenta-wrap"></div>
   </div>
 
+  <!-- ══ VISTA: MIS PEDIDOS ═══════════════════════════════════ -->
+  <div id="view-pedidos" style="display:none">
+    <div id="pedidos-wrap"></div>
+  </div>
+
+  <!-- ══ VISTA: MIS DIRECCIONES ═══════════════════════════════ -->
+  <div id="view-direcciones" style="display:none">
+    <div id="direcciones-wrap"></div>
+  </div>
+
+  <!-- ══ VISTA: MIS FAVORITOS ═════════════════════════════════ -->
+  <div id="view-favoritos" style="display:none">
+    <div id="favoritos-wrap"></div>
+  </div>
+
   <!-- ══ VISTA: MENÚ ═════════════════════════════════════════ -->
   <div id="view-menu">
 
@@ -683,6 +698,17 @@
         </div>
       </div>
       <button class="pw-btn-primary" id="btn-co-confirmar">Confirmar pedido</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Detalle de pedido -->
+  <div id="modal-pedido-detalle" class="pw-modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="detalle-modal-titulo">
+    <div class="pw-modal pw-detalle-modal">
+      <div class="pw-detalle-modal-header">
+        <h3 id="detalle-modal-titulo">Detalle del pedido</h3>
+        <button id="btn-detalle-close" class="pw-detalle-close" aria-label="Cerrar">&#10005;</button>
+      </div>
+      <div id="detalle-body" class="pw-detalle-modal-body"></div>
     </div>
   </div>
 
