@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp — DrivePizza</title>
+  <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --wa-bg:         #111b21;
+      --wa-panel:      #1f2c34;
+      --wa-card:       #202c33;
+      --wa-card-hover: #2a3942;
+      --wa-card-active:#1a3328;
+      --wa-border:     #2a3942;
+      --wa-text:       #e9edef;
+      --wa-sub:        #8696a0;
+      --wa-input:      #2a3942;
+      --wa-bubble-in:  #202c33;
+      --wa-bubble-out: #005c4b;
+      --brand-green:   #284c22;
+      --brand-orange:  #e67318;
+      --brand-sand:    #f4ecdf;
+      --wa-green:      #00a884;
+      --wa-green-light:#25d366;
+    }
+
+    html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--wa-bg); color: var(--wa-text); }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .wa-layout { display: flex; height: 100vh; }
+
+    /* ── Panel izquierdo: conversaciones ─────────────────── */
+    .wa-left {
+      width: 340px; min-width: 280px;
+      display: flex; flex-direction: column;
+      background: var(--wa-panel);
+      border-right: 1px solid var(--wa-border);
+    }
+
+    .wa-left-header {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .85rem 1rem;
+      background: var(--wa-card);
+      border-bottom: 1px solid var(--wa-border);
+    }
+    .wa-left-header h2 { font-size: .95rem; font-weight: 600; flex: 1; }
+    .wa-header-actions { display: flex; gap: .4rem; }
+    .wa-icon-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: none;
+      background: transparent; color: var(--wa-sub);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .15s;
+    }
+    .wa-icon-btn:hover { background: var(--wa-border); color: var(--wa-text); }
+    .wa-icon-btn svg { width: 18px; height: 18px; }
+
+    /* Sessions strip */
+    .wa-sessions-strip {
+      padding: .5rem .75rem;
+      display: flex; gap: .4rem; flex-wrap: wrap;
+      border-bottom: 1px solid var(--wa-border);
+      background: var(--wa-bg);
+    }
+    .wa-session-chip {
+      display: flex; align-items: center; gap: .35rem;
+      padding: .2rem .6rem; border-radius: 20px;
+      font-size: .7rem; font-weight: 600;
+      background: var(--wa-card); border: 1px solid var(--wa-border);
+      cursor: default;
+    }
+    .wa-session-chip .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--wa-sub); flex-shrink: 0;
+    }
+    .wa-session-chip.conectado .dot   { background: var(--wa-green-light); }
+    .wa-session-chip.esperando_qr .dot { background: var(--brand-orange); animation: blink 1s infinite; }
+    .wa-session-chip.reconectando .dot { background: #facc15; animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Search */
+    .wa-search-wrap {
+      padding: .5rem .75rem;
+      background: var(--wa-panel);
+      border-bottom: 1px solid var(--wa-border);
+    }
+    .wa-search {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--wa-input); border-radius: 8px;
+      padding: .45rem .75rem;
+    }
+    .wa-search svg { width: 15px; height: 15px; color: var(--wa-sub); flex-shrink: 0; }
+    .wa-search input {
+      border: none; background: transparent; color: var(--wa-text);
+      font-size: .82rem; width: 100%; outline: none;
+    }
+    .wa-search input::placeholder { color: var(--wa-sub); }
+
+    /* Filters */
+    .wa-filters {
+      display: flex; gap: .3rem; padding: .5rem .75rem;
+      border-bottom: 1px solid var(--wa-border);
+      background: var(--wa-panel);
+    }
+    .wa-filter {
+      padding: .25rem .65rem; border-radius: 20px; border: none;
+      font-size: .72rem; font-weight: 600; cursor: pointer;
+      background: var(--wa-input); color: var(--wa-sub);
+      transition: background .15s, color .15s;
+    }
+    .wa-filter.active { background: var(--brand-green); color: #fff; }
+
+    /* Conversation list */
+    .wa-conv-list { flex: 1; overflow-y: auto; }
+    .wa-conv-list::-webkit-scrollbar { width: 4px; }
+    .wa-conv-list::-webkit-scrollbar-thumb { background: var(--wa-border); border-radius: 2px; }
+
+    .wa-conv-card {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .7rem 1rem; cursor: pointer;
+      border-bottom: 1px solid var(--wa-border);
+      transition: background .12s;
+    }
+    .wa-conv-card:hover   { background: var(--wa-card-hover); }
+    .wa-conv-card.active  { background: var(--wa-card-active); }
+
+    .wa-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--brand-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .95rem; font-weight: 700; color: #fff;
+      flex-shrink: 0; text-transform: uppercase;
+    }
+    .wa-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+    .wa-conv-info { flex: 1; min-width: 0; }
+    .wa-conv-row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: .18rem; }
+    .wa-conv-nombre { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wa-conv-hora   { font-size: .68rem; color: var(--wa-sub); flex-shrink: 0; }
+    .wa-conv-row2   { display: flex; align-items: center; justify-content: space-between; }
+    .wa-conv-preview { font-size: .76rem; color: var(--wa-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+    .wa-conv-meta   { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+    .wa-sede-badge {
+      font-size: .6rem; font-weight: 700; padding: .1rem .4rem;
+      border-radius: 4px; background: var(--brand-green);
+      color: #fff; text-transform: capitalize;
+    }
+    .wa-unread {
+      min-width: 18px; height: 18px; border-radius: 9px;
+      background: var(--wa-green-light); color: #111;
+      font-size: .65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px;
+    }
+
+    /* Empty state */
+    .wa-empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: .75rem; height: 100%;
+      color: var(--wa-sub); padding: 2rem; text-align: center;
+    }
+    .wa-empty svg { width: 48px; height: 48px; opacity: .3; }
+    .wa-empty p   { font-size: .82rem; }
+
+    /* ── Panel central: chat ─────────────────────────────── */
+    .wa-center {
+      flex: 1; display: flex; flex-direction: column;
+      background: var(--wa-bg);
+      position: relative;
+    }
+
+    .wa-chat-empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 1rem; height: 100%;
+      color: var(--wa-sub); text-align: center; padding: 2rem;
+    }
+    .wa-chat-empty svg { width: 72px; height: 72px; opacity: .15; }
+    .wa-chat-empty h3 { font-size: 1rem; font-weight: 500; }
+    .wa-chat-empty p  { font-size: .82rem; }
+
+    .wa-chat-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .65rem 1rem;
+      background: var(--wa-card);
+      border-bottom: 1px solid var(--wa-border);
+    }
+    .wa-chat-header .wa-avatar { width: 36px; height: 36px; font-size: .8rem; }
+    .wa-chat-header-info h3 { font-size: .88rem; font-weight: 600; }
+    .wa-chat-header-info span { font-size: .72rem; color: var(--wa-green-light); }
+
+    .wa-messages {
+      flex: 1; overflow-y: auto; padding: 1rem;
+      display: flex; flex-direction: column; gap: .4rem;
+    }
+    .wa-messages::-webkit-scrollbar { width: 4px; }
+    .wa-messages::-webkit-scrollbar-thumb { background: var(--wa-border); border-radius: 2px; }
+
+    .wa-bubble {
+      max-width: 65%; padding: .45rem .7rem .3rem;
+      border-radius: 8px; font-size: .82rem; line-height: 1.4;
+      position: relative;
+    }
+    .wa-bubble.in  { background: var(--wa-bubble-in); border-radius: 0 8px 8px 8px; align-self: flex-start; }
+    .wa-bubble.out { background: var(--wa-bubble-out); border-radius: 8px 8px 0 8px; align-self: flex-end; }
+    .wa-bubble-time { font-size: .65rem; color: rgba(255,255,255,.45); float: right; margin-left: .75rem; margin-top: .1rem; }
+
+    .wa-input-bar {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .6rem 1rem;
+      background: var(--wa-card);
+      border-top: 1px solid var(--wa-border);
+    }
+    .wa-input-bar textarea {
+      flex: 1; background: var(--wa-input); border: none;
+      color: var(--wa-text); border-radius: 20px;
+      padding: .55rem 1rem; font-size: .85rem;
+      resize: none; outline: none; max-height: 100px;
+      font-family: inherit; line-height: 1.4;
+    }
+    .wa-input-bar textarea::placeholder { color: var(--wa-sub); }
+    .wa-send-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--wa-green); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s; flex-shrink: 0;
+    }
+    .wa-send-btn:hover { background: #008f72; }
+    .wa-send-btn svg { width: 18px; height: 18px; color: #fff; }
+
+    /* ── Panel derecho: perfil ───────────────────────────── */
+    .wa-right {
+      width: 300px; min-width: 260px;
+      display: flex; flex-direction: column;
+      background: var(--wa-panel);
+      border-left: 1px solid var(--wa-border);
+    }
+    .wa-right-header {
+      padding: .85rem 1rem;
+      background: var(--wa-card);
+      border-bottom: 1px solid var(--wa-border);
+      font-size: .88rem; font-weight: 600;
+    }
+    .wa-profile-body { flex: 1; overflow-y: auto; padding: 1rem; }
+    .wa-profile-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--wa-sub); font-size: .8rem; text-align: center; padding: 1.5rem; }
+
+    /* ── Modal QR ────────────────────────────────────────── */
+    .wa-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9000;
+    }
+    .wa-modal-overlay[hidden] { display: none; }
+    .wa-modal {
+      background: var(--wa-panel); border-radius: 14px;
+      padding: 1.5rem; width: 360px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.5);
+    }
+    .wa-modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+    .wa-modal-form { display: flex; flex-direction: column; gap: .75rem; }
+    .wa-modal label { font-size: .78rem; color: var(--wa-sub); display: block; margin-bottom: .25rem; }
+    .wa-modal select,
+    .wa-modal input {
+      width: 100%; padding: .55rem .8rem;
+      background: var(--wa-input); border: 1px solid var(--wa-border);
+      border-radius: 8px; color: var(--wa-text); font-size: .85rem; outline: none;
+    }
+    .wa-modal select option { background: var(--wa-card); }
+    .wa-modal-btns { display: flex; gap: .5rem; margin-top: .5rem; }
+    .wa-btn-primary {
+      flex: 1; padding: .6rem; border-radius: 8px; border: none;
+      background: var(--brand-green); color: #fff;
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: background .15s;
+    }
+    .wa-btn-primary:hover { background: #1e3a1a; }
+    .wa-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .wa-btn-cancel {
+      padding: .6rem 1rem; border-radius: 8px; border: none;
+      background: var(--wa-input); color: var(--wa-sub);
+      font-size: .85rem; cursor: pointer;
+    }
+    .wa-qr-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1rem; padding: 1rem 0;
+    }
+    .wa-qr-wrap p { font-size: .8rem; color: var(--wa-sub); text-align: center; }
+    #qr-canvas { border-radius: 8px; }
+    .wa-spinner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid var(--wa-border);
+      border-top-color: var(--wa-green);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 900px) { .wa-right { display: none; } }
+    @media (max-width: 640px) { .wa-left { display: none; } }
+  </style>
+</head>
+<body>
+
+<div class="wa-layout">
+
+  <!-- ══ PANEL IZQUIERDO ══════════════════════════════════════ -->
+  <aside class="wa-left">
+
+    <div class="wa-left-header">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#25d366;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.1 1.51 5.833L.057 23.57a.75.75 0 00.921.906l5.85-1.53A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 01-4.953-1.355l-.355-.21-3.671.961.978-3.56-.23-.368A9.719 9.719 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+      <h2>WhatsApp Omnicanal</h2>
+      <div class="wa-header-actions">
+        <button class="wa-icon-btn" id="btn-conectar" title="Conectar número">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sesiones activas -->
+    <div class="wa-sessions-strip" id="sessions-strip">
+      <span style="font-size:.68rem;color:var(--wa-sub);align-self:center">Cargando...</span>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="wa-search-wrap">
+      <div class="wa-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Buscar conversación...">
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="wa-filters">
+      <button class="wa-filter active" data-filter="todos">Todos</button>
+      <button class="wa-filter" data-filter="no-leidos">No leídos</button>
+      <button class="wa-filter" data-filter="pendientes">Pendientes</button>
+    </div>
+
+    <!-- Lista de conversaciones -->
+    <div class="wa-conv-list" id="conv-list">
+      <div class="wa-empty">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.1 1.51 5.833L.057 23.57a.75.75 0 00.921.906l5.85-1.53A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 01-4.953-1.355l-.355-.21-3.671.961.978-3.56-.23-.368A9.719 9.719 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+        <p>Conecta un número de WhatsApp<br>para empezar a recibir mensajes.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══ PANEL CENTRAL: CHAT ═══════════════════════════════════ -->
+  <main class="wa-center">
+    <div class="wa-chat-empty" id="chat-empty">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.1 1.51 5.833L.057 23.57a.75.75 0 00.921.906l5.85-1.53A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 01-4.953-1.355l-.355-.21-3.671.961.978-3.56-.23-.368A9.719 9.719 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+      <h3>Selecciona una conversación</h3>
+      <p>Los mensajes de WhatsApp de todas las sedes<br>aparecen aquí en tiempo real.</p>
+    </div>
+
+    <div id="chat-view" style="display:none; flex:1; display:none; flex-direction:column; height:100%">
+      <div class="wa-chat-header" id="chat-header"></div>
+      <div class="wa-messages" id="messages"></div>
+      <div class="wa-input-bar">
+        <textarea id="msg-input" rows="1" placeholder="Escribe un mensaje..."></textarea>
+        <button class="wa-send-btn" id="btn-send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══ PANEL DERECHO: PERFIL ═════════════════════════════════ -->
+  <aside class="wa-right">
+    <div class="wa-right-header">Perfil del cliente</div>
+    <div class="wa-profile-body">
+      <div class="wa-profile-empty" id="profile-empty">
+        <p>Selecciona una conversación para ver el perfil del cliente.</p>
+      </div>
+      <div id="profile-content" style="display:none"></div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- ══ MODAL: conectar número ═══════════════════════════════════ -->
+<div class="wa-modal-overlay" id="modal-conectar" hidden>
+  <div class="wa-modal">
+    <h3>Conectar número WhatsApp</h3>
+
+    <div id="modal-form-wrap" class="wa-modal-form">
+      <div>
+        <label>Sede</label>
+        <select id="modal-sede">
+          <option value="">Selecciona una sede...</option>
+          <option value="cabecera">Cabecera</option>
+          <option value="canaveral">Cañaveral</option>
+          <option value="acropolis">Acrópolis</option>
+          <option value="piedecuesta">Piedecuesta</option>
+          <option value="megamall">Megamall</option>
+          <option value="unico">Único</option>
+          <option value="gastrofusion">Gastrofusión</option>
+        </select>
+      </div>
+      <div>
+        <label>Número WhatsApp (con código de país)</label>
+        <input type="tel" id="modal-numero" placeholder="573001234567">
+      </div>
+      <div class="wa-modal-btns">
+        <button class="wa-btn-cancel" id="btn-modal-cancel">Cancelar</button>
+        <button class="wa-btn-primary" id="btn-modal-conectar">Generar QR</button>
+      </div>
+    </div>
+
+    <div id="modal-qr-wrap" class="wa-qr-wrap" style="display:none">
+      <div class="wa-spinner" id="qr-spinner"></div>
+      <canvas id="qr-canvas" style="display:none"></canvas>
+      <p id="qr-label">Esperando QR del servidor...</p>
+      <button class="wa-btn-cancel" id="btn-qr-cancel">Cancelar</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { HETZNER_URL, WS_URL } from '../Api/config.js';
+
+  // ── Estado ──────────────────────────────────────────────────────
+  const sesiones     = new Map();    // numero → { status, sede }
+  const conversaciones = new Map();  // remitente → { sede, numero, mensajes[], noLeidos, ultimoMsg, ultimaHora }
+  let convActiva     = null;         // remitente activo
+  let filtroActivo   = 'todos';
+  let busqueda       = '';
+
+  // ── Refs DOM ────────────────────────────────────────────────────
+  const sessionsStrip  = document.getElementById('sessions-strip');
+  const convList       = document.getElementById('conv-list');
+  const chatEmpty      = document.getElementById('chat-empty');
+  const chatView       = document.getElementById('chat-view');
+  const chatHeader     = document.getElementById('chat-header');
+  const messagesEl     = document.getElementById('messages');
+  const msgInput       = document.getElementById('msg-input');
+  const profileEmpty   = document.getElementById('profile-empty');
+  const profileContent = document.getElementById('profile-content');
+  const modalConectar  = document.getElementById('modal-conectar');
+  const modalFormWrap  = document.getElementById('modal-form-wrap');
+  const modalQrWrap    = document.getElementById('modal-qr-wrap');
+  const qrSpinner      = document.getElementById('qr-spinner');
+  const qrCanvas       = document.getElementById('qr-canvas');
+  const qrLabel        = document.getElementById('qr-label');
+
+  // ── Utilidades ──────────────────────────────────────────────────
+  function fmtHora(ts) {
+    const d = ts ? new Date(ts * 1000) : new Date();
+    return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+  function fmtTelefono(jid) {
+    return jid?.replace('@s.whatsapp.net', '').replace('@g.us', '');
+  }
+  function iniciales(jid) {
+    const num = fmtTelefono(jid);
+    return num?.slice(-2) || '??';
+  }
+  function capitalizar(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+  // ── Sessions strip ──────────────────────────────────────────────
+  function renderSessions() {
+    if (!sesiones.size) {
+      sessionsStrip.innerHTML = '<span style="font-size:.68rem;color:var(--wa-sub)">Sin números conectados — presiona + para agregar</span>';
+      return;
+    }
+    sessionsStrip.innerHTML = [...sesiones.values()].map(s => `
+      <div class="wa-session-chip ${s.status}">
+        <span class="dot"></span>
+        <span>${capitalizar(s.sede)}</span>
+      </div>
+    `).join('');
+  }
+
+  // ── Lista de conversaciones ─────────────────────────────────────
+  function renderConvList() {
+    let items = [...conversaciones.values()];
+
+    if (busqueda) {
+      const q = busqueda.toLowerCase();
+      items = items.filter(c => fmtTelefono(c.remitente).includes(q) || c.sede.includes(q));
+    }
+    if (filtroActivo === 'no-leidos') items = items.filter(c => c.noLeidos > 0);
+
+    items.sort((a, b) => b.ultimaHora - a.ultimaHora);
+
+    if (!items.length) {
+      convList.innerHTML = `
+        <div class="wa-empty">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:40px;height:40px"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <p>Sin conversaciones</p>
+        </div>`;
+      return;
+    }
+
+    convList.innerHTML = items.map(c => {
+      const tel = fmtTelefono(c.remitente);
+      return `
+        <div class="wa-conv-card ${c.remitente === convActiva ? 'active' : ''}"
+             data-remitente="${c.remitente}">
+          <div class="wa-avatar">${iniciales(c.remitente)}</div>
+          <div class="wa-conv-info">
+            <div class="wa-conv-row1">
+              <span class="wa-conv-nombre">${tel}</span>
+              <span class="wa-conv-hora">${fmtHora(c.ultimaHora)}</span>
+            </div>
+            <div class="wa-conv-row2">
+              <span class="wa-conv-preview">${c.ultimoMsg || ''}</span>
+              <div class="wa-conv-meta">
+                <span class="wa-sede-badge">${c.sede}</span>
+                ${c.noLeidos > 0 ? `<span class="wa-unread">${c.noLeidos}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    convList.querySelectorAll('.wa-conv-card').forEach(el => {
+      el.addEventListener('click', () => abrirConversacion(el.dataset.remitente));
+    });
+  }
+
+  // ── Abrir conversación ──────────────────────────────────────────
+  function abrirConversacion(remitente) {
+    convActiva = remitente;
+    const conv = conversaciones.get(remitente);
+    if (!conv) return;
+    conv.noLeidos = 0;
+
+    // Header del chat
+    const tel = fmtTelefono(remitente);
+    chatHeader.innerHTML = `
+      <div class="wa-avatar" style="width:36px;height:36px;font-size:.8rem">${iniciales(remitente)}</div>
+      <div class="wa-chat-header-info">
+        <h3>${tel}</h3>
+        <span>${capitalizar(conv.sede)}</span>
+      </div>`;
+
+    // Mensajes
+    renderMensajes(conv);
+
+    // Perfil
+    renderPerfil(conv, tel);
+
+    // Mostrar/ocultar vistas
+    chatEmpty.style.display = 'none';
+    chatView.style.display  = 'flex';
+
+    // Re-render lista para quitar badge
+    renderConvList();
+  }
+
+  function renderMensajes(conv) {
+    messagesEl.innerHTML = conv.mensajes.map(m => `
+      <div class="wa-bubble ${m.origen === 'cliente' ? 'in' : 'out'}">
+        ${m.texto}
+        <span class="wa-bubble-time">${fmtHora(m.timestamp)}</span>
+      </div>`).join('');
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function renderPerfil(conv, tel) {
+    profileEmpty.style.display  = 'none';
+    profileContent.style.display = 'block';
+    profileContent.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem 0 1.25rem;border-bottom:1px solid var(--wa-border)">
+        <div class="wa-avatar" style="width:56px;height:56px;font-size:1.2rem">${iniciales(conv.remitente)}</div>
+        <div style="font-size:.88rem;font-weight:600">${tel}</div>
+        <div style="font-size:.72rem;color:var(--wa-sub)">Sede: ${capitalizar(conv.sede)}</div>
+      </div>
+      <div style="padding:.75rem 0">
+        <div style="font-size:.72rem;color:var(--wa-sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Acciones</div>
+        <button onclick="window.open('https://wa.me/${tel}','_blank')"
+          style="width:100%;padding:.5rem;border-radius:8px;border:1px solid var(--wa-border);background:transparent;color:var(--wa-text);font-size:.8rem;cursor:pointer;text-align:left;display:flex;align-items:center;gap:.5rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.1 1.51 5.833L.057 23.57a.75.75 0 00.921.906l5.85-1.53A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 01-4.953-1.355l-.355-.21-3.671.961.978-3.56-.23-.368A9.719 9.719 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+          Abrir en WhatsApp
+        </button>
+      </div>`;
+  }
+
+  // ── Mensaje entrante ────────────────────────────────────────────
+  function procesarMensaje({ numero, sede, remitente, texto, timestamp }) {
+    if (!conversaciones.has(remitente)) {
+      conversaciones.set(remitente, { remitente, sede, numero, mensajes: [], noLeidos: 0, ultimoMsg: '', ultimaHora: 0 });
+    }
+    const conv = conversaciones.get(remitente);
+    conv.mensajes.push({ texto, timestamp, origen: 'cliente' });
+    conv.ultimoMsg  = texto;
+    conv.ultimaHora = timestamp || Math.floor(Date.now() / 1000);
+    if (remitente !== convActiva) conv.noLeidos++;
+
+    renderConvList();
+
+    if (remitente === convActiva) {
+      renderMensajes(conv);
+    }
+  }
+
+  // ── Enviar mensaje ──────────────────────────────────────────────
+  async function enviarMensaje() {
+    const texto = msgInput.value.trim();
+    if (!texto || !convActiva) return;
+    const conv = conversaciones.get(convActiva);
+    if (!conv) return;
+
+    msgInput.value = '';
+
+    try {
+      await fetch(`${HETZNER_URL}/wa/mensajes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numero: conv.numero, destinatario: convActiva, texto }),
+      });
+      conv.mensajes.push({ texto, timestamp: Math.floor(Date.now() / 1000), origen: 'agente' });
+      conv.ultimoMsg  = texto;
+      conv.ultimaHora = Math.floor(Date.now() / 1000);
+      renderMensajes(conv);
+      renderConvList();
+    } catch (e) {
+      console.error('[WA] Error enviando mensaje:', e);
+    }
+  }
+
+  // ── Cargar sesiones desde API ───────────────────────────────────
+  async function cargarSesiones() {
+    try {
+      const res = await fetch(`${HETZNER_URL}/wa/sesiones`);
+      const data = await res.json();
+      data.forEach(s => sesiones.set(s.numero, s));
+      renderSessions();
+    } catch (e) {
+      console.error('[WA] Error cargando sesiones:', e);
+    }
+  }
+
+  // ── WebSocket ───────────────────────────────────────────────────
+  let _pendingQrNumero = null;
+  function initWS() {
+    const ws = new WebSocket(WS_URL);
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+
+        if (msg.tipo === 'wa:status') {
+          sesiones.set(msg.numero, { numero: msg.numero, sede: msg.sede || '', status: msg.status });
+          renderSessions();
+
+          // Si se conectó y era el que estábamos esperando → cerrar modal
+          if (msg.status === 'conectado' && msg.numero === _pendingQrNumero) {
+            _pendingQrNumero = null;
+            cerrarModalQR();
+          }
+        }
+
+        if (msg.tipo === 'wa:qr' && msg.numero === _pendingQrNumero) {
+          qrSpinner.style.display = 'none';
+          qrCanvas.style.display  = 'block';
+          qrLabel.textContent     = 'Escanea con WhatsApp en tu celular';
+          QRCode.toCanvas(qrCanvas, msg.qr, { width: 256, color: { dark: '#111827', light: '#ffffff' } });
+        }
+
+        if (msg.tipo === 'wa:mensaje') {
+          procesarMensaje(msg);
+        }
+
+      } catch {}
+    };
+    ws.onclose = () => setTimeout(initWS, 5000);
+  }
+
+  // ── Modal conectar ──────────────────────────────────────────────
+  function abrirModal() {
+    modalFormWrap.style.display = 'flex';
+    modalQrWrap.style.display   = 'none';
+    document.getElementById('modal-sede').value   = '';
+    document.getElementById('modal-numero').value = '';
+    modalConectar.hidden = false;
+  }
+
+  function cerrarModalQR() {
+    modalConectar.hidden = true;
+    _pendingQrNumero     = null;
+  }
+
+  document.getElementById('btn-conectar').addEventListener('click', abrirModal);
+  document.getElementById('btn-modal-cancel').addEventListener('click', () => { modalConectar.hidden = true; });
+  document.getElementById('btn-qr-cancel').addEventListener('click', cerrarModalQR);
+
+  document.getElementById('btn-modal-conectar').addEventListener('click', async () => {
+    const sede   = document.getElementById('modal-sede').value;
+    const numero = document.getElementById('modal-numero').value.trim().replace(/\D/g, '');
+    if (!sede || !numero) return;
+
+    const btn = document.getElementById('btn-modal-conectar');
+    btn.disabled = true;
+    btn.textContent = 'Iniciando...';
+
+    try {
+      await fetch(`${HETZNER_URL}/wa/sesiones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numero, sede }),
+      });
+      _pendingQrNumero = numero;
+      sesiones.set(numero, { numero, sede, status: 'esperando_qr' });
+      renderSessions();
+
+      // Mostrar sección QR
+      modalFormWrap.style.display = 'none';
+      modalQrWrap.style.display   = 'flex';
+      qrSpinner.style.display     = 'block';
+      qrCanvas.style.display      = 'none';
+      qrLabel.textContent         = 'Esperando QR del servidor...';
+    } catch (e) {
+      console.error('[WA] Error iniciando sesión:', e);
+    } finally {
+      btn.disabled     = false;
+      btn.textContent  = 'Generar QR';
+    }
+  });
+
+  // ── Filtros y búsqueda ──────────────────────────────────────────
+  document.querySelectorAll('.wa-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.wa-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filtroActivo = btn.dataset.filter;
+      renderConvList();
+    });
+  });
+
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    busqueda = e.target.value.trim();
+    renderConvList();
+  });
+
+  // ── Enviar con Enter ────────────────────────────────────────────
+  msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje(); }
+  });
+  document.getElementById('btn-send').addEventListener('click', enviarMensaje);
+
+  // ── Init ────────────────────────────────────────────────────────
+  await cargarSesiones();
+  initWS();
+
+  // Notificar al shell que la página está lista
+  window.parent?.postMessage({ type: 'frame-ready' }, '*');
+</script>
+
+</body>
+</html>
