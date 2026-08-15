@@ -557,7 +557,31 @@ async function _loadSessions() {
         }
         _renderSessions();
         _renderList();   // pintar historial guardado al cargar
+        _loadContactos(); // cargar nombres ya conocidos por el servidor
     } catch { /* sin conexion al backend */ }
+}
+
+// ── Load contacts ──────────────────────────────────────────────────────────
+async function _loadContactos() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/contactos`);
+        if (!r.ok) return;
+        const data = await r.json(); // { [numero]: { [phone]: name } }
+        let actualizado = false;
+        for (const [numero, contactos] of Object.entries(data)) {
+            for (const [phone, name] of Object.entries(contactos)) {
+                if (!name) continue;
+                if (!_state.conv[numero])        _state.conv[numero]        = {};
+                if (!_state.conv[numero][phone])  _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+                const c = _state.conv[numero][phone];
+                if (!c.customName && c.name !== name) {
+                    c.name = name;
+                    actualizado = true;
+                }
+            }
+        }
+        if (actualizado) { _saveConv(); _renderList(); }
+    } catch { /* sin conexion */ }
 }
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
@@ -576,7 +600,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, texto, timestamp }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
     // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
     const phone = (remitente || '').replace(/@s\.whatsapp\.net$/, '').replace(/@g\.us$/, '');
     if (!phone) return;
