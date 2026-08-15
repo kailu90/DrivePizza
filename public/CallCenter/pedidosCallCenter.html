@@ -330,6 +330,7 @@
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
     import { initPanel }    from "../Shared/panelToggle.js";
     import { initPbxPanel }  from "./pbxPanel.js";
+    import { initWaPanel }   from "./waPanel.js";
     import { initNavButtons } from "./navCallCenter.js";
     import { PBX_URL, WS_URL } from "../Api/config.js";
     import { buscarClientes, cargarCliente, upsertCliente } from "./clientesCall.js";
@@ -341,6 +342,10 @@
 
     // ── PBX Panel UI ──────────────────────────────────────────────
     const pbxPanel = initPbxPanel('pbx-body');
+
+    // ── WA Panel UI ───────────────────────────────────────────────
+    // Se inicializa despues de obtener el usuario para pasar el rol
+    let _waPanelReady = false;
 
     // Botones del header (solo visibles en mobile — workspace.css)
     document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
@@ -543,6 +548,12 @@
             asesorActual = usuario.username;
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
+
+            // WA Panel — pasamos el rol para mostrar/ocultar controles de admin
+            if (!_waPanelReady) {
+                _waPanelReady = true;
+                initWaPanel('wa-body', { rol: usuario.rol });
+            }
         } catch (err) {
             console.error("Error cargando usuario:", err);
         }
