@@ -230,6 +230,10 @@ function _injectStyles() {
     color: #9ca3af;
     flex-shrink: 0;
 }
+.wap-conv-phone {
+    font-size: 1.1rem;
+    color: #9ca3af;
+}
 .wap-conv-last {
     font-size: 1.2rem;
     color: #6b7280;
@@ -278,6 +282,11 @@ function _injectStyles() {
     flex-direction: column;
     min-width: 0;
 }
+.wap-chat-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 .wap-chat-name {
     font-weight: 700;
     font-size: 1.4rem;
@@ -285,6 +294,29 @@ function _injectStyles() {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.wap-edit-name-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.7);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transition: color .15s;
+}
+.wap-edit-name-btn:hover { color: #fff; }
+.wap-name-input {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    width: 160px;
+}
+.wap-name-input::placeholder { color: rgba(255,255,255,.5); }
+.wap-name-input:focus { outline: none; background: rgba(255,255,255,.2); }
 .wap-chat-via {
     font-size: 1.1rem;
     opacity: .75;
@@ -470,8 +502,11 @@ function _renderShell(body) {
             <div class="wap-chat" id="wap-chat">
                 <div class="wap-chat-header">
                     <button class="wap-back" id="wap-back">&#8592;</button>
-                    <div class="wap-chat-info">
-                        <span class="wap-chat-name" id="wap-chat-name"></span>
+                    <div class="wap-chat-info" id="wap-chat-info">
+                        <div class="wap-chat-name-row">
+                            <span class="wap-chat-name" id="wap-chat-name"></span>
+                            <button class="wap-edit-name-btn" id="wap-edit-name-btn" title="Editar nombre">&#9998;</button>
+                        </div>
                         <span class="wap-chat-via" id="wap-chat-via"></span>
                     </div>
                 </div>
@@ -498,6 +533,7 @@ function _renderShell(body) {
         _renderList();
     });
     document.getElementById('wap-back').addEventListener('click', _closeChat);
+    document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') _sendMessage();
@@ -530,24 +566,29 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data);
-            if (msg.tipo === 'wa:mensaje') _onMensaje(msg);
-            if (msg.tipo === 'wa:status')  _onStatus(msg);
-            if (msg.tipo === 'wa:qr')      _onQr(msg);
+            if (msg.tipo === 'wa:mensaje')  _onMensaje(msg);
+            if (msg.tipo === 'wa:status')   _onStatus(msg);
+            if (msg.tipo === 'wa:qr')       _onQr(msg);
+            if (msg.tipo === 'wa:contacto') _onContacto(msg);
         } catch { /* parse error */ }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, texto, timestamp }) {
+function _onMensaje({ numero, remitente, fromMe, texto, timestamp }) {
+    // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
     const phone = (remitente || '').replace(/@s\.whatsapp\.net$/, '').replace(/@g\.us$/, '');
     if (!phone) return;
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
-    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
 
-    const c = _state.conv[numero][phone];
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out: false });
+    const c   = _state.conv[numero][phone];
+    const out = !!fromMe;
+    // Actualizar nombre WA solo si el asesor no asigno uno manual
+    if (pushName && !out && !c.customName) c.name = pushName;
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -577,6 +618,19 @@ function _onStatus({ numero, sede, status }) {
         const sede2 = _state.sesiones.find(s => s.numero === numero)?.sede;
         _showToast(`WhatsApp ${_capitalizarSede(sede2) || _fmtPhone(numero)} conectado`);
     }
+}
+
+function _onContacto({ numero, phone, name }) {
+    if (!phone || !name) return;
+    if (!_state.conv[numero])        _state.conv[numero]        = {};
+    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+    const c = _state.conv[numero][phone];
+    // Solo actualizar si el asesor no puso un nombre manual
+    if (!c.customName) c.name = name;
+    _saveConv();
+    _renderList();
+    // Actualizar header si es la conversacion abierta
+    if (_state.activeContact === phone && _state.activeNum === numero) _updateChatHeader(phone);
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -638,18 +692,20 @@ function _renderList() {
     }
 
     el.innerHTML = filtered.map(([phone, data]) => {
-        const badge  = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
-        const ts     = data.lastTs ? _fmtTs(data.lastTs) : '';
-        const initls = _initials(phone);
+        const badge   = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
+        const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
+        const display = data.customName || data.name || _fmtPhone(phone);
+        const hasName = !!(data.customName || data.name);
+        const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
         return `<div class="wap-conv-item" data-phone="${phone}">
-            <div class="wap-avatar">${initls}</div>
+            <div class="wap-avatar">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
-                    <span class="wap-conv-name">${_fmtPhone(phone)}</span>
+                    <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
                 <div class="wap-conv-row">
-                    <span class="wap-conv-last">${_esc(data.lastMsg)}</span>
+                    <span class="wap-conv-last">${sub || _esc(data.lastMsg)}</span>
                     ${badge}
                 </div>
             </div>
@@ -667,9 +723,7 @@ function _openChat(phone) {
     const c = _state.conv[_state.activeNum]?.[phone];
     if (c) c.unread = 0;
 
-    const sesion = _state.sesiones.find(s => s.numero === _state.activeNum);
-    document.getElementById('wap-chat-name').textContent = _fmtPhone(phone);
-    document.getElementById('wap-chat-via').textContent  = sesion ? `via ${_capitalizarSede(sesion.sede) || _fmtPhone(sesion.numero)}` : '';
+    _updateChatHeader(phone);
 
     _renderMsgs();
     _renderList(); // actualizar badge en background
@@ -677,6 +731,60 @@ function _openChat(phone) {
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
     document.getElementById('wap-chat').style.display        = 'flex';
+}
+
+function _updateChatHeader(phone) {
+    const c       = _state.conv[_state.activeNum]?.[phone];
+    const sesion  = _state.sesiones.find(s => s.numero === _state.activeNum);
+    const display = c?.customName || c?.name || _fmtPhone(phone);
+    const hasName = !!(c?.customName || c?.name);
+    document.getElementById('wap-chat-name').textContent = display;
+    document.getElementById('wap-chat-via').textContent  =
+        (hasName ? _fmtPhone(phone) + ' · ' : '') +
+        (sesion ? `via ${_capitalizarSede(sesion.sede) || _fmtPhone(sesion.numero)}` : '');
+}
+
+function _editContactName() {
+    const phone = _state.activeContact;
+    const num   = _state.activeNum;
+    if (!phone || !num) return;
+
+    const c       = _state.conv[num]?.[phone];
+    const current = c?.customName || c?.name || '';
+    const nameEl  = document.getElementById('wap-chat-name');
+    const editBtn = document.getElementById('wap-edit-name-btn');
+
+    // Reemplazar el span por un input inline
+    const input = document.createElement('input');
+    input.className   = 'wap-name-input';
+    input.value       = current;
+    input.placeholder = _fmtPhone(phone);
+    nameEl.replaceWith(input);
+    editBtn.style.display = 'none';
+    input.focus();
+    input.select();
+
+    function _guardar() {
+        const nuevo = input.value.trim();
+        if (_state.conv[num]?.[phone]) {
+            _state.conv[num][phone].customName = nuevo || null;
+            _saveConv();
+        }
+        // Restaurar span
+        const span = document.createElement('span');
+        span.className = 'wap-chat-name';
+        span.id        = 'wap-chat-name';
+        input.replaceWith(span);
+        editBtn.style.display = '';
+        _updateChatHeader(phone);
+        _renderList();
+    }
+
+    input.addEventListener('blur', _guardar);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = current; input.blur(); }
+    });
 }
 
 function _closeChat() {
@@ -865,9 +973,14 @@ function _fmtPhone(raw) {
     return raw;
 }
 
-function _initials(phone) {
-    const n = String(phone).replace(/\D/g, '');
-    return n.slice(-2) || '??';
+function _initials(nameOrPhone) {
+    const s = String(nameOrPhone || '').trim();
+    // Si tiene letras → iniciales del nombre
+    if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(s)) {
+        return s.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
+    // Si es puro número → últimos 2 dígitos
+    return s.replace(/\D/g, '').slice(-2) || '??';
 }
 
 function _fmtTs(ts) {
