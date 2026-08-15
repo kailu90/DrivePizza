@@ -4119,7 +4119,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-favs-fecha  { font-size: .65rem; color: rgba(45,45,45,.4); }
 .pw-favs-card-actions { display: flex; flex-direction: column; gap: .4rem; align-items: flex-end; }
 .pw-favs-btn-quitar {
-  color: #e5533d; width: 28px; height: 28px;
+  color: var(--dp-orange); width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
 }
 .pw-favs-btn-agregar {
@@ -4142,8 +4142,8 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   transition: color .15s, background .15s;
 }
 .pw-product-fav-btn:active { background: #fff; }
-.pw-product-fav-btn--active { color: #e5533d; background: rgba(255,255,255,.95); }
-.pw-product-fav-btn--active svg { fill: #e5533d; stroke: #e5533d; }
+.pw-product-fav-btn--active { color: var(--dp-orange); background: rgba(255,255,255,.95); }
+.pw-product-fav-btn--active svg { fill: var(--dp-orange); stroke: var(--dp-orange); }
 .pw-product-fav-btn svg { transition: fill .2s, stroke .2s; }
 
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
