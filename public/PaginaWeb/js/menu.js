@@ -31,7 +31,12 @@ function switchView(toView) {
   t.innerHTML = '<img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza"><span class="pw-page-transition-slogan"><span class="pw-pts-left">HECHA PARA</span><span class="pw-pts-right">COMPARTIR</span></span>';
   document.body.appendChild(t);
 
-  t.addEventListener('animationend', async () => {
+  // Usamos función nombrada (no {once:true}) para poder verificar e.target === t
+  // y descartar eventos animationend que burbujean desde los hijos (slogan, logo).
+  async function onCoverEnd(e) {
+    if (e.target !== t) return;
+    t.removeEventListener('animationend', onCoverEnd);
+
     // Guardar scroll del menú al salir de él
     if (currentView === 'menu') menuScrollY = window.scrollY;
 
@@ -87,10 +92,16 @@ function switchView(toView) {
     document.getElementById('bottom-nav-cuenta')?.classList.toggle('pw-bottom-nav-btn--active',
       ['cuenta', 'pedidos', 'direcciones'].includes(toView));
 
-    // Revelar
+    // Revelar — también filtramos por e.target para ignorar hijos
     t.className = `pw-page-transition pw-page-transition--${toHome ? 'reveal-right' : 'reveal'}`;
-    t.addEventListener('animationend', () => t.remove(), { once: true });
-  }, { once: true });
+    function onRevealEnd(e) {
+      if (e.target !== t) return;
+      t.removeEventListener('animationend', onRevealEnd);
+      t.remove();
+    }
+    t.addEventListener('animationend', onRevealEnd);
+  }
+  t.addEventListener('animationend', onCoverEnd);
 }
 
 // Conectar listeners comunes
@@ -1684,7 +1695,11 @@ init();
   ]);
 
   t.classList.add('pw-page-transition--reveal');
-  t.addEventListener('animationend', () => t.remove(), { once: true });
+  t.addEventListener('animationend', function onReveal(e) {
+    if (e.target !== t) return;
+    t.removeEventListener('animationend', onReveal);
+    t.remove();
+  });
 })().then(() => {
   // Si se llegó desde otra página con ?open=X (ej: index.html → menu.html?open=cuenta)
   const openParam = new URLSearchParams(location.search).get('open');
