@@ -1005,7 +1005,7 @@ async function obtenerUsuarioCC() {
             const selectSede = document.getElementById("filtro-sede");
             selectSede.value    = 'gastrofusion';
             selectSede.disabled = true;
-            ['panel-wa', 'panel-pbx', 'btn-open-wa', 'btn-open-pbx'].forEach(id => {
+            ['panel-pbx', 'btn-open-pbx'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -1060,11 +1060,9 @@ async function obtenerUsuarioCC() {
 })();
 
 // ── Paneles laterales ─────────────────────────────────────────────────────────
-const panelWA  = initPanel('panel-wa',  'strip-wa',  'dp_panel_wa_h');
 const panelPBX = initPanel('panel-pbx', 'strip-pbx', 'dp_panel_pbx_h');
 const pbxPanel = initPbxPanel('pbx-body');
 
-document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
 document.getElementById('btn-open-pbx')?.addEventListener('click', () => panelPBX?.toggle());
 
 document.getElementById('btn-sip-reconectar')?.addEventListener('click', e => {

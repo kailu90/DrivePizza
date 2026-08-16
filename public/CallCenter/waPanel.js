@@ -1,6 +1,6 @@
 /**
  * waPanel.js — WhatsApp Omnicanal Panel
- * Se inicializa con initWaPanel('wa-body', { rol }) desde pedidosCallCenter.html
+ * Se inicializa con initWaPanel('wa-body', { rol }) desde callcenter-shell.html
  * Renderiza lista de conversaciones + chat inline dentro del panel lateral.
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
@@ -1851,9 +1851,9 @@ function _showQr(numero, qrData) {
     modal.classList.add('active');
 
     // Abrir el panel si esta colapsado
-    const panel = document.getElementById('panel-wa');
-    if (panel?.classList.contains('collapsed')) {
-        document.getElementById('strip-wa')?.click();
+    const panel = document.getElementById('wa-panel');
+    if (panel && !panel.classList.contains('expanded')) {
+        document.getElementById('wa-strip')?.click();
     }
 }
 
@@ -1989,7 +1989,7 @@ function _showToast(msg, ms = 3000) {
 
 // ── Flash icono del panel (nuevo mensaje) ──────────────────────────────────
 function _flashIcon() {
-    const strip = document.getElementById('strip-wa');
+    const strip = document.getElementById('wa-strip');
     if (!strip) return;
     strip.classList.add('wap-flash');
     setTimeout(() => strip.classList.remove('wap-flash'), 1500);
