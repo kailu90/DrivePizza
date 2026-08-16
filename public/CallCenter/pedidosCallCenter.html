@@ -552,7 +552,7 @@
             // WA Panel — pasamos el rol para mostrar/ocultar controles de admin
             if (!_waPanelReady) {
                 _waPanelReady = true;
-                initWaPanel('wa-body', { rol: usuario.rol });
+                initWaPanel('wa-body', { rol: usuario.rol, asesor: usuario.username });
             }
         } catch (err) {
             console.error("Error cargando usuario:", err);

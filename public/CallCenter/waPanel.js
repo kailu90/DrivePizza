@@ -16,6 +16,7 @@ const _state = {
     filterText:    '',
     colorMap:      {},    // { [numero]: colorHex }
     customNames:   {},    // { [numero]: nombre personalizado }
+    asignaciones:  {},    // { 'numero:contacto': asesor }
 };
 
 let _editingNum = null;  // numero cuya card está en modo edición
@@ -57,23 +58,26 @@ function _getColor(numero) {
     return _state.colorMap[numero];
 }
 
-let _rolUsuario = '';
-let _ws         = null;
-let _qrNumero   = null;   // numero cuyo QR modal esta abierto
+let _rolUsuario   = '';
+let _asesorActual = '';
+let _ws           = null;
+let _qrNumero     = null;   // numero cuyo QR modal esta abierto
 
 const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
-export function initWaPanel(bodyId, { rol = '' } = {}) {
+export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;
-    _rolUsuario = rol;
+    _rolUsuario   = rol;
+    _asesorActual = asesor;
     _injectStyles();
     _loadMeta();          // restaurar colores y nombres personalizados
     _loadConv();          // restaurar historial desde localStorage
     _renderShell(body);
     _loadSessions();
+    _loadAsignaciones();
     _connectWs();
 }
 
@@ -570,6 +574,46 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 
+/* ── Asignaciones ────────────────────────────────── */
+.wap-conv-item--libre {
+    background: #fffbeb;
+}
+.wap-tomar-btn {
+    background: #284c22;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+}
+.wap-tomar-btn:hover { background: #75892a; }
+.wap-mio-tag {
+    display: inline-block;
+    background: rgba(40,76,34,.12);
+    color: #284c22;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-top: 3px;
+}
+.wap-liberar-btn {
+    background: none;
+    border: 1.5px solid rgba(255,255,255,.6);
+    color: #fff;
+    border-radius: 14px;
+    padding: 3px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+    margin-left: auto;
+}
+.wap-liberar-btn:hover { background: rgba(255,255,255,.15); }
+
 /* ── Chat view ───────────────────────────────────── */
 .wap-chat {
     display: none;
@@ -852,6 +896,7 @@ function _renderShell(body) {
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                             </div>
+                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Liberar a bandeja" style="display:none;">Liberar</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
                         <div class="wap-input-row">
@@ -889,6 +934,11 @@ function _renderShell(body) {
         _renderList();
     });
     document.getElementById('wap-back').addEventListener('click', _closeChat);
+    document.getElementById('wap-liberar-btn').addEventListener('click', () => {
+        if (_state.activeNum && _state.activeContact) {
+            _liberarChat(_state.activeNum, _state.activeContact);
+        }
+    });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-input').addEventListener('keydown', e => {
@@ -911,6 +961,45 @@ function _renderShell(body) {
         document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
         if (view === 'ses') _renderSesionesView();
     });
+}
+
+// ── Asignaciones ───────────────────────────────────────────────────────────
+async function _loadAsignaciones() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/asignaciones`);
+        if (!r.ok) return;
+        const data = await r.json(); // [{ numero, contacto, asesor }]
+        _state.asignaciones = {};
+        for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = a.asesor;
+        _renderList();
+    } catch { /* sin conexión */ }
+}
+
+async function _tomarChat(num, phone) {
+    if (!_asesorActual) return;
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/asignaciones`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero: num, contacto: phone, asesor: _asesorActual }),
+        });
+        if (!r.ok) return _showToast('Error al tomar el chat', 3000);
+        _state.asignaciones[`${num}:${phone}`] = _asesorActual;
+        _state.activeNum = num;
+        _openChat(phone);
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _liberarChat(num, phone) {
+    try {
+        await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
+            method: 'DELETE',
+        });
+        delete _state.asignaciones[`${num}:${phone}`];
+        _closeChat();
+        _renderList();
+        _showToast('Chat liberado a la bandeja');
+    } catch { _showToast('Error al liberar', 3000); }
 }
 
 // ── Load sessions ──────────────────────────────────────────────────────────
@@ -957,10 +1046,12 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data);
-            if (msg.tipo === 'wa:mensaje')  _onMensaje(msg);
-            if (msg.tipo === 'wa:status')   _onStatus(msg);
-            if (msg.tipo === 'wa:qr')       _onQr(msg);
-            if (msg.tipo === 'wa:contacto') _onContacto(msg);
+            if (msg.tipo === 'wa:mensaje')    _onMensaje(msg);
+            if (msg.tipo === 'wa:status')     _onStatus(msg);
+            if (msg.tipo === 'wa:qr')         _onQr(msg);
+            if (msg.tipo === 'wa:contacto')   _onContacto(msg);
+            if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
+            if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
         } catch { /* parse error */ }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
@@ -1032,6 +1123,21 @@ function _onContacto({ numero, phone, name }) {
     _renderList();
     // Actualizar header si es la conversacion abierta
     if (_state.activeContact === phone && _state.activeNum === numero) _updateChatHeader(phone);
+}
+
+function _onAsignacion({ numero, contacto, asesor }) {
+    _state.asignaciones[`${numero}:${contacto}`] = asesor;
+    _renderList();
+    // Si el chat que tengo abierto fue tomado por otro, cerrarlo
+    if (_state.activeContact === contacto && _state.activeNum === numero && asesor !== _asesorActual) {
+        _closeChat();
+        _showToast(`Chat tomado por ${asesor}`);
+    }
+}
+
+function _onLiberacion({ numero, contacto }) {
+    delete _state.asignaciones[`${numero}:${contacto}`];
+    _renderList();
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -1207,8 +1313,14 @@ function _renderList() {
 
     const q = _state.filterText;
     const filtered = allConvs
-        .filter(({ phone, data }) => !q || phone.includes(q) ||
-            (data.customName || data.name || '').toLowerCase().includes(q))
+        .filter(({ num, phone, data }) => {
+            // Filtrar por texto
+            if (q && !phone.includes(q) && !(data.customName || data.name || '').toLowerCase().includes(q)) return false;
+            // Ocultar chats asignados a otro asesor
+            const asig = _state.asignaciones[`${num}:${phone}`];
+            if (asig && asig !== _asesorActual) return false;
+            return true;
+        })
         .sort((a, b) => b.data.lastTs - a.data.lastTs);
 
     if (!filtered.length) {
@@ -1218,12 +1330,21 @@ function _renderList() {
 
     el.innerHTML = filtered.map(({ num, phone, data }) => {
         const color   = _getColor(num);
+        const asig    = _state.asignaciones[`${num}:${phone}`];
+        const esLibre = !asig;
+        const esMio   = asig === _asesorActual;
         const badge   = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
         const display = data.customName || data.name || _fmtPhone(phone);
         const hasName = !!(data.customName || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
-        return `<div class="wap-conv-item" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color};">
+        const tomarBtn = esLibre
+            ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">Tomar</button>`
+            : '';
+        const mioTag = esMio
+            ? `<span class="wap-mio-tag">Mío</span>`
+            : '';
+        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color};">
             <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
@@ -1234,14 +1355,29 @@ function _renderList() {
                     <span class="wap-conv-last">${sub || _esc(data.lastMsg)}</span>
                     ${badge}
                 </div>
+                ${esLibre ? `<div class="wap-conv-row" style="margin-top:4px;">${tomarBtn}</div>` : ''}
+                ${mioTag}
             </div>
         </div>`;
     }).join('');
 
+    // Botones "Tomar"
+    el.querySelectorAll('.wap-tomar-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            _tomarChat(btn.dataset.num, btn.dataset.phone);
+        });
+    });
+
+    // Click en el chat (solo si es mío o libre sin tomar aún)
     el.querySelectorAll('.wap-conv-item').forEach(item => {
         item.addEventListener('click', () => {
-            _state.activeNum = item.dataset.num; // fijar sesión al abrir chat
-            _openChat(item.dataset.phone);
+            const num   = item.dataset.num;
+            const phone = item.dataset.phone;
+            const asig  = _state.asignaciones[`${num}:${phone}`];
+            if (asig && asig !== _asesorActual) return; // no debería verse, pero por si acaso
+            _state.activeNum = num;
+            _openChat(phone);
         });
     });
 }
@@ -1253,6 +1389,11 @@ function _openChat(phone) {
     if (c) c.unread = 0;
 
     _updateChatHeader(phone);
+
+    // Mostrar botón Liberar solo si el chat es mío
+    const asig = _state.asignaciones[`${_state.activeNum}:${phone}`];
+    const liberarBtn = document.getElementById('wap-liberar-btn');
+    if (liberarBtn) liberarBtn.style.display = (asig === _asesorActual) ? '' : 'none';
 
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
