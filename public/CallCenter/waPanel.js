@@ -18,7 +18,7 @@ let _rolUsuario = '';
 let _ws         = null;
 let _qrNumero   = null;   // numero cuyo QR modal esta abierto
 
-const LS_KEY      = 'wap_conv_v1';
+const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
@@ -601,8 +601,14 @@ function _connectWs() {
 
 // ── WS event handlers ──────────────────────────────────────────────────────
 function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
+    // Descartar fuentes no válidas
+    if (!remitente) return;
+    if (remitente === 'status@broadcast') return;
+    if (remitente.endsWith('@g.us')) return;
+    if (remitente.endsWith('@lid')) return;
+
     // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
-    const phone = (remitente || '').replace(/@s\.whatsapp\.net$/, '').replace(/@g\.us$/, '');
+    const phone = remitente.replace(/@s\.whatsapp\.net$/, '');
     if (!phone) return;
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
@@ -646,6 +652,9 @@ function _onStatus({ numero, sede, status }) {
 
 function _onContacto({ numero, phone, name }) {
     if (!phone || !name) return;
+    if (phone === 'status@broadcast') return;
+    if (phone.endsWith('@g.us')) return;
+    if (phone.endsWith('@lid')) return;
     if (!_state.conv[numero])        _state.conv[numero]        = {};
     if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
     const c = _state.conv[numero][phone];
@@ -968,7 +977,18 @@ function _saveConv() {
 function _loadConv() {
     try {
         const raw = localStorage.getItem(LS_KEY);
-        if (raw) Object.assign(_state.conv, JSON.parse(raw));
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        // Filtrar phones contaminados que pudieron guardarse en versiones anteriores
+        for (const num of Object.keys(parsed)) {
+            const convs = parsed[num];
+            for (const phone of Object.keys(convs)) {
+                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.endsWith('@lid') || phone.includes('@')) {
+                    delete convs[phone];
+                }
+            }
+        }
+        Object.assign(_state.conv, parsed);
     } catch { /* datos corruptos — ignorar */ }
 }
 
