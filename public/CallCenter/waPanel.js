@@ -6,13 +6,26 @@
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
+const SESSION_COLORS = ['#25D366', '#0088cc', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+
 const _state = {
     sesiones:      [],    // [{ numero, sede, status, tieneQr }]
     conv:          {},    // { [numero]: { [phoneContact]: { msgs, unread, lastMsg, lastTs } } }
-    activeNum:     null,  // sesión WA activa (pill seleccionada)
+    activeNum:     null,  // sesión WA activa (pill seleccionada) — null = todas
     activeContact: null,  // conversación abierta
     filterText:    '',
+    colorMap:      {},    // { [numero]: colorHex }
 };
+
+function _getColor(numero) {
+    if (!_state.colorMap[numero]) {
+        const used = new Set(Object.values(_state.colorMap));
+        const pick = SESSION_COLORS.find(c => !used.has(c))
+            || SESSION_COLORS[Object.keys(_state.colorMap).length % SESSION_COLORS.length];
+        _state.colorMap[numero] = pick;
+    }
+    return _state.colorMap[numero];
+}
 
 let _rolUsuario = '';
 let _ws         = null;
@@ -49,11 +62,166 @@ function _injectStyles() {
 .wap-root {
     height: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     overflow: hidden;
     font-size: 1.3rem;
     background: var(--color-secundario);
 }
+
+/* ── Nav sidebar ─────────────────────────────────── */
+.wap-nav {
+    width: 48px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    background: #1e293b;
+    gap: 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+.wap-nav::-webkit-scrollbar { display: none; }
+
+.wap-nav-logo {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+    color: #25D366;
+}
+
+.wap-nav-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.45);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+    position: relative;
+}
+.wap-nav-icon:hover {
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.85);
+}
+.wap-nav-icon--active {
+    background: rgba(255,255,255,.14);
+    color: #fff;
+}
+.wap-nav-icon--active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #25D366;
+}
+
+/* ── Content area ────────────────────────────────── */
+.wap-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ── Views ───────────────────────────────────────── */
+.wap-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+.wap-view--hidden { display: none !important; }
+
+/* ── Vista Sesiones ──────────────────────────────── */
+.wap-ses-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+}
+.wap-ses-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.wap-ses-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 10px;
+    border-left: 4px solid #ccc;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+}
+.wap-ses-card-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wap-ses-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.wap-ses-card-name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-terciario);
+}
+.wap-ses-card-num {
+    font-size: 1.1rem;
+    color: #9ca3af;
+}
+.wap-ses-badge {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    width: fit-content;
+}
+.wap-ses-badge--green  { background: #dcfce7; color: #16a34a; }
+.wap-ses-badge--yellow { background: #fef9c3; color: #b45309; }
+.wap-ses-badge--red    { background: #fee2e2; color: #dc2626; }
+.wap-ses-btn-des {
+    background: none;
+    border: 1.5px solid #ef4444;
+    color: #ef4444;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+}
+.wap-ses-btn-des:hover { background: #ef4444; color: #fff; }
 
 /* ── Sessions strip ──────────────────────────────── */
 .wap-sessions {
@@ -87,9 +255,8 @@ function _injectStyles() {
     transition: background .15s, color .15s;
 }
 .wap-pill--active {
-    background: var(--color-primario);
-    color: var(--color-secundario);
-    border-color: var(--color-primario);
+    /* color viene inline desde _getColor() */
+    font-weight: 700;
 }
 .wap-dot {
     width: 7px;
@@ -211,10 +378,11 @@ function _injectStyles() {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 10px 12px 10px 10px;
     cursor: pointer;
     border-bottom: 1px solid rgba(0,0,0,.05);
     transition: background .12s;
+    border-left: 4px solid transparent;
 }
 .wap-conv-item:hover { background: rgba(0,0,0,.04); }
 .wap-avatar {
@@ -511,33 +679,71 @@ function _renderShell(body) {
 
     body.innerHTML = `
         <div class="wap-root" id="wap-root">
-            <div class="wap-sessions" id="wap-sessions">
-                <span class="wap-sessions-empty">Sin sesiones activas</span>
-            </div>
-            ${isAdmin ? `<button class="wap-btn-connect" id="wap-btn-connect">+ Conectar numero</button>` : ''}
-            <div id="wap-connect-form" style="display:none;"></div>
-            <div class="wap-search" id="wap-search-wrap">
-                <input type="text" id="wap-search" placeholder="Buscar conversacion...">
-            </div>
-            <div class="wap-list" id="wap-list">
-                <p class="wap-empty">Esperando mensajes...</p>
-            </div>
-            <div class="wap-chat" id="wap-chat">
-                <div class="wap-chat-header">
-                    <button class="wap-back" id="wap-back">&#8592;</button>
-                    <div class="wap-chat-info" id="wap-chat-info">
-                        <div class="wap-chat-name-row">
-                            <span class="wap-chat-name" id="wap-chat-name"></span>
-                            <button class="wap-edit-name-btn" id="wap-edit-name-btn" title="Editar nombre">&#9998;</button>
+
+            <!-- ── Barra de navegación lateral ── -->
+            <nav class="wap-nav" id="wap-nav">
+                <div class="wap-nav-logo">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.979-1.402A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.95 7.95 0 01-4.073-1.113l-.292-.174-3.024.851.81-2.967-.19-.305A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8zm4.406-5.908c-.242-.121-1.43-.706-1.652-.786-.222-.08-.383-.121-.545.121-.16.242-.625.786-.766.948-.14.16-.282.18-.524.06-.242-.121-1.022-.377-1.947-1.201-.72-.642-1.206-1.435-1.347-1.677-.14-.242-.015-.373.106-.493.109-.108.242-.282.363-.424.12-.14.16-.242.242-.403.08-.161.04-.302-.02-.424-.06-.12-.545-1.314-.747-1.8-.197-.472-.397-.408-.545-.415l-.464-.008c-.161 0-.424.06-.646.302-.222.242-.847.827-.847 2.018 0 1.19.868 2.341.988 2.502.12.16 1.707 2.607 4.138 3.655.578.25 1.03.399 1.381.51.581.185 1.11.159 1.528.097.466-.07 1.43-.585 1.632-1.15.202-.565.202-1.049.141-1.15-.06-.1-.222-.16-.464-.282z"/>
+                    </svg>
+                </div>
+
+                <button class="wap-nav-icon wap-nav-icon--active" data-view="conv" title="Conversaciones">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                </button>
+
+                <button class="wap-nav-icon" data-view="ses" title="Sesiones conectadas">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                </button>
+            </nav>
+
+            <!-- ── Área de contenido ── -->
+            <div class="wap-content" id="wap-content">
+
+                <!-- Vista: Conversaciones -->
+                <div class="wap-view" id="wap-view-conv">
+                    <div class="wap-sessions" id="wap-sessions">
+                        <span class="wap-sessions-empty">Sin sesiones activas</span>
+                    </div>
+                    <div id="wap-connect-form" style="display:none;"></div>
+                    <div class="wap-search" id="wap-search-wrap">
+                        <input type="text" id="wap-search" placeholder="Buscar conversacion...">
+                    </div>
+                    <div class="wap-list" id="wap-list">
+                        <p class="wap-empty">Esperando mensajes...</p>
+                    </div>
+                    <div class="wap-chat" id="wap-chat">
+                        <div class="wap-chat-header">
+                            <button class="wap-back" id="wap-back">&#8592;</button>
+                            <div class="wap-chat-info" id="wap-chat-info">
+                                <div class="wap-chat-name-row">
+                                    <span class="wap-chat-name" id="wap-chat-name"></span>
+                                    <button class="wap-edit-name-btn" id="wap-edit-name-btn" title="Editar nombre">&#9998;</button>
+                                </div>
+                                <span class="wap-chat-via" id="wap-chat-via"></span>
+                            </div>
                         </div>
-                        <span class="wap-chat-via" id="wap-chat-via"></span>
+                        <div class="wap-msgs" id="wap-msgs"></div>
+                        <div class="wap-input-row">
+                            <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
+                            <button id="wap-send">&#10148;</button>
+                        </div>
                     </div>
                 </div>
-                <div class="wap-msgs" id="wap-msgs"></div>
-                <div class="wap-input-row">
-                    <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
-                    <button id="wap-send">&#10148;</button>
+
+                <!-- Vista: Sesiones -->
+                <div class="wap-view wap-view--hidden" id="wap-view-ses">
+                    <div class="wap-ses-header">
+                        <span>Sesiones WhatsApp</span>
+                        ${isAdmin ? `<button class="wap-btn-connect" id="wap-btn-connect" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Conectar</button>` : ''}
+                    </div>
+                    <div id="wap-ses-list" class="wap-ses-list"></div>
                 </div>
+
             </div>
         </div>
         <div class="wap-qr-modal" id="wap-qr-modal">
@@ -566,6 +772,18 @@ function _renderShell(body) {
     if (isAdmin) {
         document.getElementById('wap-btn-connect').addEventListener('click', _toggleConnectForm);
     }
+
+    // ── Navegación lateral ──
+    document.getElementById('wap-nav').addEventListener('click', e => {
+        const btn = e.target.closest('[data-view]');
+        if (!btn) return;
+        const view = btn.dataset.view;
+        document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
+            b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
+        document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
+        document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
+        if (view === 'ses') _renderSesionesView();
+    });
 }
 
 // ── Load sessions ──────────────────────────────────────────────────────────
@@ -575,9 +793,8 @@ async function _loadSessions() {
         if (!r.ok) return;
         const data = await r.json();
         _state.sesiones = data;
-        if (data.length && !_state.activeNum) {
-            _state.activeNum = data[0].numero;
-        }
+        // Asignar color a cada sesión al cargar
+        data.forEach(s => _getColor(s.numero));
         _renderSessions();
         _renderList();   // pintar historial guardado al cargar
         _loadContactos(); // cargar nombres ya conocidos por el servidor
@@ -664,7 +881,7 @@ function _onStatus({ numero, sede, status }) {
         _state.sesiones[idx].status  = status;
         _state.sesiones[idx].tieneQr = false;
     }
-    if (!_state.activeNum && _state.sesiones.length) _state.activeNum = _state.sesiones[0].numero;
+    _getColor(numero); // asignar color si es nueva sesión
     _renderSessions();
 
     // Cerrar QR modal si el numero que estaba esperando QR ya se conecto
@@ -698,7 +915,46 @@ function _onQr({ numero, sede, qr }) {
     _showQr(numero, qr);
 }
 
-// ── Render sessions ────────────────────────────────────────────────────────
+// ── Vista Sesiones ─────────────────────────────────────────────────────────
+function _renderSesionesView() {
+    const el = document.getElementById('wap-ses-list');
+    if (!el) return;
+
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+
+    if (!_state.sesiones.length) {
+        el.innerHTML = `<p class="wap-empty" style="padding:24px;">No hay sesiones conectadas</p>`;
+        return;
+    }
+
+    el.innerHTML = _state.sesiones.map(s => {
+        const color  = _getColor(s.numero);
+        const label  = _capitalizarSede(s.sede) || _fmtPhone(s.numero);
+        const status = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
+                     : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
+                     : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
+        const btnDes = isAdmin
+            ? `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>`
+            : '';
+        return `<div class="wap-ses-card" style="border-left:4px solid ${color};">
+            <div class="wap-ses-card-dot" style="background:${color};"></div>
+            <div class="wap-ses-card-info">
+                <span class="wap-ses-card-name">${label}</span>
+                <span class="wap-ses-card-num">${_fmtPhone(s.numero)}</span>
+                ${status}
+            </div>
+            ${btnDes}
+        </div>`;
+    }).join('');
+
+    if (isAdmin) {
+        el.querySelectorAll('.wap-ses-btn-des').forEach(btn => {
+            btn.addEventListener('click', () => _desconectarSesion(btn.dataset.num));
+        });
+    }
+}
+
+// ── Render sessions (pills strip) ──────────────────────────────────────────
 function _renderSessions() {
     const el = document.getElementById('wap-sessions');
     if (!el) return;
@@ -711,6 +967,7 @@ function _renderSessions() {
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
 
     el.innerHTML = _state.sesiones.map(s => {
+        const color   = _getColor(s.numero);
         const active  = s.numero === _state.activeNum ? ' wap-pill--active' : '';
         const dotCls  = s.status === 'conectado'    ? 'wap-dot--green'
                       : s.status === 'esperando_qr' ? 'wap-dot--yellow'
@@ -719,8 +976,11 @@ function _renderSessions() {
         const btnDescon  = isAdmin
             ? `<button class="wap-pill-descon" data-num="${s.numero}" title="Desconectar">&#10005;</button>`
             : '';
+        const activeStyle = s.numero === _state.activeNum
+            ? `background:${color};border-color:${color};color:#fff;`
+            : `border-color:${color};color:${color};`;
         return `<div class="wap-pill-wrap">
-            <button class="wap-pill${active}" data-num="${s.numero}">
+            <button class="wap-pill${active}" data-num="${s.numero}" style="${activeStyle}">
                 <span class="wap-dot ${dotCls}"></span>
                 <span>${label}</span>
             </button>${btnDescon}
@@ -752,26 +1012,35 @@ function _renderList() {
     const el = document.getElementById('wap-list');
     if (!el) return;
 
-    const num  = _state.activeNum;
-    const convs = num && _state.conv[num] ? Object.entries(_state.conv[num]) : [];
+    // Recopilar conversaciones de todas las sesiones (o solo la activa si está filtrada)
+    const allConvs = [];
+    for (const [num, convs] of Object.entries(_state.conv)) {
+        if (_state.activeNum && _state.activeNum !== num) continue;
+        for (const [phone, data] of Object.entries(convs)) {
+            allConvs.push({ num, phone, data });
+        }
+    }
 
-    const filtered = convs
-        .filter(([phone]) => !_state.filterText || phone.includes(_state.filterText))
-        .sort(([, a], [, b]) => b.lastTs - a.lastTs);
+    const q = _state.filterText;
+    const filtered = allConvs
+        .filter(({ phone, data }) => !q || phone.includes(q) ||
+            (data.customName || data.name || '').toLowerCase().includes(q))
+        .sort((a, b) => b.data.lastTs - a.data.lastTs);
 
     if (!filtered.length) {
-        el.innerHTML = `<p class="wap-empty">${num ? 'Sin conversaciones' : 'Selecciona una sesion'}</p>`;
+        el.innerHTML = `<p class="wap-empty">${_state.sesiones.length ? 'Sin conversaciones' : 'Sin sesiones activas'}</p>`;
         return;
     }
 
-    el.innerHTML = filtered.map(([phone, data]) => {
+    el.innerHTML = filtered.map(({ num, phone, data }) => {
+        const color   = _getColor(num);
         const badge   = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
         const display = data.customName || data.name || _fmtPhone(phone);
         const hasName = !!(data.customName || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
-        return `<div class="wap-conv-item" data-phone="${phone}">
-            <div class="wap-avatar">${_initials(display)}</div>
+        return `<div class="wap-conv-item" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color};">
+            <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
                     <span class="wap-conv-name">${_esc(display)}</span>
@@ -786,7 +1055,10 @@ function _renderList() {
     }).join('');
 
     el.querySelectorAll('.wap-conv-item').forEach(item => {
-        item.addEventListener('click', () => _openChat(item.dataset.phone));
+        item.addEventListener('click', () => {
+            _state.activeNum = item.dataset.num; // fijar sesión al abrir chat
+            _openChat(item.dataset.phone);
+        });
     });
 }
 
