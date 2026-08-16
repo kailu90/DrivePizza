@@ -1527,15 +1527,10 @@ function _renderList() {
         });
     });
 
-    // Click en el chat (solo si es mío o libre sin tomar aún)
     el.querySelectorAll('.wap-conv-item').forEach(item => {
         item.addEventListener('click', () => {
-            const num   = item.dataset.num;
-            const phone = item.dataset.phone;
-            const asig  = _state.asignaciones[`${num}:${phone}`];
-            if (asig && asig !== _asesorActual) return; // no debería verse, pero por si acaso
-            _state.activeNum = num;
-            _openChat(phone);
+            _state.activeNum = item.dataset.num;
+            _openChat(item.dataset.phone);
         });
     });
 }
