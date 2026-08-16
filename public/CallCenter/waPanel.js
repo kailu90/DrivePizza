@@ -583,19 +583,19 @@ function _injectStyles() {
 
 /* ── Filtro asesor (admin) ───────────────────────── */
 .wap-filtro-asesor {
-    padding: 6px 10px 2px;
-    flex-shrink: 0;
+    display: inline-flex;
 }
 .wap-filtro-asesor select {
-    width: 100%;
-    padding: 5px 8px;
-    border: 1px solid var(--color-primario);
-    border-radius: 6px;
-    font-size: .82rem;
+    padding: 3px 6px;
+    border: 1.5px solid var(--color-primario);
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 600;
     background: var(--color-secundario);
-    color: var(--color-terciario);
+    color: var(--color-primario);
     cursor: pointer;
     outline: none;
+    max-width: 140px;
 }
 
 /* ── Filtros de estado ───────────────────────────── */
@@ -974,8 +974,9 @@ function _renderShell(body) {
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
-                    <div class="wap-filtro-asesor" id="wap-filtro-asesor" style="display:none;"></div>
-                    <div class="wap-filtros" id="wap-filtros"></div>
+                    <div class="wap-filtros" id="wap-filtros">
+                        <div class="wap-filtro-asesor" id="wap-filtro-asesor" style="display:none;"></div>
+                    </div>
                     <div class="wap-list" id="wap-list">
                         <p class="wap-empty">Esperando mensajes...</p>
                     </div>
