@@ -95,3 +95,12 @@ export function initNavButtons(paginaActual, { onBarrios } = {}) {
 
     logout.parentElement.insertBefore(fragment, logout);
 }
+
+// Desplaza solo el #workspace cuando el panel WA del shell abre/cierra
+window.addEventListener('message', (e) => {
+    if (e.data?.type !== 'wa-workspace-offset') return;
+    const ws = document.getElementById('workspace');
+    if (!ws) return;
+    ws.style.transition = 'margin-left 260ms ease';
+    ws.style.marginLeft = (e.data.offset || 0) + 'px';
+});

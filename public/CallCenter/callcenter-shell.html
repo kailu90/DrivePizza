@@ -18,7 +18,6 @@
         #cc-wrap {
             position: fixed;
             top: 0; right: 0; bottom: 0; left: 0;
-            transition: left 260ms ease;
         }
         #cc-frame { width: 100%; height: 100%; border: none; display: block; }
 
@@ -111,10 +110,10 @@
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
 
-        /* ── WA Panel — strip lateral izquierdo, cubre todo el alto ── */
+        /* ── WA Panel — debajo del header, empuja solo el workspace ── */
         #wa-panel {
             position: fixed;
-            top: 0; left: 0; bottom: 0;
+            top: 100px; left: 0; bottom: 0;
             width: 350px;
             display: flex; flex-direction: column;
             overflow: hidden;
@@ -126,7 +125,7 @@
         #wa-panel.expanded { transform: translateX(0); }
 
         #wa-panel .panel-header {
-            width: 350px; height: 100px;
+            width: 350px; height: 60px;
             display: flex; align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
@@ -149,7 +148,7 @@
             transition: background 0.15s;
         }
         #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
-        @media (max-width: 768px) { #wa-panel .panel-header { height: 54px; } }
+        @media (max-width: 768px) { #wa-panel { top: 54px; } }
         #wa-badge-hdr {
             position: absolute; top: 6px; right: 6px;
             background: #ef4444; color: #fff; font-size: 10px;
@@ -220,26 +219,32 @@
     import { PBX_URL, WS_URL } from '../Api/config.js';
 
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
+    function _waOffset() {
+        const panel = document.getElementById('wa-panel');
+        if (panel.style.display === 'none') return 0;
+        return panel.classList.contains('expanded') ? 350 : 60;
+    }
+    function _postWaOffset() {
+        document.getElementById('cc-frame')?.contentWindow?.postMessage(
+            { type: 'wa-workspace-offset', offset: _waOffset() }, '*'
+        );
+    }
     function _setWaVisible(show) {
         const panel = document.getElementById('wa-panel');
-        const wrap  = document.getElementById('cc-wrap');
         if (!show) {
             panel.classList.remove('expanded');
             panel.style.display = 'none';
-            wrap.style.left = '0';
         } else {
             panel.style.display = '';
-            wrap.style.left = '60px';
         }
+        _postWaOffset();
     }
     // Oculto por defecto — callcenter.html (index) lo mantiene oculto
     _setWaVisible(false);
 
     document.getElementById('wa-strip').addEventListener('click', () => {
-        const panel = document.getElementById('wa-panel');
-        const wrap  = document.getElementById('cc-wrap');
-        panel.classList.toggle('expanded');
-        wrap.style.left = panel.classList.contains('expanded') ? '350px' : '60px';
+        document.getElementById('wa-panel').classList.toggle('expanded');
+        _postWaOffset();
     });
 
     document.addEventListener('wa:conteos', (e) => {
@@ -282,7 +287,10 @@
         const wait = Math.max(0, MIN_OVERLAY_MS - elapsed);
         setTimeout(() => _overlay.classList.remove('visible'), wait);
     }
-    document.getElementById('cc-frame').addEventListener('load', hideOverlay);
+    document.getElementById('cc-frame').addEventListener('load', () => {
+        hideOverlay();
+        _postWaOffset();
+    });
 
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
@@ -299,7 +307,7 @@
                 el.style.animation = '';
             });
         }
-        if (e.data?.type === 'frame-ready')       postToFrame(_sipState);
+        if (e.data?.type === 'frame-ready')       { postToFrame(_sipState); _postWaOffset(); }
         if (e.data?.type === 'sip-reconnect')     sipReconnect();
         if (e.data?.type === 'reactivacion-hecha') {
             if (_ws?.readyState === 1) _ws.send(JSON.stringify({ tipo: 'reactivacion', clienteId: e.data.clienteId || null }));
