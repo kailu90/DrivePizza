@@ -1498,7 +1498,7 @@ function _renderList() {
             ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
             : estado === 'resuelto'
                 ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
-                : esMio ? `<span class="wap-estado-tag wap-estado--mio">Mío</span>` : '';
+                : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
         const tomarBtn = esLibre
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
