@@ -807,6 +807,12 @@ function _injectStyles() {
     align-self: flex-end;
     border-radius: 10px 10px 0 10px;
 }
+.wap-msg-asesor {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primario);
+    margin-bottom: 1px;
+}
 .wap-msg-text { color: var(--color-terciario); }
 .wap-msg-ts {
     font-size: 1rem;
@@ -1217,7 +1223,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor }) {
     // Descartar fuentes no válidas
     if (!remitente) return;
     if (remitente === 'status@broadcast') return;
@@ -1238,7 +1244,16 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
     const out = !!fromMe;
     // Actualizar nombre WA solo si el asesor no asigno uno manual
     if (pushName && !out && !c.customName) c.name = pushName;
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out });
+
+    // Deduplicar: si es saliente y ya existe en state (optimista), solo actualizar asesor si falta
+    if (out) {
+        const existing = [...c.msgs].reverse().find(m => m.out && m.text === texto);
+        if (existing) {
+            if (!existing.asesor && asesor) { existing.asesor = asesor; _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
+            return;
+        }
+    }
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -1796,6 +1811,7 @@ function _renderMsgs() {
     }
     el.innerHTML = c.msgs.map(m => `
         <div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}">
+            ${m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : ''}
             <span class="wap-msg-text">${_esc(m.text)}</span>
             <span class="wap-msg-ts">${m.ts ? _fmtTs(m.ts) : ''}</span>
         </div>`).join('');
@@ -1816,7 +1832,7 @@ async function _sendMessage() {
     if (!_state.conv[num])          _state.conv[num]        = {};
     if (!_state.conv[num][phone])   _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
     const c = _state.conv[num][phone];
-    c.msgs.push({ text: texto, ts, out: true });
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual });
     c.lastMsg = texto;
     c.lastTs  = ts;
     _saveConv();
@@ -1828,7 +1844,7 @@ async function _sendMessage() {
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario, texto }),
+            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual }),
         });
         if (!r.ok) {
             // Revertir mensaje optimista y avisar al asesor
