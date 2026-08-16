@@ -14,13 +14,13 @@
     <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #cc-frame {
+        /* Wrapper div — no es replaced element, calcula width correctamente */
+        #cc-wrap {
             position: fixed;
             top: 0; right: 0; bottom: 0; left: 0;
-            width: auto; height: 100%;
-            border: none; display: block;
             transition: left 260ms ease;
         }
+        #cc-frame { width: 100%; height: 100%; border: none; display: block; }
 
         /* ── Banner nueva versión ── */
         #banner-nueva-version {
@@ -171,7 +171,7 @@
     <button onclick="location.reload()">Recargar ahora</button>
 </div>
 
-<iframe id="cc-frame" src="./callcenter.html"></iframe>
+<div id="cc-wrap"><iframe id="cc-frame" src="./callcenter.html"></iframe></div>
 <audio id="sip-audio" autoplay></audio>
 <div id="nav-overlay" class="visible">
     <img class="nav-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
@@ -222,14 +222,14 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     function _setWaVisible(show) {
         const panel = document.getElementById('wa-panel');
-        const frame = document.getElementById('cc-frame');
+        const wrap  = document.getElementById('cc-wrap');
         if (!show) {
             panel.classList.remove('expanded');
             panel.style.display = 'none';
-            frame.style.left = '0';
+            wrap.style.left = '0';
         } else {
             panel.style.display = '';
-            frame.style.left = '60px';
+            wrap.style.left = '60px';
         }
     }
     // Oculto por defecto — callcenter.html (index) lo mantiene oculto
@@ -237,9 +237,9 @@
 
     document.getElementById('wa-strip').addEventListener('click', () => {
         const panel = document.getElementById('wa-panel');
-        const frame = document.getElementById('cc-frame');
+        const wrap  = document.getElementById('cc-wrap');
         panel.classList.toggle('expanded');
-        frame.style.left = panel.classList.contains('expanded') ? '350px' : '60px';
+        wrap.style.left = panel.classList.contains('expanded') ? '350px' : '60px';
     });
 
     document.addEventListener('wa:conteos', (e) => {
