@@ -211,7 +211,17 @@
     import { supabase } from '../Api/supabaseConfig.js';
     import { PBX_URL, WS_URL } from '../Api/config.js';
 
-    // ── WA Panel toggle (igual que strip-wa en pedidosCallCenter) ─────────────
+    // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
+    function _setWaVisible(show) {
+        const panel = document.getElementById('wa-panel');
+        const frame = document.getElementById('cc-frame');
+        panel.style.display  = show ? '' : 'none';
+        frame.style.marginLeft = show ? '60px' : '0';
+        frame.style.width      = show ? 'calc(100% - 60px)' : '100%';
+    }
+    // Oculto por defecto — callcenter.html (index) lo mantiene oculto
+    _setWaVisible(false);
+
     document.getElementById('wa-strip').addEventListener('click', () => {
         document.getElementById('wa-panel').classList.toggle('expanded');
     });
@@ -260,7 +270,11 @@
 
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
+        if (e.data?.type === 'wa-visible') {
+            _setWaVisible(e.data.show !== false);
+        }
         if (e.data?.type === 'nav-loading') {
+            _setWaVisible(true); // al navegar, asumir que el destino necesita el panel
             _overlayShownAt = performance.now();
             _overlay.classList.add('visible');
             _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {
