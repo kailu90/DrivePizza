@@ -96,12 +96,6 @@ function _injectStyles() {
     const s = document.createElement('style');
     s.id = 'wap-css';
     s.textContent = `
-/* ── Panel body override ─────────────────────────── */
-#panel-wa .panel-body {
-    overflow: hidden;
-    padding: 0;
-}
-
 /* ── Root ────────────────────────────────────────── */
 .wap-root {
     height: 100%;
@@ -1502,6 +1496,7 @@ async function _fetchConteos() {
             resuelto:  data.resuelto  ?? 0,
         };
         _renderFiltros();
+        document.dispatchEvent(new CustomEvent('wa:conteos', { detail: { ..._state.conteos } }));
     } catch { /* sin conexión — mantiene conteos anteriores */ }
 }
 

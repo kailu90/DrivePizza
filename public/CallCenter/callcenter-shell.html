@@ -104,6 +104,45 @@
         @keyframes nav-pulse      { 0%,100%{transform:scale(1);opacity:.9} 50%{transform:scale(1.07);opacity:1} }
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+        /* ── WA FAB ── */
+        #wa-fab {
+            position: fixed; bottom: 20px; left: 20px;
+            width: 52px; height: 52px; border-radius: 50%;
+            background: #25D366; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            z-index: 7000; transition: transform 0.15s, box-shadow 0.15s;
+            color: #fff;
+        }
+        #wa-fab:hover { transform: scale(1.08); box-shadow: 0 6px 22px rgba(0,0,0,0.42); }
+        #wa-fab-badge {
+            position: absolute; top: -4px; right: -4px;
+            background: #ef4444; color: #fff; font-size: 11px;
+            font-weight: 700; border-radius: 10px; min-width: 18px;
+            height: 18px; padding: 0 4px; display: flex;
+            align-items: center; justify-content: center;
+            font-family: sans-serif; line-height: 1;
+        }
+
+        /* ── WA Backdrop ── */
+        #wa-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.3); z-index: 7400;
+        }
+        #wa-backdrop.visible { display: block; }
+
+        /* ── WA Drawer ── */
+        #wa-drawer {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 440px; z-index: 7500;
+            transform: translateX(100%);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        #wa-drawer.open { transform: translateX(0); }
+        #wa-body { flex: 1; overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+        @media (max-width: 500px) { #wa-drawer { width: 100%; } }
     </style>
 </head>
 <body>
@@ -139,12 +178,45 @@
     </div>
 </div>
 
+<!-- WA Drawer -->
+<div id="wa-backdrop"></div>
+<div id="wa-drawer">
+    <div id="wa-body"></div>
+</div>
+<button id="wa-fab" title="WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+    </svg>
+    <span id="wa-fab-badge" style="display:none;"></span>
+</button>
+
 <!-- JsSIP (debe cargar antes del módulo) -->
 <script src="../jssip.min.js"></script>
 
 <script type="module">
     import { supabase } from '../Api/supabaseConfig.js';
     import { PBX_URL, WS_URL } from '../Api/config.js';
+
+    // ── WA Drawer ─────────────────────────────────────────────────────────────
+    function _toggleWaDrawer() {
+        const drawer   = document.getElementById('wa-drawer');
+        const backdrop = document.getElementById('wa-backdrop');
+        const isOpen   = drawer.classList.contains('open');
+        drawer.classList.toggle('open', !isOpen);
+        backdrop.classList.toggle('visible', !isOpen);
+        if (!isOpen) document.getElementById('wa-fab-badge').style.display = 'none';
+    }
+    document.getElementById('wa-fab').addEventListener('click', _toggleWaDrawer);
+    document.getElementById('wa-backdrop').addEventListener('click', _toggleWaDrawer);
+
+    document.addEventListener('wa:conteos', (e) => {
+        const badge  = document.getElementById('wa-fab-badge');
+        const espera = e.detail?.en_espera || 0;
+        const closed = !document.getElementById('wa-drawer').classList.contains('open');
+        badge.textContent   = espera;
+        badge.style.display = (espera > 0 && closed) ? 'flex' : 'none';
+    });
 
     const ICE = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -228,6 +300,9 @@
                 extension:   data.extension   || null,
                 sipPassword: data.sip_password || null
             };
+            // Inicializar WA panel en el drawer persistente
+            const { initWaPanel } = await import('./waPanel.js');
+            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
             return window._usuarioCC;
         } catch (err) {

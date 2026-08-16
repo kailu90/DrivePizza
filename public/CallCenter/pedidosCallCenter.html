@@ -52,12 +52,6 @@
 
         <div class="header-controls">
             <!-- Toggle panels mobile (ocultos en desktop — workspace.css) -->
-            <button class="btn-historial btn-panel-mobile with-tooltip" data-tooltip="WhatsApp" id="btn-open-wa" aria-label="Abrir WhatsApp">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-                </svg>
-            </button>
             <button class="btn-historial btn-panel-mobile with-tooltip" data-tooltip="Softphone" id="btn-open-pbx" aria-label="Abrir PBX" style="position:relative;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.98-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
@@ -83,22 +77,6 @@
     </header>
 
     <div id="workspace">
-
-        <!-- ── Panel izquierdo: WhatsApp omnicanal ───────────────── -->
-        <div id="panel-wa" class="side-panel collapsed">
-            <div class="panel-header">
-                <span class="panel-header__title">WhatsApp</span>
-                <button class="panel-header__icon" id="strip-wa" aria-label="Toggle WhatsApp">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-body" id="wa-body">
-                <!-- Contenido: paso 5 (waPanel.js) -->
-            </div>
-        </div><!-- /panel-wa -->
 
         <!-- ── Bloque central: categorías + productos + carrito ───── -->
         <div id="layout-center">
@@ -330,25 +308,18 @@
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
     import { initPanel }    from "../Shared/panelToggle.js";
     import { initPbxPanel }  from "./pbxPanel.js";
-    import { initWaPanel }   from "./waPanel.js";
-    import { initNavButtons } from "./navCallCenter.js";
+import { initNavButtons } from "./navCallCenter.js";
     import { PBX_URL, WS_URL } from "../Api/config.js";
     import { buscarClientes, cargarCliente, upsertCliente } from "./clientesCall.js";
     import { getSedes } from "../Shared/sedesService.js";
 
     // ── Paneles laterales ─────────────────────────────────────────
-    const panelWA  = initPanel('panel-wa',  'strip-wa',  'dp_panel_wa');
     const panelPBX = initPanel('panel-pbx', 'strip-pbx', 'dp_panel_pbx');
 
     // ── PBX Panel UI ──────────────────────────────────────────────
     const pbxPanel = initPbxPanel('pbx-body');
 
-    // ── WA Panel UI ───────────────────────────────────────────────
-    // Se inicializa despues de obtener el usuario para pasar el rol
-    let _waPanelReady = false;
-
     // Botones del header (solo visibles en mobile — workspace.css)
-    document.getElementById('btn-open-wa')?.addEventListener('click',  () => panelWA?.toggle());
     document.getElementById('btn-open-pbx')?.addEventListener('click', () => panelPBX?.toggle());
 
     // ── Autocomplete teléfono ─────────────────────────────────────
@@ -548,12 +519,6 @@
             asesorActual = usuario.username;
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
-
-            // WA Panel — pasamos el rol para mostrar/ocultar controles de admin
-            if (!_waPanelReady) {
-                _waPanelReady = true;
-                initWaPanel('wa-body', { rol: usuario.rol, asesor: usuario.username });
-            }
         } catch (err) {
             console.error("Error cargando usuario:", err);
         }
