@@ -1808,6 +1808,14 @@ async function _desconectarSesion(numero) {
     if (!confirm(`¿Desconectar sesión ${_fmtPhone(numero)}?`)) return;
     try {
         await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
+
+        // Limpiar toda la data de esta sesión en estado y localStorage
+        delete _state.conv[numero];
+        for (const key of Object.keys(_state.asignaciones)) {
+            if (key.startsWith(`${numero}:`)) delete _state.asignaciones[key];
+        }
+        _saveConv();
+
         _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
         if (_state.activeNum === numero) {
             _state.activeNum     = _state.sesiones[0]?.numero || null;
@@ -1815,6 +1823,7 @@ async function _desconectarSesion(numero) {
             _showListView();
         }
         _renderSessions();
+        _renderFiltros();
         _renderList();
         _showToast('Sesión desconectada');
     } catch {
