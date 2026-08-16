@@ -1202,6 +1202,7 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data);
+            console.log('[waPanel WS]', msg.tipo, msg);
             if (msg.tipo === 'wa:mensaje')    _onMensaje(msg);
             if (msg.tipo === 'wa:status')     _onStatus(msg);
             if (msg.tipo === 'wa:qr')         _onQr(msg);
@@ -1209,7 +1210,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')     _onEstado(msg);
-        } catch { /* parse error */ }
+        } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
 }
@@ -1943,6 +1944,22 @@ function _toggleConnectForm() {
             wrap.innerHTML = '';
             // Mostrar modal de inmediato (QR llegará por WS o viene en la respuesta)
             _onQr({ numero, sede, qr: data.qr || null });
+            // Polling fallback: si el WS no entrega el QR, lo buscamos en GET /wa/sesiones
+            let _pollTries = 0;
+            const _pollQr = setInterval(async () => {
+                _pollTries++;
+                if (_pollTries > 15 || !document.getElementById('wap-qr-modal')?.classList.contains('active')) {
+                    clearInterval(_pollQr); return;
+                }
+                try {
+                    const pr = await fetch(`${HETZNER_URL}/wa/sesiones`);
+                    if (!pr.ok) return;
+                    const sesiones = await pr.json();
+                    const s = sesiones.find(s => s.numero === numero);
+                    console.log('[waPanel poll]', s);
+                    if (s?.qr) { clearInterval(_pollQr); _showQr(numero, s.qr); }
+                } catch { /* ignore */ }
+            }, 2000);
         } catch (e) {
             alert('Error al conectar: ' + e.message);
             btn.disabled = false;
