@@ -594,9 +594,9 @@ function _injectStyles() {
     gap: 5px;
     padding: 4px 10px;
     border-radius: 20px;
-    border: 1.5px solid var(--fc, #ccc);
-    background: transparent;
-    color: var(--fc, #666);
+    border: 1.5px solid var(--color-cuaternario);
+    background: var(--color-secundario);
+    color: var(--color-primario);
     font-size: 1.15rem;
     font-weight: 600;
     cursor: pointer;
@@ -604,21 +604,22 @@ function _injectStyles() {
     white-space: nowrap;
 }
 .wap-filtro:hover {
-    background: color-mix(in srgb, var(--fc) 12%, transparent);
+    background: rgba(40,76,34,.08);
 }
 .wap-filtro--active {
-    background: var(--fc, #ccc);
-    color: #fff;
+    background: var(--color-primario);
+    border-color: var(--color-primario);
+    color: var(--color-secundario);
 }
 .wap-filtro-count {
-    background: rgba(0,0,0,.15);
+    background: rgba(40,76,34,.15);
     border-radius: 10px;
     padding: 0 6px;
     font-size: 1.05rem;
     font-weight: 700;
 }
 .wap-filtro--active .wap-filtro-count {
-    background: rgba(255,255,255,.25);
+    background: rgba(244,236,223,.25);
 }
 
 /* ── Tags de estado en conversación ─────────────── */
@@ -944,9 +945,6 @@ function _renderShell(body) {
 
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
-                    <div class="wap-sessions" id="wap-sessions">
-                        <span class="wap-sessions-empty">Sin sesiones activas</span>
-                    </div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
