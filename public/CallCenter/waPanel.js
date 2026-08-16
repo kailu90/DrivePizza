@@ -15,7 +15,37 @@ const _state = {
     activeContact: null,  // conversación abierta
     filterText:    '',
     colorMap:      {},    // { [numero]: colorHex }
+    customNames:   {},    // { [numero]: nombre personalizado }
 };
+
+let _editingNum = null;  // numero cuya card está en modo edición
+
+const LS_KEY_META = 'wap_meta_v1';
+
+function _loadMeta() {
+    try {
+        const raw = localStorage.getItem(LS_KEY_META);
+        if (!raw) return;
+        const { colorMap, customNames } = JSON.parse(raw);
+        if (colorMap)    Object.assign(_state.colorMap,    colorMap);
+        if (customNames) Object.assign(_state.customNames, customNames);
+    } catch { /* ignorar */ }
+}
+
+function _saveMeta() {
+    try {
+        localStorage.setItem(LS_KEY_META, JSON.stringify({
+            colorMap:    _state.colorMap,
+            customNames: _state.customNames,
+        }));
+    } catch { /* ignorar */ }
+}
+
+function _sessionLabel(numero) {
+    if (_state.customNames[numero]) return _state.customNames[numero];
+    const s = _state.sesiones.find(x => x.numero === numero);
+    return _capitalizarSede(s?.sede) || _fmtPhone(numero);
+}
 
 function _getColor(numero) {
     if (!_state.colorMap[numero]) {
@@ -40,6 +70,7 @@ export function initWaPanel(bodyId, { rol = '' } = {}) {
     if (!body) return;
     _rolUsuario = rol;
     _injectStyles();
+    _loadMeta();          // restaurar colores y nombres personalizados
     _loadConv();          // restaurar historial desde localStorage
     _renderShell(body);
     _loadSessions();
@@ -211,6 +242,31 @@ function _injectStyles() {
 .wap-ses-badge--green  { background: #dcfce7; color: #16a34a; }
 .wap-ses-badge--yellow { background: #fef9c3; color: #b45309; }
 .wap-ses-badge--red    { background: #fee2e2; color: #dc2626; }
+.wap-ses-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.wap-ses-btn-edit {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: none;
+    border: 1.5px solid #d1d5db;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s, color .15s, background .15s;
+    flex-shrink: 0;
+}
+.wap-ses-btn-edit:hover {
+    border-color: #284c22;
+    color: #284c22;
+    background: rgba(40,76,34,.06);
+}
 .wap-ses-btn-des {
     background: none;
     border: 1.5px solid #ef4444;
@@ -223,6 +279,76 @@ function _injectStyles() {
     transition: background .15s, color .15s;
 }
 .wap-ses-btn-des:hover { background: #ef4444; color: #fff; }
+
+/* ── Edit form ───────────────────────────────────── */
+.wap-ses-card--editing { flex-direction: column; align-items: stretch; }
+.wap-ses-edit-form { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.wap-ses-edit-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.wap-ses-edit-input {
+    padding: 7px 10px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color .15s;
+}
+.wap-ses-edit-input:focus { outline: none; border-color: #284c22; }
+.wap-color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.wap-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s;
+    outline: none;
+}
+.wap-color-swatch:hover { transform: scale(1.15); }
+.wap-color-swatch--active {
+    border-color: #2d2d2d;
+    transform: scale(1.15);
+}
+.wap-ses-edit-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+}
+.wap-ses-btn-cancel {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 8px;
+    border: 1.5px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background .15s;
+}
+.wap-ses-btn-cancel:hover { background: #f3f4f6; }
+.wap-ses-btn-save {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 8px;
+    border: none;
+    background: #284c22;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+}
+.wap-ses-btn-save:hover { background: #75892a; }
 
 /* ── Sessions strip ──────────────────────────────── */
 .wap-sessions {
@@ -924,35 +1050,103 @@ function _renderSesionesView() {
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
 
     if (!_state.sesiones.length) {
-        el.innerHTML = `<p class="wap-empty" style="padding:24px;">No hay sesiones conectadas</p>`;
+        el.innerHTML = `<p class="wap-empty" style="padding:24px;">No hay conexiones activas</p>`;
         return;
     }
 
     el.innerHTML = _state.sesiones.map(s => {
-        const color  = _getColor(s.numero);
-        const label  = _capitalizarSede(s.sede) || _fmtPhone(s.numero);
+        const color = _getColor(s.numero);
+        const label = _sessionLabel(s.numero);
+
+        if (s.numero === _editingNum) {
+            // ── Card en modo edición ──
+            const swatches = SESSION_COLORS.map(c =>
+                `<button class="wap-color-swatch${c === color ? ' wap-color-swatch--active' : ''}"
+                    data-color="${c}" style="background:${c};" title="${c}"></button>`
+            ).join('');
+            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${color};" data-num="${s.numero}">
+                <div class="wap-ses-edit-form">
+                    <label class="wap-ses-edit-label">Nombre</label>
+                    <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
+                        type="text" value="${_esc(label)}" placeholder="${_fmtPhone(s.numero)}">
+                    <label class="wap-ses-edit-label">Color identificador</label>
+                    <div class="wap-color-swatches" id="wap-swatches-${s.numero}">${swatches}</div>
+                    <div class="wap-ses-edit-btns">
+                        <button class="wap-ses-btn-cancel" data-num="${s.numero}">Cancelar</button>
+                        <button class="wap-ses-btn-save" data-num="${s.numero}">Guardar</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ── Card normal ──
         const status = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
                      : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
                      : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
-        const btnDes = isAdmin
-            ? `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>`
-            : '';
         return `<div class="wap-ses-card" style="border-left:4px solid ${color};">
             <div class="wap-ses-card-dot" style="background:${color};"></div>
             <div class="wap-ses-card-info">
-                <span class="wap-ses-card-name">${label}</span>
+                <span class="wap-ses-card-name">${_esc(label)}</span>
                 <span class="wap-ses-card-num">${_fmtPhone(s.numero)}</span>
                 ${status}
             </div>
-            ${btnDes}
+            <div class="wap-ses-card-actions">
+                <button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>
+                ${isAdmin ? `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>` : ''}
+            </div>
         </div>`;
     }).join('');
 
+    // Listeners card normal
+    el.querySelectorAll('.wap-ses-btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+            _editingNum = btn.dataset.num;
+            _renderSesionesView();
+        });
+    });
     if (isAdmin) {
         el.querySelectorAll('.wap-ses-btn-des').forEach(btn => {
             btn.addEventListener('click', () => _desconectarSesion(btn.dataset.num));
         });
     }
+
+    // Listeners card edición
+    el.querySelectorAll('.wap-ses-btn-cancel').forEach(btn => {
+        btn.addEventListener('click', () => { _editingNum = null; _renderSesionesView(); });
+    });
+    el.querySelectorAll('.wap-ses-btn-save').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const num   = btn.dataset.num;
+            const name  = document.getElementById(`wap-edit-name-${num}`)?.value.trim() || '';
+            _state.customNames[num] = name || null;
+            _saveMeta();
+            _editingNum = null;
+            _renderSesionesView();
+            _renderSessions(); // actualizar pills
+            _renderList();     // actualizar colores en lista
+        });
+    });
+
+    // Listeners swatches de color
+    el.querySelectorAll('.wap-color-swatches').forEach(wrap => {
+        const num = wrap.id.replace('wap-swatches-', '');
+        wrap.querySelectorAll('.wap-color-swatch').forEach(sw => {
+            sw.addEventListener('click', () => {
+                _state.colorMap[num] = sw.dataset.color;
+                _saveMeta();
+                wrap.querySelectorAll('.wap-color-swatch').forEach(s =>
+                    s.classList.toggle('wap-color-swatch--active', s.dataset.color === sw.dataset.color));
+                // Actualizar borde de la card en tiempo real
+                const card = el.querySelector(`.wap-ses-card--editing[data-num="${num}"]`);
+                if (card) card.style.borderLeftColor = sw.dataset.color;
+            });
+        });
+    });
 }
 
 // ── Render sessions (pills strip) ──────────────────────────────────────────
@@ -973,7 +1167,7 @@ function _renderSessions() {
         const dotCls  = s.status === 'conectado'    ? 'wap-dot--green'
                       : s.status === 'esperando_qr' ? 'wap-dot--yellow'
                       : 'wap-dot--red';
-        const label      = _capitalizarSede(s.sede) || _fmtPhone(s.numero);
+        const label      = _sessionLabel(s.numero);
         const btnDescon  = isAdmin
             ? `<button class="wap-pill-descon" data-num="${s.numero}" title="Desconectar">&#10005;</button>`
             : '';
