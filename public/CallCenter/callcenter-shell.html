@@ -105,10 +105,22 @@
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
 
-        /* ── WA Panel (réplica exacta de side-panel de workspace.css) ── */
+        /* ── WA header spacer — rellena la columna izquierda al nivel del header ── */
+        #wa-header-spacer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 60px; height: 100px;
+            background: var(--color-primario);
+            z-index: 7499;
+        }
+        @media (max-width: 768px) {
+            #wa-header-spacer { height: 54px; }
+        }
+
+        /* ── WA Panel — empieza debajo del header, igual que #workspace ── */
         #wa-panel {
             position: fixed;
-            top: 0; left: 0; bottom: 0;
+            top: 100px; left: 0; bottom: 0;
             width: 350px;
             display: flex; flex-direction: column;
             overflow: hidden;
@@ -116,6 +128,7 @@
             transition: transform 260ms ease;
             z-index: 7500;
         }
+        @media (max-width: 768px) { #wa-panel { top: 54px; } }
         #wa-panel.expanded { transform: translateX(0); }
 
         #wa-panel .panel-header {
@@ -190,6 +203,7 @@
 </div>
 
 <!-- WA Panel (mismo diseño que panel PBX, lado izquierdo) -->
+<div id="wa-header-spacer"></div>
 <div id="wa-panel">
     <div class="panel-header">
         <span class="panel-header__title">WhatsApp</span>
@@ -213,9 +227,11 @@
 
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     function _setWaVisible(show) {
-        const panel = document.getElementById('wa-panel');
-        const frame = document.getElementById('cc-frame');
+        const panel   = document.getElementById('wa-panel');
+        const spacer  = document.getElementById('wa-header-spacer');
+        const frame   = document.getElementById('cc-frame');
         panel.style.display  = show ? '' : 'none';
+        spacer.style.display = show ? '' : 'none';
         frame.style.marginLeft = show ? '60px' : '0';
         frame.style.width      = show ? 'calc(100% - 60px)' : '100%';
     }
