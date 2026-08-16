@@ -758,12 +758,67 @@ function _openChat(phone) {
 
     _updateChatHeader(phone);
 
-    _renderMsgs();
-    _renderList(); // actualizar badge en background
-
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
     document.getElementById('wap-chat').style.display        = 'flex';
+
+    // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
+    _renderMsgs();
+    _renderList(); // actualizar badge en background
+    _loadMsgsSupabase(phone);
+}
+
+async function _loadMsgsSupabase(phone) {
+    const num = _state.activeNum;
+    if (!num || !phone) return;
+
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}?limit=50`
+        );
+        if (!r.ok) return;
+        const msgs = await r.json(); // [{id, texto, timestamp, saliente, nombre, ...}]
+        if (!Array.isArray(msgs) || !msgs.length) return;
+
+        if (!_state.conv[num])        _state.conv[num]        = {};
+        if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+
+        const c = _state.conv[num][phone];
+
+        // Convertir formato Supabase → formato interno
+        const supabaseMsgs = msgs.map(m => ({
+            text:  m.texto,
+            ts:    m.timestamp,
+            out:   m.saliente,
+            msgId: m.msg_id,
+        }));
+
+        // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
+        const lastSupabaseTs = supabaseMsgs[supabaseMsgs.length - 1]?.ts ?? 0;
+        const masNuevos      = c.msgs.filter(m => m.ts > lastSupabaseTs);
+        c.msgs = [...supabaseMsgs, ...masNuevos];
+
+        // Actualizar nombre desde Supabase si el asesor no asignó uno manual
+        if (!c.customName) {
+            const nombreSupabase = msgs.find(m => !m.saliente && m.nombre)?.nombre;
+            if (nombreSupabase) c.name = nombreSupabase;
+        }
+
+        // Actualizar lastMsg / lastTs desde el historial completo
+        if (c.msgs.length) {
+            const ultimo = c.msgs[c.msgs.length - 1];
+            c.lastMsg = ultimo.text;
+            c.lastTs  = ultimo.ts;
+        }
+
+        _saveConv();
+        // Solo re-renderizar si esta conversación sigue abierta
+        if (_state.activeContact === phone && _state.activeNum === num) {
+            _renderMsgs();
+            _updateChatHeader(phone);
+        }
+        _renderList();
+    } catch { /* sin conexión — se queda con datos locales */ }
 }
 
 function _updateChatHeader(phone) {
