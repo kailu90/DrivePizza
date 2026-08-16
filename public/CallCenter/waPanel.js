@@ -628,10 +628,10 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
     if (!remitente) return;
     if (remitente === 'status@broadcast') return;
     if (remitente.endsWith('@g.us')) return;
-    if (remitente.endsWith('@lid')) return;
 
     // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
-    const phone = remitente.replace(/@s\.whatsapp\.net$/, '');
+    // @lid = nuevo formato WA — el número antes del @ sigue siendo válido como clave
+    const phone = remitente.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '');
     if (!phone) return;
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
@@ -677,7 +677,6 @@ function _onContacto({ numero, phone, name }) {
     if (!phone || !name) return;
     if (phone === 'status@broadcast') return;
     if (phone.endsWith('@g.us')) return;
-    if (phone.endsWith('@lid')) return;
     if (!_state.conv[numero])        _state.conv[numero]        = {};
     if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
     const c = _state.conv[numero][phone];
@@ -1096,7 +1095,7 @@ function _loadConv() {
         for (const num of Object.keys(parsed)) {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
-                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.endsWith('@lid') || phone.includes('@')) {
+                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.includes('@')) {
                     delete convs[phone];
                 }
             }
