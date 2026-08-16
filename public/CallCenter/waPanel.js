@@ -1851,8 +1851,10 @@ function _showQr(numero, qrData) {
     document.getElementById('wap-qr-num').textContent = `Numero: ${_fmtPhone(numero)}`;
     if (qrData && qrData.startsWith('data:')) {
         imgEl.innerHTML = `<img src="${qrData}" alt="QR WhatsApp">`;
+    } else if (qrData) {
+        imgEl.innerHTML = `<img src="${qrData}" alt="QR WhatsApp">`;
     } else {
-        imgEl.innerHTML = `<p style="font-size:1.1rem;color:#9ca3af;padding:20px;">QR no disponible<br>Revisa la consola del servidor.</p>`;
+        imgEl.innerHTML = `<p style="font-size:1.1rem;color:#9ca3af;padding:20px;">⏳ Generando QR...<br>Espera un momento.</p>`;
     }
     modal.classList.add('active');
 
@@ -1935,10 +1937,12 @@ function _toggleConnectForm() {
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ numero, sede }),
             });
-            if (!r.ok) throw new Error((await r.json()).error || 'Error');
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || 'Error');
             wrap.style.display = 'none';
             wrap.innerHTML = '';
-            // El QR llegara por WS automaticamente
+            // Mostrar modal de inmediato (QR llegará por WS o viene en la respuesta)
+            _onQr({ numero, sede, qr: data.qr || null });
         } catch (e) {
             alert('Error al conectar: ' + e.message);
             btn.disabled = false;
