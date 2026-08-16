@@ -598,18 +598,7 @@ function _injectStyles() {
 /* ── Filtro asesor (admin) ───────────────────────── */
 .wap-filtro-asesor {
     display: inline-flex;
-}
-.wap-filtro-asesor select {
-    padding: 3px 6px;
-    border: 1.5px solid var(--color-primario);
-    border-radius: 20px;
-    font-size: .75rem;
-    font-weight: 600;
-    background: var(--color-secundario);
-    color: var(--color-primario);
-    cursor: pointer;
-    outline: none;
-    max-width: 140px;
+    gap: 6px;
 }
 
 /* ── Filtros de estado ───────────────────────────── */
@@ -1446,23 +1435,18 @@ function _renderFiltroAsesor() {
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     if (!isAdmin) { el.style.display = 'none'; return; }
 
-    // Recopilar asesores únicos con chats asignados/resueltos
-    const asesores = new Set();
-    for (const a of Object.values(_state.asignaciones)) {
-        if (a?.asesor) asesores.add(a.asesor);
-    }
-
     el.style.display = '';
-    const current = _state.filtroAsesor || '';
-    el.innerHTML = `<select id="wap-select-asesor">
-        <option value="">Todos los asesores</option>
-        ${[...asesores].sort().map(a => `<option value="${_esc(a)}" ${a === current ? 'selected' : ''}>${_esc(a)}</option>`).join('')}
-    </select>`;
+    const f = _state.filtroAsesor; // null = todos | 'mio' = solo míos
+    el.innerHTML =
+        `<button class="wap-filtro${!f ? ' wap-filtro--active' : ''}" data-fa="todos" style="--fc:#6b7280;">Todos</button>` +
+        `<button class="wap-filtro${f === 'mio' ? ' wap-filtro--active' : ''}" data-fa="mio" style="--fc:#6b7280;">Míos</button>`;
 
-    el.querySelector('#wap-select-asesor').addEventListener('change', e => {
-        _state.filtroAsesor = e.target.value || null;
-        _renderList();
-        _renderFiltros();
+    el.querySelectorAll('.wap-filtro').forEach(btn => {
+        btn.addEventListener('click', () => {
+            _state.filtroAsesor = btn.dataset.fa === 'mio' ? 'mio' : null;
+            _renderFiltros();
+            _renderList();
+        });
     });
 }
 
@@ -1534,7 +1518,7 @@ function _renderList() {
             const asig   = _getAsig(num, phone);
 
             // Filtro asesor (solo admin)
-            if (_state.filtroAsesor && asig?.asesor !== _state.filtroAsesor) return false;
+            if (_state.filtroAsesor === 'mio' && asig?.asesor !== _asesorActual) return false;
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
