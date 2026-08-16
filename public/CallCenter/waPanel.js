@@ -18,6 +18,7 @@ const _state = {
     customNames:   {},    // { [numero]: nombre personalizado }
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:  null,  // null | 'en_espera' | 'asignado' | 'resuelto'
+    filtroAsesor:  null,  // null = todos | 'nombre' = solo ese asesor (admin)
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -580,6 +581,23 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 
+/* ── Filtro asesor (admin) ───────────────────────── */
+.wap-filtro-asesor {
+    padding: 6px 10px 2px;
+    flex-shrink: 0;
+}
+.wap-filtro-asesor select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--color-primario);
+    border-radius: 6px;
+    font-size: .82rem;
+    background: var(--color-secundario);
+    color: var(--color-terciario);
+    cursor: pointer;
+    outline: none;
+}
+
 /* ── Filtros de estado ───────────────────────────── */
 .wap-filtros {
     display: flex;
@@ -956,6 +974,7 @@ function _renderShell(body) {
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
+                    <div class="wap-filtro-asesor" id="wap-filtro-asesor" style="display:none;"></div>
                     <div class="wap-filtros" id="wap-filtros"></div>
                     <div class="wap-list" id="wap-list">
                         <p class="wap-empty">Esperando mensajes...</p>
@@ -1405,8 +1424,36 @@ function _renderSessions() {
 
 }
 
+// ── Render filtro asesor (solo admin) ─────────────────────────────────────
+function _renderFiltroAsesor() {
+    const el = document.getElementById('wap-filtro-asesor');
+    if (!el) return;
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    if (!isAdmin) { el.style.display = 'none'; return; }
+
+    // Recopilar asesores únicos con chats asignados/resueltos
+    const asesores = new Set();
+    for (const a of Object.values(_state.asignaciones)) {
+        if (a?.asesor) asesores.add(a.asesor);
+    }
+
+    el.style.display = '';
+    const current = _state.filtroAsesor || '';
+    el.innerHTML = `<select id="wap-select-asesor">
+        <option value="">Todos los asesores</option>
+        ${[...asesores].sort().map(a => `<option value="${_esc(a)}" ${a === current ? 'selected' : ''}>${_esc(a)}</option>`).join('')}
+    </select>`;
+
+    el.querySelector('#wap-select-asesor').addEventListener('change', e => {
+        _state.filtroAsesor = e.target.value || null;
+        _renderList();
+        _renderFiltros();
+    });
+}
+
 // ── Render filtros de estado ───────────────────────────────────────────────
 function _renderFiltros() {
+    _renderFiltroAsesor();
     const el = document.getElementById('wap-filtros');
     if (!el) return;
 
@@ -1470,6 +1517,9 @@ function _renderList() {
 
             const estado = _getEstado(num, phone);
             const asig   = _getAsig(num, phone);
+
+            // Filtro asesor (solo admin)
+            if (_state.filtroAsesor && asig?.asesor !== _state.filtroAsesor) return false;
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
