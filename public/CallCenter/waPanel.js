@@ -970,8 +970,7 @@ function _renderShell(body) {
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                             </div>
-                            <button class="wap-resolver-btn" id="wap-resolver-btn" title="Marcar como resuelto" style="display:none;">Resolver</button>
-                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Liberar a bandeja" style="display:none;">Liberar</button>
+                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">RESOLVER</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
                         <div class="wap-input-row">
@@ -1012,10 +1011,6 @@ function _renderShell(body) {
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
             _liberarChat(_state.activeNum, _state.activeContact);
-    });
-    document.getElementById('wap-resolver-btn').addEventListener('click', () => {
-        if (_state.activeNum && _state.activeContact)
-            _resolverChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
@@ -1550,12 +1545,10 @@ function _openChat(phone) {
 
     _updateChatHeader(phone);
 
-    // Mostrar Liberar / Resolver solo si el chat es mío y está asignado (no resuelto)
-    const esMioAbierto  = _esMio(_state.activeNum, phone) && _getEstado(_state.activeNum, phone) === 'asignado';
-    const liberarBtn  = document.getElementById('wap-liberar-btn');
-    const resolverBtn = document.getElementById('wap-resolver-btn');
-    if (liberarBtn)  liberarBtn.style.display  = esMioAbierto ? '' : 'none';
-    if (resolverBtn) resolverBtn.style.display = esMioAbierto ? '' : 'none';
+    // Mostrar RESOLVER solo si el chat es mío y está asignado (no resuelto)
+    const esMioAbierto = _esMio(_state.activeNum, phone) && _getEstado(_state.activeNum, phone) === 'asignado';
+    const liberarBtn   = document.getElementById('wap-liberar-btn');
+    if (liberarBtn) liberarBtn.style.display = esMioAbierto ? '' : 'none';
 
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
