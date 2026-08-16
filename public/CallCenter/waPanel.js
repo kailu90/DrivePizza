@@ -1313,7 +1313,7 @@ function _onQr({ numero, sede, qr }) {
     if (idx === -1) _state.sesiones.push({ numero, sede: sede || '', status: 'esperando_qr', tieneQr: true });
     else            { _state.sesiones[idx].status = 'esperando_qr'; _state.sesiones[idx].tieneQr = true; }
     _renderSessions();
-    _showQr(numero, qr);
+    if (['admin', 'callcenter-admin'].includes(_rolUsuario)) _showQr(numero, qr);
 }
 
 // ── Vista Sesiones ─────────────────────────────────────────────────────────
