@@ -1084,14 +1084,20 @@ async function _resolverChat(num, phone) {
 
 async function _liberarChat(num, phone) {
     try {
-        await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
-            method: 'DELETE',
+        const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ estado: 'resuelto' }),
         });
-        delete _state.asignaciones[`${num}:${phone}`];
+        if (!r.ok) return _showToast('Error al resolver', 3000);
+        if (_state.asignaciones[`${num}:${phone}`]) {
+            _state.asignaciones[`${num}:${phone}`].estado = 'resuelto';
+        }
         _closeChat();
         _renderList();
-        _showToast('Chat liberado a la bandeja');
-    } catch { _showToast('Error al liberar', 3000); }
+        _renderFiltros();
+        _showToast('Chat resuelto ✓');
+    } catch { _showToast('Error de conexión', 3000); }
 }
 
 // ── Load sessions ──────────────────────────────────────────────────────────
