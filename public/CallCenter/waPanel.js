@@ -1032,6 +1032,12 @@ function _renderShell(body) {
     document.getElementById('wap-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') _sendMessage();
     });
+    // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
+    // lo que lo convertiría en containing-block. Lo movemos al <body> para que
+    // el overlay cubra todo el viewport correctamente.
+    const qrModal = document.getElementById('wap-qr-modal');
+    if (qrModal) document.body.appendChild(qrModal);
+
     document.getElementById('wap-qr-close').addEventListener('click', _closeQr);
 
     if (isAdmin) {
