@@ -1822,12 +1822,22 @@ async function _sendMessage() {
     try {
         // Reconstruir JID completo para que Baileys enrute correctamente (@lid o @s.whatsapp.net)
         const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
-        await fetch(`${HETZNER_URL}/wa/mensajes`, {
+        const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ numero: num, destinatario, texto }),
         });
-    } catch { /* error de red — mensaje ya visible optimistamente */ }
+        if (!r.ok) {
+            // Revertir mensaje optimista y avisar al asesor
+            c.msgs.pop();
+            c.lastMsg = c.msgs.at(-1)?.text || '';
+            c.lastTs  = c.msgs.at(-1)?.ts  || 0;
+            _saveConv();
+            _renderMsgs();
+            const err = await r.json().catch(() => ({}));
+            _showToast(err.error?.includes('no disponible') ? '⚠️ Sesión desconectada — mensaje no enviado' : '⚠️ Error al enviar mensaje', 4000);
+        }
+    } catch { _showToast('⚠️ Sin conexión — mensaje no enviado', 4000); }
 }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
