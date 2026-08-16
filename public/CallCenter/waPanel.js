@@ -739,7 +739,7 @@ function _renderShell(body) {
                 <!-- Vista: Sesiones -->
                 <div class="wap-view wap-view--hidden" id="wap-view-ses">
                     <div class="wap-ses-header">
-                        <span>Sesiones WhatsApp</span>
+                        <span>Conexiones</span>
                         ${isAdmin ? `<button class="wap-btn-connect" id="wap-btn-connect" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Conectar</button>` : ''}
                     </div>
                     <div id="wap-ses-list" class="wap-ses-list"></div>
