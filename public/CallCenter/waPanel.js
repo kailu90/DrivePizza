@@ -630,14 +630,16 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
     if (remitente.endsWith('@g.us')) return;
 
     // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
-    // @lid = nuevo formato WA — el número antes del @ sigue siendo válido como clave
-    const phone = remitente.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '');
+    // @lid = nuevo formato WA — guardamos el sufijo para reconstruir el JID al enviar
+    const jidSuffix = remitente.endsWith('@lid') ? '@lid' : '@s.whatsapp.net';
+    const phone     = remitente.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '');
     if (!phone) return;
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
-    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null, jidSuffix: '@s.whatsapp.net' };
 
     const c   = _state.conv[numero][phone];
+    c.jidSuffix = jidSuffix;  // actualizar siempre — puede cambiar entre sesiones
     const out = !!fromMe;
     // Actualizar nombre WA solo si el asesor no asigno uno manual
     if (pushName && !out && !c.customName) c.name = pushName;
@@ -962,10 +964,12 @@ async function _sendMessage() {
     _renderMsgs();
 
     try {
+        // Reconstruir JID completo para que Baileys enrute correctamente (@lid o @s.whatsapp.net)
+        const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
         await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario: phone, texto }),
+            body:    JSON.stringify({ numero: num, destinatario, texto }),
         });
     } catch { /* error de red — mensaje ya visible optimistamente */ }
 }
