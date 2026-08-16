@@ -14,7 +14,7 @@
     <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #cc-frame { margin-left: 60px; width: calc(100% - 60px); height: 100%; border: none; display: block; transition: margin-left 260ms ease, width 260ms ease; }
+        #cc-frame { width: 100%; height: 100%; border: none; display: block; }
 
         /* ── Banner nueva versión ── */
         #banner-nueva-version {
@@ -105,18 +105,6 @@
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
 
-        /* ── WA header spacer — rellena la columna izquierda al nivel del header ── */
-        #wa-header-spacer {
-            position: fixed;
-            top: 0; left: 0;
-            width: 60px; height: 100px;
-            background: var(--color-primario);
-            z-index: 7499;
-        }
-        @media (max-width: 768px) {
-            #wa-header-spacer { height: 54px; }
-        }
-
         /* ── WA Panel — empieza debajo del header, igual que #workspace ── */
         #wa-panel {
             position: fixed;
@@ -203,7 +191,6 @@
 </div>
 
 <!-- WA Panel (mismo diseño que panel PBX, lado izquierdo) -->
-<div id="wa-header-spacer"></div>
 <div id="wa-panel">
     <div class="panel-header">
         <span class="panel-header__title">WhatsApp</span>
@@ -227,25 +214,15 @@
 
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     function _setWaVisible(show) {
-        const panel   = document.getElementById('wa-panel');
-        const spacer  = document.getElementById('wa-header-spacer');
-        const frame   = document.getElementById('cc-frame');
-        if (!show) panel.classList.remove('expanded'); // resetear al ocultar
-        panel.style.display  = show ? '' : 'none';
-        spacer.style.display = show ? '' : 'none';
-        frame.style.marginLeft = show ? '60px' : '0';
-        frame.style.width      = show ? 'calc(100% - 60px)' : '100%';
+        const panel = document.getElementById('wa-panel');
+        if (!show) panel.classList.remove('expanded');
+        panel.style.display = show ? '' : 'none';
     }
     // Oculto por defecto — callcenter.html (index) lo mantiene oculto
     _setWaVisible(false);
 
     document.getElementById('wa-strip').addEventListener('click', () => {
-        const panel = document.getElementById('wa-panel');
-        const frame = document.getElementById('cc-frame');
-        const expanding = !panel.classList.contains('expanded');
-        panel.classList.toggle('expanded');
-        frame.style.marginLeft = expanding ? '350px' : '60px';
-        frame.style.width      = expanding ? 'calc(100% - 350px)' : 'calc(100% - 60px)';
+        document.getElementById('wa-panel').classList.toggle('expanded');
     });
 
     document.addEventListener('wa:conteos', (e) => {
