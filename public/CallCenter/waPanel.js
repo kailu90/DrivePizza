@@ -86,6 +86,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _renderShell(body);
     _loadSessions();
     _loadAsignaciones();
+    _loadConversaciones();
     _connectWs();
 }
 
@@ -1135,6 +1136,41 @@ async function _loadSessions() {
         _scheduleConteos();
         _loadContactos();
     } catch { /* sin conexion al backend */ }
+}
+
+// ── Load conversaciones desde Supabase (seed inicial compartido) ───────────
+async function _loadConversaciones() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/conversaciones`);
+        if (!r.ok) return;
+        const convs = await r.json(); // [{ numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado }]
+        if (!Array.isArray(convs) || !convs.length) return;
+
+        let actualizado = false;
+        for (const c of convs) {
+            const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado } = c;
+            if (!numero || !contacto) continue;
+
+            if (!_state.conv[numero]) _state.conv[numero] = {};
+            if (!_state.conv[numero][contacto]) {
+                _state.conv[numero][contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+                actualizado = true;
+            }
+            const conv = _state.conv[numero][contacto];
+            // Actualizar metadata solo si Supabase tiene info más reciente
+            if (!conv.customName && nombre) conv.name = nombre;
+            if ((ultimo_ts || 0) > conv.lastTs) {
+                conv.lastMsg = ultimo_mensaje || '';
+                conv.lastTs  = ultimo_ts || 0;
+                actualizado  = true;
+            }
+        }
+
+        if (actualizado) {
+            _saveConv();
+            _renderList();
+        }
+    } catch { /* sin conexión — se queda con datos locales */ }
 }
 
 // ── Load contacts ──────────────────────────────────────────────────────────
