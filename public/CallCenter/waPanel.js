@@ -836,7 +836,6 @@ function _renderShell(body) {
                     <div class="wap-sessions" id="wap-sessions">
                         <span class="wap-sessions-empty">Sin sesiones activas</span>
                     </div>
-                    <div id="wap-connect-form" style="display:none;"></div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
@@ -866,8 +865,9 @@ function _renderShell(body) {
                 <div class="wap-view wap-view--hidden" id="wap-view-ses">
                     <div class="wap-ses-header">
                         <span>Conexiones</span>
-                        ${isAdmin ? `<button class="wap-btn-connect" id="wap-btn-connect" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Conectar</button>` : ''}
+                        ${isAdmin ? `<button class="wap-btn-connect" id="wap-btn-connect" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Agregar</button>` : ''}
                     </div>
+                    <div id="wap-connect-form" style="display:none;"></div>
                     <div id="wap-ses-list" class="wap-ses-list"></div>
                 </div>
 
