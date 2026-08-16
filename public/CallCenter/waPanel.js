@@ -643,22 +643,21 @@ function _injectStyles() {
     right: 0;
     top: 0;
     bottom: 0;
-    width: 32px;
+    width: 70px;
     background: var(--color-primario);
     border: none;
     cursor: pointer;
     border-radius: 0 4px 4px 0;
-    transition: width .15s, background .15s;
+    transition: background .15s;
     flex-shrink: 0;
     color: var(--color-secundario);
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: .08em;
     writing-mode: vertical-rl;
     transform: rotate(180deg);
 }
 .wap-tomar-btn:hover {
-    width: 38px;
     background: var(--color-cuaternario);
 }
 .wap-mio-tag {
@@ -1512,7 +1511,7 @@ function _renderList() {
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre ? '40px' : '12px'};">
+        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre ? '78px' : '12px'};">
             <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
