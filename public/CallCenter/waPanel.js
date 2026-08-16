@@ -654,8 +654,6 @@ function _injectStyles() {
     font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: .08em;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
 }
 .wap-tomar-btn:hover {
     background: var(--color-cuaternario);
