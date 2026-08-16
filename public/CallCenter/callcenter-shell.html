@@ -14,7 +14,7 @@
     <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #cc-frame { margin-left: 60px; width: calc(100% - 60px); height: 100%; border: none; display: block; }
+        #cc-frame { margin-left: 60px; width: calc(100% - 60px); height: 100%; border: none; display: block; transition: margin-left 260ms ease, width 260ms ease; }
 
         /* ── Banner nueva versión ── */
         #banner-nueva-version {
@@ -230,6 +230,7 @@
         const panel   = document.getElementById('wa-panel');
         const spacer  = document.getElementById('wa-header-spacer');
         const frame   = document.getElementById('cc-frame');
+        if (!show) panel.classList.remove('expanded'); // resetear al ocultar
         panel.style.display  = show ? '' : 'none';
         spacer.style.display = show ? '' : 'none';
         frame.style.marginLeft = show ? '60px' : '0';
@@ -239,7 +240,12 @@
     _setWaVisible(false);
 
     document.getElementById('wa-strip').addEventListener('click', () => {
-        document.getElementById('wa-panel').classList.toggle('expanded');
+        const panel = document.getElementById('wa-panel');
+        const frame = document.getElementById('cc-frame');
+        const expanding = !panel.classList.contains('expanded');
+        panel.classList.toggle('expanded');
+        frame.style.marginLeft = expanding ? '350px' : '60px';
+        frame.style.width      = expanding ? 'calc(100% - 350px)' : 'calc(100% - 60px)';
     });
 
     document.addEventListener('wa:conteos', (e) => {
