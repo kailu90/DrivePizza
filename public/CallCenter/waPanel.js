@@ -958,12 +958,12 @@ function _renderShell(body) {
                     </svg>
                 </button>
 
-                <button class="wap-nav-icon" data-view="ses" title="Conexiones">
+                ${isAdmin ? `<button class="wap-nav-icon" data-view="ses" title="Conexiones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/>
                         <path d="M17 6H7a4 4 0 000 8h1v4a2 2 0 004 0v-4h2v4a2 2 0 004 0v-4h1a4 4 0 000-8z"/>
                     </svg>
-                </button>
+                </button>` : ''}
             </nav>
 
             <!-- ── Área de contenido ── -->
