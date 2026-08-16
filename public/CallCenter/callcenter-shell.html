@@ -111,22 +111,22 @@
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
 
-        /* ── WA Panel — empieza debajo del header, igual que #workspace ── */
+        /* ── WA Panel — strip lateral izquierdo, cubre todo el alto ── */
         #wa-panel {
             position: fixed;
-            top: 100px; left: 0; bottom: 0;
+            top: 0; left: 0; bottom: 0;
             width: 350px;
             display: flex; flex-direction: column;
             overflow: hidden;
+            background: var(--color-secundario, #fff);
             transform: translateX(-290px);
             transition: transform 260ms ease;
             z-index: 7500;
         }
-        @media (max-width: 768px) { #wa-panel { top: 54px; } }
         #wa-panel.expanded { transform: translateX(0); }
 
         #wa-panel .panel-header {
-            width: 350px; height: 60px;
+            width: 350px; height: 100px;
             display: flex; align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
@@ -149,6 +149,7 @@
             transition: background 0.15s;
         }
         #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
+        @media (max-width: 768px) { #wa-panel .panel-header { height: 54px; } }
         #wa-badge-hdr {
             position: absolute; top: 6px; right: 6px;
             background: #ef4444; color: #fff; font-size: 10px;
