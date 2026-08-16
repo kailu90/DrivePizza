@@ -14,7 +14,13 @@
     <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #cc-frame { width: 100%; height: 100%; border: none; display: block; }
+        #cc-frame {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            width: auto; height: 100%;
+            border: none; display: block;
+            transition: left 260ms ease;
+        }
 
         /* ── Banner nueva versión ── */
         #banner-nueva-version {
@@ -215,14 +221,24 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     function _setWaVisible(show) {
         const panel = document.getElementById('wa-panel');
-        if (!show) panel.classList.remove('expanded');
-        panel.style.display = show ? '' : 'none';
+        const frame = document.getElementById('cc-frame');
+        if (!show) {
+            panel.classList.remove('expanded');
+            panel.style.display = 'none';
+            frame.style.left = '0';
+        } else {
+            panel.style.display = '';
+            frame.style.left = '60px';
+        }
     }
     // Oculto por defecto — callcenter.html (index) lo mantiene oculto
     _setWaVisible(false);
 
     document.getElementById('wa-strip').addEventListener('click', () => {
-        document.getElementById('wa-panel').classList.toggle('expanded');
+        const panel = document.getElementById('wa-panel');
+        const frame = document.getElementById('cc-frame');
+        panel.classList.toggle('expanded');
+        frame.style.left = panel.classList.contains('expanded') ? '350px' : '60px';
     });
 
     document.addEventListener('wa:conteos', (e) => {
