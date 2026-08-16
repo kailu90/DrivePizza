@@ -581,6 +581,20 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 
+/* ── Filtros wrap ────────────────────────────────── */
+.wap-filtros-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 4px;
+    flex-shrink: 0;
+}
+.wap-filtros-wrap .wap-filtros {
+    padding: 0;
+    flex: 1;
+}
+
 /* ── Filtro asesor (admin) ───────────────────────── */
 .wap-filtro-asesor {
     display: inline-flex;
@@ -602,7 +616,6 @@ function _injectStyles() {
 .wap-filtros {
     display: flex;
     gap: 6px;
-    padding: 6px 10px 4px;
     flex-shrink: 0;
     flex-wrap: wrap;
 }
@@ -974,8 +987,9 @@ function _renderShell(body) {
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
-                    <div class="wap-filtros" id="wap-filtros">
+                    <div class="wap-filtros-wrap">
                         <div class="wap-filtro-asesor" id="wap-filtro-asesor" style="display:none;"></div>
+                        <div class="wap-filtros" id="wap-filtros"></div>
                     </div>
                     <div class="wap-list" id="wap-list">
                         <p class="wap-empty">Esperando mensajes...</p>
