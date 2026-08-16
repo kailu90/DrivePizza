@@ -1450,6 +1450,7 @@ function _renderList() {
     for (const [num, convs] of Object.entries(_state.conv)) {
         if (_state.activeNum && _state.activeNum !== num) continue;
         for (const [phone, data] of Object.entries(convs)) {
+            if (phone === num) continue; // ignorar mensajes a sí mismo
             allConvs.push({ num, phone, data });
         }
     }
