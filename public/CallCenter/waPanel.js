@@ -16,8 +16,14 @@ const _state = {
     filterText:    '',
     colorMap:      {},    // { [numero]: colorHex }
     customNames:   {},    // { [numero]: nombre personalizado }
-    asignaciones:  {},    // { 'numero:contacto': asesor }
+    asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
+    filtroEstado:  null,  // null | 'en_espera' | 'asignado' | 'resuelto'
 };
+
+// ── Helpers de estado ───────────────────────────────────────────────────────
+function _getAsig(num, phone)   { return _state.asignaciones[`${num}:${phone}`]; }
+function _getEstado(num, phone) { const a = _getAsig(num, phone); return a ? (a.estado || 'asignado') : 'en_espera'; }
+function _esMio(num, phone)     { return _getAsig(num, phone)?.asesor === _asesorActual; }
 
 let _editingNum = null;  // numero cuya card está en modo edición
 
@@ -574,6 +580,59 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 
+/* ── Filtros de estado ───────────────────────────── */
+.wap-filtros {
+    display: flex;
+    gap: 6px;
+    padding: 6px 10px 4px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+.wap-filtro {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1.5px solid var(--fc, #ccc);
+    background: transparent;
+    color: var(--fc, #666);
+    font-size: 1.15rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+}
+.wap-filtro:hover {
+    background: color-mix(in srgb, var(--fc) 12%, transparent);
+}
+.wap-filtro--active {
+    background: var(--fc, #ccc);
+    color: #fff;
+}
+.wap-filtro-count {
+    background: rgba(0,0,0,.15);
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+.wap-filtro--active .wap-filtro-count {
+    background: rgba(255,255,255,.25);
+}
+
+/* ── Tags de estado en conversación ─────────────── */
+.wap-estado-tag {
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 10px;
+}
+.wap-estado--espera  { background: #fef9c3; color: #b45309; }
+.wap-estado--mio     { background: #dbeafe; color: #1d4ed8; }
+.wap-estado--resuelto{ background: #dcfce7; color: #16a34a; }
+
 /* ── Asignaciones ────────────────────────────────── */
 .wap-conv-item--libre {
     background: #fffbeb;
@@ -600,19 +659,27 @@ function _injectStyles() {
     border-radius: 10px;
     margin-top: 3px;
 }
-.wap-liberar-btn {
+.wap-resolver-btn, .wap-liberar-btn {
     background: none;
-    border: 1.5px solid rgba(255,255,255,.6);
-    color: #fff;
     border-radius: 14px;
     padding: 3px 10px;
     font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background .15s;
-    margin-left: auto;
+    transition: background .15s, color .15s;
 }
-.wap-liberar-btn:hover { background: rgba(255,255,255,.15); }
+.wap-resolver-btn {
+    margin-left: auto;
+    border: 1.5px solid #25D366;
+    color: #16a34a;
+}
+.wap-resolver-btn:hover { background: #dcfce7; }
+.wap-liberar-btn {
+    border: 1.5px solid rgba(40,76,34,.35);
+    color: var(--color-primario);
+}
+.wap-liberar-btn:hover { background: rgba(40,76,34,.08); }
 
 /* ── Chat view ───────────────────────────────────── */
 .wap-chat {
@@ -626,14 +693,16 @@ function _injectStyles() {
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    background: var(--color-primario);
-    color: var(--color-secundario);
+    background: #f4ecdf;
+    color: var(--color-terciario);
     flex-shrink: 0;
+    border-left: 4px solid transparent;
+    border-bottom: 1px solid rgba(40,76,34,.12);
 }
 .wap-back {
     background: none;
     border: none;
-    color: var(--color-secundario);
+    color: var(--color-primario);
     font-size: 1.8rem;
     cursor: pointer;
     padding: 0 4px;
@@ -655,34 +724,32 @@ function _injectStyles() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--color-terciario);
 }
 .wap-edit-name-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,.7);
+    color: rgba(40,76,34,.45);
     font-size: 1.3rem;
     cursor: pointer;
     padding: 0 2px;
     flex-shrink: 0;
     transition: color .15s;
 }
-.wap-edit-name-btn:hover { color: #fff; }
+.wap-edit-name-btn:hover { color: var(--color-primario); }
 .wap-name-input {
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.5);
+    background: rgba(40,76,34,.08);
+    border: 1px solid rgba(40,76,34,.3);
     border-radius: 6px;
-    color: #fff;
+    color: var(--color-terciario);
     font-size: 1.4rem;
     font-weight: 700;
     padding: 2px 8px;
     width: 160px;
 }
-.wap-name-input::placeholder { color: rgba(255,255,255,.5); }
-.wap-name-input:focus { outline: none; background: rgba(255,255,255,.2); }
-.wap-chat-via {
-    font-size: 1.1rem;
-    opacity: .75;
-}
+.wap-name-input::placeholder { color: rgba(40,76,34,.4); }
+.wap-name-input:focus { outline: none; background: rgba(40,76,34,.12); }
+.wap-chat-via { display: none; }
 .wap-msgs {
     flex: 1;
     overflow-y: auto;
@@ -883,6 +950,7 @@ function _renderShell(body) {
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
+                    <div class="wap-filtros" id="wap-filtros"></div>
                     <div class="wap-list" id="wap-list">
                         <p class="wap-empty">Esperando mensajes...</p>
                     </div>
@@ -896,6 +964,7 @@ function _renderShell(body) {
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                             </div>
+                            <button class="wap-resolver-btn" id="wap-resolver-btn" title="Marcar como resuelto" style="display:none;">Resolver</button>
                             <button class="wap-liberar-btn" id="wap-liberar-btn" title="Liberar a bandeja" style="display:none;">Liberar</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
@@ -935,9 +1004,12 @@ function _renderShell(body) {
     });
     document.getElementById('wap-back').addEventListener('click', _closeChat);
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
-        if (_state.activeNum && _state.activeContact) {
+        if (_state.activeNum && _state.activeContact)
             _liberarChat(_state.activeNum, _state.activeContact);
-        }
+    });
+    document.getElementById('wap-resolver-btn').addEventListener('click', () => {
+        if (_state.activeNum && _state.activeContact)
+            _resolverChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
@@ -968,10 +1040,11 @@ async function _loadAsignaciones() {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones`);
         if (!r.ok) return;
-        const data = await r.json(); // [{ numero, contacto, asesor }]
+        const data = await r.json(); // [{ numero, contacto, asesor, estado }]
         _state.asignaciones = {};
-        for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = a.asesor;
+        for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
         _renderList();
+        _renderFiltros();
     } catch { /* sin conexión */ }
 }
 
@@ -984,9 +1057,27 @@ async function _tomarChat(num, phone) {
             body:    JSON.stringify({ numero: num, contacto: phone, asesor: _asesorActual }),
         });
         if (!r.ok) return _showToast('Error al tomar el chat', 3000);
-        _state.asignaciones[`${num}:${phone}`] = _asesorActual;
+        _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'asignado' };
         _state.activeNum = num;
         _openChat(phone);
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _resolverChat(num, phone) {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ estado: 'resuelto' }),
+        });
+        if (!r.ok) return _showToast('Error al resolver', 3000);
+        if (_state.asignaciones[`${num}:${phone}`]) {
+            _state.asignaciones[`${num}:${phone}`].estado = 'resuelto';
+        }
+        _closeChat();
+        _renderList();
+        _renderFiltros();
+        _showToast('Chat marcado como resuelto');
     } catch { _showToast('Error de conexión', 3000); }
 }
 
@@ -1012,8 +1103,9 @@ async function _loadSessions() {
         // Asignar color a cada sesión al cargar
         data.forEach(s => _getColor(s.numero));
         _renderSessions();
-        _renderList();   // pintar historial guardado al cargar
-        _loadContactos(); // cargar nombres ya conocidos por el servidor
+        _renderList();
+        _renderFiltros();
+        _loadContactos();
     } catch { /* sin conexion al backend */ }
 }
 
@@ -1052,6 +1144,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:contacto')   _onContacto(msg);
             if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
+            if (msg.tipo === 'wa:estado')     _onEstado(msg);
         } catch { /* parse error */ }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
@@ -1126,9 +1219,9 @@ function _onContacto({ numero, phone, name }) {
 }
 
 function _onAsignacion({ numero, contacto, asesor }) {
-    _state.asignaciones[`${numero}:${contacto}`] = asesor;
+    _state.asignaciones[`${numero}:${contacto}`] = { asesor, estado: 'asignado' };
     _renderList();
-    // Si el chat que tengo abierto fue tomado por otro, cerrarlo
+    _renderFiltros();
     if (_state.activeContact === contacto && _state.activeNum === numero && asesor !== _asesorActual) {
         _closeChat();
         _showToast(`Chat tomado por ${asesor}`);
@@ -1138,6 +1231,14 @@ function _onAsignacion({ numero, contacto, asesor }) {
 function _onLiberacion({ numero, contacto }) {
     delete _state.asignaciones[`${numero}:${contacto}`];
     _renderList();
+    _renderFiltros();
+}
+
+function _onEstado({ numero, contacto, estado }) {
+    const key = `${numero}:${contacto}`;
+    if (_state.asignaciones[key]) _state.asignaciones[key].estado = estado;
+    _renderList();
+    _renderFiltros();
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -1297,6 +1398,47 @@ function _renderSessions() {
 
 }
 
+// ── Render filtros de estado ───────────────────────────────────────────────
+function _renderFiltros() {
+    const el = document.getElementById('wap-filtros');
+    if (!el) return;
+
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    let espera = 0, asignado = 0, resuelto = 0;
+
+    for (const [num, convs] of Object.entries(_state.conv)) {
+        for (const phone of Object.keys(convs)) {
+            const estado = _getEstado(num, phone);
+            const asig   = _getAsig(num, phone);
+            if (estado === 'en_espera') espera++;
+            else if (estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual)) asignado++;
+            else if (estado === 'resuelto' && (isAdmin || asig?.asesor === _asesorActual)) resuelto++;
+        }
+    }
+
+    const f = _state.filtroEstado;
+    const badge = (key, label, count, color) => {
+        const activo = f === key ? ' wap-filtro--active' : '';
+        return `<button class="wap-filtro${activo}" data-filtro="${key}" style="--fc:${color};">
+            ${label} <span class="wap-filtro-count">${count}</span>
+        </button>`;
+    };
+
+    el.innerHTML =
+        badge('en_espera', 'En espera', espera,  '#f59e0b') +
+        badge('asignado',  'Asignado',  asignado, '#0088cc') +
+        badge('resuelto',  'Resuelto',  resuelto, '#25D366');
+
+    el.querySelectorAll('.wap-filtro').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.filtro;
+            _state.filtroEstado = (_state.filtroEstado === key) ? null : key;
+            _renderFiltros();
+            _renderList();
+        });
+    });
+}
+
 // ── Render conversation list ───────────────────────────────────────────────
 function _renderList() {
     const el = document.getElementById('wap-list');
@@ -1311,15 +1453,26 @@ function _renderList() {
         }
     }
 
-    const q = _state.filterText;
+    const q      = _state.filterText;
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const filtered = allConvs
         .filter(({ num, phone, data }) => {
             // Filtrar por texto
             if (q && !phone.includes(q) && !(data.customName || data.name || '').toLowerCase().includes(q)) return false;
-            // Ocultar chats asignados a otro asesor
-            const asig = _state.asignaciones[`${num}:${phone}`];
-            if (asig && asig !== _asesorActual) return false;
-            return true;
+
+            const estado = _getEstado(num, phone);
+            const asig   = _getAsig(num, phone);
+
+            // Filtro activo por badge
+            if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
+            if (_state.filtroEstado === 'asignado')  return estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual);
+            if (_state.filtroEstado === 'resuelto')  return estado === 'resuelto' && (isAdmin || asig?.asesor === _asesorActual);
+
+            // Sin filtro: mostrar en_espera + asignado a mí (no resueltos)
+            if (estado === 'resuelto') return false;
+            if (estado === 'en_espera') return true;
+            if (estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual)) return true;
+            return false;
         })
         .sort((a, b) => b.data.lastTs - a.data.lastTs);
 
@@ -1330,20 +1483,26 @@ function _renderList() {
 
     el.innerHTML = filtered.map(({ num, phone, data }) => {
         const color   = _getColor(num);
-        const asig    = _state.asignaciones[`${num}:${phone}`];
-        const esLibre = !asig;
-        const esMio   = asig === _asesorActual;
-        const badge   = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
+        const estado  = _getEstado(num, phone);
+        const asig    = _getAsig(num, phone);
+        const esLibre = estado === 'en_espera';
+        const esMio   = _esMio(num, phone);
+        const unread  = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
         const display = data.customName || data.name || _fmtPhone(phone);
         const hasName = !!(data.customName || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
+
+        const estadoTag = esLibre
+            ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
+            : estado === 'resuelto'
+                ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
+                : esMio ? `<span class="wap-estado-tag wap-estado--mio">Mío</span>` : '';
+
         const tomarBtn = esLibre
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">Tomar</button>`
             : '';
-        const mioTag = esMio
-            ? `<span class="wap-mio-tag">Mío</span>`
-            : '';
+
         return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color};">
             <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
             <div class="wap-conv-info">
@@ -1353,10 +1512,11 @@ function _renderList() {
                 </div>
                 <div class="wap-conv-row">
                     <span class="wap-conv-last">${sub || _esc(data.lastMsg)}</span>
-                    ${badge}
+                    ${unread}
                 </div>
-                ${esLibre ? `<div class="wap-conv-row" style="margin-top:4px;">${tomarBtn}</div>` : ''}
-                ${mioTag}
+                <div class="wap-conv-row" style="margin-top:3px;gap:6px;">
+                    ${estadoTag}${tomarBtn}
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -1390,10 +1550,12 @@ function _openChat(phone) {
 
     _updateChatHeader(phone);
 
-    // Mostrar botón Liberar solo si el chat es mío
-    const asig = _state.asignaciones[`${_state.activeNum}:${phone}`];
-    const liberarBtn = document.getElementById('wap-liberar-btn');
-    if (liberarBtn) liberarBtn.style.display = (asig === _asesorActual) ? '' : 'none';
+    // Mostrar Liberar / Resolver solo si el chat es mío y está asignado (no resuelto)
+    const esMioAbierto  = _esMio(_state.activeNum, phone) && _getEstado(_state.activeNum, phone) === 'asignado';
+    const liberarBtn  = document.getElementById('wap-liberar-btn');
+    const resolverBtn = document.getElementById('wap-resolver-btn');
+    if (liberarBtn)  liberarBtn.style.display  = esMioAbierto ? '' : 'none';
+    if (resolverBtn) resolverBtn.style.display = esMioAbierto ? '' : 'none';
 
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
@@ -1460,13 +1622,13 @@ async function _loadMsgsSupabase(phone) {
 
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
-    const sesion  = _state.sesiones.find(s => s.numero === _state.activeNum);
     const display = c?.customName || c?.name || _fmtPhone(phone);
-    const hasName = !!(c?.customName || c?.name);
     document.getElementById('wap-chat-name').textContent = display;
-    document.getElementById('wap-chat-via').textContent  =
-        (hasName ? _fmtPhone(phone) + ' · ' : '') +
-        (sesion ? `via ${_capitalizarSede(sesion.sede) || _fmtPhone(sesion.numero)}` : '');
+
+    // Badge de color de la conexión en el borde izquierdo del header
+    const color  = _getColor(_state.activeNum);
+    const header = document.querySelector('.wap-chat-header');
+    if (header) header.style.borderLeftColor = color;
 }
 
 function _editContactName() {
