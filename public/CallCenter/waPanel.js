@@ -19,6 +19,7 @@ const _state = {
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:  null,  // null | 'en_espera' | 'asignado' | 'resuelto'
     filtroAsesor:  null,  // null = todos | 'nombre' = solo ese asesor (admin)
+    conteos:       { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -1064,7 +1065,7 @@ async function _loadAsignaciones() {
         _state.asignaciones = {};
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
         _renderList();
-        _renderFiltros();
+        _scheduleConteos();
     } catch { /* sin conexión */ }
 }
 
@@ -1078,6 +1079,7 @@ async function _tomarChat(num, phone) {
         });
         if (!r.ok) return _showToast('Error al tomar el chat', 3000);
         _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'asignado' };
+        _scheduleConteos();
         _state.activeNum = num;
         _openChat(phone);
     } catch { _showToast('Error de conexión', 3000); }
@@ -1096,7 +1098,7 @@ async function _resolverChat(num, phone) {
         }
         _closeChat();
         _renderList();
-        _renderFiltros();
+        _scheduleConteos();
         _showToast('Chat marcado como resuelto');
     } catch { _showToast('Error de conexión', 3000); }
 }
@@ -1114,7 +1116,7 @@ async function _liberarChat(num, phone) {
         }
         _closeChat();
         _renderList();
-        _renderFiltros();
+        _scheduleConteos();
         _showToast('Chat resuelto ✓');
     } catch { _showToast('Error de conexión', 3000); }
 }
@@ -1130,7 +1132,7 @@ async function _loadSessions() {
         data.forEach(s => _getColor(s.numero));
         _renderSessions();
         _renderList();
-        _renderFiltros();
+        _scheduleConteos();
         _loadContactos();
     } catch { /* sin conexion al backend */ }
 }
@@ -1190,7 +1192,8 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
     if (!phone) return;
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
-    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null, jidSuffix: '@s.whatsapp.net' };
+    const isNewConv = !_state.conv[numero][phone];
+    if (isNewConv) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null, jidSuffix: '@s.whatsapp.net' };
 
     const c   = _state.conv[numero][phone];
     c.jidSuffix = jidSuffix;  // actualizar siempre — puede cambiar entre sesiones
@@ -1206,6 +1209,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp }) {
 
     _saveConv();
     _renderList();
+    if (isNewConv && !fromMe) _scheduleConteos(); // nueva conv entrante → actualiza en_espera
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
 }
@@ -1247,7 +1251,7 @@ function _onContacto({ numero, phone, name }) {
 function _onAsignacion({ numero, contacto, asesor }) {
     _state.asignaciones[`${numero}:${contacto}`] = { asesor, estado: 'asignado' };
     _renderList();
-    _renderFiltros();
+    _scheduleConteos();
     if (_state.activeContact === contacto && _state.activeNum === numero && asesor !== _asesorActual) {
         _closeChat();
         _showToast(`Chat tomado por ${asesor}`);
@@ -1257,14 +1261,14 @@ function _onAsignacion({ numero, contacto, asesor }) {
 function _onLiberacion({ numero, contacto }) {
     delete _state.asignaciones[`${numero}:${contacto}`];
     _renderList();
-    _renderFiltros();
+    _scheduleConteos();
 }
 
 function _onEstado({ numero, contacto, estado }) {
     const key = `${numero}:${contacto}`;
     if (_state.asignaciones[key]) _state.asignaciones[key].estado = estado;
     _renderList();
-    _renderFiltros();
+    _scheduleConteos();
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -1444,25 +1448,39 @@ function _renderFiltroAsesor() {
     });
 }
 
+// ── Conteos desde Supabase (badges compartidos) ────────────────────────────
+let _conteoTimer = null;
+
+async function _fetchConteos() {
+    try {
+        const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+        const url = isAdmin
+            ? `${HETZNER_URL}/wa/asignaciones/conteos`
+            : `${HETZNER_URL}/wa/asignaciones/conteos?asesor=${encodeURIComponent(_asesorActual)}`;
+        const r = await fetch(url);
+        if (!r.ok) return;
+        const data = await r.json();
+        _state.conteos = {
+            en_espera: data.en_espera ?? 0,
+            asignado:  data.asignado  ?? 0,
+            resuelto:  data.resuelto  ?? 0,
+        };
+        _renderFiltros();
+    } catch { /* sin conexión — mantiene conteos anteriores */ }
+}
+
+function _scheduleConteos() {
+    clearTimeout(_conteoTimer);
+    _conteoTimer = setTimeout(_fetchConteos, 500);
+}
+
 // ── Render filtros de estado ───────────────────────────────────────────────
 function _renderFiltros() {
     _renderFiltroAsesor();
     const el = document.getElementById('wap-filtros');
     if (!el) return;
 
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    let espera = 0, asignado = 0, resuelto = 0;
-
-    for (const [num, convs] of Object.entries(_state.conv)) {
-        for (const phone of Object.keys(convs)) {
-            const estado = _getEstado(num, phone);
-            const asig   = _getAsig(num, phone);
-            if (estado === 'en_espera') espera++;
-            else if (estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual)) asignado++;
-            else if (estado === 'resuelto' && (isAdmin || asig?.asesor === _asesorActual)) resuelto++;
-        }
-    }
-
+    const { en_espera: espera, asignado, resuelto } = _state.conteos;
     const f = _state.filtroEstado;
     const badge = (key, label, count, color) => {
         const activo = f === key ? ' wap-filtro--active' : '';
@@ -1823,7 +1841,7 @@ async function _desconectarSesion(numero) {
             _showListView();
         }
         _renderSessions();
-        _renderFiltros();
+        _scheduleConteos();
         _renderList();
         _showToast('Sesión desconectada');
     } catch {
