@@ -14,7 +14,7 @@
     <link rel="prefetch" href="./adminBarrios.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        #cc-frame { width: 100%; height: 100%; border: none; display: block; }
+        #cc-frame { margin-left: 60px; width: calc(100% - 60px); height: 100%; border: none; display: block; }
 
         /* ── Banner nueva versión ── */
         #banner-nueva-version {
@@ -105,47 +105,55 @@
         @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
 
-        /* ── WA Strip tab (borde izquierdo) ── */
-        #wa-tab {
-            position: fixed; left: 0; top: 50%;
-            transform: translateY(-50%);
-            z-index: 7000;
-            background: #1e293b; color: #f1f5f9;
-            border: none; cursor: pointer;
-            border-radius: 0 10px 10px 0;
-            padding: 14px 10px;
-            display: flex; flex-direction: column; align-items: center;
-            gap: 8px;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.25);
+        /* ── WA Panel (réplica exacta de side-panel de workspace.css) ── */
+        #wa-panel {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 350px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            transform: translateX(-290px);
+            transition: transform 260ms ease;
+            z-index: 7500;
+        }
+        #wa-panel.expanded { transform: translateX(0); }
+
+        #wa-panel .panel-header {
+            width: 350px; height: 60px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border-radius: 0 0 30px 0;
+        }
+        #wa-panel .panel-header__title {
+            font-size: 1.6rem; font-weight: 700;
+            letter-spacing: 0.5px; white-space: nowrap;
+            flex: 0; margin-left: auto; padding-right: 12px;
+        }
+        #wa-panel .panel-header__icon {
+            width: 60px; height: 60px; border-radius: 30px;
+            flex-shrink: 0; display: flex; align-items: center;
+            justify-content: center; position: relative;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border: none; outline: none; cursor: pointer;
             transition: background 0.15s;
         }
-        #wa-tab:hover { background: #334155; }
-        #wa-tab-badge {
-            background: #ef4444; color: #fff; font-size: 11px;
-            font-weight: 700; border-radius: 8px; min-width: 18px;
-            height: 18px; padding: 0 4px; display: flex;
+        #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
+        #wa-badge-hdr {
+            position: absolute; top: 6px; right: 6px;
+            background: #ef4444; color: #fff; font-size: 10px;
+            font-weight: 700; border-radius: 8px; min-width: 16px;
+            height: 16px; padding: 0 3px; display: none;
             align-items: center; justify-content: center;
             font-family: sans-serif; line-height: 1;
         }
-
-        /* ── WA Backdrop ── */
-        #wa-backdrop {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.3); z-index: 7400;
+        #wa-body {
+            flex: 1; overflow: hidden; min-height: 0;
+            display: flex; flex-direction: column;
         }
-        #wa-backdrop.visible { display: block; }
-
-        /* ── WA Drawer (desliza desde la izquierda) ── */
-        #wa-drawer {
-            position: fixed; top: 0; left: 0; bottom: 0;
-            width: 440px; z-index: 7500;
-            transform: translateX(-100%);
-            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-            overflow: hidden; display: flex; flex-direction: column;
-        }
-        #wa-drawer.open { transform: translateX(0); }
-        #wa-body { flex: 1; overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
-        @media (max-width: 500px) { #wa-drawer { width: 100%; } }
     </style>
 </head>
 <body>
@@ -181,18 +189,20 @@
     </div>
 </div>
 
-<!-- WA Drawer -->
-<div id="wa-backdrop"></div>
-<div id="wa-drawer">
+<!-- WA Panel (mismo diseño que panel PBX, lado izquierdo) -->
+<div id="wa-panel">
+    <div class="panel-header">
+        <button class="panel-header__icon" id="wa-strip" title="WhatsApp">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            </svg>
+            <span id="wa-badge-hdr"></span>
+        </button>
+        <span class="panel-header__title">WhatsApp</span>
+    </div>
     <div id="wa-body"></div>
 </div>
-<button id="wa-tab" title="WhatsApp">
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-    </svg>
-    <span id="wa-tab-badge" style="display:none;"></span>
-</button>
 
 <!-- JsSIP (debe cargar antes del módulo) -->
 <script src="../jssip.min.js"></script>
@@ -201,24 +211,16 @@
     import { supabase } from '../Api/supabaseConfig.js';
     import { PBX_URL, WS_URL } from '../Api/config.js';
 
-    // ── WA Drawer ─────────────────────────────────────────────────────────────
-    function _toggleWaDrawer() {
-        const drawer   = document.getElementById('wa-drawer');
-        const backdrop = document.getElementById('wa-backdrop');
-        const isOpen   = drawer.classList.contains('open');
-        drawer.classList.toggle('open', !isOpen);
-        backdrop.classList.toggle('visible', !isOpen);
-        if (!isOpen) document.getElementById('wa-tab-badge').style.display = 'none';
-    }
-    document.getElementById('wa-tab').addEventListener('click', _toggleWaDrawer);
-    document.getElementById('wa-backdrop').addEventListener('click', _toggleWaDrawer);
+    // ── WA Panel toggle (igual que strip-wa en pedidosCallCenter) ─────────────
+    document.getElementById('wa-strip').addEventListener('click', () => {
+        document.getElementById('wa-panel').classList.toggle('expanded');
+    });
 
     document.addEventListener('wa:conteos', (e) => {
-        const badge  = document.getElementById('wa-tab-badge');
+        const badge  = document.getElementById('wa-badge-hdr');
         const espera = e.detail?.en_espera || 0;
-        const closed = !document.getElementById('wa-drawer').classList.contains('open');
         badge.textContent   = espera;
-        badge.style.display = (espera > 0 && closed) ? 'flex' : 'none';
+        badge.style.display = espera > 0 ? 'flex' : 'none';
     });
 
     const ICE = [
