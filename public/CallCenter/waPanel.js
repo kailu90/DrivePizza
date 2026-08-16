@@ -101,6 +101,29 @@ function _injectStyles() {
 .wap-dot--yellow { background: #f59e0b; }
 .wap-dot--red    { background: #ef4444; }
 
+/* ── Session pill wrapper + disconnect btn ───────── */
+.wap-pill-wrap {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.wap-pill-descon {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    border-radius: 50%;
+    transition: color .15s, background .15s;
+}
+.wap-pill-descon:hover {
+    color: #ef4444;
+    background: rgba(239,68,68,.1);
+}
+
 /* ── Connect button (admin) ───────────────────────── */
 .wap-btn-connect {
     margin: 6px 10px 4px;
@@ -684,16 +707,23 @@ function _renderSessions() {
         return;
     }
 
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+
     el.innerHTML = _state.sesiones.map(s => {
         const active  = s.numero === _state.activeNum ? ' wap-pill--active' : '';
         const dotCls  = s.status === 'conectado'    ? 'wap-dot--green'
                       : s.status === 'esperando_qr' ? 'wap-dot--yellow'
                       : 'wap-dot--red';
-        const label   = _capitalizarSede(s.sede) || _fmtPhone(s.numero);
-        return `<button class="wap-pill${active}" data-num="${s.numero}">
-            <span class="wap-dot ${dotCls}"></span>
-            <span>${label}</span>
-        </button>`;
+        const label      = _capitalizarSede(s.sede) || _fmtPhone(s.numero);
+        const btnDescon  = isAdmin
+            ? `<button class="wap-pill-descon" data-num="${s.numero}" title="Desconectar">&#10005;</button>`
+            : '';
+        return `<div class="wap-pill-wrap">
+            <button class="wap-pill${active}" data-num="${s.numero}">
+                <span class="wap-dot ${dotCls}"></span>
+                <span>${label}</span>
+            </button>${btnDescon}
+        </div>`;
     }).join('');
 
     el.querySelectorAll('.wap-pill').forEach(btn => {
@@ -705,6 +735,15 @@ function _renderSessions() {
             _showListView();
         });
     });
+
+    if (isAdmin) {
+        el.querySelectorAll('.wap-pill-descon').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                _desconectarSesion(btn.dataset.num);
+            });
+        });
+    }
 }
 
 // ── Render conversation list ───────────────────────────────────────────────
@@ -957,6 +996,25 @@ function _showQr(numero, qrData) {
 function _closeQr() {
     document.getElementById('wap-qr-modal')?.classList.remove('active');
     _qrNumero = null;
+}
+
+// ── Desconectar sesión (admin) ─────────────────────────────────────────────
+async function _desconectarSesion(numero) {
+    if (!confirm(`¿Desconectar sesión ${_fmtPhone(numero)}?`)) return;
+    try {
+        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
+        _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
+        if (_state.activeNum === numero) {
+            _state.activeNum     = _state.sesiones[0]?.numero || null;
+            _state.activeContact = null;
+            _showListView();
+        }
+        _renderSessions();
+        _renderList();
+        _showToast('Sesión desconectada');
+    } catch {
+        _showToast('Error al desconectar');
+    }
 }
 
 // ── Conectar numero (admin) ────────────────────────────────────────────────
