@@ -1168,9 +1168,6 @@ function _renderSessions() {
                       : s.status === 'esperando_qr' ? 'wap-dot--yellow'
                       : 'wap-dot--red';
         const label      = _sessionLabel(s.numero);
-        const btnDescon  = isAdmin
-            ? `<button class="wap-pill-descon" data-num="${s.numero}" title="Desconectar">&#10005;</button>`
-            : '';
         const activeStyle = s.numero === _state.activeNum
             ? `background:${color};border-color:${color};color:#fff;`
             : `border-color:${color};color:${color};`;
@@ -1178,7 +1175,7 @@ function _renderSessions() {
             <button class="wap-pill${active}" data-num="${s.numero}" style="${activeStyle}">
                 <span class="wap-dot ${dotCls}"></span>
                 <span>${label}</span>
-            </button>${btnDescon}
+            </button>
         </div>`;
     }).join('');
 
@@ -1192,14 +1189,6 @@ function _renderSessions() {
         });
     });
 
-    if (isAdmin) {
-        el.querySelectorAll('.wap-pill-descon').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                _desconectarSesion(btn.dataset.num);
-            });
-        });
-    }
 }
 
 // ── Render conversation list ───────────────────────────────────────────────
