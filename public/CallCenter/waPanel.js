@@ -1944,22 +1944,26 @@ function _toggleConnectForm() {
             wrap.innerHTML = '';
             // Mostrar modal de inmediato (QR llegará por WS o viene en la respuesta)
             _onQr({ numero, sede, qr: data.qr || null });
-            // Polling fallback: si el WS no entrega el QR, lo buscamos en GET /wa/sesiones
-            let _pollTries = 0;
-            const _pollQr = setInterval(async () => {
-                _pollTries++;
-                if (_pollTries > 15 || !document.getElementById('wap-qr-modal')?.classList.contains('active')) {
-                    clearInterval(_pollQr); return;
-                }
+            // Si en 6s no llega wa:qr por WS, la sesión probablemente ya existe con
+            // credenciales viejas → borrar y recrear para forzar QR fresco.
+            const _qrTimeout = setTimeout(async () => {
+                if (!document.getElementById('wap-qr-modal')?.classList.contains('active')) return;
+                const imgEl2 = document.getElementById('wap-qr-img');
+                if (imgEl2?.querySelector('img')) return; // ya llegó el QR, no hacer nada
                 try {
-                    const pr = await fetch(`${HETZNER_URL}/wa/sesiones`);
-                    if (!pr.ok) return;
-                    const sesiones = await pr.json();
-                    const s = sesiones.find(s => s.numero === numero);
-                    console.log('[waPanel poll]', s);
-                    if (s?.qr) { clearInterval(_pollQr); _showQr(numero, s.qr); }
+                    // Borrar sesión existente
+                    await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
+                    // Esperar un momento y recrear
+                    await new Promise(r => setTimeout(r, 1500));
+                    const r2 = await fetch(`${HETZNER_URL}/wa/sesiones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ numero, sede }),
+                    });
+                    const d2 = await r2.json().catch(() => ({}));
+                    if (d2.qr) _showQr(numero, d2.qr);
                 } catch { /* ignore */ }
-            }, 2000);
+            }, 6000);
         } catch (e) {
             alert('Error al conectar: ' + e.message);
             btn.disabled = false;
