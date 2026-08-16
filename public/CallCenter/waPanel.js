@@ -1436,17 +1436,15 @@ function _renderFiltroAsesor() {
     if (!isAdmin) { el.style.display = 'none'; return; }
 
     el.style.display = '';
-    const f = _state.filtroAsesor; // null = todos | 'mio' = solo míos
-    el.innerHTML =
-        `<button class="wap-filtro${!f ? ' wap-filtro--active' : ''}" data-fa="todos" style="--fc:#6b7280;">Todos</button>` +
-        `<button class="wap-filtro${f === 'mio' ? ' wap-filtro--active' : ''}" data-fa="mio" style="--fc:#6b7280;">Míos</button>`;
+    const esMio = _state.filtroAsesor === 'mio';
+    el.innerHTML = `<button class="wap-filtro wap-filtro--active" id="wap-btn-fa" style="--fc:#6b7280;">
+        ${esMio ? 'Míos' : 'Todos'}
+    </button>`;
 
-    el.querySelectorAll('.wap-filtro').forEach(btn => {
-        btn.addEventListener('click', () => {
-            _state.filtroAsesor = btn.dataset.fa === 'mio' ? 'mio' : null;
-            _renderFiltros();
-            _renderList();
-        });
+    el.querySelector('#wap-btn-fa').addEventListener('click', () => {
+        _state.filtroAsesor = _state.filtroAsesor === 'mio' ? null : 'mio';
+        _renderFiltros();
+        _renderList();
     });
 }
 
