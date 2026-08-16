@@ -435,7 +435,7 @@ function _injectStyles() {
     padding: 6px 12px;
     border-radius: 8px;
     border: none;
-    background: var(--color-cuaternario);
+    background: var(--color-primario);
     color: #fff;
     font-size: 1.2rem;
     font-weight: 700;
@@ -443,7 +443,7 @@ function _injectStyles() {
     flex-shrink: 0;
     transition: background .15s;
 }
-.wap-btn-connect:hover { background: var(--color-primario); }
+.wap-btn-connect:hover { background: var(--color-cuaternario); }
 
 /* ── Connect form (admin) ─────────────────────────── */
 .wap-connect-form {
