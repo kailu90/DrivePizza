@@ -70,6 +70,7 @@ let _rolUsuario   = '';
 let _asesorActual = '';
 let _ws           = null;
 let _qrNumero     = null;   // numero cuyo QR modal esta abierto
+let _waitingQrFor = null;   // numero que este cliente esta esperando escanear (solo quien lo genero)
 
 const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
@@ -1313,7 +1314,7 @@ function _onQr({ numero, sede, qr }) {
     if (idx === -1) _state.sesiones.push({ numero, sede: sede || '', status: 'esperando_qr', tieneQr: true });
     else            { _state.sesiones[idx].status = 'esperando_qr'; _state.sesiones[idx].tieneQr = true; }
     _renderSessions();
-    if (['admin', 'callcenter-admin'].includes(_rolUsuario)) _showQr(numero, qr);
+    if (_waitingQrFor === numero) _showQr(numero, qr);
 }
 
 // ── Vista Sesiones ─────────────────────────────────────────────────────────
@@ -1868,7 +1869,8 @@ function _showQr(numero, qrData) {
 
 function _closeQr() {
     document.getElementById('wap-qr-modal')?.classList.remove('active');
-    _qrNumero = null;
+    _qrNumero     = null;
+    _waitingQrFor = null;
 }
 
 // ── Desconectar sesión (admin) ─────────────────────────────────────────────
@@ -1942,6 +1944,8 @@ function _toggleConnectForm() {
             if (!r.ok) throw new Error(data.error || 'Error');
             wrap.style.display = 'none';
             wrap.innerHTML = '';
+            // Marcar que este cliente espera el QR de este numero
+            _waitingQrFor = numero;
             // Mostrar modal de inmediato (QR llegará por WS o viene en la respuesta)
             _onQr({ numero, sede, qr: data.qr || null });
             // Si en 6s no llega wa:qr por WS, la sesión probablemente ya existe con
