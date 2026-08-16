@@ -76,7 +76,8 @@ function _injectStyles() {
     flex-direction: column;
     align-items: center;
     padding: 8px 0;
-    background: #1e293b;
+    background: #f4ecdf;
+    border-right: 1px solid rgba(40,76,34,.15);
     gap: 4px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -92,7 +93,7 @@ function _injectStyles() {
     justify-content: center;
     margin-bottom: 6px;
     flex-shrink: 0;
-    color: #25D366;
+    color: #284c22;
 }
 
 .wap-nav-icon {
@@ -101,7 +102,7 @@ function _injectStyles() {
     border-radius: 10px;
     background: none;
     border: none;
-    color: rgba(255,255,255,.45);
+    color: rgba(40,76,34,.4);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -111,12 +112,12 @@ function _injectStyles() {
     position: relative;
 }
 .wap-nav-icon:hover {
-    background: rgba(255,255,255,.1);
-    color: rgba(255,255,255,.85);
+    background: rgba(40,76,34,.1);
+    color: #284c22;
 }
 .wap-nav-icon--active {
-    background: rgba(255,255,255,.14);
-    color: #fff;
+    background: rgba(40,76,34,.12);
+    color: #284c22;
 }
 .wap-nav-icon--active::before {
     content: '';
@@ -126,7 +127,7 @@ function _injectStyles() {
     bottom: 6px;
     width: 3px;
     border-radius: 0 3px 3px 0;
-    background: #25D366;
+    background: #75892a;
 }
 
 /* ── Content area ────────────────────────────────── */
