@@ -9,13 +9,12 @@ import { HETZNER_URL, WS_URL } from '../Api/config.js';
 const SESSION_COLORS = ['#25D366', '#0088cc', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
 const _state = {
-    sesiones:      [],    // [{ numero, sede, status, tieneQr }]
+    sesiones:      [],    // [{ numero, sede, status, tieneQr, color, respuesta_inicial }]
     conv:          {},    // { [numero]: { [phoneContact]: { msgs, unread, lastMsg, lastTs } } }
     activeNum:     null,  // sesión WA activa (pill seleccionada) — null = todas
     activeContact: null,  // conversación abierta
     filterText:    '',
-    colorMap:      {},    // { [numero]: colorHex }
-    customNames:   {},    // { [numero]: nombre personalizado }
+    customNames:   {},    // { [numero]: nombre personalizado } — localStorage
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:  null,  // null | 'en_espera' | 'asignado' | 'resuelto'
     filtroAsesor:  null,  // null = todos | 'nombre' = solo ese asesor (admin)
@@ -27,7 +26,8 @@ function _getAsig(num, phone)   { return _state.asignaciones[`${num}:${phone}`];
 function _getEstado(num, phone) { const a = _getAsig(num, phone); return a ? (a.estado || 'asignado') : 'en_espera'; }
 function _esMio(num, phone)     { return _getAsig(num, phone)?.asesor === _asesorActual; }
 
-let _editingNum = null;  // numero cuya card está en modo edición
+let _editingNum    = null;  // numero cuya card está en modo edición
+let _pendingColors = {};   // { [numero]: colorHex } — selección temporal antes de guardar
 
 const LS_KEY_META = 'wap_meta_v1';
 
@@ -35,18 +35,14 @@ function _loadMeta() {
     try {
         const raw = localStorage.getItem(LS_KEY_META);
         if (!raw) return;
-        const { colorMap, customNames } = JSON.parse(raw);
-        if (colorMap)    Object.assign(_state.colorMap,    colorMap);
+        const { customNames } = JSON.parse(raw);
         if (customNames) Object.assign(_state.customNames, customNames);
     } catch { /* ignorar */ }
 }
 
 function _saveMeta() {
     try {
-        localStorage.setItem(LS_KEY_META, JSON.stringify({
-            colorMap:    _state.colorMap,
-            customNames: _state.customNames,
-        }));
+        localStorage.setItem(LS_KEY_META, JSON.stringify({ customNames: _state.customNames }));
     } catch { /* ignorar */ }
 }
 
@@ -57,13 +53,12 @@ function _sessionLabel(numero) {
 }
 
 function _getColor(numero) {
-    if (!_state.colorMap[numero]) {
-        // Hash determinista del número → mismo color para todos los usuarios
-        const hash = [...String(numero)].reduce((acc, c) => acc + c.charCodeAt(0), 0);
-        _state.colorMap[numero] = SESSION_COLORS[hash % SESSION_COLORS.length];
-        _saveMeta();
-    }
-    return _state.colorMap[numero];
+    // Primero: color guardado en BD (viene en _state.sesiones)
+    const fromBD = _state.sesiones.find(s => s.numero === numero)?.color;
+    if (fromBD) return fromBD;
+    // Fallback: hash determinista (misma sesión → mismo color para todos)
+    const hash = [...String(numero)].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return SESSION_COLORS[hash % SESSION_COLORS.length];
 }
 
 let _rolUsuario   = '';
@@ -329,6 +324,18 @@ function _injectStyles() {
     transition: border-color .15s;
 }
 .wap-ses-edit-input:focus { outline: none; border-color: #284c22; }
+.wap-ses-edit-textarea {
+    padding: 7px 10px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color .15s;
+}
+.wap-ses-edit-textarea:focus { outline: none; border-color: #284c22; }
 .wap-color-swatches {
     display: flex;
     flex-wrap: wrap;
@@ -1387,6 +1394,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')     _onEstado(msg);
             if (msg.tipo === 'wa:merge')      _onMerge(msg);
+            if (msg.tipo === 'wa:config')     _onConfig(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
@@ -1571,6 +1579,17 @@ function _onMerge({ numero, lidPhone, realPhone }) {
     _renderList();
 }
 
+function _onConfig({ numero, color, respuesta_inicial }) {
+    const s = _state.sesiones.find(x => x.numero === numero);
+    if (!s) return;
+    if (color !== undefined)             s.color              = color;
+    if (respuesta_inicial !== undefined) s.respuesta_inicial  = respuesta_inicial;
+    _renderSessions();
+    _renderSesionesView();
+    _renderList(); // actualiza bordes de colores en bandeja
+    if (_state.activeNum === numero) _updateChatHeader(_state.activeContact);
+}
+
 function _onQr({ numero, sede, qr }) {
     const idx = _state.sesiones.findIndex(s => s.numero === numero);
     if (idx === -1) _state.sesiones.push({ numero, sede: sede || '', status: 'esperando_qr', tieneQr: true });
@@ -1597,17 +1616,22 @@ function _renderSesionesView() {
 
         if (s.numero === _editingNum) {
             // ── Card en modo edición ──
+            const colorActual = _pendingColors[s.numero] || color;
             const swatches = SESSION_COLORS.map(c =>
-                `<button class="wap-color-swatch${c === color ? ' wap-color-swatch--active' : ''}"
+                `<button class="wap-color-swatch${c === colorActual ? ' wap-color-swatch--active' : ''}"
                     data-color="${c}" style="background:${c};" title="${c}"></button>`
             ).join('');
-            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${color};" data-num="${s.numero}">
+            const respActual = _esc(s.respuesta_inicial || '');
+            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
                 <div class="wap-ses-edit-form">
                     <label class="wap-ses-edit-label">Nombre</label>
                     <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
                         type="text" value="${_esc(label)}" placeholder="${_fmtPhone(s.numero)}">
                     <label class="wap-ses-edit-label">Color identificador</label>
                     <div class="wap-color-swatches" id="wap-swatches-${s.numero}">${swatches}</div>
+                    <label class="wap-ses-edit-label">Respuesta automática (primer mensaje)</label>
+                    <textarea class="wap-ses-edit-textarea" id="wap-respuesta-${s.numero}"
+                        rows="3" placeholder="Escribe el mensaje de bienvenida...">${respActual}</textarea>
                     <div class="wap-ses-edit-btns">
                         <button class="wap-ses-btn-cancel" data-num="${s.numero}">Cancelar</button>
                         <button class="wap-ses-btn-save" data-num="${s.numero}">Guardar</button>
@@ -1665,31 +1689,52 @@ function _renderSesionesView() {
 
     // Listeners card edición
     el.querySelectorAll('.wap-ses-btn-cancel').forEach(btn => {
-        btn.addEventListener('click', () => { _editingNum = null; _renderSesionesView(); });
-    });
-    el.querySelectorAll('.wap-ses-btn-save').forEach(btn => {
         btn.addEventListener('click', () => {
-            const num   = btn.dataset.num;
-            const name  = document.getElementById(`wap-edit-name-${num}`)?.value.trim() || '';
-            _state.customNames[num] = name || null;
-            _saveMeta();
+            delete _pendingColors[btn.dataset.num];
             _editingNum = null;
             _renderSesionesView();
-            _renderSessions(); // actualizar pills
-            _renderList();     // actualizar colores en lista
+        });
+    });
+    el.querySelectorAll('.wap-ses-btn-save').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const num       = btn.dataset.num;
+            const name      = document.getElementById(`wap-edit-name-${num}`)?.value.trim() || '';
+            const respuesta = document.getElementById(`wap-respuesta-${num}`)?.value.trim() || '';
+            const color     = _pendingColors[num];
+
+            // Nombre: sigue en localStorage
+            _state.customNames[num] = name || null;
+            _saveMeta();
+
+            // Color + respuesta_inicial → API (solo si hay algo que guardar)
+            if (color !== undefined || respuesta !== undefined) {
+                const body = {};
+                if (color     !== undefined) body.color             = color;
+                body.respuesta_inicial = respuesta; // siempre enviar (permite borrar)
+                try {
+                    await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(num)}/config`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+                } catch { _showToast('Error guardando configuración', 3000); }
+            }
+
+            delete _pendingColors[num];
+            _editingNum = null;
+            _renderSesionesView();
+            _renderSessions();
+            _renderList();
         });
     });
 
-    // Listeners swatches de color
+    // Listeners swatches de color — solo marcan pendiente, no guardan todavía
     el.querySelectorAll('.wap-color-swatches').forEach(wrap => {
         const num = wrap.id.replace('wap-swatches-', '');
         wrap.querySelectorAll('.wap-color-swatch').forEach(sw => {
             sw.addEventListener('click', () => {
-                _state.colorMap[num] = sw.dataset.color;
-                _saveMeta();
+                _pendingColors[num] = sw.dataset.color;
                 wrap.querySelectorAll('.wap-color-swatch').forEach(s =>
                     s.classList.toggle('wap-color-swatch--active', s.dataset.color === sw.dataset.color));
-                // Actualizar borde de la card en tiempo real
                 const card = el.querySelector(`.wap-ses-card--editing[data-num="${num}"]`);
                 if (card) card.style.borderLeftColor = sw.dataset.color;
             });
