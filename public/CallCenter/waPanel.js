@@ -90,7 +90,6 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _injectStyles();
     _loadMeta();          // restaurar colores y nombres personalizados
     _loadConv();          // restaurar historial desde localStorage (ya limpia vacíos)
-    _purgeEmptyConvs();   // limpiar chats vacíos que ya estén en memoria
     _renderShell(body);
     _loadSessions();
     _loadAsignaciones();
@@ -1254,6 +1253,9 @@ async function _loadConversaciones() {
             const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado } = c;
             if (!numero || !contacto) continue;
             if (contacto === 'status@broadcast' || contacto.endsWith('@g.us')) continue;
+            // Ignorar contactos sin ningún mensaje real — evita resembrar chats vacíos
+            // (ej. miembros de grupos que solo tienen asignación pero nunca escribieron)
+            if (!ultimo_mensaje && !ultimo_ts) continue;
 
             if (!_state.conv[numero]) _state.conv[numero] = {};
             if (!_state.conv[numero][contacto]) {
@@ -1270,6 +1272,8 @@ async function _loadConversaciones() {
             }
         }
 
+        // Purgar vacíos que pudieran haber quedado y re-renderizar
+        _purgeEmptyConvs();
         if (actualizado) {
             _saveConv();
             _renderList();
@@ -1287,8 +1291,8 @@ async function _loadContactos() {
         for (const [numero, contactos] of Object.entries(data)) {
             for (const [phone, name] of Object.entries(contactos)) {
                 if (!name) continue;
-                if (!_state.conv[numero])        _state.conv[numero]        = {};
-                if (!_state.conv[numero][phone])  _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+                // Solo actualizar si la conv ya existe — no crear entradas vacías
+                if (!_state.conv[numero]?.[phone]) continue;
                 const c = _state.conv[numero][phone];
                 if (!c.customName && c.name !== name) {
                     c.name = name;
