@@ -1284,6 +1284,19 @@ async function _loadConversaciones() {
 
         // Purgar vacíos que pudieran haber quedado y re-renderizar
         _purgeEmptyConvs();
+
+        // Eliminar contactos con formato @lid (15+ dígitos) que ya no están en Supabase
+        // Ocurre cuando un lid fue migrado al número real de teléfono
+        const validosSupabase = new Set(convs.filter(c => c.ultimo_mensaje || c.ultimo_ts).map(c => `${c.numero}:${c.contacto}`));
+        for (const [num, contactos] of Object.entries(_state.conv)) {
+            for (const phone of Object.keys(contactos)) {
+                const esLid = /^\d{15,}$/.test(phone);
+                if (esLid && !validosSupabase.has(`${num}:${phone}`)) {
+                    delete _state.conv[num][phone];
+                    actualizado = true;
+                }
+            }
+        }
         if (actualizado) {
             _saveConv();
             _renderList();
