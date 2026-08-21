@@ -84,13 +84,14 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _rolUsuario   = rol;
     _asesorActual = asesor;
     _injectStyles();
-    _loadMeta();          // restaurar colores y nombres personalizados
-    _loadConv();          // restaurar historial desde localStorage (ya limpia vacíos)
+    _loadMeta();          // restaurar nombres personalizados desde localStorage
+    _loadConv();          // caché de msgs para mostrar rápido mientras llega Supabase
     _renderShell(body);
     _loadSessions();
     _loadAsignaciones();
-    _loadConversaciones();
+    _loadConversaciones(); // fuente de verdad — reconstruye conv desde Supabase
     _connectWs();
+    setInterval(_loadConversaciones, 60_000); // re-sync cada 60s
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
@@ -1377,58 +1378,53 @@ async function _loadSessions() {
     } catch { /* sin conexion al backend */ }
 }
 
-// ── Load conversaciones desde Supabase (seed inicial compartido) ───────────
+// ── Load conversaciones desde Supabase — ÚNICA fuente de verdad ────────────
+// Reconstruye _state.conv completo desde Supabase. Preserva solo msgs y
+// customName del estado anterior (caché local). Ejecuta cada 60s para
+// garantizar que todos los asesores ven la misma bandeja.
 async function _loadConversaciones() {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/conversaciones`);
         if (!r.ok) return;
-        const convs = await r.json(); // [{ numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado }]
-        if (!Array.isArray(convs) || !convs.length) return;
+        const convs = await r.json(); // [{ numero, contacto, nombre, ultimo_mensaje, ultimo_ts }]
+        if (!Array.isArray(convs)) return;
 
-        let actualizado = false;
+        // Construir nuevo conv solo con lo que Supabase devuelve
+        const newConv = {};
         for (const c of convs) {
-            const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado } = c;
+            const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
             if (contacto === 'status@broadcast' || contacto.endsWith('@g.us')) continue;
-            // Ignorar contactos sin ningún mensaje real — evita resembrar chats vacíos
-            // (ej. miembros de grupos que solo tienen asignación pero nunca escribieron)
             if (!ultimo_mensaje && !ultimo_ts) continue;
 
-            if (!_state.conv[numero]) _state.conv[numero] = {};
-            if (!_state.conv[numero][contacto]) {
-                _state.conv[numero][contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
-                actualizado = true;
-            }
-            const conv = _state.conv[numero][contacto];
-            // Actualizar metadata solo si Supabase tiene info más reciente
-            if (!conv.customName && nombre) conv.name = nombre;
-            if ((ultimo_ts || 0) > conv.lastTs) {
-                conv.lastMsg = ultimo_mensaje || '';
-                conv.lastTs  = ultimo_ts || 0;
-                actualizado  = true;
-            }
+            if (!newConv[numero]) newConv[numero] = {};
+            const prev = _state.conv[numero]?.[contacto] || {};
+            newConv[numero][contacto] = {
+                msgs:       prev.msgs?.length ? prev.msgs : [],
+                unread:     prev.unread || 0,
+                customName: prev.customName || null,
+                name:       nombre || prev.name || null,
+                lastMsg:    ultimo_mensaje || prev.lastMsg || '',
+                lastTs:     ultimo_ts     || prev.lastTs  || 0,
+            };
         }
 
-        // Purgar vacíos que pudieran haber quedado y re-renderizar
-        _purgeEmptyConvs();
-
-        // Eliminar contactos con formato @lid (15+ dígitos) que ya no están en Supabase
-        // Ocurre cuando un lid fue migrado al número real de teléfono
-        const validosSupabase = new Set(convs.filter(c => c.ultimo_mensaje || c.ultimo_ts).map(c => `${c.numero}:${c.contacto}`));
+        // Conversaciones recién llegadas por WS aún no confirmadas en Supabase:
+        // si están en _state.conv pero no en newConv, conservarlas temporalmente
         for (const [num, contactos] of Object.entries(_state.conv)) {
-            for (const phone of Object.keys(contactos)) {
-                const esLid = /^\d{15,}$/.test(phone);
-                if (esLid && !validosSupabase.has(`${num}:${phone}`)) {
-                    delete _state.conv[num][phone];
-                    actualizado = true;
+            for (const [phone, data] of Object.entries(contactos)) {
+                if (!newConv[num]?.[phone] && data.lastTs > (Date.now() / 1000 - 120)) {
+                    // Llegó en los últimos 2 minutos — puede ser lag de Supabase
+                    if (!newConv[num]) newConv[num] = {};
+                    newConv[num][phone] = data;
                 }
             }
         }
-        if (actualizado) {
-            _saveConv();
-            _renderList();
-        }
-    } catch { /* sin conexión — se queda con datos locales */ }
+
+        _state.conv = newConv;
+        _saveConv();
+        _renderList();
+    } catch { /* sin conexión — mantener estado actual */ }
 }
 
 // ── Load contacts ──────────────────────────────────────────────────────────
@@ -2613,25 +2609,31 @@ function _saveConv() {
     } catch { /* localStorage lleno — ignorar */ }
 }
 
+// Solo carga msgs y customName como caché temporal para mostrar historial
+// mientras llega la respuesta de Supabase. _loadConversaciones() lo reemplaza.
 function _loadConv() {
     try {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        // Filtrar entradas contaminadas o vacías que pudieron guardarse en versiones anteriores
         for (const num of Object.keys(parsed)) {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
                 const c = convs[phone];
-                // Eliminar: JIDs inválidos, grupos, o chats sin ningún mensaje real
-                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.includes('@')) {
-                    delete convs[phone];
-                } else if (!c.msgs?.length && !c.lastMsg) {
-                    delete convs[phone];
-                }
+                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.includes('@')) continue;
+                if (!c.msgs?.length && !c.lastMsg) continue;
+                if (!_state.conv[num]) _state.conv[num] = {};
+                // Solo msgs y customName — lista y metadata vienen de Supabase
+                _state.conv[num][phone] = {
+                    msgs:       c.msgs?.slice(-MAX_MSGS) || [],
+                    unread:     0,
+                    customName: c.customName || null,
+                    name:       c.name || null,
+                    lastMsg:    c.lastMsg || '',
+                    lastTs:     c.lastTs  || 0,
+                };
             }
         }
-        Object.assign(_state.conv, parsed);
     } catch { /* datos corruptos — ignorar */ }
 }
 
