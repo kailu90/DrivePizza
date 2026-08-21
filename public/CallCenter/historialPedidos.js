@@ -1180,4 +1180,7 @@ window.addEventListener('message', e => {
     pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
 });
 
-if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
+if (window.parent !== window) {
+    window.parent.postMessage({ type: 'frame-ready' }, '*');
+    window.parent.postMessage({ type: 'wa-visible', show: true }, '*');
+}

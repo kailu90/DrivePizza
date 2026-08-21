@@ -309,7 +309,7 @@
             _setWaVisible(e.data.show !== false);
         }
         if (e.data?.type === 'nav-loading') {
-            _setWaVisible(true); // al navegar, asumir que el destino necesita el panel
+            _setWaVisible(false); // ocultar por defecto — cada página lo muestra si lo necesita
             _overlayShownAt = performance.now();
             _overlay.classList.add('visible');
             _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {

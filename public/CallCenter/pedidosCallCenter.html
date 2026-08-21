@@ -610,7 +610,10 @@ import { initNavButtons } from "./navCallCenter.js";
 
     // Avisar al shell que el frame está listo para recibir el estado actual
     initNavButtons('pedidos');
-    if (window.parent !== window) window.parent.postMessage({ type: 'frame-ready' }, '*');
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'frame-ready' }, '*');
+        window.parent.postMessage({ type: 'wa-visible', show: true }, '*');
+    }
 
     // ── Asesores conectados ───────────────────────────────────────────────────
     let panelAgentsExpanded = false;
