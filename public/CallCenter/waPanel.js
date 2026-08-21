@@ -874,6 +874,36 @@ function _injectStyles() {
 }
 .wap-input-row button:hover { background: var(--color-cuaternario); }
 
+/* ── Banner sesión desconectada (en chat) ────────── */
+.wap-offline-bar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    border-top: 1px solid #fecaca;
+    color: #dc2626;
+    font-size: 1.15rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    text-align: center;
+}
+.wap-offline-bar.visible { display: flex; }
+
+/* ── Indicador offline en card de conversación ───── */
+.wap-conv-item--offline {
+    opacity: 0.65;
+}
+.wap-offline-tag {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
 /* ── Toast ───────────────────────────────────────── */
 .wap-toast {
     position: fixed;
@@ -1057,6 +1087,9 @@ function _renderShell(body) {
                             <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">RESOLVER</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
+                        <div class="wap-offline-bar" id="wap-offline-bar">
+                            ⚠️ Sesión desconectada — reconecta para responder
+                        </div>
                         <div class="wap-input-row">
                             <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
                             <button id="wap-send">&#10148;</button>
@@ -1341,6 +1374,7 @@ function _onStatus({ numero, sede, status }) {
     _getColor(numero); // asignar color si es nueva sesión
     _renderSessions();
     _renderSesionesView(); // actualizar cards en vista Conexiones en tiempo real
+    if (_state.activeNum === numero) _updateOfflineBar(); // actualizar banner si el chat activo es de esta sesión
 
     // QR escaneado — mostrar animación de confirmación en el modal
     if (status === 'conectando' && _waitingQrFor === numero) {
@@ -1700,28 +1734,32 @@ function _renderList() {
     }
 
     el.innerHTML = filtered.map(({ num, phone, data }) => {
-        const color   = _getColor(num);
-        const estado  = _getEstado(num, phone);
-        const asig    = _getAsig(num, phone);
-        const esLibre = estado === 'en_espera';
-        const esMio   = _esMio(num, phone);
+        const color      = _getColor(num);
+        const estado     = _getEstado(num, phone);
+        const asig       = _getAsig(num, phone);
+        const esLibre    = estado === 'en_espera';
+        const esMio      = _esMio(num, phone);
+        const sesStatus  = _state.sesiones.find(s => s.numero === num)?.status;
+        const isOffline  = sesStatus === 'desconectado' || sesStatus === 'reconectando';
         const unread  = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
         const display = data.customName || data.name || _fmtPhone(phone);
         const hasName = !!(data.customName || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
 
-        const estadoTag = esLibre
-            ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
-            : estado === 'resuelto'
-                ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
-                : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
+        const estadoTag = isOffline
+                ? `<span class="wap-offline-tag">Sesión caída</span>`
+                : esLibre
+                    ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
+                    : estado === 'resuelto'
+                        ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
+                        : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
-        const tomarBtn = esLibre
+        const tomarBtn = (esLibre && !isOffline)
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre ? '78px' : '12px'};">
+        return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
             <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
@@ -1773,6 +1811,7 @@ function _openChat(phone) {
 
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
     _renderMsgs();
+    _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión
     _renderList(); // actualizar badge en background
     _loadMsgsSupabase(phone);
 }
@@ -1913,10 +1952,29 @@ function _renderMsgs() {
     el.scrollTop = el.scrollHeight;
 }
 
+function _updateOfflineBar() {
+    const bar    = document.getElementById('wap-offline-bar');
+    const input  = document.getElementById('wap-input');
+    const sendBtn = document.getElementById('wap-send');
+    if (!bar) return;
+    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
+    const offline   = sesStatus === 'desconectado' || sesStatus === 'reconectando';
+    bar.classList.toggle('visible', offline);
+    if (input)   input.disabled   = offline;
+    if (sendBtn) sendBtn.disabled = offline;
+}
+
 async function _sendMessage() {
     const input = document.getElementById('wap-input');
     const texto = input?.value.trim();
     if (!texto || !_state.activeNum || !_state.activeContact) return;
+
+    // Bloquear envío si la sesión está desconectada
+    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
+    if (sesStatus === 'desconectado' || sesStatus === 'reconectando') {
+        _showToast('Sesión desconectada — reconecta para responder', 3500);
+        return;
+    }
 
     input.value = '';
     const num   = _state.activeNum;
@@ -2054,12 +2112,8 @@ async function _desconectarSesion(numero) {
     try {
         await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
 
-        // Limpiar conversaciones y asignaciones de esta sesión
-        delete _state.conv[numero];
-        for (const key of Object.keys(_state.asignaciones)) {
-            if (key.startsWith(`${numero}:`)) delete _state.asignaciones[key];
-        }
-        _saveConv();
+        // No eliminamos conv ni asignaciones — las conversaciones quedan
+        // visibles en la bandeja con indicador de sesión caída (Opción B).
 
         // Marcar como desconectada (no eliminar — la card sigue visible con botón Conectar)
         const idx = _state.sesiones.findIndex(s => s.numero === numero);
