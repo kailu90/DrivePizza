@@ -2054,20 +2054,28 @@ async function _desconectarSesion(numero) {
     try {
         await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
 
-        // Limpiar toda la data de esta sesión en estado y localStorage
+        // Limpiar conversaciones y asignaciones de esta sesión
         delete _state.conv[numero];
         for (const key of Object.keys(_state.asignaciones)) {
             if (key.startsWith(`${numero}:`)) delete _state.asignaciones[key];
         }
         _saveConv();
 
-        _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
+        // Marcar como desconectada (no eliminar — la card sigue visible con botón Conectar)
+        const idx = _state.sesiones.findIndex(s => s.numero === numero);
+        if (idx !== -1) {
+            _state.sesiones[idx].status  = 'desconectado';
+            _state.sesiones[idx].tieneQr = false;
+        }
+
+        // Si era la sesión activa, pasar a la primera conectada o a null
         if (_state.activeNum === numero) {
-            _state.activeNum     = _state.sesiones[0]?.numero || null;
+            _state.activeNum     = _state.sesiones.find(s => s.status === 'conectado')?.numero || null;
             _state.activeContact = null;
             _showListView();
         }
         _renderSessions();
+        _renderSesionesView();
         _scheduleConteos();
         _renderList();
         _showToast('Sesión desconectada');
