@@ -1373,8 +1373,9 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
 
     _saveConv();
     _renderList();
-    // Actualizar conteos si: conv nueva entrante, o conv resuelta que se reactiva
-    if (!fromMe && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
+    // Actualizar conteos si: entrante, desde celular, o conv resuelta que se reactiva
+    const esEntranteOCelular = !fromMe || desdeTelefono;
+    if (esEntranteOCelular && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
 }
@@ -1863,10 +1864,12 @@ async function _loadMsgsSupabase(phone) {
 
         // Convertir formato Supabase → formato interno
         const supabaseMsgs = msgs.map(m => ({
-            text:  m.texto,
-            ts:    m.timestamp,
-            out:   m.saliente,
-            msgId: m.msg_id,
+            text:   m.texto,
+            ts:     m.timestamp,
+            out:    m.saliente,
+            msgId:  m.msg_id,
+            asesor: m.asesor || null,
+            celular: !!m.desde_telefono,
         }));
 
         // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
