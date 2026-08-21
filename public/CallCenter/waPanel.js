@@ -828,6 +828,16 @@ function _injectStyles() {
     align-self: flex-end;
     border-radius: 10px 10px 0 10px;
 }
+.wap-msg--celular {
+    background: #ede9fe;
+    border-left: 3px solid #7c3aed;
+}
+.wap-msg-celular-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #7c3aed;
+    margin-bottom: 1px;
+}
 .wap-msg-asesor {
     font-size: 1rem;
     font-weight: 600;
@@ -1324,7 +1334,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono }) {
     // Descartar fuentes no válidas
     if (!remitente) return;
     if (remitente === 'status@broadcast') return;
@@ -1354,7 +1364,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -1962,8 +1972,8 @@ function _renderMsgs() {
         return;
     }
     el.innerHTML = c.msgs.map(m => `
-        <div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}">
-            ${m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : ''}
+        <div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}">
+            ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
             <span class="wap-msg-ts">${m.ts ? _fmtTs(m.ts) : ''}</span>
         </div>`).join('');
