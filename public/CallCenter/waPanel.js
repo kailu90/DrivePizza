@@ -1363,7 +1363,8 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
 
     _saveConv();
     _renderList();
-    if (isNewConv && !fromMe) _scheduleConteos(); // nueva conv entrante → actualiza en_espera
+    // Actualizar conteos si: conv nueva entrante, o conv resuelta que se reactiva
+    if (!fromMe && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
 }
