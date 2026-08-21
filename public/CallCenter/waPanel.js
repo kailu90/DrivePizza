@@ -255,6 +255,7 @@ function _injectStyles() {
 }
 .wap-ses-badge--green  { background: #dcfce7; color: #16a34a; }
 .wap-ses-badge--yellow { background: #fef9c3; color: #b45309; }
+.wap-ses-badge--blue   { background: #dbeafe; color: #1d4ed8; }
 .wap-ses-badge--red    { background: #fee2e2; color: #dc2626; }
 .wap-ses-card-actions {
     display: flex;
@@ -1325,6 +1326,7 @@ function _onStatus({ numero, sede, status }) {
     }
     _getColor(numero); // asignar color si es nueva sesión
     _renderSessions();
+    _renderSesionesView(); // actualizar cards en vista Conexiones en tiempo real
 
     // QR escaneado — mostrar animación de confirmación en el modal
     if (status === 'conectando' && _waitingQrFor === numero) {
@@ -1438,15 +1440,23 @@ function _renderSesionesView() {
         }
 
         // ── Card normal ──
-        const status = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
-                     : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
-                     : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
+        const isDesconectado = s.status === 'desconectado';
+        const statusBadge = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
+                          : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
+                          : s.status === 'conectando'   ? '<span class="wap-ses-badge wap-ses-badge--blue">Conectando...</span>'
+                          : s.status === 'reconectando' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Reconectando...</span>'
+                          : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
+        const actionBtn = isAdmin
+            ? (isDesconectado
+                ? `<button class="wap-ses-btn-con" data-num="${s.numero}" title="Conectar">Conectar</button>`
+                : `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>`)
+            : '';
         return `<div class="wap-ses-card" style="border-left:4px solid ${color};">
             <div class="wap-ses-card-dot" style="background:${color};"></div>
             <div class="wap-ses-card-info">
                 <span class="wap-ses-card-name">${_esc(label)}</span>
                 <span class="wap-ses-card-num">${_fmtPhone(s.numero)}</span>
-                ${status}
+                ${statusBadge}
             </div>
             <div class="wap-ses-card-actions">
                 <button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
@@ -1455,7 +1465,7 @@ function _renderSesionesView() {
                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>
-                ${isAdmin ? `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>` : ''}
+                ${actionBtn}
             </div>
         </div>`;
     }).join('');
@@ -1470,6 +1480,9 @@ function _renderSesionesView() {
     if (isAdmin) {
         el.querySelectorAll('.wap-ses-btn-des').forEach(btn => {
             btn.addEventListener('click', () => _desconectarSesion(btn.dataset.num));
+        });
+        el.querySelectorAll('.wap-ses-btn-con').forEach(btn => {
+            btn.addEventListener('click', () => _reconectarSesion(btn.dataset.num));
         });
     }
 
@@ -1993,6 +2006,26 @@ function _closeQr() {
     document.getElementById('wap-qr-modal')?.classList.remove('active');
     _qrNumero     = null;
     _waitingQrFor = null;
+}
+
+// ── Reconectar sesión desconectada (admin) ────────────────────────────────
+async function _reconectarSesion(numero) {
+    const s = _state.sesiones.find(x => x.numero === numero);
+    if (!s) return;
+    _waitingQrFor = numero;
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/sesiones`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero, sede: s.sede }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || 'Error');
+        _onQr({ numero, sede: s.sede, qr: data.qr || null });
+    } catch (e) {
+        _waitingQrFor = null;
+        _showToast('Error al reconectar: ' + e.message);
+    }
 }
 
 // ── Desconectar sesión (admin) ─────────────────────────────────────────────
