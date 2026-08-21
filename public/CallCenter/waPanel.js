@@ -1808,10 +1808,11 @@ function _openChat(phone) {
 
     _updateChatHeader(phone);
 
-    // Mostrar RESOLVER solo si el chat es mío y está asignado (no resuelto)
-    const esMioAbierto = _esMio(_state.activeNum, phone) && _getEstado(_state.activeNum, phone) === 'asignado';
+    // Mostrar RESOLVER si el chat está asignado y: es mío, o soy admin/callcenter-admin
+    const isAdminChat  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const puedeResolver = _getEstado(_state.activeNum, phone) === 'asignado' && (_esMio(_state.activeNum, phone) || isAdminChat);
     const liberarBtn   = document.getElementById('wap-liberar-btn');
-    if (liberarBtn) liberarBtn.style.display = esMioAbierto ? '' : 'none';
+    if (liberarBtn) liberarBtn.style.display = puedeResolver ? '' : 'none';
 
     document.getElementById('wap-list').style.display        = 'none';
     document.getElementById('wap-search-wrap').style.display = 'none';
