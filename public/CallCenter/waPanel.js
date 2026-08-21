@@ -89,7 +89,8 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _asesorActual = asesor;
     _injectStyles();
     _loadMeta();          // restaurar colores y nombres personalizados
-    _loadConv();          // restaurar historial desde localStorage
+    _loadConv();          // restaurar historial desde localStorage (ya limpia vacíos)
+    _purgeEmptyConvs();   // limpiar chats vacíos que ya estén en memoria
     _renderShell(body);
     _loadSessions();
     _loadAsignaciones();
@@ -2222,6 +2223,20 @@ function _toggleConnectForm() {
 }
 
 // ── Persistencia localStorage ──────────────────────────────────────────────
+function _purgeEmptyConvs() {
+    let changed = false;
+    for (const num of Object.keys(_state.conv)) {
+        for (const phone of Object.keys(_state.conv[num])) {
+            const c = _state.conv[num][phone];
+            if (!c.msgs?.length && !c.lastMsg) {
+                delete _state.conv[num][phone];
+                changed = true;
+            }
+        }
+    }
+    if (changed) _saveConv();
+}
+
 function _saveConv() {
     try {
         // Limitar a MAX_MSGS por conversacion antes de guardar
@@ -2245,11 +2260,15 @@ function _loadConv() {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        // Filtrar phones contaminados que pudieron guardarse en versiones anteriores
+        // Filtrar entradas contaminadas o vacías que pudieron guardarse en versiones anteriores
         for (const num of Object.keys(parsed)) {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
+                const c = convs[phone];
+                // Eliminar: JIDs inválidos, grupos, o chats sin ningún mensaje real
                 if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.includes('@')) {
+                    delete convs[phone];
+                } else if (!c.msgs?.length && !c.lastMsg) {
                     delete convs[phone];
                 }
             }
