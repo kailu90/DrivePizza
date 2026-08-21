@@ -973,6 +973,19 @@ function _injectStyles() {
     transition: opacity 0.3s;
 }
 .wap-qr-step.fade { opacity: 0; }
+.wap-qr-scanned {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: #25D366;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 700;
+    animation: wap-scanned-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes wap-scanned-pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
 `;
     document.head.appendChild(s);
 }
@@ -1312,6 +1325,26 @@ function _onStatus({ numero, sede, status }) {
     }
     _getColor(numero); // asignar color si es nueva sesión
     _renderSessions();
+
+    // QR escaneado — mostrar animación de confirmación en el modal
+    if (status === 'conectando' && _waitingQrFor === numero) {
+        const modal = document.getElementById('wap-qr-modal');
+        const imgEl = document.getElementById('wap-qr-img');
+        const hintEl = document.getElementById('wap-qr-hint');
+        if (modal?.classList.contains('active') && imgEl) {
+            _stopQrSteps();
+            imgEl.innerHTML = `
+                <div class="wap-qr-loader">
+                    <div class="wap-qr-scanned">✓</div>
+                    <p class="wap-qr-step" id="wap-qr-step">¡QR escaneado!</p>
+                </div>`;
+            if (hintEl) hintEl.style.display = 'none';
+            _startQrSteps([
+                { delay: 900,  text: 'Conectando tu cuenta...' },
+                { delay: 2400, text: 'Verificando credenciales...' },
+            ]);
+        }
+    }
 
     // Cerrar QR modal si el numero que estaba esperando QR ya se conecto
     if (status === 'conectado' && _qrNumero === numero) {
