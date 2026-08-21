@@ -433,19 +433,45 @@ function _injectStyles() {
 }
 .wap-sessions {
     display: none;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 4px 10px 10px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-direction: column;
+    padding: 4px 0 6px;
 }
-.wap-sessions::-webkit-scrollbar { display: none; }
 .wap-sessions-wrap.open .wap-sessions { display: flex; }
-.wap-sessions-empty {
-    color: #999;
+.wap-sessions-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 7px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
     font-size: 1.2rem;
-    padding: 2px 0;
+    font-weight: 500;
+    color: #374151;
+    text-align: left;
+    transition: background .12s;
 }
+.wap-sessions-item:hover { background: rgba(0,0,0,.04); }
+.wap-sessions-item--active {
+    background: rgba(0,0,0,.06);
+    font-weight: 700;
+}
+.wap-sessions-status {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wap-sessions-status--green  { background: #22c55e; }
+.wap-sessions-status--yellow { background: #f59e0b; }
+.wap-sessions-status--red    { background: #ef4444; }
+.wap-sessions-color-bar {
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.wap-sessions-name { flex: 1; }
 .wap-pill {
     display: flex;
     align-items: center;
@@ -1832,38 +1858,30 @@ function _renderSessions() {
         });
     }
 
-    // ── Pills list ───────────────────────────────────────────────────
-    const todasActive = _state.activeNum === null ? ' wap-pill--active' : '';
-    const todasStyle  = _state.activeNum === null
-        ? 'background:#374151;border-color:#374151;color:#fff;'
-        : 'border-color:#374151;color:#374151;';
+    // ── Lista vertical ───────────────────────────────────────────────
+    const todasCls = _state.activeNum === null ? ' wap-sessions-item--active' : '';
 
     el.innerHTML = `
-        <div class="wap-pill-wrap">
-            <button class="wap-pill${todasActive}" data-num="" style="${todasStyle}">
-                <span>Todas</span>
-            </button>
-        </div>
+        <button class="wap-sessions-item${todasCls}" data-num="">
+            <span class="wap-sessions-status wap-sessions-status--green"></span>
+            <span class="wap-sessions-name">Todas las conexiones</span>
+        </button>
         ${sesiones.map(s => {
-            const color      = _getColor(s.numero);
-            const active     = s.numero === _state.activeNum ? ' wap-pill--active' : '';
-            const dotCls     = s.status === 'conectado'    ? 'wap-dot--green'
-                             : s.status === 'esperando_qr' ? 'wap-dot--yellow'
-                             : 'wap-dot--red';
-            const label      = _sessionLabel(s.numero);
-            const activeStyle = s.numero === _state.activeNum
-                ? `background:${color};border-color:${color};color:#fff;`
-                : `border-color:${color};color:${color};`;
-            return `<div class="wap-pill-wrap">
-                <button class="wap-pill${active}" data-num="${s.numero}" style="${activeStyle}">
-                    <span class="wap-dot ${dotCls}"></span>
-                    <span>${label}</span>
-                </button>
-            </div>`;
+            const color    = _getColor(s.numero);
+            const activeCls = s.numero === _state.activeNum ? ' wap-sessions-item--active' : '';
+            const statusCls = s.status === 'conectado'    ? 'wap-sessions-status--green'
+                            : s.status === 'esperando_qr' ? 'wap-sessions-status--yellow'
+                            : 'wap-sessions-status--red';
+            const label    = _sessionLabel(s.numero);
+            return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
+                <span class="wap-sessions-status ${statusCls}"></span>
+                <span class="wap-sessions-color-bar" style="background:${color};"></span>
+                <span class="wap-sessions-name">${label}</span>
+            </button>`;
         }).join('')}
     `;
 
-    el.querySelectorAll('.wap-pill').forEach(btn => {
+    el.querySelectorAll('.wap-sessions-item').forEach(btn => {
         btn.addEventListener('click', () => {
             _state.activeNum     = btn.dataset.num || null;
             _state.activeContact = null;
