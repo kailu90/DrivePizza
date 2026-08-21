@@ -391,17 +391,56 @@ function _injectStyles() {
 }
 .wap-ses-btn-save:hover { background: #75892a; }
 
-/* ── Sessions strip ──────────────────────────────── */
-.wap-sessions {
-    display: flex;
-    gap: 6px;
-    padding: 8px 10px 6px;
-    overflow-x: auto;
+/* ── Sessions colapsable ─────────────────────────── */
+.wap-sessions-wrap {
     flex-shrink: 0;
     border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.wap-sessions-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 7px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #374151;
+    text-align: left;
+}
+.wap-sessions-toggle:hover { background: rgba(0,0,0,.04); }
+.wap-sessions-toggle-label { flex: 1; }
+.wap-sessions-toggle-badge {
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+.wap-sessions-toggle-arrow {
+    font-size: 1rem;
+    color: #9ca3af;
+    transition: transform .2s;
+}
+.wap-sessions-wrap.open .wap-sessions-toggle-arrow { transform: rotate(180deg); }
+.wap-sessions-active-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wap-sessions {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 10px 10px;
+    overflow-x: auto;
     scrollbar-width: none;
 }
 .wap-sessions::-webkit-scrollbar { display: none; }
+.wap-sessions-wrap.open .wap-sessions { display: flex; }
 .wap-sessions-empty {
     color: #999;
     font-size: 1.2rem;
@@ -1123,7 +1162,10 @@ function _renderShell(body) {
 
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
-                    <div class="wap-sessions" id="wap-sessions"></div>
+                    <div class="wap-sessions-wrap" id="wap-sessions-wrap">
+                        <button class="wap-sessions-toggle" id="wap-sessions-toggle" style="display:none;"></button>
+                        <div class="wap-sessions" id="wap-sessions"></div>
+                    </div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
@@ -1747,46 +1789,90 @@ function _renderSesionesView() {
     });
 }
 
-// ── Render sessions (pills strip) ──────────────────────────────────────────
+// ── Render sessions (collapsible filter) ───────────────────────────────────
 function _renderSessions() {
-    const el = document.getElementById('wap-sessions');
-    if (!el) return;
+    const wrap   = document.getElementById('wap-sessions-wrap');
+    const toggle = document.getElementById('wap-sessions-toggle');
+    const el     = document.getElementById('wap-sessions');
+    if (!wrap || !toggle || !el) return;
 
-    if (!_state.sesiones.length) {
-        el.innerHTML = `<span class="wap-sessions-empty">Sin sesiones activas</span>`;
+    // Solo mostrar si hay más de 1 sesión
+    const sesiones = _state.sesiones;
+    if (sesiones.length <= 1) {
+        wrap.style.display = 'none';
+        // Si solo hay una, fijar filtro a esa sesión o null
+        if (sesiones.length === 1 && _state.activeNum === null) {
+            _state.activeNum = sesiones[0].numero;
+        }
         return;
     }
+    wrap.style.display = '';
 
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    // ── Toggle button ────────────────────────────────────────────────
+    const activeSes = sesiones.find(s => s.numero === _state.activeNum);
+    const activeColor = activeSes ? _getColor(activeSes.numero) : null;
+    const toggleLabel = activeSes ? _sessionLabel(activeSes.numero) : 'Todas las conexiones';
+    const connectedCount = sesiones.filter(s => s.status === 'conectado').length;
 
-    el.innerHTML = _state.sesiones.map(s => {
-        const color   = _getColor(s.numero);
-        const active  = s.numero === _state.activeNum ? ' wap-pill--active' : '';
-        const dotCls  = s.status === 'conectado'    ? 'wap-dot--green'
-                      : s.status === 'esperando_qr' ? 'wap-dot--yellow'
-                      : 'wap-dot--red';
-        const label      = _sessionLabel(s.numero);
-        const activeStyle = s.numero === _state.activeNum
-            ? `background:${color};border-color:${color};color:#fff;`
-            : `border-color:${color};color:${color};`;
-        return `<div class="wap-pill-wrap">
-            <button class="wap-pill${active}" data-num="${s.numero}" style="${activeStyle}">
-                <span class="wap-dot ${dotCls}"></span>
-                <span>${label}</span>
+    toggle.style.display = '';
+    toggle.innerHTML = `
+        ${activeColor
+            ? `<span class="wap-sessions-active-dot" style="background:${activeColor};"></span>`
+            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`
+        }
+        <span class="wap-sessions-toggle-label">${toggleLabel}</span>
+        <span class="wap-sessions-toggle-badge">${connectedCount}/${sesiones.length}</span>
+        <span class="wap-sessions-toggle-arrow">&#9660;</span>
+    `;
+
+    if (!toggle._hasListener) {
+        toggle._hasListener = true;
+        toggle.addEventListener('click', () => {
+            wrap.classList.toggle('open');
+        });
+    }
+
+    // ── Pills list ───────────────────────────────────────────────────
+    const todasActive = _state.activeNum === null ? ' wap-pill--active' : '';
+    const todasStyle  = _state.activeNum === null
+        ? 'background:#374151;border-color:#374151;color:#fff;'
+        : 'border-color:#374151;color:#374151;';
+
+    el.innerHTML = `
+        <div class="wap-pill-wrap">
+            <button class="wap-pill${todasActive}" data-num="" style="${todasStyle}">
+                <span>Todas</span>
             </button>
-        </div>`;
-    }).join('');
+        </div>
+        ${sesiones.map(s => {
+            const color      = _getColor(s.numero);
+            const active     = s.numero === _state.activeNum ? ' wap-pill--active' : '';
+            const dotCls     = s.status === 'conectado'    ? 'wap-dot--green'
+                             : s.status === 'esperando_qr' ? 'wap-dot--yellow'
+                             : 'wap-dot--red';
+            const label      = _sessionLabel(s.numero);
+            const activeStyle = s.numero === _state.activeNum
+                ? `background:${color};border-color:${color};color:#fff;`
+                : `border-color:${color};color:${color};`;
+            return `<div class="wap-pill-wrap">
+                <button class="wap-pill${active}" data-num="${s.numero}" style="${activeStyle}">
+                    <span class="wap-dot ${dotCls}"></span>
+                    <span>${label}</span>
+                </button>
+            </div>`;
+        }).join('')}
+    `;
 
     el.querySelectorAll('.wap-pill').forEach(btn => {
         btn.addEventListener('click', () => {
-            _state.activeNum     = btn.dataset.num;
+            _state.activeNum     = btn.dataset.num || null;
             _state.activeContact = null;
+            wrap.classList.remove('open');
             _renderSessions();
             _renderList();
             _showListView();
         });
     });
-
 }
 
 // ── Render filtro asesor (solo admin) ─────────────────────────────────────
