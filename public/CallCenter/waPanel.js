@@ -355,6 +355,11 @@ function _injectStyles() {
     border-color: #2d2d2d;
     transform: scale(1.15);
 }
+.wap-color-swatch--used {
+    opacity: 0.25;
+    cursor: not-allowed;
+    transform: none !important;
+}
 .wap-ses-edit-btns {
     display: flex;
     gap: 6px;
@@ -1612,10 +1617,15 @@ function _renderSesionesView() {
         if (s.numero === _editingNum) {
             // ── Card en modo edición ──
             const colorActual = _pendingColors[s.numero] || color;
-            const swatches = SESSION_COLORS.map(c =>
-                `<button class="wap-color-swatch${c === colorActual ? ' wap-color-swatch--active' : ''}"
-                    data-color="${c}" style="background:${c};" title="${c}"></button>`
-            ).join('');
+            const usedColors  = new Set(
+                _state.sesiones.filter(x => x.numero !== s.numero && x.color).map(x => x.color)
+            );
+            const swatches = SESSION_COLORS.map(c => {
+                const isActive   = c === colorActual;
+                const isUsed     = usedColors.has(c) && !isActive;
+                return `<button class="wap-color-swatch${isActive ? ' wap-color-swatch--active' : ''}${isUsed ? ' wap-color-swatch--used' : ''}"
+                    data-color="${c}" style="background:${c};" title="${isUsed ? 'En uso por otra conexión' : c}"${isUsed ? ' disabled' : ''}></button>`;
+            }).join('');
             const respActual = _esc(s.respuesta_inicial || '');
             return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
                 <div class="wap-ses-edit-form">
