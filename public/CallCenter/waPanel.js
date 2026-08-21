@@ -1394,7 +1394,8 @@ async function _loadConversaciones() {
         for (const c of convs) {
             const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
-            if (contacto === 'status@broadcast' || contacto.endsWith('@g.us')) continue;
+            const _ctoSuffix = contacto.split('@')[1] || '';
+            if (_ctoSuffix !== 's.whatsapp.net' && _ctoSuffix !== 'lid') continue;
             if (!ultimo_mensaje && !ultimo_ts) continue;
 
             if (!newConv[numero]) newConv[numero] = {};
@@ -1473,10 +1474,10 @@ function _connectWs() {
 
 // ── WS event handlers ──────────────────────────────────────────────────────
 function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje }) {
-    // Descartar fuentes no válidas
+    // Solo chats 1:1 — descartar grupos, canales, listas de difusión, etc.
     if (!remitente) return;
-    if (remitente === 'status@broadcast') return;
-    if (remitente.endsWith('@g.us')) return;
+    const _rimSuffix = remitente.split('@')[1] || '';
+    if (_rimSuffix !== 's.whatsapp.net' && _rimSuffix !== 'lid') return;
 
     // remitente siempre es el contacto (cliente), tanto en entrantes como salientes
     // @lid = nuevo formato WA — guardamos el sufijo para reconstruir el JID al enviar
@@ -1561,8 +1562,8 @@ function _onStatus({ numero, sede, status }) {
 
 function _onContacto({ numero, phone, name }) {
     if (!phone || !name) return;
-    if (phone === 'status@broadcast') return;
-    if (phone.endsWith('@g.us')) return;
+    const _cSuffix = phone.split('@')[1] || '';
+    if (_cSuffix !== 's.whatsapp.net' && _cSuffix !== 'lid') return;
     // Solo actualizar nombre si la conversación YA existe — no crear entradas vacías.
     // Sin este guard, miembros de grupos generan chats vacíos porque Baileys emite
     // contacts.upsert con su JID individual (@s.whatsapp.net) al procesar grupos.
@@ -2620,7 +2621,8 @@ function _loadConv() {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
                 const c = convs[phone];
-                if (phone === 'status@broadcast' || phone.endsWith('@g.us') || phone.includes('@')) continue;
+                const _pSuffix = phone.split('@')[1] || '';
+                if (_pSuffix !== 's.whatsapp.net' && _pSuffix !== 'lid') continue;
                 if (!c.msgs?.length && !c.lastMsg) continue;
                 if (!_state.conv[num]) _state.conv[num] = {};
                 // Solo msgs y customName — lista y metadata vienen de Supabase
