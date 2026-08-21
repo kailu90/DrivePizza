@@ -796,7 +796,7 @@ function _injectStyles() {
 }
 .wap-name-input::placeholder { color: rgba(40,76,34,.4); }
 .wap-name-input:focus { outline: none; background: rgba(40,76,34,.12); }
-.wap-chat-via { display: none; }
+.wap-chat-via { font-size: 0.75rem; color: #6b7280; margin-top: 1px; }
 .wap-msgs {
     flex: 1;
     overflow-y: auto;
@@ -1513,11 +1513,27 @@ function _onLiberacion({ numero, contacto }) {
     _scheduleConteos();
 }
 
-function _onEstado({ numero, contacto, estado }) {
+function _onEstado({ numero, contacto, estado, asesor }) {
     const key = `${numero}:${contacto}`;
-    if (_state.asignaciones[key]) _state.asignaciones[key].estado = estado;
+    if (_state.asignaciones[key]) {
+        _state.asignaciones[key].estado = estado;
+        if (asesor) _state.asignaciones[key].asesor = asesor;
+    } else if (asesor) {
+        _state.asignaciones[key] = { asesor, estado };
+    }
     _renderList();
     _scheduleConteos();
+    // Si el chat activo cambió de estado, refrescar header y barra
+    if (_state.activeNum === numero && _state.activeContact === contacto) {
+        _updateOfflineBar();
+        _updateChatHeader(contacto);
+        const liberarBtn = document.getElementById('wap-liberar-btn');
+        if (liberarBtn) {
+            const isAdminChat   = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+            const puedeResolver = estado === 'asignado' && (_esMio(numero, contacto) || isAdminChat);
+            liberarBtn.style.display = puedeResolver ? '' : 'none';
+        }
+    }
 }
 
 function _onMerge({ numero, lidPhone, realPhone }) {
@@ -1999,6 +2015,18 @@ function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
     const display = c?.customName || c?.name || _fmtPhone(phone);
     document.getElementById('wap-chat-name').textContent = display;
+
+    // Sub-línea: estado + asesor asignado
+    const asig  = _getAsig(_state.activeNum, phone);
+    const viaEl = document.getElementById('wap-chat-via');
+    if (viaEl) {
+        if (asig?.asesor) {
+            const label = asig.estado === 'resuelto' ? 'Resuelto' : 'En atención';
+            viaEl.textContent = `${label} · ${asig.asesor}`;
+        } else {
+            viaEl.textContent = '';
+        }
+    }
 
     // Badge de color de la conexión en el borde izquierdo del header
     const color  = _getColor(_state.activeNum);
