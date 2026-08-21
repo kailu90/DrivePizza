@@ -1123,6 +1123,7 @@ function _renderShell(body) {
 
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
+                    <div class="wap-sessions" id="wap-sessions"></div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
