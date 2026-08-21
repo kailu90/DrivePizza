@@ -16,9 +16,10 @@ const _state = {
     filterText:    '',
     customNames:   {},    // { [numero]: nombre personalizado } — localStorage
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
-    filtroEstado:  null,  // null | 'en_espera' | 'asignado' | 'resuelto'
-    filtroAsesor:  null,  // null = todos | 'nombre' = solo ese asesor (admin)
-    conteos:       { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
+    filtroEstado:    null,  // null | 'en_espera' | 'asignado' | 'resuelto'
+    filtroAsesor:    null,  // null = todos | 'nombre' = solo ese asesor (admin)
+    filtroSesiones:  new Set(), // Set<numero> vacío = todas las sesiones
+    conteos:         { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -472,6 +473,11 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-sessions-name { flex: 1; }
+.wap-sessions-check {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    color: #374151;
+}
 .wap-pill {
     display: flex;
     align-items: center;
@@ -1826,26 +1832,31 @@ function _renderSessions() {
     const sesiones = _state.sesiones;
     if (sesiones.length <= 1) {
         wrap.style.display = 'none';
-        // Si solo hay una, fijar filtro a esa sesión o null
-        if (sesiones.length === 1 && _state.activeNum === null) {
-            _state.activeNum = sesiones[0].numero;
-        }
         return;
     }
     wrap.style.display = '';
 
-    // ── Toggle button ────────────────────────────────────────────────
-    const activeSes = sesiones.find(s => s.numero === _state.activeNum);
-    const activeColor = activeSes ? _getColor(activeSes.numero) : null;
-    const toggleLabel = activeSes ? _sessionLabel(activeSes.numero) : 'Todas las conexiones';
+    // ── Toggle button label según selección ─────────────────────────
+    const sel = _state.filtroSesiones;
     const connectedCount = sesiones.filter(s => s.status === 'conectado').length;
+    let toggleDot = '';
+    let toggleLabel = '';
+    if (sel.size === 0) {
+        toggleLabel = 'Todas las conexiones';
+        toggleDot = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+    } else if (sel.size === 1) {
+        const num = [...sel][0];
+        const c = _getColor(num);
+        toggleLabel = _sessionLabel(num);
+        toggleDot = `<span class="wap-sessions-active-dot" style="background:${c};"></span>`;
+    } else {
+        toggleLabel = `${sel.size} conexiones`;
+        toggleDot = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+    }
 
     toggle.style.display = '';
     toggle.innerHTML = `
-        ${activeColor
-            ? `<span class="wap-sessions-active-dot" style="background:${activeColor};"></span>`
-            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`
-        }
+        ${toggleDot}
         <span class="wap-sessions-toggle-label">${toggleLabel}</span>
         <span class="wap-sessions-toggle-badge">${connectedCount}/${sesiones.length}</span>
         <span class="wap-sessions-toggle-arrow">&#9660;</span>
@@ -1858,8 +1869,8 @@ function _renderSessions() {
         });
     }
 
-    // ── Lista vertical ───────────────────────────────────────────────
-    const todasCls = _state.activeNum === null ? ' wap-sessions-item--active' : '';
+    // ── Lista vertical con multi-selección ──────────────────────────
+    const todasCls = sel.size === 0 ? ' wap-sessions-item--active' : '';
 
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
@@ -1867,28 +1878,39 @@ function _renderSessions() {
             <span class="wap-sessions-name">Todas las conexiones</span>
         </button>
         ${sesiones.map(s => {
-            const color    = _getColor(s.numero);
-            const activeCls = s.numero === _state.activeNum ? ' wap-sessions-item--active' : '';
+            const color     = _getColor(s.numero);
+            const checked   = sel.has(s.numero);
+            const activeCls = checked ? ' wap-sessions-item--active' : '';
             const statusCls = s.status === 'conectado'    ? 'wap-sessions-status--green'
                             : s.status === 'esperando_qr' ? 'wap-sessions-status--yellow'
                             : 'wap-sessions-status--red';
-            const label    = _sessionLabel(s.numero);
+            const label     = _sessionLabel(s.numero);
+            const checkIcon = checked
+                ? `<svg class="wap-sessions-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+                : `<span class="wap-sessions-check"></span>`;
             return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
                 <span class="wap-sessions-status ${statusCls}"></span>
                 <span class="wap-sessions-color-bar" style="background:${color};"></span>
                 <span class="wap-sessions-name">${label}</span>
+                ${checkIcon}
             </button>`;
         }).join('')}
     `;
 
     el.querySelectorAll('.wap-sessions-item').forEach(btn => {
         btn.addEventListener('click', () => {
-            _state.activeNum     = btn.dataset.num || null;
-            _state.activeContact = null;
-            wrap.classList.remove('open');
+            const num = btn.dataset.num;
+            if (!num) {
+                // "Todas" — limpiar filtro y cerrar
+                sel.clear();
+                wrap.classList.remove('open');
+            } else if (sel.has(num)) {
+                sel.delete(num);
+            } else {
+                sel.add(num);
+            }
             _renderSessions();
             _renderList();
-            _showListView();
         });
     });
 }
@@ -1981,7 +2003,7 @@ function _renderList() {
     // Recopilar conversaciones de todas las sesiones (o solo la activa si está filtrada)
     const allConvs = [];
     for (const [num, convs] of Object.entries(_state.conv)) {
-        if (_state.activeNum && _state.activeNum !== num) continue;
+        if (_state.filtroSesiones.size > 0 && !_state.filtroSesiones.has(num)) continue;
         for (const [phone, data] of Object.entries(convs)) {
             if (phone === num) continue; // ignorar mensajes a sí mismo
             allConvs.push({ num, phone, data });
