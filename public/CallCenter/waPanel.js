@@ -1212,12 +1212,7 @@ function _renderShell(body) {
     document.getElementById('wap-nav').addEventListener('click', e => {
         const btn = e.target.closest('[data-view]');
         if (!btn) return;
-        const view = btn.dataset.view;
-        document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
-            b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
-        document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
-        document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
-        if (view === 'ses') _renderSesionesView();
+        _navTo(btn.dataset.view);
     });
 }
 
@@ -1706,24 +1701,23 @@ function _renderSesionesView() {
             _state.customNames[num] = name || null;
             _saveMeta();
 
-            // Color + respuesta_inicial → API (solo si hay algo que guardar)
-            if (color !== undefined || respuesta !== undefined) {
-                const body = {};
-                if (color     !== undefined) body.color             = color;
-                body.respuesta_inicial = respuesta; // siempre enviar (permite borrar)
-                try {
-                    await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(num)}/config`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    });
-                } catch { _showToast('Error guardando configuración', 3000); }
-            }
-
+            // Cerrar edición ANTES del await para evitar render en modo edición durante la espera
             delete _pendingColors[num];
             _editingNum = null;
             _renderSesionesView();
-            _renderSessions();
-            _renderList();
+
+            // Color + respuesta_inicial → API
+            const body = { respuesta_inicial: respuesta };
+            if (color !== undefined) body.color = color;
+            try {
+                await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(num)}/config`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+            } catch { _showToast('Error guardando configuración', 3000); }
+
+            // Volver a la vista de conversaciones
+            _navTo('conv');
         });
     });
 
@@ -2125,6 +2119,15 @@ function _editContactName() {
 function _closeChat() {
     _state.activeContact = null;
     _showListView();
+}
+
+function _navTo(view) {
+    document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
+        b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
+    document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
+    document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
+    if (view === 'ses') _renderSesionesView();
+    if (view === 'conv') _renderList();
 }
 
 function _showListView() {
