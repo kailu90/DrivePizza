@@ -71,11 +71,17 @@ let _asesorActual = '';
 let _ws           = null;
 let _qrNumero     = null;   // numero cuyo QR modal esta abierto
 let _waitingQrFor = null;   // numero que este cliente esta esperando escanear (solo quien lo genero)
+let _qrStepTimers = [];     // timers de animación de pasos del modal QR
 
 const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
+export function resetWaView() {
+    _state.activeContact = null;
+    _showListView();
+}
+
 export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;
@@ -939,6 +945,34 @@ function _injectStyles() {
     font-weight: 700;
     cursor: pointer;
 }
+/* ── QR Loader (mientras genera QR) ─────────── */
+.wap-qr-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 0 8px;
+    gap: 18px;
+    min-height: 190px;
+}
+.wap-qr-spinner {
+    width: 52px;
+    height: 52px;
+    border: 4px solid rgba(37,211,102,.2);
+    border-top-color: #25D366;
+    border-radius: 50%;
+    animation: wap-spin 0.85s linear infinite;
+}
+@keyframes wap-spin { to { transform: rotate(360deg); } }
+.wap-qr-step {
+    font-size: 1.2rem;
+    color: #4b5563;
+    text-align: center;
+    margin: 0;
+    min-height: 1.6em;
+    transition: opacity 0.3s;
+}
+.wap-qr-step.fade { opacity: 0; }
 `;
     document.head.appendChild(s);
 }
@@ -1019,7 +1053,7 @@ function _renderShell(body) {
                 <h3>Escanea con WhatsApp</h3>
                 <p class="wap-qr-num" id="wap-qr-num"></p>
                 <div class="wap-qr-img" id="wap-qr-img"></div>
-                <p class="wap-qr-hint">Abre WhatsApp &rarr; Dispositivos vinculados &rarr; Vincular dispositivo</p>
+                <p class="wap-qr-hint" id="wap-qr-hint">Abre WhatsApp &rarr; Dispositivos vinculados &rarr; Vincular dispositivo</p>
                 <button class="wap-qr-close" id="wap-qr-close">Cerrar</button>
             </div>
         </div>
@@ -1157,6 +1191,7 @@ async function _loadConversaciones() {
         for (const c of convs) {
             const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts, asesor, estado } = c;
             if (!numero || !contacto) continue;
+            if (contacto === 'status@broadcast' || contacto.endsWith('@g.us')) continue;
 
             if (!_state.conv[numero]) _state.conv[numero] = {};
             if (!_state.conv[numero][contacto]) {
@@ -1860,23 +1895,60 @@ async function _sendMessage() {
 }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
+function _stopQrSteps() {
+    _qrStepTimers.forEach(clearTimeout);
+    _qrStepTimers = [];
+}
+
+function _startQrSteps(steps) {
+    _stopQrSteps();
+    steps.forEach(({ delay, text }) => {
+        _qrStepTimers.push(setTimeout(() => {
+            const el = document.getElementById('wap-qr-step');
+            if (!el) return;
+            el.classList.add('fade');
+            setTimeout(() => {
+                const el2 = document.getElementById('wap-qr-step');
+                if (!el2) return;
+                el2.textContent = text;
+                el2.classList.remove('fade');
+            }, 300);
+        }, delay));
+    });
+}
+
 function _showQr(numero, qrData) {
-    const modal = document.getElementById('wap-qr-modal');
-    const imgEl = document.getElementById('wap-qr-img');
+    const modal  = document.getElementById('wap-qr-modal');
+    const imgEl  = document.getElementById('wap-qr-img');
+    const hintEl = document.getElementById('wap-qr-hint');
     if (!modal || !imgEl) return;
 
     _qrNumero = numero;
-    document.getElementById('wap-qr-num').textContent = `Numero: ${_fmtPhone(numero)}`;
-    if (qrData && qrData.startsWith('data:')) {
+    document.getElementById('wap-qr-num').textContent = `Número: ${_fmtPhone(numero)}`;
+
+    if (qrData) {
+        // QR listo — detener animación y mostrar imagen
+        _stopQrSteps();
         imgEl.innerHTML = `<img src="${qrData}" alt="QR WhatsApp">`;
-    } else if (qrData) {
-        imgEl.innerHTML = `<img src="${qrData}" alt="QR WhatsApp">`;
+        if (hintEl) hintEl.style.display = '';
     } else {
-        imgEl.innerHTML = `<p style="font-size:1.1rem;color:#9ca3af;padding:20px;">⏳ Generando QR...<br>Espera un momento.</p>`;
+        // Sin QR aún — mostrar loader animado con pasos
+        imgEl.innerHTML = `
+            <div class="wap-qr-loader">
+                <div class="wap-qr-spinner"></div>
+                <p class="wap-qr-step" id="wap-qr-step">Iniciando sesión...</p>
+            </div>`;
+        if (hintEl) hintEl.style.display = 'none';
+        _startQrSteps([
+            { delay: 1200, text: 'Conectando con WhatsApp...' },
+            { delay: 3000, text: 'Generando código QR...' },
+            { delay: 5200, text: 'Casi listo...' },
+        ]);
     }
+
     modal.classList.add('active');
 
-    // Abrir el panel si esta colapsado
+    // Abrir el panel si está colapsado
     const panel = document.getElementById('wa-panel');
     if (panel && !panel.classList.contains('expanded')) {
         document.getElementById('wa-strip')?.click();
@@ -1884,6 +1956,7 @@ function _showQr(numero, qrData) {
 }
 
 function _closeQr() {
+    _stopQrSteps();
     document.getElementById('wap-qr-modal')?.classList.remove('active');
     _qrNumero     = null;
     _waitingQrFor = null;
@@ -1970,6 +2043,12 @@ function _toggleConnectForm() {
                 if (!document.getElementById('wap-qr-modal')?.classList.contains('active')) return;
                 const imgEl2 = document.getElementById('wap-qr-img');
                 if (imgEl2?.querySelector('img')) return; // ya llegó el QR, no hacer nada
+                // Mostrar pasos de recreación de sesión
+                _startQrSteps([
+                    { delay: 0,    text: 'Limpiando sesión anterior...' },
+                    { delay: 1800, text: 'Reiniciando conexión...' },
+                    { delay: 3500, text: 'Generando código QR...' },
+                ]);
                 try {
                     // Borrar sesión existente
                     await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
