@@ -832,6 +832,43 @@ function _injectStyles() {
     background: #ede9fe;
     border-left: 3px solid #7c3aed;
 }
+.wap-msg--sistema {
+    align-self: center;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 3px 12px;
+    color: #9ca3af;
+    font-size: 1rem;
+    font-style: italic;
+    text-align: center;
+    max-width: 85%;
+    box-shadow: none;
+}
+.wap-resuelto-bar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-top: 1px solid #bbf7d0;
+    font-size: 1.1rem;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+.wap-resuelto-bar.visible { display: flex; }
+.wap-abrir-btn {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.wap-abrir-btn:hover { background: #15803d; }
 .wap-msg-celular-label {
     font-size: 1rem;
     font-weight: 600;
@@ -1100,6 +1137,10 @@ function _renderShell(body) {
                         <div class="wap-offline-bar" id="wap-offline-bar">
                             ⚠️ Sesión desconectada — reconecta para responder
                         </div>
+                        <div class="wap-resuelto-bar" id="wap-resuelto-bar">
+                            <span>Chat resuelto — solo lectura</span>
+                            <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir</button>
+                        </div>
                         <div class="wap-input-row">
                             <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
                             <button id="wap-send">&#10148;</button>
@@ -1138,6 +1179,10 @@ function _renderShell(body) {
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
             _liberarChat(_state.activeNum, _state.activeContact);
+    });
+    document.getElementById('wap-abrir-btn').addEventListener('click', () => {
+        if (_state.activeNum && _state.activeContact)
+            _reabrirChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
@@ -1348,7 +1393,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje }) {
     // Descartar fuentes no válidas
     if (!remitente) return;
     if (remitente === 'status@broadcast') return;
@@ -1378,7 +1423,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje' });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -1919,6 +1964,7 @@ async function _loadMsgsSupabase(phone) {
             msgId:  m.msg_id,
             asesor: m.asesor || null,
             celular: !!m.desde_telefono,
+            tipo:   m.tipo || 'mensaje',
         }));
 
         // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
@@ -2023,25 +2069,47 @@ function _renderMsgs() {
         el.innerHTML = `<p class="wap-empty" style="background:transparent;">Inicio de la conversacion</p>`;
         return;
     }
-    el.innerHTML = c.msgs.map(m => `
-        <div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}">
+    el.innerHTML = c.msgs.map(m => {
+        if (m.tipo === 'sistema') {
+            return `<div class="wap-msg wap-msg--sistema">
+                ${_esc(m.text)}${m.ts ? ' · ' + _fmtTs(m.ts) : ''}
+            </div>`;
+        }
+        return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}">
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
             <span class="wap-msg-ts">${m.ts ? _fmtTs(m.ts) : ''}</span>
-        </div>`).join('');
+        </div>`;
+    }).join('');
     el.scrollTop = el.scrollHeight;
 }
 
 function _updateOfflineBar() {
-    const bar    = document.getElementById('wap-offline-bar');
-    const input  = document.getElementById('wap-input');
-    const sendBtn = document.getElementById('wap-send');
+    const bar       = document.getElementById('wap-offline-bar');
+    const resBar    = document.getElementById('wap-resuelto-bar');
+    const input     = document.getElementById('wap-input');
+    const sendBtn   = document.getElementById('wap-send');
     if (!bar) return;
-    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
-    const offline   = sesStatus === 'desconectado' || sesStatus === 'reconectando';
+    const sesStatus  = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
+    const offline    = sesStatus === 'desconectado' || sesStatus === 'reconectando';
+    const resuelto   = _getEstado(_state.activeNum, _state.activeContact) === 'resuelto';
+    const bloqueado  = offline || resuelto;
     bar.classList.toggle('visible', offline);
-    if (input)   input.disabled   = offline;
-    if (sendBtn) sendBtn.disabled = offline;
+    if (resBar) resBar.classList.toggle('visible', !offline && resuelto);
+    if (input)   input.disabled   = bloqueado;
+    if (sendBtn) sendBtn.disabled = bloqueado;
+}
+
+async function _reabrirChat(num, phone) {
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}/reabrir`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ asesor: _asesorActual }) }
+        );
+        if (!r.ok) return _showToast('Error al abrir el chat', 3000);
+        // _onEstado y _onMensaje llegarán vía WS para actualizar estado y mostrar mensaje de sistema
+    } catch { _showToast('Error de conexión', 3000); }
 }
 
 async function _sendMessage() {
