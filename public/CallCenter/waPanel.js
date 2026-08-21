@@ -294,6 +294,20 @@ function _injectStyles() {
     transition: background .15s, color .15s;
 }
 .wap-ses-btn-des:hover { background: #ef4444; color: #fff; }
+.wap-ses-btn-con {
+    background: none;
+    border: 1.5px solid #25D366;
+    color: #25D366;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+}
+.wap-ses-btn-con:hover    { background: #25D366; color: #fff; }
+.wap-ses-btn-con:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Edit form ───────────────────────────────────── */
 .wap-ses-card--editing { flex-direction: column; align-items: stretch; }
@@ -2012,6 +2026,11 @@ function _closeQr() {
 async function _reconectarSesion(numero) {
     const s = _state.sesiones.find(x => x.numero === numero);
     if (!s) return;
+
+    // Feedback visual en el botón
+    const btn = document.querySelector(`.wap-ses-btn-con[data-num="${numero}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Conectando...'; }
+
     _waitingQrFor = numero;
     try {
         const r = await fetch(`${HETZNER_URL}/wa/sesiones`, {
@@ -2024,6 +2043,7 @@ async function _reconectarSesion(numero) {
         _onQr({ numero, sede: s.sede, qr: data.qr || null });
     } catch (e) {
         _waitingQrFor = null;
+        if (btn) { btn.disabled = false; btn.textContent = 'Conectar'; }
         _showToast('Error al reconectar: ' + e.message);
     }
 }
