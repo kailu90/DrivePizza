@@ -58,10 +58,10 @@ function _sessionLabel(numero) {
 
 function _getColor(numero) {
     if (!_state.colorMap[numero]) {
-        const used = new Set(Object.values(_state.colorMap));
-        const pick = SESSION_COLORS.find(c => !used.has(c))
-            || SESSION_COLORS[Object.keys(_state.colorMap).length % SESSION_COLORS.length];
-        _state.colorMap[numero] = pick;
+        // Hash determinista del número → mismo color para todos los usuarios
+        const hash = [...String(numero)].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        _state.colorMap[numero] = SESSION_COLORS[hash % SESSION_COLORS.length];
+        _saveMeta();
     }
     return _state.colorMap[numero];
 }
