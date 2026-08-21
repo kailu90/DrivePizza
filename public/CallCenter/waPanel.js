@@ -1684,9 +1684,9 @@ function _renderFiltros() {
     };
 
     el.innerHTML =
-        badge('en_espera', 'En espera', espera,  '#f59e0b') +
-        badge('asignado',  'Asignado',  asignado, '#0088cc') +
-        badge('resuelto',  'Resuelto',  resuelto, '#25D366');
+        badge('en_espera', 'En espera',   espera,   '#f59e0b') +
+        badge('asignado',  'En atención', asignado, '#0088cc') +
+        badge('resuelto',  'Resuelto',    resuelto, '#25D366');
 
     el.querySelectorAll('.wap-filtro').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1737,7 +1737,13 @@ function _renderList() {
             if (estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual)) return true;
             return false;
         })
-        .sort((a, b) => b.data.lastTs - a.data.lastTs);
+        .sort((a, b) => {
+            const prioridad = e => e === 'en_espera' ? 0 : e === 'asignado' ? 1 : 2;
+            const pa = prioridad(_getEstado(a.num, a.phone));
+            const pb = prioridad(_getEstado(b.num, b.phone));
+            if (pa !== pb) return pa - pb;
+            return b.data.lastTs - a.data.lastTs;
+        });
 
     if (!filtered.length) {
         el.innerHTML = `<p class="wap-empty">${_state.sesiones.length ? 'Sin conversaciones' : 'Sin sesiones activas'}</p>`;
