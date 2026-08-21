@@ -1341,6 +1341,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')     _onEstado(msg);
+            if (msg.tipo === 'wa:merge')      _onMerge(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => setTimeout(_connectWs, 5000);
@@ -1472,6 +1473,41 @@ function _onEstado({ numero, contacto, estado }) {
     if (_state.asignaciones[key]) _state.asignaciones[key].estado = estado;
     _renderList();
     _scheduleConteos();
+}
+
+function _onMerge({ numero, lidPhone, realPhone }) {
+    if (!_state.conv[numero]?.[lidPhone]) return;
+    const lidConv  = _state.conv[numero][lidPhone];
+    const realConv = _state.conv[numero][realPhone] || { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+
+    // Fusionar mensajes, deduplicar por ts+texto, ordenar cronológicamente
+    const allMsgs = [...lidConv.msgs, ...realConv.msgs];
+    allMsgs.sort((a, b) => a.ts - b.ts);
+    const seen = new Set();
+    realConv.msgs = allMsgs.filter(m => {
+        const key = `${m.ts}:${m.text}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+    realConv.unread += lidConv.unread;
+    if ((lidConv.lastTs || 0) > (realConv.lastTs || 0)) {
+        realConv.lastMsg = lidConv.lastMsg;
+        realConv.lastTs  = lidConv.lastTs;
+    }
+    if (!realConv.customName && lidConv.name) realConv.name = lidConv.name;
+
+    _state.conv[numero][realPhone] = realConv;
+    delete _state.conv[numero][lidPhone];
+    delete _state.asignaciones[`${numero}:${lidPhone}`];
+
+    // Si el chat lid estaba abierto, redirigir al teléfono real
+    if (_state.activeContact === lidPhone && _state.activeNum === numero) {
+        _state.activeContact = realPhone;
+        _renderMsgs();
+    }
+    _saveConv();
+    _renderList();
 }
 
 function _onQr({ numero, sede, qr }) {
