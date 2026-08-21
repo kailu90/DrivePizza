@@ -1408,8 +1408,10 @@ function _onContacto({ numero, phone, name }) {
     if (!phone || !name) return;
     if (phone === 'status@broadcast') return;
     if (phone.endsWith('@g.us')) return;
-    if (!_state.conv[numero])        _state.conv[numero]        = {};
-    if (!_state.conv[numero][phone]) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null };
+    // Solo actualizar nombre si la conversación YA existe — no crear entradas vacías.
+    // Sin este guard, miembros de grupos generan chats vacíos porque Baileys emite
+    // contacts.upsert con su JID individual (@s.whatsapp.net) al procesar grupos.
+    if (!_state.conv[numero]?.[phone]) return;
     const c = _state.conv[numero][phone];
     // Solo actualizar si el asesor no puso un nombre manual
     if (!c.customName) c.name = name;
