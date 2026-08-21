@@ -1394,8 +1394,7 @@ async function _loadConversaciones() {
         for (const c of convs) {
             const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
-            const _ctoSuffix = contacto.split('@')[1] || '';
-            if (_ctoSuffix !== 's.whatsapp.net' && _ctoSuffix !== 'lid') continue;
+            if (contacto.includes('@')) continue; // grupos, canales, listas — en Supabase los teléfonos válidos son números puros
             if (!ultimo_mensaje && !ultimo_ts) continue;
 
             if (!newConv[numero]) newConv[numero] = {};
@@ -2621,8 +2620,7 @@ function _loadConv() {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
                 const c = convs[phone];
-                const _pSuffix = phone.split('@')[1] || '';
-                if (_pSuffix !== 's.whatsapp.net' && _pSuffix !== 'lid') continue;
+                if (phone.includes('@')) continue; // en localStorage los teléfonos válidos son números puros
                 if (!c.msgs?.length && !c.lastMsg) continue;
                 if (!_state.conv[num]) _state.conv[num] = {};
                 // Solo msgs y customName — lista y metadata vienen de Supabase
