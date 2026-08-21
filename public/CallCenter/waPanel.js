@@ -1633,6 +1633,7 @@ function _renderFiltroAsesor() {
 
     el.querySelector('#wap-btn-fa').addEventListener('click', () => {
         _state.filtroAsesor = _state.filtroAsesor === 'mio' ? null : 'mio';
+        _scheduleConteos();
         _renderFiltros();
         _renderList();
     });
@@ -1644,9 +1645,11 @@ let _conteoTimer = null;
 async function _fetchConteos() {
     try {
         const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-        const url = isAdmin
-            ? `${HETZNER_URL}/wa/asignaciones/conteos`
-            : `${HETZNER_URL}/wa/asignaciones/conteos?asesor=${encodeURIComponent(_asesorActual)}`;
+        // Admin en modo "Míos" filtra por su propio asesor, igual que un asesor regular
+        const filtrarPorAsesor = !isAdmin || _state.filtroAsesor === 'mio';
+        const url = filtrarPorAsesor
+            ? `${HETZNER_URL}/wa/asignaciones/conteos?asesor=${encodeURIComponent(_asesorActual)}`
+            : `${HETZNER_URL}/wa/asignaciones/conteos`;
         const r = await fetch(url);
         if (!r.ok) return;
         const data = await r.json();
