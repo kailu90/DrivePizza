@@ -25,5 +25,4 @@ document.getElementById('btn_reporte_asesores').addEventListener('click', () => 
 document.getElementById('btn_reservas').addEventListener('click', () => navTo('./historialPedidos.html?tipo=reserva'));
 document.getElementById('btn_pbx').addEventListener('click', () => navTo('./pbx.html'));
 document.getElementById('btn_clientes').addEventListener('click', () => navTo('./clientesCall.html'));
-document.getElementById('btn_whatsapp').addEventListener('click', () => navTo('./whatsapp.html'));
 document.getElementById('btn_admin_barrios').addEventListener('click', () => navTo('./adminBarrios.html'));
