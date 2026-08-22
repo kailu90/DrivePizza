@@ -2325,7 +2325,24 @@ async function _loadMsgsSupabase(phone) {
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
     const display = c?.nombre || c?.name || _fmtPhone(phone);
-    document.getElementById('wap-chat-name').textContent = display;
+
+    // El span puede haber sido reemplazado por un input de edición/vincular sin confirmar.
+    // Lo restauramos aquí para garantizar que el header siempre sea navegable.
+    let nameEl = document.getElementById('wap-chat-name');
+    if (!nameEl || nameEl.tagName !== 'SPAN') {
+        const fresh = document.createElement('span');
+        fresh.className = 'wap-chat-name';
+        fresh.id        = 'wap-chat-name';
+        if (nameEl) nameEl.replaceWith(fresh);
+        else document.querySelector('.wap-chat-name-row')?.prepend(fresh);
+        nameEl = fresh;
+        // Restaurar botones de edición y vincular que pudo haber ocultado el input
+        const eb = document.getElementById('wap-edit-name-btn');
+        if (eb) eb.style.display = '';
+        const vb = document.getElementById('wap-vincular-lid-btn');
+        if (vb) vb.style.display = phone.length > 12 ? '' : 'none';
+    }
+    nameEl.textContent = display;
 
     // Sub-línea: estado + asesor asignado
     const asig  = _getAsig(_state.activeNum, phone);
@@ -2406,17 +2423,24 @@ function _vincularLid() {
         } catch { _showToast('Error de conexión', 3000); _updateChatHeader(lid); }
     }
 
-    okBtn.addEventListener('click', _confirmar);
+    function _cancelar() {
+        if (!document.contains(wrap)) return; // ya fue reemplazado
+        const span = document.createElement('span');
+        span.className = 'wap-chat-name';
+        span.id        = 'wap-chat-name';
+        wrap.replaceWith(span);
+        editBtn.style.display     = '';
+        vincularBtn.style.display = lid.length > 12 ? '' : 'none';
+        _updateChatHeader(lid);
+    }
+
+    let _okClicked = false;
+    okBtn.addEventListener('mousedown', () => { _okClicked = true; });
+    okBtn.addEventListener('click', () => { _okClicked = false; _confirmar(); });
+    input.addEventListener('blur', () => { if (!_okClicked) _cancelar(); _okClicked = false; });
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); _confirmar(); }
-        if (e.key === 'Escape') {
-            const span = document.createElement('span');
-            span.className = 'wap-chat-name';
-            span.id        = 'wap-chat-name';
-            wrap.replaceWith(span);
-            editBtn.style.display    = '';
-            _updateChatHeader(lid);
-        }
+        if (e.key === 'Escape') _cancelar();
     });
 }
 
