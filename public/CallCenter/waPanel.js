@@ -64,10 +64,12 @@ function _getColor(numero) {
 
 let _rolUsuario   = '';
 let _asesorActual = '';
-let _ws           = null;
-let _qrNumero     = null;   // numero cuyo QR modal esta abierto
-let _waitingQrFor = null;   // numero que este cliente esta esperando escanear (solo quien lo genero)
-let _qrStepTimers = [];     // timers de animación de pasos del modal QR
+let _ws              = null;
+let _wsEverConnected = false; // true después de la primera conexión exitosa
+let _qrNumero        = null;  // numero cuyo QR modal esta abierto
+let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
+let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
+let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
 
 const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
@@ -1162,6 +1164,36 @@ function _injectStyles() {
     from { transform: scale(0); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
 }
+
+/* ── Indicador WS ────────────────────────────────── */
+.wap-ws-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin: auto auto 10px;
+    flex-shrink: 0;
+    transition: background .3s;
+}
+.wap-ws-dot--ok           { background: #22c55e; }
+.wap-ws-dot--reconectando { background: #f59e0b; animation: wap-ws-pulse 1.2s infinite; }
+.wap-ws-dot--desconectado { background: #ef4444; }
+@keyframes wap-ws-pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* ── Mensajes pendientes / fallidos ─────────────── */
+.wap-msg--pending { opacity: 0.55; }
+.wap-msg--failed  { background: #fee2e2 !important; }
+.wap-msg-status   { font-size: 0.9rem; margin-left: 4px; }
+.wap-msg-retry {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.wap-msg-retry:hover { background: #dc2626; }
 `;
     document.head.appendChild(s);
 }
@@ -1175,6 +1207,7 @@ function _renderShell(body) {
 
             <!-- ── Barra de navegación lateral ── -->
             <nav class="wap-nav" id="wap-nav">
+                <div class="wap-ws-dot wap-ws-dot--reconectando" id="wap-ws-dot" title="Tiempo real: conectando..."></div>
 
                 <button class="wap-nav-icon wap-nav-icon--active" data-view="conv" title="Conversaciones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1276,6 +1309,10 @@ function _renderShell(body) {
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') _sendMessage();
+    });
+    document.getElementById('wap-msgs').addEventListener('click', e => {
+        const btn = e.target.closest('.wap-msg-retry');
+        if (btn) _retrySend(+btn.dataset.tmp);
     });
     // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
     // lo que lo convertiría en containing-block. Lo movemos al <body> para que
@@ -1451,8 +1488,27 @@ async function _loadContactos() {
 }
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
+function _setWsStatus(status) {
+    const dot = document.getElementById('wap-ws-dot');
+    if (!dot) return;
+    dot.className = `wap-ws-dot wap-ws-dot--${status}`;
+    dot.title = status === 'ok'           ? 'Tiempo real: conectado'
+              : status === 'reconectando' ? 'Tiempo real: reconectando...'
+              : 'Tiempo real: desconectado';
+}
+
 function _connectWs() {
+    _setWsStatus('reconectando');
     _ws = new WebSocket(WS_URL);
+    _ws.onopen = () => {
+        _setWsStatus('ok');
+        if (_wsEverConnected) {
+            // Reconexión — recuperar mensajes perdidos durante la desconexión
+            _loadConversaciones();
+            _loadAsignaciones();
+        }
+        _wsEverConnected = true;
+    };
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data);
@@ -1468,7 +1524,8 @@ function _connectWs() {
             if (msg.tipo === 'wa:config')     _onConfig(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
-    _ws.onclose = () => setTimeout(_connectWs, 5000);
+    _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
+    _ws.onerror = () => { _setWsStatus('desconectado'); };
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
@@ -2312,10 +2369,17 @@ function _renderMsgs() {
                 ${_esc(m.text)}${m.ts ? ' · ' + _fmtTs(m.ts) : ''}
             </div>`;
         }
-        return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}">
+        const statusCls = m.pending ? ' wap-msg--pending' : m.failed ? ' wap-msg--failed' : '';
+        const statusEl  = m.pending
+            ? `<span class="wap-msg-status">⏳</span>`
+            : m.failed
+            ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
+            : '';
+        return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
-            <span class="wap-msg-ts">${m.ts ? _fmtTs(m.ts) : ''}</span>
+            <span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>
+            ${statusEl}
         </div>`;
     }).join('');
     el.scrollTop = el.scrollHeight;
@@ -2365,36 +2429,80 @@ async function _sendMessage() {
     const num   = _state.activeNum;
     const phone = _state.activeContact;
     const ts    = Math.floor(Date.now() / 1000);
+    const tmpId = ++_tmpMsgId;
 
-    // Optimistic update
-    if (!_state.conv[num])          _state.conv[num]        = {};
-    if (!_state.conv[num][phone])   _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+    // Optimistic update con estado "pending"
+    if (!_state.conv[num])        _state.conv[num]        = {};
+    if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
     const c = _state.conv[num][phone];
-    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual });
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId });
     c.lastMsg = texto;
     c.lastTs  = ts;
     _saveConv();
     _renderMsgs();
 
     try {
-        // Reconstruir JID completo para que Baileys enrute correctamente (@lid o @s.whatsapp.net)
         const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual }),
+            signal:  AbortSignal.timeout(10000),
         });
-        if (!r.ok) {
-            // Revertir mensaje optimista y avisar al asesor
-            c.msgs.pop();
-            c.lastMsg = c.msgs.at(-1)?.text || '';
-            c.lastTs  = c.msgs.at(-1)?.ts  || 0;
-            _saveConv();
-            _renderMsgs();
+        const m = c.msgs.find(x => x.tmpId === tmpId);
+        if (r.ok) {
+            if (m) { delete m.pending; delete m.tmpId; }
+        } else {
+            if (m) { m.failed = true; delete m.pending; }
             const err = await r.json().catch(() => ({}));
-            _showToast(err.error?.includes('no disponible') ? '⚠️ Sesión desconectada — mensaje no enviado' : '⚠️ Error al enviar mensaje', 4000);
+            _showToast(err.error?.includes('no disponible') ? '⚠️ Sesión desconectada' : '⚠️ Error al enviar — toca Reintentar', 4000);
         }
-    } catch { _showToast('⚠️ Sin conexión — mensaje no enviado', 4000); }
+    } catch {
+        const m = c.msgs.find(x => x.tmpId === tmpId);
+        if (m) { m.failed = true; delete m.pending; }
+        _showToast('⚠️ Sin conexión — toca Reintentar', 4000);
+    }
+    _saveConv();
+    _renderMsgs();
+}
+
+async function _retrySend(tmpId) {
+    const num   = _state.activeNum;
+    const phone = _state.activeContact;
+    if (!num || !phone) return;
+    const c = _state.conv[num]?.[phone];
+    if (!c) return;
+    const m = c.msgs.find(x => x.tmpId === tmpId);
+    if (!m) return;
+
+    m.pending = true;
+    delete m.failed;
+    _renderMsgs();
+
+    try {
+        const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
+        const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual }),
+            signal:  AbortSignal.timeout(10000),
+        });
+        if (r.ok) {
+            delete m.pending;
+            delete m.tmpId;
+            delete m.failed;
+        } else {
+            m.failed = true;
+            delete m.pending;
+            _showToast('⚠️ Error al reenviar mensaje', 4000);
+        }
+    } catch {
+        m.failed = true;
+        delete m.pending;
+        _showToast('⚠️ Sin conexión — intenta de nuevo', 4000);
+    }
+    _saveConv();
+    _renderMsgs();
 }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
