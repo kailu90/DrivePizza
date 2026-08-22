@@ -1906,6 +1906,7 @@ function _renderSessions() {
                 sel.add(num);
             }
             _renderSessions();
+            _scheduleConteos();
             _renderList();
         });
     });
@@ -1932,33 +1933,41 @@ function _renderFiltroAsesor() {
     });
 }
 
-// ── Conteos desde Supabase (badges compartidos) ────────────────────────────
-let _conteoTimer = null;
+// ── Conteos locales (filtrados por sesión y asesor) ────────────────────────
+// Calcula desde _state.conv + _state.asignaciones sin llamar al servidor,
+// así los badges reflejan exactamente el filtro de sesiones activo.
+function _computeConteos() {
+    const isAdmin          = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const filtrarPorAsesor = !isAdmin || _state.filtroAsesor === 'mio';
+    const numeros          = _state.filtroSesiones.size > 0
+        ? _state.filtroSesiones
+        : new Set(Object.keys(_state.conv));
 
-async function _fetchConteos() {
-    try {
-        const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-        // Admin en modo "Míos" filtra por su propio asesor, igual que un asesor regular
-        const filtrarPorAsesor = !isAdmin || _state.filtroAsesor === 'mio';
-        const url = filtrarPorAsesor
-            ? `${HETZNER_URL}/wa/asignaciones/conteos?asesor=${encodeURIComponent(_asesorActual)}`
-            : `${HETZNER_URL}/wa/asignaciones/conteos`;
-        const r = await fetch(url);
-        if (!r.ok) return;
-        const data = await r.json();
-        _state.conteos = {
-            en_espera: data.en_espera ?? 0,
-            asignado:  data.asignado  ?? 0,
-            resuelto:  data.resuelto  ?? 0,
-        };
-        _renderFiltros();
-        document.dispatchEvent(new CustomEvent('wa:conteos', { detail: { ..._state.conteos } }));
-    } catch { /* sin conexión — mantiene conteos anteriores */ }
+    let en_espera = 0, asignado = 0, resuelto = 0;
+
+    for (const num of numeros) {
+        const convs = _state.conv[num] || {};
+        for (const phone of Object.keys(convs)) {
+            if (phone === num) continue; // auto-mensajes
+            const asig = _state.asignaciones[`${num}:${phone}`];
+            if (!asig) {
+                en_espera++;
+            } else if (asig.estado === 'asignado') {
+                if (!filtrarPorAsesor || asig.asesor === _asesorActual) asignado++;
+            } else if (asig.estado === 'resuelto') {
+                if (!filtrarPorAsesor || asig.asesor === _asesorActual) resuelto++;
+            }
+        }
+    }
+
+    _state.conteos = { en_espera, asignado, resuelto };
+    document.dispatchEvent(new CustomEvent('wa:conteos', { detail: { ..._state.conteos } }));
 }
 
+let _conteoTimer = null;
 function _scheduleConteos() {
     clearTimeout(_conteoTimer);
-    _conteoTimer = setTimeout(_fetchConteos, 500);
+    _conteoTimer = setTimeout(() => { _computeConteos(); _renderFiltros(); }, 100);
 }
 
 // ── Render filtros de estado ───────────────────────────────────────────────
