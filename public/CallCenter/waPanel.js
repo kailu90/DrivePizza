@@ -487,8 +487,8 @@ function _injectStyles() {
     transition: background .12s, border-color .12s;
 }
 .wap-sessions-cb--checked {
-    background: #25D366;
-    border-color: #25D366;
+    background: var(--color-primario);
+    border-color: var(--color-primario);
 }
 .wap-sessions-cb--checked::after {
     content: '';
