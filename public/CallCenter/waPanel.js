@@ -887,6 +887,17 @@ function _injectStyles() {
     transition: color .15s;
 }
 .wap-edit-name-btn:hover { color: var(--color-primario); }
+.wap-vincular-lid-btn {
+    background: none;
+    border: none;
+    color: #f59e0b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transition: color .15s;
+}
+.wap-vincular-lid-btn:hover { color: #d97706; }
 .wap-name-input {
     background: rgba(40,76,34,.08);
     border: 1px solid rgba(40,76,34,.3);
@@ -1275,6 +1286,7 @@ function _renderShell(body) {
                                 <div class="wap-chat-name-row">
                                     <span class="wap-chat-name" id="wap-chat-name"></span>
                                     <button class="wap-edit-name-btn" id="wap-edit-name-btn" title="Editar nombre">&#9998;</button>
+                                    <button class="wap-vincular-lid-btn" id="wap-vincular-lid-btn" title="Vincular a número real" style="display:none;">&#128279;</button>
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                             </div>
@@ -1332,6 +1344,7 @@ function _renderShell(body) {
             _reabrirChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
+    document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') _sendMessage();
@@ -2326,10 +2339,85 @@ function _updateChatHeader(phone) {
         }
     }
 
+    // Botón vincular: visible solo cuando el contacto es un @lid sin resolver (> 12 dígitos)
+    const vincularBtn = document.getElementById('wap-vincular-lid-btn');
+    if (vincularBtn) vincularBtn.style.display = phone.length > 12 ? '' : 'none';
+
     // Badge de color de la conexión en el borde izquierdo del header
     const color  = _getColor(_state.activeNum);
     const header = document.querySelector('.wap-chat-header');
     if (header) header.style.borderLeftColor = color;
+}
+
+function _vincularLid() {
+    const lid = _state.activeContact;
+    const num = _state.activeNum;
+    if (!lid || !num || lid.length <= 12) return;
+
+    const nameEl     = document.getElementById('wap-chat-name');
+    const vincularBtn = document.getElementById('wap-vincular-lid-btn');
+    const editBtn    = document.getElementById('wap-edit-name-btn');
+
+    // Mostrar input inline debajo del nombre
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const input = document.createElement('input');
+    input.className   = 'wap-name-input';
+    input.type        = 'tel';
+    input.placeholder = 'Ej: 3001234567';
+    input.style.width = '150px';
+    const okBtn = document.createElement('button');
+    okBtn.textContent = '✓';
+    okBtn.style.cssText = 'background:var(--color-primario);color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:1.1rem;';
+    wrap.appendChild(input);
+    wrap.appendChild(okBtn);
+    nameEl.replaceWith(wrap);
+    editBtn.style.display    = 'none';
+    vincularBtn.style.display = 'none';
+    input.focus();
+
+    async function _confirmar() {
+        const val = input.value.trim().replace(/\D/g, '');
+        // Restaurar UI antes de hacer fetch
+        const span = document.createElement('span');
+        span.className = 'wap-chat-name';
+        span.id        = 'wap-chat-name';
+        wrap.replaceWith(span);
+        editBtn.style.display    = '';
+
+        if (!val || val.length < 10) {
+            _updateChatHeader(lid);
+            return;
+        }
+
+        try {
+            const r = await fetch(
+                `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(lid)}/vincular`,
+                { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ realPhone: val }) }
+            );
+            if (r.ok) {
+                _showToast('Contacto vinculado correctamente', 3000);
+            } else {
+                const err = await r.json().catch(() => ({}));
+                _showToast('Error: ' + (err.error || r.status), 4000);
+                _updateChatHeader(lid);
+            }
+        } catch { _showToast('Error de conexión', 3000); _updateChatHeader(lid); }
+    }
+
+    okBtn.addEventListener('click', _confirmar);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); _confirmar(); }
+        if (e.key === 'Escape') {
+            const span = document.createElement('span');
+            span.className = 'wap-chat-name';
+            span.id        = 'wap-chat-name';
+            wrap.replaceWith(span);
+            editBtn.style.display    = '';
+            _updateChatHeader(lid);
+        }
+    });
 }
 
 function _editContactName() {
