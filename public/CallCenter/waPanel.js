@@ -1392,7 +1392,7 @@ async function _loadConversaciones() {
         // Construir nuevo conv solo con lo que Supabase devuelve
         const newConv = {};
         for (const c of convs) {
-            const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts } = c;
+            const { numero, contacto, nombre, nombre_cliente, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
             if (contacto.includes('@')) continue; // grupos, canales, listas
             if (!ultimo_mensaje && !ultimo_ts) continue;
@@ -1400,12 +1400,12 @@ async function _loadConversaciones() {
             if (!newConv[numero]) newConv[numero] = {};
             const prev = _state.conv[numero]?.[contacto] || {};
             newConv[numero][contacto] = {
-                msgs:       prev.msgs?.length ? prev.msgs : [],
-                unread:     prev.unread || 0,
-                customName: prev.customName || null,
-                name:       nombre || prev.name || null,
-                lastMsg:    ultimo_mensaje || prev.lastMsg || '',
-                lastTs:     ultimo_ts     || prev.lastTs  || 0,
+                msgs:    prev.msgs?.length ? prev.msgs : [],
+                unread:  prev.unread || 0,
+                nombre:  nombre_cliente || prev.nombre || null, // clientes BD (fuente de verdad)
+                name:    nombre         || prev.name   || null, // pushName WA (fallback)
+                lastMsg: ultimo_mensaje || prev.lastMsg || '',
+                lastTs:  ultimo_ts      || prev.lastTs  || 0,
             };
         }
 
@@ -1440,7 +1440,7 @@ async function _loadContactos() {
                 // Solo actualizar si la conv ya existe — no crear entradas vacías
                 if (!_state.conv[numero]?.[phone]) continue;
                 const c = _state.conv[numero][phone];
-                if (!c.customName && c.name !== name) {
+                if (!c.nombre && c.name !== name) {
                     c.name = name;
                     actualizado = true;
                 }
@@ -1486,13 +1486,13 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
 
     if (!_state.conv[numero])        _state.conv[numero]        = {};
     const isNewConv = !_state.conv[numero][phone];
-    if (isNewConv) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, customName: null, jidSuffix: '@s.whatsapp.net' };
+    if (isNewConv) _state.conv[numero][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, nombre: null, name: null, jidSuffix: '@s.whatsapp.net' };
 
     const c   = _state.conv[numero][phone];
     c.jidSuffix = jidSuffix;  // actualizar siempre — puede cambiar entre sesiones
     const out = !!fromMe;
     // Actualizar nombre WA solo si el asesor no asigno uno manual
-    if (pushName && !out && !c.customName) c.name = pushName;
+    if (pushName && !out && !c.nombre) c.name = pushName;
 
     // Deduplicar: si es saliente y ya existe en state (optimista), solo actualizar asesor si falta
     if (out) {
@@ -1559,17 +1559,17 @@ function _onStatus({ numero, sede, status }) {
     }
 }
 
-function _onContacto({ numero, phone, name }) {
+function _onContacto({ numero, phone, name, fuente }) {
     if (!phone || !name) return;
     const _cSuffix = phone.split('@')[1] || '';
     if (_cSuffix !== 's.whatsapp.net' && _cSuffix !== 'lid') return;
-    // Solo actualizar nombre si la conversación YA existe — no crear entradas vacías.
-    // Sin este guard, miembros de grupos generan chats vacíos porque Baileys emite
-    // contacts.upsert con su JID individual (@s.whatsapp.net) al procesar grupos.
     if (!_state.conv[numero]?.[phone]) return;
     const c = _state.conv[numero][phone];
-    // Solo actualizar si el asesor no puso un nombre manual
-    if (!c.customName) c.name = name;
+    if (fuente === 'clientes') {
+        c.nombre = name; // fuente de verdad — override siempre
+    } else if (!c.nombre) {
+        c.name = name;   // pushName WA — solo si no hay nombre de clientes
+    }
     _saveConv();
     _renderList();
     // Actualizar header si es la conversacion abierta
@@ -2062,8 +2062,8 @@ function _renderList() {
         const isOffline  = sesStatus === 'desconectado' || sesStatus === 'reconectando';
         const unread  = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
-        const display = data.customName || data.name || _fmtPhone(phone);
-        const hasName = !!(data.customName || data.name);
+        const display = data.nombre || data.name || _fmtPhone(phone);
+        const hasName = !!(data.nombre || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
 
         const estadoTag = isOffline
@@ -2194,7 +2194,7 @@ async function _loadMsgsSupabase(phone) {
 
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
-    const display = c?.customName || c?.name || _fmtPhone(phone);
+    const display = c?.nombre || c?.name || _fmtPhone(phone);
     document.getElementById('wap-chat-name').textContent = display;
 
     // Sub-línea: estado + asesor asignado
@@ -2220,12 +2220,17 @@ function _editContactName() {
     const num   = _state.activeNum;
     if (!phone || !num) return;
 
+    // Bloquear edición para @lid sin resolver (contacto no identificado)
+    if (/^\d{14,}$/.test(phone)) {
+        _showToast('No se puede editar el nombre de un contacto no identificado', 3000);
+        return;
+    }
+
     const c       = _state.conv[num]?.[phone];
-    const current = c?.customName || c?.name || '';
+    const current = c?.nombre || c?.name || '';
     const nameEl  = document.getElementById('wap-chat-name');
     const editBtn = document.getElementById('wap-edit-name-btn');
 
-    // Reemplazar el span por un input inline
     const input = document.createElement('input');
     input.className   = 'wap-name-input';
     input.value       = current;
@@ -2235,20 +2240,34 @@ function _editContactName() {
     input.focus();
     input.select();
 
-    function _guardar() {
+    async function _guardar() {
         const nuevo = input.value.trim();
-        if (_state.conv[num]?.[phone]) {
-            _state.conv[num][phone].customName = nuevo || null;
-            _saveConv();
-        }
-        // Restaurar span
+        // Restaurar span primero para no bloquear la UI
         const span = document.createElement('span');
         span.className = 'wap-chat-name';
         span.id        = 'wap-chat-name';
         input.replaceWith(span);
         editBtn.style.display = '';
+
+        if (!nuevo || nuevo === current) { _updateChatHeader(phone); return; }
+
+        try {
+            const r = await fetch(
+                `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`,
+                { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ nombre: nuevo }) }
+            );
+            if (r.ok) {
+                if (_state.conv[num]?.[phone]) {
+                    _state.conv[num][phone].nombre = nuevo;
+                    _saveConv();
+                }
+                _renderList();
+            } else {
+                _showToast('Error al guardar el nombre', 3000);
+            }
+        } catch { _showToast('Error de conexión', 3000); }
         _updateChatHeader(phone);
-        _renderList();
     }
 
     input.addEventListener('blur', _guardar);
@@ -2632,14 +2651,14 @@ function _loadConv() {
                 if (phone.includes('@')) continue; // grupos, canales, listas
                 if (!c.msgs?.length && !c.lastMsg) continue;
                 if (!_state.conv[num]) _state.conv[num] = {};
-                // Solo msgs y customName — lista y metadata vienen de Supabase
+                // Solo msgs, nombre y name como caché — lista y metadata vienen de Supabase
                 _state.conv[num][phone] = {
-                    msgs:       c.msgs?.slice(-MAX_MSGS) || [],
-                    unread:     0,
-                    customName: c.customName || null,
-                    name:       c.name || null,
-                    lastMsg:    c.lastMsg || '',
-                    lastTs:     c.lastTs  || 0,
+                    msgs:    c.msgs?.slice(-MAX_MSGS) || [],
+                    unread:  0,
+                    nombre:  c.nombre || null, // clientes BD
+                    name:    c.name   || null, // pushName WA
+                    lastMsg: c.lastMsg || '',
+                    lastTs:  c.lastTs  || 0,
                 };
             }
         }
