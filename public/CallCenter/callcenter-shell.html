@@ -298,6 +298,10 @@
         const wait = Math.max(0, MIN_OVERLAY_MS - elapsed);
         setTimeout(() => _overlay.classList.remove('visible'), wait);
     }
+    // Fallback inicial: cubre race condition en recarga (location.reload) donde el evento
+    // load del iframe puede llegar tarde o nav-loading puede re-mostrar el overlay.
+    // Si load llega antes de 3s, hideOverlay() cancela este timer. Si no, fuerza cierre.
+    _overlayFallback = setTimeout(() => hideOverlay(), 3000);
     document.getElementById('cc-frame').addEventListener('load', () => {
         hideOverlay();
         _postWaOffset();
@@ -317,10 +321,10 @@
                 el.offsetHeight; // fuerza reflow para resetear la animación
                 el.style.animation = '';
             });
-            // Seguridad: si el evento load del iframe ya disparó antes que este mensaje
-            // (caché prefetch muy rápido), el overlay quedaría atascado. Forzar cierre a los 6s.
+            // Fallback: si load ya disparó antes que nav-loading (caché muy rápido),
+            // el overlay quedaría atascado. Forzar cierre en 3s (antes era 6s).
             clearTimeout(_overlayFallback);
-            _overlayFallback = setTimeout(() => hideOverlay(), 6000);
+            _overlayFallback = setTimeout(() => hideOverlay(), 3000);
         }
         if (e.data?.type === 'frame-ready')       { postToFrame(_sipState); _postWaOffset(); }
         if (e.data?.type === 'sip-reconnect')     sipReconnect();
