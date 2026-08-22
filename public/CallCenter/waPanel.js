@@ -1178,6 +1178,15 @@ function _injectStyles() {
 .wap-ws-dot--desconectado { background: #ef4444; }
 @keyframes wap-ws-pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
+/* ── Ticks de estado (enviado/entregado/leído) ───── */
+.wap-msg-ticks {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 3px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
 /* ── Mensajes pendientes / fallidos ─────────────── */
 .wap-msg--pending { opacity: 0.55; }
 .wap-msg--failed  { background: #fee2e2 !important; }
@@ -1522,6 +1531,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:estado')     _onEstado(msg);
             if (msg.tipo === 'wa:merge')      _onMerge(msg);
             if (msg.tipo === 'wa:config')     _onConfig(msg);
+            if (msg.tipo === 'wa:msg_status') _onMsgStatus(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -1529,7 +1539,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, msgId }) {
     // Solo chats 1:1 — descartar grupos, canales, listas de difusión, etc.
     if (!remitente) return;
     const _rimSuffix = remitente.split('@')[1] || '';
@@ -1555,11 +1565,14 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (out) {
         const existing = [...c.msgs].reverse().find(m => m.out && m.text === texto);
         if (existing) {
-            if (!existing.asesor && asesor) { existing.asesor = asesor; _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
+            let changed = false;
+            if (!existing.asesor && asesor) { existing.asesor = asesor; changed = true; }
+            if (msgId && !existing.msgId) { existing.msgId = msgId; existing.status = 2; changed = true; }
+            if (changed) { _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje' });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', msgId: msgId || null, status: out ? 2 : undefined });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -1614,6 +1627,32 @@ function _onStatus({ numero, sede, status }) {
         const sede2 = _state.sesiones.find(s => s.numero === numero)?.sede;
         _showToast(`WhatsApp ${_capitalizarSede(sede2) || _fmtPhone(numero)} conectado`);
     }
+}
+
+function _onMsgStatus({ numero, msgId, status }) {
+    if (!msgId || !numero) return;
+    let updated = false;
+    for (const convs of Object.values(_state.conv[numero] || {})) {
+        const m = convs.msgs?.find(x => x.msgId === msgId);
+        if (m) { m.status = status; updated = true; break; }
+    }
+    if (!updated) return;
+    _saveConv();
+    if (_state.activeNum === numero) _renderMsgs();
+}
+
+function _tickSvg(status) {
+    if (!status || status < 2) return '';
+    const color = status >= 4 ? '#53bdeb' : '#8696a0';
+    if (status === 2) {
+        return `<span class="wap-msg-ticks"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+            <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>`;
+    }
+    return `<span class="wap-msg-ticks"><svg width="18" height="10" viewBox="0 0 18 10" fill="none">
+        <path d="M1 5L4.5 8.5L13 1"   stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 5L8.5 8.5L17 1"   stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg></span>`;
 }
 
 function _onContacto({ numero, phone, name, fuente }) {
@@ -2212,13 +2251,14 @@ async function _loadMsgsSupabase(phone) {
 
         // Convertir formato Supabase → formato interno
         const supabaseMsgs = msgs.map(m => ({
-            text:   m.texto,
-            ts:     m.timestamp,
-            out:    m.saliente,
-            msgId:  m.msg_id,
-            asesor: m.asesor || null,
+            text:    m.texto,
+            ts:      m.timestamp,
+            out:     m.saliente,
+            msgId:   m.msg_id,
+            asesor:  m.asesor || null,
             celular: !!m.desde_telefono,
-            tipo:   m.tipo || 'mensaje',
+            tipo:    m.tipo || 'mensaje',
+            status:  m.status || (m.saliente ? 2 : undefined),
         }));
 
         // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
@@ -2374,7 +2414,7 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : '';
+            : (m.out ? _tickSvg(m.status) : '');
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
