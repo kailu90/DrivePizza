@@ -476,10 +476,27 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-sessions-name { flex: 1; }
-.wap-sessions-check {
-    width: 14px; height: 14px;
+.wap-sessions-cb {
+    width: 16px; height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 3px;
     flex-shrink: 0;
-    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s, border-color .12s;
+}
+.wap-sessions-cb--checked {
+    background: #25D366;
+    border-color: #25D366;
+}
+.wap-sessions-cb--checked::after {
+    content: '';
+    width: 9px; height: 5px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translate(1px, -1px);
+    display: block;
 }
 .wap-pill {
     display: flex;
@@ -1963,27 +1980,27 @@ function _renderSessions() {
     // ── Lista vertical con multi-selección ──────────────────────────
     const todasCls = sel.size === 0 ? ' wap-sessions-item--active' : '';
 
+    const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked' : '';
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
             <span class="wap-sessions-status wap-sessions-status--green"></span>
             <span class="wap-sessions-name">Todas las conexiones</span>
+            <span class="wap-sessions-cb${todasChecked}"></span>
         </button>
         ${sesiones.map(s => {
             const color     = _getColor(s.numero);
             const checked   = sel.has(s.numero);
             const activeCls = checked ? ' wap-sessions-item--active' : '';
+            const cbCls     = checked ? ' wap-sessions-cb--checked' : '';
             const statusCls = s.status === 'conectado'    ? 'wap-sessions-status--green'
                             : s.status === 'esperando_qr' ? 'wap-sessions-status--yellow'
                             : 'wap-sessions-status--red';
             const label     = _sessionLabel(s.numero);
-            const checkIcon = checked
-                ? `<svg class="wap-sessions-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
-                : `<span class="wap-sessions-check"></span>`;
             return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
                 <span class="wap-sessions-status ${statusCls}"></span>
                 <span class="wap-sessions-color-bar" style="background:${color};"></span>
                 <span class="wap-sessions-name">${label}</span>
-                ${checkIcon}
+                <span class="wap-sessions-cb${cbCls}"></span>
             </button>`;
         }).join('')}
     `;
