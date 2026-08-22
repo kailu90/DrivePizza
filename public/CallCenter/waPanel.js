@@ -1532,6 +1532,10 @@ function _connectWs() {
             // Reconexión — recuperar mensajes perdidos durante la desconexión
             _loadConversaciones();
             _loadAsignaciones();
+            // Si hay un chat abierto, recargar sus mensajes desde Supabase
+            if (_state.activeContact && _state.activeNum) {
+                _loadMsgsSupabase(_state.activeContact);
+            }
         }
         _wsEverConnected = true;
     };
