@@ -2657,7 +2657,6 @@ function _flashIcon() {
 // ── Helpers ────────────────────────────────────────────────────────────────
 function _fmtPhone(raw) {
     const n = String(raw || '').replace(/\D/g, '');
-    if (n.length >= 14) return 'Desconocido'; // @lid sin resolver — número de dispositivo interno de WA
     if (n.startsWith('57') && n.length === 12) return `+57 ${n.slice(2, 5)} ${n.slice(5, 8)} ${n.slice(8)}`;
     if (n.length === 10) return `${n.slice(0, 3)} ${n.slice(3, 6)} ${n.slice(6)}`;
     return raw;
