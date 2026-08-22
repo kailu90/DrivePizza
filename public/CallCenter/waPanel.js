@@ -2053,7 +2053,7 @@ function _computeConteos() {
     const filtrarPorAsesor = !isAdmin || _state.filtroAsesor === 'mio';
     const numeros          = _state.filtroSesiones.size > 0
         ? _state.filtroSesiones
-        : new Set(_state.sesiones.filter(s => s.status === 'conectado').map(s => s.numero));
+        : new Set(Object.keys(_state.conv));
 
     let en_espera = 0, asignado = 0, resuelto = 0;
 
