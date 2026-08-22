@@ -1394,8 +1394,7 @@ async function _loadConversaciones() {
         for (const c of convs) {
             const { numero, contacto, nombre, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
-            if (contacto.includes('@')) continue;   // grupos, canales, listas
-            if (/^\d{14,}$/.test(contacto)) continue; // @lid sin mapear (14+ dígitos no son teléfonos válidos)
+            if (contacto.includes('@')) continue; // grupos, canales, listas
             if (!ultimo_mensaje && !ultimo_ts) continue;
 
             if (!newConv[numero]) newConv[numero] = {};
@@ -2621,8 +2620,7 @@ function _loadConv() {
             const convs = parsed[num];
             for (const phone of Object.keys(convs)) {
                 const c = convs[phone];
-                if (phone.includes('@')) continue;   // grupos, canales, listas
-                if (/^\d{14,}$/.test(phone)) continue; // @lid sin mapear
+                if (phone.includes('@')) continue; // grupos, canales, listas
                 if (!c.msgs?.length && !c.lastMsg) continue;
                 if (!_state.conv[num]) _state.conv[num] = {};
                 // Solo msgs y customName — lista y metadata vienen de Supabase
@@ -2659,6 +2657,7 @@ function _flashIcon() {
 // ── Helpers ────────────────────────────────────────────────────────────────
 function _fmtPhone(raw) {
     const n = String(raw || '').replace(/\D/g, '');
+    if (n.length >= 14) return 'Desconocido'; // @lid sin resolver — número de dispositivo interno de WA
     if (n.startsWith('57') && n.length === 12) return `+57 ${n.slice(2, 5)} ${n.slice(5, 8)} ${n.slice(8)}`;
     if (n.length === 10) return `${n.slice(0, 3)} ${n.slice(3, 6)} ${n.slice(6)}`;
     return raw;
