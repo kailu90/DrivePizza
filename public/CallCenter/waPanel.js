@@ -18,8 +18,9 @@ const _state = {
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:    null,  // null | 'en_espera' | 'asignado' | 'resuelto'
     filtroAsesor:    null,  // null = todos | 'nombre' = solo ese asesor (admin)
-    filtroSesiones:  new Set(), // Set<numero> vacío = todas las sesiones
-    conteos:         { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
+    filtroSesiones:    new Set(), // Set<numero> vacío = todas las sesiones
+    conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
+    respuestasRapidas: [], // [{ id, titulo, texto }]
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _loadSessions();
     _loadAsignaciones();
     _loadConversaciones(); // fuente de verdad — reconstruye conv desde Supabase
+    _loadRespuestasRapidas();
     _connectWs();
     setInterval(_loadConversaciones, 60_000); // re-sync cada 60s
 }
@@ -1358,7 +1360,146 @@ function _injectStyles() {
     cursor: pointer;
 }
 .wap-msg-retry:hover { background: #dc2626; }
+
+/* ── Input row (position para slash picker) ──────── */
+.wap-input-row { position: relative; }
+
+/* ── Slash picker ────────────────────────────────── */
+.wap-slash-picker {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid rgba(40,76,34,.2);
+    border-radius: 8px 8px 0 0;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 -4px 12px rgba(0,0,0,.1);
+    z-index: 20;
+    display: none;
+}
+.wap-slash-picker.visible { display: block; }
+.wap-slash-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    transition: background .1s;
+}
+.wap-slash-item:last-child { border-bottom: none; }
+.wap-slash-item:hover,
+.wap-slash-item.wap-slash-selected { background: rgba(40,76,34,.08); }
+.wap-slash-item-titulo { font-weight: 600; color: #284c22; font-size: 1.2rem; }
+.wap-slash-item-titulo::before { content: '/'; opacity: .45; }
+.wap-slash-item-texto {
+    color: #888;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Vista Respuestas Rápidas ────────────────────── */
+.wap-rr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+    background: #f4ecdf;
+}
+.wap-rr-form {
+    padding: 10px 12px;
+    background: #fff;
+    border-bottom: 1px solid rgba(40,76,34,.1);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.wap-rr-form input,
+.wap-rr-form textarea {
+    width: 100%;
+    border: 1px solid rgba(40,76,34,.3);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 1.2rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+.wap-rr-form input:focus,
+.wap-rr-form textarea:focus { border-color: var(--color-primario); }
+.wap-rr-form-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
+.wap-rr-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+.wap-rr-empty {
+    text-align: center;
+    color: #aaa;
+    font-size: 1.2rem;
+    padding: 24px 12px;
+}
+.wap-rr-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    transition: background .12s;
+}
+.wap-rr-item:hover { background: rgba(40,76,34,.04); }
+.wap-rr-item-body { flex: 1; min-width: 0; }
+.wap-rr-item-titulo {
+    font-weight: 600;
+    color: #284c22;
+    font-size: 1.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-rr-item-titulo::before { content: '/'; opacity: .45; margin-right: 1px; }
+.wap-rr-item-texto {
+    color: #888;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-rr-item-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.wap-rr-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    transition: background .12s, color .12s;
+}
+.wap-rr-icon-btn:hover { background: rgba(0,0,0,.07); color: #374151; }
+.wap-rr-icon-btn--del:hover { color: #ef4444; }
+.wap-btn-secondary {
+    background: none;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #555;
+    transition: background .12s;
+}
+.wap-btn-secondary:hover { background: rgba(0,0,0,.06); }
 `;
+
     document.head.appendChild(s);
 }
 
@@ -1376,6 +1517,12 @@ function _renderShell(body) {
                 <button class="wap-nav-icon wap-nav-icon--active" data-view="conv" title="Conversaciones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                </button>
+
+                <button class="wap-nav-icon" data-view="rr" title="Respuestas rápidas">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                     </svg>
                 </button>
 
@@ -1439,10 +1586,21 @@ function _renderShell(body) {
                             <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir conversación</button>
                         </div>
                         <div class="wap-input-row">
+                            <div class="wap-slash-picker" id="wap-slash-picker"></div>
                             <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
                             <button id="wap-send">&#10148;</button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Vista: Respuestas rápidas -->
+                <div class="wap-view wap-view--hidden" id="wap-view-rr">
+                    <div class="wap-rr-header">
+                        <span>Respuestas rápidas</span>
+                        <button class="wap-btn-connect" id="wap-rr-new-btn" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Nueva</button>
+                    </div>
+                    <div class="wap-rr-form" id="wap-rr-form" style="display:none;"></div>
+                    <div class="wap-rr-list" id="wap-rr-list"></div>
                 </div>
 
                 <!-- Vista: Sesiones -->
@@ -1488,8 +1646,23 @@ function _renderShell(body) {
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
+    document.getElementById('wap-input').addEventListener('input', _onInputSlash);
+    document.getElementById('wap-input').addEventListener('blur', () => setTimeout(_hideSlashPicker, 150));
     document.getElementById('wap-input').addEventListener('keydown', e => {
+        if (_slashPickerOpen()) {
+            if (e.key === 'ArrowDown')  { e.preventDefault(); _slashMove(1);   return; }
+            if (e.key === 'ArrowUp')    { e.preventDefault(); _slashMove(-1);  return; }
+            if (e.key === 'Enter')      { e.preventDefault(); _slashConfirm(); return; }
+            if (e.key === 'Escape')     { _hideSlashPicker();                  return; }
+        }
         if (e.key === 'Enter') _sendMessage();
+    });
+    document.getElementById('wap-rr-new-btn').addEventListener('click', () => _openRRForm(null));
+    document.getElementById('wap-rr-list').addEventListener('click', e => {
+        const editBtn = e.target.closest('[data-rr-edit]');
+        const delBtn  = e.target.closest('[data-rr-del]');
+        if (editBtn) _openRRForm(parseInt(editBtn.dataset.rrEdit));
+        if (delBtn)  _deleteRR(parseInt(delBtn.dataset.rrDel));
     });
     document.getElementById('wap-msgs').addEventListener('click', e => {
         const btn = e.target.closest('.wap-msg-retry');
@@ -2738,9 +2911,11 @@ function _navTo(view) {
     document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
         b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
     document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
+    document.getElementById('wap-view-rr').classList.toggle('wap-view--hidden', view !== 'rr');
     document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
     if (view === 'ses') _renderSesionesView();
     if (view === 'conv') _renderList();
+    if (view === 'rr') _renderRRView();
 }
 
 function _showListView() {
@@ -3245,4 +3420,170 @@ function _esc(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+// ── Respuestas rápidas ──────────────────────────────────────────────────────
+
+async function _loadRespuestasRapidas() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/respuestas-rapidas`);
+        if (!r.ok) return;
+        _state.respuestasRapidas = await r.json();
+    } catch { /* sin conexión */ }
+}
+
+function _renderRRView() {
+    const list = document.getElementById('wap-rr-list');
+    if (!list) return;
+    if (!_state.respuestasRapidas.length) {
+        list.innerHTML = `<p class="wap-rr-empty">Sin respuestas rápidas — crea la primera con "+ Nueva"</p>`;
+        return;
+    }
+    list.innerHTML = _state.respuestasRapidas.map(rr => `
+        <div class="wap-rr-item" data-id="${rr.id}">
+            <div class="wap-rr-item-body">
+                <div class="wap-rr-item-titulo">${_esc(rr.titulo)}</div>
+                <div class="wap-rr-item-texto">${_esc(rr.texto)}</div>
+            </div>
+            <div class="wap-rr-item-btns">
+                <button class="wap-rr-icon-btn" data-rr-edit="${rr.id}" title="Editar">&#9998;</button>
+                <button class="wap-rr-icon-btn wap-rr-icon-btn--del" data-rr-del="${rr.id}" title="Eliminar">&#128465;</button>
+            </div>
+        </div>`).join('');
+}
+
+function _openRRForm(id) {
+    const form = document.getElementById('wap-rr-form');
+    if (!form) return;
+    const rr = id ? _state.respuestasRapidas.find(x => x.id === id) : null;
+    form.style.display = '';
+    form.innerHTML = `
+        <input  id="wap-rr-titulo"  type="text"    placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
+        <textarea id="wap-rr-texto" rows="3"       placeholder="Texto completo del mensaje">${_esc(rr?.texto || '')}</textarea>
+        <div class="wap-rr-form-btns">
+            <button class="wap-btn-secondary" id="wap-rr-cancel">Cancelar</button>
+            <button class="wap-btn-connect"   id="wap-rr-save" style="margin:0;font-size:1.1rem;padding:5px 14px;">${rr ? 'Guardar' : 'Crear'}</button>
+        </div>`;
+    form.querySelector('#wap-rr-cancel').addEventListener('click', () => {
+        form.style.display = 'none';
+        form.innerHTML = '';
+    });
+    form.querySelector('#wap-rr-save').addEventListener('click', () => _saveRR(id));
+    form.querySelector('#wap-rr-titulo').focus();
+}
+
+async function _saveRR(id) {
+    const titulo = document.getElementById('wap-rr-titulo')?.value.trim();
+    const texto  = document.getElementById('wap-rr-texto')?.value.trim();
+    if (!titulo || !texto) { _showToast('Completa título y texto', 2500); return; }
+
+    const method = id ? 'PUT' : 'POST';
+    const url    = id
+        ? `${HETZNER_URL}/wa/respuestas-rapidas/${id}`
+        : `${HETZNER_URL}/wa/respuestas-rapidas`;
+
+    try {
+        const r = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo, texto }),
+        });
+        if (!r.ok) { _showToast('Error al guardar', 3000); return; }
+        const saved = await r.json();
+        if (id) {
+            const idx = _state.respuestasRapidas.findIndex(x => x.id === id);
+            if (idx !== -1) _state.respuestasRapidas[idx] = saved;
+        } else {
+            _state.respuestasRapidas.push(saved);
+        }
+        const form = document.getElementById('wap-rr-form');
+        if (form) { form.style.display = 'none'; form.innerHTML = ''; }
+        _renderRRView();
+        _showToast(id ? 'Respuesta actualizada' : 'Respuesta creada');
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _deleteRR(id) {
+    if (!confirm('¿Eliminar esta respuesta rápida?')) return;
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/respuestas-rapidas/${id}`, { method: 'DELETE' });
+        if (!r.ok) { _showToast('Error al eliminar', 3000); return; }
+        _state.respuestasRapidas = _state.respuestasRapidas.filter(x => x.id !== id);
+        _renderRRView();
+        _showToast('Respuesta eliminada');
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+// ── Slash picker ────────────────────────────────────────────────────────────
+
+let _slashIdx = -1; // ítem seleccionado en el picker
+
+function _slashPickerOpen() {
+    return document.getElementById('wap-slash-picker')?.classList.contains('visible');
+}
+
+function _onInputSlash() {
+    const input = document.getElementById('wap-input');
+    const val   = input?.value ?? '';
+    if (!val.startsWith('/')) { _hideSlashPicker(); return; }
+
+    const query   = val.slice(1).toLowerCase();
+    const matches = _state.respuestasRapidas.filter(rr =>
+        rr.titulo.toLowerCase().includes(query) ||
+        rr.texto.toLowerCase().includes(query)
+    );
+
+    if (!matches.length) { _hideSlashPicker(); return; }
+
+    const picker = document.getElementById('wap-slash-picker');
+    if (!picker) return;
+
+    picker.innerHTML = matches.map((rr, i) => `
+        <div class="wap-slash-item${i === 0 ? ' wap-slash-selected' : ''}" data-slash-idx="${i}" data-slash-id="${rr.id}">
+            <span class="wap-slash-item-titulo">${_esc(rr.titulo)}</span>
+            <span class="wap-slash-item-texto">${_esc(rr.texto)}</span>
+        </div>`).join('');
+
+    _slashIdx = 0;
+    picker.classList.add('visible');
+
+    // click en un ítem
+    picker.querySelectorAll('.wap-slash-item').forEach(el => {
+        el.addEventListener('mousedown', e => {
+            e.preventDefault(); // evita blur en el input
+            const id = parseInt(el.dataset.slashId);
+            _applySlash(id);
+        });
+    });
+}
+
+function _slashMove(delta) {
+    const items = document.querySelectorAll('#wap-slash-picker .wap-slash-item');
+    if (!items.length) return;
+    items[_slashIdx]?.classList.remove('wap-slash-selected');
+    _slashIdx = Math.max(0, Math.min(items.length - 1, _slashIdx + delta));
+    items[_slashIdx]?.classList.add('wap-slash-selected');
+    items[_slashIdx]?.scrollIntoView({ block: 'nearest' });
+}
+
+function _slashConfirm() {
+    const selected = document.querySelector('#wap-slash-picker .wap-slash-selected');
+    if (!selected) return;
+    const id = parseInt(selected.dataset.slashId);
+    _applySlash(id);
+}
+
+function _applySlash(id) {
+    const rr    = _state.respuestasRapidas.find(x => x.id === id);
+    const input = document.getElementById('wap-input');
+    if (!rr || !input) return;
+    input.value = rr.texto;
+    input.focus();
+    _hideSlashPicker();
+}
+
+function _hideSlashPicker() {
+    const picker = document.getElementById('wap-slash-picker');
+    if (picker) { picker.classList.remove('visible'); picker.innerHTML = ''; }
+    _slashIdx = -1;
 }
