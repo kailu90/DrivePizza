@@ -2824,11 +2824,12 @@ function _renderFiltros() {
         </button>`;
     };
 
+    const actTodos    = f === null    ? ' wap-filtro--active' : '';
     const actResuelto = f === 'resuelto' ? ' wap-filtro--active' : '';
     el.innerHTML =
         badge('asignado',  'Atención', asignado) +
         badge('en_espera', 'Espera',   espera)   +
-        badge(null,        'Todos',    total)     +
+        `<button class="wap-filtro${actTodos}" data-filtro="">Todos</button>` +
         `<button class="wap-filtro${actResuelto}" data-filtro="resuelto">Resueltos</button>`;
 
     el.querySelectorAll('.wap-filtro[data-filtro]').forEach(btn => {
@@ -2972,10 +2973,10 @@ function _renderList() {
             if (_state.filtroEstado === 'asignado')  return estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual);
             if (_state.filtroEstado === 'resuelto')  return estado === 'resuelto' && (isAdmin || asig?.asesor === _asesorActual);
 
-            // Sin filtro: mostrar en_espera + asignado a mí (no resueltos)
-            if (estado === 'resuelto') return false;
+            // Sin filtro (Todos): en_espera + asignado a mí + resueltos al final
             if (estado === 'en_espera') return true;
             if (estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual)) return true;
+            if (estado === 'resuelto'  && (isAdmin || asig?.asesor === _asesorActual)) return true;
             return false;
         })
         .sort((a, b) => {
