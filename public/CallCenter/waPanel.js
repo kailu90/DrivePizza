@@ -2742,7 +2742,7 @@ function _renderAsesorPills() {
 
     // Lista de asesores únicos con chats activos (solo admin)
     const asesores = isAdmin
-        ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].sort()
+        ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].filter(a => a !== _asesorActual).sort()
         : [];
 
     const labelActual = fa === null ? 'Todos'
