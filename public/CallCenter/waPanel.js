@@ -1294,6 +1294,9 @@ function _injectStyles() {
 .wap-msg-video { display: block; max-width: 280px; max-height: 220px; border-radius: 8px; background: #000; }
 .wap-msg-doc { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(0,0,0,.06); border-radius: 8px; color: var(--color-terciario); text-decoration: none; font-size: 13px; word-break: break-all; }
 .wap-msg-doc:hover { background: rgba(0,0,0,.12); }
+.wap-reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.wap-reaction-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; background: rgba(0,0,0,.08); border-radius: 12px; font-size: 15px; cursor: default; border: 1px solid rgba(0,0,0,.10); }
+.wap-msg--out .wap-reactions { justify-content: flex-end; }
 .wap-msg-ts {
     font-size: 1rem;
     color: #9ca3af;
@@ -2234,6 +2237,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:msg_editado')   _onMsgEditado(msg);
             if (msg.tipo === 'wa:eliminado')     _onSesionEliminada(msg);
             if (msg.tipo === 'wa:rr_update')     _onRrUpdate();
+            if (msg.tipo === 'wa:reaccion')      _onReaccion(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -2489,6 +2493,18 @@ function _onSesionEliminada({ numero }) {
 async function _onRrUpdate() {
     await _loadRespuestasRapidas();
     _renderRRView();
+}
+
+function _onReaccion({ numero, contacto, targetMsgId, reactor, emoji }) {
+    const c = _state.conv[numero]?.[contacto];
+    if (!c) return;
+    const msg = c.msgs.find(m => m.msgId === targetMsgId);
+    if (!msg) return;
+    if (!msg.reactions) msg.reactions = {};
+    if (emoji) msg.reactions[reactor] = emoji;
+    else delete msg.reactions[reactor];
+    _saveConv();
+    if (_state.activeContact === contacto && _state.activeNum === numero) _renderMsgs();
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -3137,6 +3153,7 @@ async function _loadMsgsSupabase(phone) {
                 tipo:         m.tipo || 'mensaje',
                 mediaUrl:     m.media_url      || null,
                 status:       Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                reactions:    m.reactions      || {},
                 quotedMsgId:  m.quoted_msg_id  || null,
                 quotedTexto:  m.quoted_texto   || null,
                 quotedFromMe: m.quoted_from_me ?? null,
@@ -3485,11 +3502,18 @@ function _renderMsgs() {
                 const textEl = caption ? `<span class="wap-msg-text">${_esc(caption)}</span>` : '';
                 return `${quotedBlock}${mediaBlock}${textEl}`;
             })();
+        const reactionBadges = (() => {
+            const r = m.reactions;
+            if (!r || !Object.keys(r).length) return '';
+            const badges = Object.entries(r).map(([k, e]) => `<span class="wap-reaction-badge" title="${k === 'asesor' ? 'Tú' : 'Cliente'}">${e}</span>`).join('');
+            return `<div class="wap-reactions">${badges}</div>`;
+        })();
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             ${msgContent}
             ${isEditing ? '' : `<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>${statusEl}`}
+            ${reactionBadges}
         </div>`;
     }).join('');
     el.scrollTop = el.scrollHeight;
