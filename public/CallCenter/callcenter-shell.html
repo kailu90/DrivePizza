@@ -114,18 +114,21 @@
         #wa-panel {
             position: fixed;
             top: 100px; left: 0; bottom: 0;
-            width: 350px;
+            width: 420px;
             display: flex; flex-direction: column;
             overflow: hidden;
             background: var(--color-secundario, #fff);
-            transform: translateX(-290px);
+            transform: translateX(-360px);
             transition: transform 260ms ease;
             z-index: 7500;
         }
         #wa-panel.expanded { transform: translateX(0); }
+        @media (max-width: 768px) {
+            #wa-panel { width: 100%; transform: translateX(-100%); top: 54px; }
+        }
 
         #wa-panel .panel-header {
-            width: 350px; height: 60px;
+            width: 420px; height: 60px;
             display: flex; align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
@@ -148,7 +151,6 @@
             transition: background 0.15s;
         }
         #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
-        @media (max-width: 768px) { #wa-panel { top: 54px; } }
         #wa-badge-hdr {
             position: absolute; top: 6px; right: 6px;
             background: #ef4444; color: #fff; font-size: 10px;
@@ -228,7 +230,7 @@
     function _waOffset() {
         const panel = document.getElementById('wa-panel');
         if (panel.style.display === 'none') return 0;
-        return panel.classList.contains('expanded') ? 350 : 60;
+        return panel.classList.contains('expanded') ? 420 : 60;
     }
     function _postWaOffset() {
         document.getElementById('cc-frame')?.contentWindow?.postMessage(
