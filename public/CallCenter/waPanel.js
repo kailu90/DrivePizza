@@ -80,6 +80,15 @@ function _getColor(numero) {
     return SESSION_COLORS[hash % SESSION_COLORS.length];
 }
 
+// Devuelve '#ffffff' o '#1f2937' según la luminancia percibida del color de fondo
+function _textColorForBg(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#1f2937' : '#ffffff';
+}
+
 let _rolUsuario   = '';
 let _asesorActual = '';
 let _ws              = null;
@@ -2903,7 +2912,7 @@ function _renderList() {
             : '';
 
         return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
-            <div class="wap-avatar" style="background:${color};">${_initials(display)}</div>
+            <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
                     <span class="wap-conv-name">${_esc(display)}</span>
@@ -3040,6 +3049,7 @@ function _updateChatHeader(phone) {
     if (avatarEl) {
         avatarEl.textContent      = (display[0] || '?').toUpperCase();
         avatarEl.style.background = color;
+        avatarEl.style.color      = _textColorForBg(color);
     }
 
     // El span puede haber sido reemplazado por un input de edición/vincular sin confirmar.
