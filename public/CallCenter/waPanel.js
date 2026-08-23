@@ -25,6 +25,9 @@ const SESSION_COLORS = [
     '#ffffff', // blanco
 ];
 
+const _notifAudio = new Audio('../Audio/notificacion-wa.mp3');
+_notifAudio.volume = 0.6;
+
 const _state = {
     sesiones:      [],    // [{ numero, sede, status, tieneQr, color, respuesta_inicial }]
     conv:          {},    // { [numero]: { [phoneContact]: { msgs, unread, lastMsg, lastTs } } }
@@ -2275,6 +2278,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (esEntranteOCelular && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
+    if (!out) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
 }
 
 function _onStatus({ numero, sede, status }) {
