@@ -766,13 +766,14 @@ function _injectStyles() {
     border-color: rgba(0,0,0,.18);
 }
 .wap-filtro--active {
-    background: #2d3748;
-    border-color: #2d3748;
-    color: #fff;
+    background: transparent;
+    border: 2px solid #f97316;
+    color: #ea6c0a;
+    font-weight: 700;
 }
 .wap-filtro--active:hover {
-    background: #1a202c;
-    border-color: #1a202c;
+    background: rgba(249,115,22,.06);
+    border-color: #ea6c0a;
 }
 .wap-filtro-count {
     font-size: 1.05rem;
