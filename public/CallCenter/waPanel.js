@@ -2137,6 +2137,12 @@ async function _loadConversaciones() {
             }
         }
 
+        // Descartar conversaciones de sesiones que ya no existen
+        const _sesActivas = new Set(_state.sesiones.map(s => s.numero));
+        for (const num of Object.keys(newConv)) {
+            if (!_sesActivas.has(num)) delete newConv[num];
+        }
+
         _state.conv = newConv;
         _saveConv();
         _renderList();
@@ -2839,8 +2845,10 @@ function _renderList() {
     if (!el) return;
 
     // Recopilar conversaciones de todas las sesiones (o solo la activa si está filtrada)
+    const sesionesActivas = new Set(_state.sesiones.map(s => s.numero));
     const allConvs = [];
     for (const [num, convs] of Object.entries(_state.conv)) {
+        if (!sesionesActivas.has(num)) continue; // omitir sesiones eliminadas
         if (_state.filtroSesiones.size > 0 && !_state.filtroSesiones.has(num)) continue;
         for (const [phone, data] of Object.entries(convs)) {
             if (phone === num) continue; // ignorar mensajes a sí mismo
