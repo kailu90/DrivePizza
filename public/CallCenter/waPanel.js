@@ -247,10 +247,11 @@ function _injectStyles() {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: #fff;
+    background: #f5f0e8;
     border-radius: 10px;
     border-left: 4px solid #ccc;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid rgba(0,0,0,.08);
+    border-left-width: 4px;
 }
 .wap-ses-card-dot {
     width: 10px;
