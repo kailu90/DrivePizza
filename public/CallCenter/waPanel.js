@@ -767,13 +767,12 @@ function _injectStyles() {
 }
 .wap-filtro--active {
     background: transparent;
-    border: 2px solid #f97316;
-    color: #ea6c0a;
+    border: 2px solid var(--color-primario);
+    color: var(--color-primario);
     font-weight: 700;
 }
 .wap-filtro--active:hover {
-    background: rgba(249,115,22,.06);
-    border-color: #ea6c0a;
+    background: rgba(0,0,0,.04);
 }
 .wap-filtro-count {
     font-size: 1.05rem;
