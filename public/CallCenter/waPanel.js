@@ -2178,6 +2178,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
             if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
             if (msg.tipo === 'wa:msg_editado')   _onMsgEditado(msg);
+            if (msg.tipo === 'wa:eliminado')     _onSesionEliminada(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -2410,6 +2411,21 @@ function _onConfig({ numero, color, respuesta_inicial }) {
     _renderSesionesView();
     _renderList(); // actualiza bordes de colores en bandeja
     if (_state.activeNum === numero) _updateChatHeader(_state.activeContact);
+}
+
+function _onSesionEliminada({ numero }) {
+    _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
+    delete _state.conv[numero];
+    if (_state.activeNum === numero) {
+        _state.activeNum     = _state.sesiones.find(s => s.status === 'conectado')?.numero || null;
+        _state.activeContact = null;
+        _showListView();
+    }
+    _saveConv();
+    _renderSessions();
+    _renderSesionesView();
+    _scheduleConteos();
+    _renderList();
 }
 
 function _onQr({ numero, sede, qr }) {
