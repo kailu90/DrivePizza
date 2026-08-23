@@ -1448,7 +1448,11 @@ function _injectStyles() {
     padding: 1px 5px;
     font-size: 1rem;
     margin-right: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .12s;
 }
+.wap-rr-vars-hint code:hover { background: rgba(40,76,34,.18); }
 .wap-rr-form-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
 .wap-rr-list {
     flex: 1;
@@ -3473,7 +3477,7 @@ function _openRRForm(id) {
     form.innerHTML = `
         <input  id="wap-rr-titulo"  type="text"    placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
         <textarea id="wap-rr-texto" rows="3"       placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
-        <p class="wap-rr-vars-hint">Variables: <code>{nombreUsuario}</code> <code>{nombreAsesor}</code></p>
+        <p class="wap-rr-vars-hint">Insertar: <code class="wap-rr-var" data-var="{nombreUsuario}">{nombreUsuario}</code><code class="wap-rr-var" data-var="{nombreAsesor}">{nombreAsesor}</code></p>
         <div class="wap-rr-form-btns">
             <button class="wap-btn-secondary" id="wap-rr-cancel">Cancelar</button>
             <button class="wap-btn-connect"   id="wap-rr-save" style="margin:0;font-size:1.1rem;padding:5px 14px;">${rr ? 'Guardar' : 'Crear'}</button>
@@ -3483,6 +3487,17 @@ function _openRRForm(id) {
         form.innerHTML = '';
     });
     form.querySelector('#wap-rr-save').addEventListener('click', () => _saveRR(id));
+    form.querySelectorAll('.wap-rr-var').forEach(badge => {
+        badge.addEventListener('click', () => {
+            const ta    = form.querySelector('#wap-rr-texto');
+            const start = ta.selectionStart;
+            const end   = ta.selectionEnd;
+            const v     = badge.dataset.var;
+            ta.value    = ta.value.slice(0, start) + v + ta.value.slice(end);
+            ta.selectionStart = ta.selectionEnd = start + v.length;
+            ta.focus();
+        });
+    });
     form.querySelector('#wap-rr-titulo').focus();
 }
 
