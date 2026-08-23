@@ -3003,10 +3003,12 @@ function _renderList() {
             const estado = _getEstado(num, phone);
             const asig   = _getAsig(num, phone);
 
-            // Filtro asesor
+            // Filtro asesor — con 'mio': las en_espera pasan siempre (disponibles para tomar)
             if (_state.filtroAsesor) {
-                const target = _state.filtroAsesor === 'mio' ? _asesorActual : _state.filtroAsesor;
-                if (asig?.asesor !== target) return false;
+                const target   = _state.filtroAsesor === 'mio' ? _asesorActual : _state.filtroAsesor;
+                const esMio    = _state.filtroAsesor === 'mio';
+                const esEspera = estado === 'en_espera';
+                if (!(esMio && esEspera) && asig?.asesor !== target) return false;
             }
 
             // Filtro activo por badge
