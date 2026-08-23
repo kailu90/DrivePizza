@@ -412,49 +412,57 @@ function _injectStyles() {
     color: var(--color-primario);
     flex-shrink: 0;
 }
-.wap-panel-sep {
-    color: #9ca3af;
-    font-size: 1.2rem;
-    margin: 0 4px;
-    flex-shrink: 0;
+/* ── Asesor pills (header) ───────────────────────── */
+.wap-asesor-pills {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow-x: auto;
+    flex: 1;
+    padding: 0 6px;
+    scrollbar-width: none;
 }
+.wap-asesor-pills::-webkit-scrollbar { display: none; }
+.wap-asesor-pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: transparent;
+    color: #374151;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all .15s;
+}
+.wap-asesor-pill:hover { background: rgba(0,0,0,.05); }
+.wap-asesor-pill--active {
+    border: 2px solid var(--color-quinto);
+    color: var(--color-quinto);
+    font-weight: 700;
+}
+.wap-sessions-icon {
+    width: 28px; height: 28px;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #374151;
+    padding: 0;
+    transition: background .15s;
+}
+.wap-sessions-icon:hover { background: rgba(0,0,0,.06); }
 
 /* ── Sessions colapsable ─────────────────────────── */
 .wap-sessions-wrap {
     flex-shrink: 0;
     border-bottom: 1px solid rgba(0,0,0,.08);
 }
-.wap-sessions-toggle {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--color-primario);
-    text-align: left;
-    min-width: 0;
-}
-.wap-sessions-toggle--static { cursor: default; }
-.wap-sessions-toggle:hover:not(.wap-sessions-toggle--static) { opacity: .75; }
-.wap-sessions-toggle-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wap-sessions-toggle-badge {
-    background: #e5e7eb;
-    color: #6b7280;
-    font-size: 1rem;
-    font-weight: 700;
-    border-radius: 10px;
-    padding: 1px 7px;
-}
-.wap-sessions-toggle-arrow {
-    font-size: 1rem;
-    color: #9ca3af;
-    transition: transform .2s;
-}
-.wap-sessions-wrap.open .wap-sessions-toggle-arrow { transform: rotate(180deg); }
 .wap-sessions-active-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
@@ -1317,8 +1325,10 @@ function _renderShell(body) {
                 <div class="wap-view" id="wap-view-conv">
                     <div class="wap-panel-header">
                         <span class="wap-panel-title">WhatsApp</span>
-                        <span class="wap-panel-sep">·</span>
-                        <button class="wap-sessions-toggle" id="wap-sessions-toggle"></button>
+                        <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
+                        <button class="wap-sessions-icon" id="wap-sessions-toggle" title="Conexiones" style="display:none;">
+                            <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+                        </button>
                     </div>
                     <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
                         <div class="wap-sessions" id="wap-sessions"></div>
@@ -1437,6 +1447,7 @@ async function _loadAsignaciones() {
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
         _renderList();
         _scheduleConteos();
+        _renderAsesorPills();
     } catch { /* sin conexión */ }
 }
 
@@ -2010,77 +2021,33 @@ function _renderSesionesView() {
     });
 }
 
-// ── Render sessions (collapsible filter) ───────────────────────────────────
+// ── Render sessions (dropdown desde ícono en header) ───────────────────────
 function _renderSessions() {
     const wrap   = document.getElementById('wap-sessions-wrap');
     const toggle = document.getElementById('wap-sessions-toggle');
     const el     = document.getElementById('wap-sessions');
-    const sep    = document.querySelector('.wap-panel-sep');
     if (!wrap || !toggle || !el) return;
 
     const sesiones = _state.sesiones;
 
-    // Sin sesiones: ocultar toggle y separador
-    if (sesiones.length === 0) {
+    // Con ≤1 sesión: ocultar ícono y dropdown
+    if (sesiones.length <= 1) {
         toggle.style.display = 'none';
-        if (sep) sep.style.display = 'none';
-        wrap.style.display = 'none';
+        wrap.style.display   = 'none';
         return;
     }
 
-    if (sep) sep.style.display = '';
+    // Con 2+ sesiones: mostrar ícono, registrar listener una sola vez
     toggle.style.display = '';
-
-    // Con 1 sola sesión: nombre estático, sin dropdown
-    if (sesiones.length === 1) {
-        const s     = sesiones[0];
-        const color = _getColor(s.numero);
-        toggle.className   = 'wap-sessions-toggle wap-sessions-toggle--static';
-        toggle._hasListener = false;
-        toggle.innerHTML = `
-            <span class="wap-sessions-active-dot" style="background:${color};"></span>
-            <span class="wap-sessions-toggle-label">${_sessionLabel(s.numero)}</span>
-        `;
-        wrap.style.display = 'none';
-        return;
-    }
-
-    // Con 2+ sesiones: dropdown interactivo
-    toggle.className = 'wap-sessions-toggle';
-    wrap.style.display = '';
-
-    const sel = _state.filtroSesiones;
-    let toggleDot   = '';
-    let toggleLabel = '';
-    if (sel.size === 0) {
-        toggleLabel = 'Todas las conexiones';
-        toggleDot = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
-    } else if (sel.size === 1) {
-        const num = [...sel][0];
-        const c   = _getColor(num);
-        toggleLabel = _sessionLabel(num);
-        toggleDot = `<span class="wap-sessions-active-dot" style="background:${c};"></span>`;
-    } else {
-        toggleLabel = `${sel.size} conexiones`;
-        toggleDot = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
-    }
-
-    toggle.innerHTML = `
-        ${toggleDot}
-        <span class="wap-sessions-toggle-label">${toggleLabel}</span>
-        <span class="wap-sessions-toggle-arrow">&#9660;</span>
-    `;
-
     if (!toggle._hasListener) {
         toggle._hasListener = true;
-        toggle.addEventListener('click', () => {
-            wrap.classList.toggle('open');
-        });
+        toggle.addEventListener('click', () => wrap.classList.toggle('open'));
     }
 
     // ── Lista vertical con multi-selección ──────────────────────────
+    const sel          = _state.filtroSesiones;
     const todasCls     = sel.size === 0 ? ' wap-sessions-item--active' : '';
-    const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked' : '';
+    const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked'  : '';
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
             <span class="wap-sessions-status wap-sessions-status--green"></span>
@@ -2091,15 +2058,14 @@ function _renderSessions() {
             const color     = _getColor(s.numero);
             const checked   = sel.has(s.numero);
             const activeCls = checked ? ' wap-sessions-item--active' : '';
-            const cbCls     = checked ? ' wap-sessions-cb--checked' : '';
+            const cbCls     = checked ? ' wap-sessions-cb--checked'  : '';
             const statusCls = s.status === 'conectado'    ? 'wap-sessions-status--green'
                             : s.status === 'esperando_qr' ? 'wap-sessions-status--yellow'
                             : 'wap-sessions-status--red';
-            const label     = _sessionLabel(s.numero);
             return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
                 <span class="wap-sessions-status ${statusCls}"></span>
                 <span class="wap-sessions-color-bar" style="background:${color};"></span>
-                <span class="wap-sessions-name">${label}</span>
+                <span class="wap-sessions-name">${_sessionLabel(s.numero)}</span>
                 <span class="wap-sessions-cb${cbCls}"></span>
             </button>`;
         }).join('')}
@@ -2108,15 +2074,44 @@ function _renderSessions() {
     el.querySelectorAll('.wap-sessions-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const num = btn.dataset.num;
-            if (!num) {
-                sel.clear();
-                wrap.classList.remove('open');
-            } else if (sel.has(num)) {
-                sel.delete(num);
-            } else {
-                sel.add(num);
-            }
+            if (!num) { sel.clear(); wrap.classList.remove('open'); }
+            else if (sel.has(num)) sel.delete(num);
+            else sel.add(num);
             _renderSessions();
+            _scheduleConteos();
+            _renderList();
+        });
+    });
+}
+
+// ── Render asesor pills en el header ───────────────────────────────────────
+function _renderAsesorPills() {
+    const el = document.getElementById('wap-asesor-pills');
+    if (!el) return;
+
+    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const fa       = _state.filtroAsesor;
+
+    // Lista de asesores únicos con chats activos (solo para admin)
+    const asesores = isAdmin
+        ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].sort()
+        : [];
+
+    const pill = (key, label) => {
+        const activo = fa === key ? ' wap-asesor-pill--active' : '';
+        return `<button class="wap-asesor-pill${activo}" data-fa="${key ?? ''}">${label}</button>`;
+    };
+
+    el.innerHTML =
+        pill(null,  'Todos') +
+        pill('mio', 'Míos')  +
+        asesores.map(a => pill(a, a)).join('');
+
+    el.querySelectorAll('.wap-asesor-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.fa || null;
+            _state.filtroAsesor = (_state.filtroAsesor === key) ? null : key;
+            _renderAsesorPills();
             _scheduleConteos();
             _renderList();
         });
@@ -2148,9 +2143,10 @@ function _renderFiltroAsesor() {
 // Calcula desde _state.conv + _state.asignaciones sin llamar al servidor,
 // así los badges reflejan exactamente el filtro de sesiones activo.
 function _computeConteos() {
-    const isAdmin          = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    const filtrarPorAsesor = !isAdmin || _state.filtroAsesor === 'mio';
-    const numeros          = _state.filtroSesiones.size > 0
+    const asesorTarget = _state.filtroAsesor === 'mio' ? _asesorActual
+                       : _state.filtroAsesor            ? _state.filtroAsesor
+                       : null;
+    const numeros = _state.filtroSesiones.size > 0
         ? _state.filtroSesiones
         : new Set(Object.keys(_state.conv));
 
@@ -2164,9 +2160,9 @@ function _computeConteos() {
             if (!asig) {
                 en_espera++;
             } else if (asig.estado === 'asignado') {
-                if (!filtrarPorAsesor || asig.asesor === _asesorActual) asignado++;
+                if (!asesorTarget || asig.asesor === asesorTarget) asignado++;
             } else if (asig.estado === 'resuelto') {
-                if (!filtrarPorAsesor || asig.asesor === _asesorActual) resuelto++;
+                if (!asesorTarget || asig.asesor === asesorTarget) resuelto++;
             }
         }
     }
@@ -2178,7 +2174,7 @@ function _computeConteos() {
 let _conteoTimer = null;
 function _scheduleConteos() {
     clearTimeout(_conteoTimer);
-    _conteoTimer = setTimeout(() => { _computeConteos(); _renderFiltros(); }, 100);
+    _conteoTimer = setTimeout(() => { _computeConteos(); _renderFiltros(); _renderAsesorPills(); }, 100);
 }
 
 // ── Render filtros de estado ───────────────────────────────────────────────
@@ -2187,26 +2183,21 @@ function _renderFiltros() {
     if (!el) return;
 
     const { en_espera: espera, asignado, resuelto } = _state.conteos;
-    const total   = espera + asignado + resuelto;
-    const f       = _state.filtroEstado;
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    const esMio   = _state.filtroAsesor === 'mio';
+    const total = espera + asignado + resuelto;
+    const f     = _state.filtroEstado;
 
-    const badge = (key, label, count, color) => {
+    const badge = (key, label, count) => {
         const activo = f === key ? ' wap-filtro--active' : '';
-        return `<button class="wap-filtro${activo}" data-filtro="${key ?? ''}" style="--fc:${color};">
+        return `<button class="wap-filtro${activo}" data-filtro="${key ?? ''}">
             ${label} <span class="wap-filtro-count">${count}</span>
         </button>`;
     };
 
     el.innerHTML =
-        badge(null,        'Todos',    total,    '#6b7280') +
-        badge('en_espera', 'Espera',   espera,   '#f59e0b') +
-        badge('asignado',  'Atención', asignado, '#0088cc') +
-        badge('resuelto',  'Resueltos',resuelto, '#25D366') +
-        (isAdmin ? `<button class="wap-filtro${esMio ? ' wap-filtro--active' : ''}" id="wap-btn-fa" style="--fc:#6b7280;">
-            ${esMio ? 'Míos' : 'Todos los asesores'}
-        </button>` : '');
+        badge(null,        'Todos',     total)    +
+        badge('en_espera', 'Espera',    espera)   +
+        badge('asignado',  'Atención',  asignado) +
+        badge('resuelto',  'Resueltos', resuelto);
 
     el.querySelectorAll('.wap-filtro[data-filtro]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2216,15 +2207,6 @@ function _renderFiltros() {
             _renderList();
         });
     });
-
-    if (isAdmin) {
-        el.querySelector('#wap-btn-fa')?.addEventListener('click', () => {
-            _state.filtroAsesor = _state.filtroAsesor === 'mio' ? null : 'mio';
-            _scheduleConteos();
-            _renderFiltros();
-            _renderList();
-        });
-    }
 }
 
 // ── Render conversation list ───────────────────────────────────────────────
@@ -2252,8 +2234,11 @@ function _renderList() {
             const estado = _getEstado(num, phone);
             const asig   = _getAsig(num, phone);
 
-            // Filtro asesor (solo admin)
-            if (_state.filtroAsesor === 'mio' && asig?.asesor !== _asesorActual) return false;
+            // Filtro asesor
+            if (_state.filtroAsesor) {
+                const target = _state.filtroAsesor === 'mio' ? _asesorActual : _state.filtroAsesor;
+                if (asig?.asesor !== target) return false;
+            }
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
