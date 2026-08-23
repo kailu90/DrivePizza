@@ -3445,7 +3445,7 @@ function _renderMsgs() {
                 return `<img class="${cls}" src="${url}" alt="${m.tipo}" loading="lazy" onclick="window.open('${url}','_blank')">`;
             }
             if (m.tipo === 'audio' || m.tipo === 'voz') {
-                return `<audio class="wap-msg-audio" controls src="${url}" preload="none"></audio>`;
+                return `<audio class="wap-msg-audio" controls src="${url}" preload="metadata"></audio>`;
             }
             if (m.tipo === 'video') {
                 return `<video class="wap-msg-video" controls src="${url}" preload="none" playsinline></video>`;
