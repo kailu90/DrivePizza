@@ -1045,7 +1045,29 @@ function _injectStyles() {
     background: #d9fdd3;
     align-self: flex-end;
     border-radius: 10px 10px 0 10px;
+    position: relative;
 }
+.wap-msg-del {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    transition: background .12s;
+}
+.wap-msg-del:hover { background: #dc2626; }
+.wap-msg--out:hover .wap-msg-del { display: flex; }
 .wap-msg--celular {
     background: #ede9fe;
     border-left: 3px solid #7c3aed;
@@ -1692,8 +1714,10 @@ function _renderShell(body) {
         if (delBtn)  _deleteRR(parseInt(delBtn.dataset.rrDel));
     });
     document.getElementById('wap-msgs').addEventListener('click', e => {
-        const btn = e.target.closest('.wap-msg-retry');
-        if (btn) _retrySend(+btn.dataset.tmp);
+        const retryBtn = e.target.closest('.wap-msg-retry');
+        if (retryBtn) { _retrySend(+retryBtn.dataset.tmp); return; }
+        const delBtn = e.target.closest('.wap-msg-del');
+        if (delBtn) _deleteMsg(delBtn.dataset.msgid);
     });
     // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
     // lo que lo convertiría en containing-block. Lo movemos al <body> para que
@@ -1914,9 +1938,10 @@ function _connectWs() {
             if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')     _onEstado(msg);
-            if (msg.tipo === 'wa:merge')      _onMerge(msg);
-            if (msg.tipo === 'wa:config')     _onConfig(msg);
-            if (msg.tipo === 'wa:msg_status') _onMsgStatus(msg);
+            if (msg.tipo === 'wa:merge')         _onMerge(msg);
+            if (msg.tipo === 'wa:config')        _onConfig(msg);
+            if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
+            if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -2978,7 +3003,11 @@ function _renderMsgs() {
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
             : (m.out && !m.celular ? _tickSvg(m.status) : '');
+        const delBtn = m.out && m.msgId && !m.pending && !m.failed
+            ? `<button class="wap-msg-del" data-msgid="${_esc(m.msgId)}" title="Eliminar mensaje">&#x2715;</button>`
+            : '';
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
+            ${delBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
             <span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>
@@ -3448,6 +3477,41 @@ function _esc(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+// ── Eliminar mensaje ────────────────────────────────────────────────────────
+
+async function _deleteMsg(msgId) {
+    if (!msgId || !_state.activeNum || !_state.activeContact) return;
+    if (!confirm('¿Eliminar este mensaje para todos?')) return;
+    const num   = _state.activeNum;
+    const phone = _state.activeContact;
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}/${encodeURIComponent(msgId)}`,
+            { method: 'DELETE' }
+        );
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            _showToast(err.error || 'Error al eliminar', 3000);
+            return;
+        }
+        // Eliminar localmente (el WS broadcast también lo hará para otros paneles)
+        _removeMsgLocally(num, phone, msgId);
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+function _onMsgEliminado({ numero, contacto, msgId }) {
+    if (!numero || !contacto || !msgId) return;
+    _removeMsgLocally(numero, contacto, msgId);
+}
+
+function _removeMsgLocally(num, phone, msgId) {
+    const c = _state.conv[num]?.[phone];
+    if (!c) return;
+    c.msgs = c.msgs.filter(m => m.msgId !== msgId);
+    _saveConv();
+    if (_state.activeNum === num && _state.activeContact === phone) _renderMsgs();
 }
 
 // ── Auto-resize textarea ────────────────────────────────────────────────────
