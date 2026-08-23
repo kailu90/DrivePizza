@@ -1124,7 +1124,7 @@ function _injectStyles() {
     color: var(--color-primario);
     margin-bottom: 1px;
 }
-.wap-msg-text { color: var(--color-terciario); }
+.wap-msg-text { color: var(--color-terciario); white-space: pre-wrap; word-break: break-word; }
 .wap-msg-ts {
     font-size: 1rem;
     color: #9ca3af;
@@ -1132,21 +1132,28 @@ function _injectStyles() {
 }
 .wap-input-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 6px;
     padding: 8px 10px;
     background: #f0f0f0;
     flex-shrink: 0;
 }
-.wap-input-row input {
+.wap-input-row textarea {
     flex: 1;
     padding: 8px 12px;
     border: none;
     border-radius: 20px;
     font-size: 1.3rem;
+    font-family: inherit;
     background: #fff;
+    resize: none;
+    overflow-y: auto;
+    min-height: 36px;
+    max-height: 120px;
+    line-height: 1.4;
+    scrollbar-width: thin;
 }
-.wap-input-row input:focus { outline: none; }
+.wap-input-row textarea:focus { outline: none; }
 .wap-input-row button {
     background: var(--color-primario);
     color: #fff;
@@ -1604,7 +1611,7 @@ function _renderShell(body) {
                         </div>
                         <div class="wap-input-row">
                             <div class="wap-slash-picker" id="wap-slash-picker"></div>
-                            <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
+                            <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
                             <button id="wap-send">&#10148;</button>
                         </div>
                     </div>
@@ -1663,7 +1670,10 @@ function _renderShell(body) {
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
-    document.getElementById('wap-input').addEventListener('input', _onInputSlash);
+    document.getElementById('wap-input').addEventListener('input', e => {
+        _onInputSlash();
+        _autoResizeTextarea(e.target);
+    });
     document.getElementById('wap-input').addEventListener('blur', () => setTimeout(_hideSlashPicker, 150));
     document.getElementById('wap-input').addEventListener('keydown', e => {
         if (_slashPickerOpen()) {
@@ -1672,7 +1682,7 @@ function _renderShell(body) {
             if (e.key === 'Enter')      { e.preventDefault(); _slashConfirm(); return; }
             if (e.key === 'Escape')     { _hideSlashPicker();                  return; }
         }
-        if (e.key === 'Enter') _sendMessage();
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _sendMessage(); }
     });
     document.getElementById('wap-rr-new-btn').addEventListener('click', () => _openRRForm(null));
     document.getElementById('wap-rr-list').addEventListener('click', e => {
@@ -3035,6 +3045,7 @@ async function _sendMessage() {
     }
 
     input.value = '';
+    _autoResizeTextarea(input);
     const num   = _state.activeNum;
     const phone = _state.activeContact;
     const ts    = Math.floor(Date.now() / 1000);
@@ -3439,6 +3450,13 @@ function _esc(str) {
         .replace(/>/g, '&gt;');
 }
 
+// ── Auto-resize textarea ────────────────────────────────────────────────────
+function _autoResizeTextarea(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
 // ── Respuestas rápidas ──────────────────────────────────────────────────────
 
 async function _loadRespuestasRapidas() {
@@ -3615,6 +3633,7 @@ function _applySlash(id) {
     input.value = rr.texto
         .replace(/\{nombreUsuario\}/gi, nombreUsuario)
         .replace(/\{nombreAsesor\}/gi, nombreAsesor);
+    _autoResizeTextarea(input);
     input.focus();
     _hideSlashPicker();
 }
