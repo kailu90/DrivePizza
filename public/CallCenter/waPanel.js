@@ -2278,7 +2278,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (esEntranteOCelular && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
-    if (!out) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
+    if (!out && _getEstado(numero, phone) !== 'asignado') { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
 }
 
 function _onStatus({ numero, sede, status }) {
