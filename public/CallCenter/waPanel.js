@@ -1051,7 +1051,7 @@ function _injectStyles() {
     display: none;
     position: absolute;
     top: 4px;
-    left: -22px;
+    right: 4px;
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -1070,8 +1070,8 @@ function _injectStyles() {
 .wap-msg--out:hover .wap-msg-menu-btn { display: flex; }
 .wap-msg-dropdown {
     position: absolute;
-    top: 22px;
-    left: -22px;
+    top: 26px;
+    right: 4px;
     background: #fff;
     border: 1px solid rgba(0,0,0,.12);
     border-radius: 8px;
