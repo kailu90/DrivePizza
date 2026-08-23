@@ -2293,16 +2293,23 @@ async function _loadMsgsSupabase(phone) {
         const c = _state.conv[num][phone];
 
         // Convertir formato Supabase → formato interno
-        const supabaseMsgs = msgs.map(m => ({
-            text:    m.texto,
-            ts:      m.timestamp,
-            out:     m.saliente,
-            msgId:   m.msg_id,
-            asesor:  m.asesor || null,
-            celular: !!m.desde_telefono,
-            tipo:    m.tipo || 'mensaje',
-            status:  m.status || (m.saliente ? 2 : undefined),
-        }));
+        // Para status: usar el mayor entre Supabase y memoria (evita regresión cuando el re-sync
+        // llega antes de que el UPDATE de Supabase se haya confirmado)
+        const prevMsgs = new Map((c.msgs || []).filter(m => m.msgId).map(m => [m.msgId, m]));
+        const supabaseMsgs = msgs.map(m => {
+            const prev   = prevMsgs.get(m.msg_id);
+            const dbStat = m.status || (m.saliente ? 2 : undefined);
+            return {
+                text:    m.texto,
+                ts:      m.timestamp,
+                out:     m.saliente,
+                msgId:   m.msg_id,
+                asesor:  m.asesor || null,
+                celular: !!m.desde_telefono,
+                tipo:    m.tipo || 'mensaje',
+                status:  Math.max(dbStat || 0, prev?.status || 0) || undefined,
+            };
+        });
 
         // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
         const lastSupabaseTs = supabaseMsgs[supabaseMsgs.length - 1]?.ts ?? 0;
