@@ -2250,8 +2250,10 @@ function _onStatus({ numero, sede, status }) {
     }
     _getColor(numero); // asignar color si es nueva sesión
     _renderSessions();
-    _renderSesionesView(); // actualizar cards en vista Conexiones en tiempo real
-    if (_state.activeNum === numero) _updateOfflineBar(); // actualizar banner si el chat activo es de esta sesión
+    _renderSesionesView();
+    _renderList(); // actualiza colores y filtros de bandeja al cambiar estado de sesión
+    _scheduleConteos();
+    if (_state.activeNum === numero) _updateOfflineBar();
 
     // QR escaneado — mostrar animación de confirmación en el modal
     if (status === 'conectando' && _waitingQrFor === numero) {
@@ -2433,6 +2435,7 @@ function _onQr({ numero, sede, qr }) {
     if (idx === -1) _state.sesiones.push({ numero, sede: sede || '', status: 'esperando_qr', tieneQr: true });
     else            { _state.sesiones[idx].status = 'esperando_qr'; _state.sesiones[idx].tieneQr = true; }
     _renderSessions();
+    _renderSesionesView();
     if (_waitingQrFor === numero) _showQr(numero, qr);
 }
 
