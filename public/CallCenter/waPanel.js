@@ -1067,7 +1067,8 @@ function _injectStyles() {
     z-index: 2;
 }
 .wap-msg-menu-btn:hover { background: rgba(0,0,0,.28); }
-.wap-msg--out:hover .wap-msg-menu-btn { display: flex; }
+.wap-msg--out:hover .wap-msg-menu-btn,
+.wap-msg--in:hover  .wap-msg-menu-btn { display: flex; }
 .wap-msg-dropdown {
     position: absolute;
     top: 26px;
@@ -1459,6 +1460,73 @@ function _injectStyles() {
 }
 .wap-msg-retry:hover { background: #dc2626; }
 
+/* ── Barra de respuesta (reply preview) ─────────── */
+.wap-reply-bar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #e8f5e9;
+    border-top: 2px solid var(--color-primario);
+    flex-shrink: 0;
+}
+.wap-reply-bar.visible { display: flex; }
+.wap-reply-preview {
+    flex: 1;
+    min-width: 0;
+    border-left: 3px solid var(--color-primario);
+    padding-left: 8px;
+}
+.wap-reply-author {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-primario);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-reply-text {
+    display: block;
+    font-size: 1.1rem;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-reply-cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.wap-reply-cancel:hover { color: #374151; background: rgba(0,0,0,.06); }
+
+/* ── Bloque citado dentro de burbuja ─────────────── */
+.wap-msg-quoted {
+    border-left: 3px solid rgba(0,0,0,.25);
+    padding: 3px 8px;
+    margin-bottom: 3px;
+    border-radius: 0 4px 4px 0;
+    background: rgba(0,0,0,.06);
+}
+.wap-msg--out .wap-msg-quoted { border-color: var(--color-primario); background: rgba(40,76,34,.08); }
+.wap-msg-quoted-author { display: block; font-size: 1rem; font-weight: 600; color: var(--color-primario); }
+.wap-msg-quoted-text {
+    display: block;
+    font-size: 1.1rem;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
 /* ── Input row (position para slash picker) ──────── */
 .wap-input-row { position: relative; }
 
@@ -1700,6 +1768,13 @@ function _renderShell(body) {
                             <span>✅ Chat resuelto — solo lectura</span>
                             <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir conversación</button>
                         </div>
+                        <div class="wap-reply-bar" id="wap-reply-bar">
+                            <div class="wap-reply-preview">
+                                <span class="wap-reply-author" id="wap-reply-author"></span>
+                                <span class="wap-reply-text"   id="wap-reply-text"></span>
+                            </div>
+                            <button class="wap-reply-cancel" id="wap-reply-cancel">&#x2715;</button>
+                        </div>
                         <div class="wap-input-row">
                             <div class="wap-slash-picker" id="wap-slash-picker"></div>
                             <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
@@ -1775,6 +1850,7 @@ function _renderShell(body) {
         }
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _sendMessage(); }
     });
+    document.getElementById('wap-reply-cancel').addEventListener('click', _cancelReply);
     document.getElementById('wap-rr-new-btn').addEventListener('click', () => _openRRForm(null));
     document.getElementById('wap-rr-list').addEventListener('click', e => {
         const editBtn = e.target.closest('[data-rr-edit]');
@@ -1797,6 +1873,21 @@ function _renderShell(body) {
             // Cerrar todos los dropdowns abiertos
             document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
             if (!isOpen && dd) dd.classList.add('open');
+            return;
+        }
+
+        // Responder
+        const replyBtn = e.target.closest('[data-reply-msgid]');
+        if (replyBtn) {
+            _replyingTo = {
+                msgId:  replyBtn.dataset.replyMsgid,
+                texto:  replyBtn.dataset.replyTexto,
+                fromMe: replyBtn.dataset.replyOut === '1',
+                nombre: replyBtn.dataset.replyNombre,
+            };
+            document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
+            _updateReplyBar();
+            document.getElementById('wap-input')?.focus();
             return;
         }
 
@@ -2061,7 +2152,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, msgId }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, msgId, quotedMsgId, quotedTexto, quotedFromMe }) {
     // Solo chats 1:1 — descartar grupos, canales, listas de difusión, etc.
     if (!remitente) return;
     const _rimSuffix = remitente.split('@')[1] || '';
@@ -2099,7 +2190,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', msgId: msgId || null, status: out ? 2 : undefined });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', msgId: msgId || null, status: out ? 2 : undefined, quotedMsgId: quotedMsgId || null, quotedTexto: quotedTexto || null, quotedFromMe: quotedFromMe ?? null });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -2823,14 +2914,17 @@ async function _loadMsgsSupabase(phone) {
             const prev   = prevMsgs.get(m.msg_id);
             const dbStat = m.status || (m.saliente ? 2 : undefined);
             return {
-                text:    m.texto,
-                ts:      m.timestamp,
-                out:     m.saliente,
-                msgId:   m.msg_id,
-                asesor:  m.asesor || null,
-                celular: !!m.desde_telefono,
-                tipo:    m.tipo || 'mensaje',
-                status:  Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                text:         m.texto,
+                ts:           m.timestamp,
+                out:          m.saliente,
+                msgId:        m.msg_id,
+                asesor:       m.asesor || null,
+                celular:      !!m.desde_telefono,
+                tipo:         m.tipo || 'mensaje',
+                status:       Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                quotedMsgId:  m.quoted_msg_id  || null,
+                quotedTexto:  m.quoted_texto   || null,
+                quotedFromMe: m.quoted_from_me ?? null,
             };
         });
 
@@ -3084,6 +3178,7 @@ function _navTo(view) {
 
 function _showListView() {
     _editingMsgId = null;
+    _cancelReply();
     document.getElementById('wap-chat').style.display                    = 'none';
     document.getElementById('wap-list').style.display                    = '';
     document.getElementById('wap-search-wrap').style.display             = '';
@@ -3117,11 +3212,18 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
             : (m.out && !m.celular ? _tickSvg(m.status) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
-        const menuBtn = m.out && m.msgId && !m.pending && !m.failed && !isEditing
+        const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
             ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
                <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
-                   <button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
-                   <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>
+                   <button class="wap-msg-dropdown-item" data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}">&#x21A9; Responder</button>
+                   ${m.out ? `<button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
+                   <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>` : ''}
+               </div>`
+            : '';
+        const quotedBlock = m.quotedTexto
+            ? `<div class="wap-msg-quoted">
+                   <span class="wap-msg-quoted-author">${_esc(m.quotedFromMe ? _asesorActual || 'Tú' : (m.nombre || _fmtPhone(_state.activeContact)))}</span>
+                   <span class="wap-msg-quoted-text">${_esc(m.quotedTexto)}</span>
                </div>`
             : '';
         const msgContent = isEditing
@@ -3132,7 +3234,7 @@ function _renderMsgs() {
                        <button class="wap-msg-edit-save"   data-save-edit="${_esc(m.msgId)}">Guardar</button>
                    </div>
                </div>`
-            : `<span class="wap-msg-text">${_esc(m.text)}</span>`;
+            : `${quotedBlock}<span class="wap-msg-text">${_esc(m.text)}</span>`;
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
@@ -3221,9 +3323,10 @@ async function _sendMessage() {
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual }),
+            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, quoted: _replyingTo }),
             signal:  AbortSignal.timeout(10000),
         });
+        _cancelReply();
         const m = c.msgs.find(x => x.tmpId === tmpId);
         if (r.ok) {
             if (m) { delete m.pending; delete m.tmpId; }
@@ -3605,6 +3708,22 @@ function _esc(str) {
         .replace(/>/g, '&gt;');
 }
 
+// ── Reply ───────────────────────────────────────────────────────────────────
+
+function _updateReplyBar() {
+    const bar  = document.getElementById('wap-reply-bar');
+    if (!bar) return;
+    if (!_replyingTo) { bar.classList.remove('visible'); return; }
+    document.getElementById('wap-reply-author').textContent = _replyingTo.fromMe ? (_asesorActual || 'Tú') : _replyingTo.nombre;
+    document.getElementById('wap-reply-text').textContent   = _replyingTo.texto;
+    bar.classList.add('visible');
+}
+
+function _cancelReply() {
+    _replyingTo = null;
+    _updateReplyBar();
+}
+
 // ── Editar / Eliminar mensaje ───────────────────────────────────────────────
 
 async function _saveEditMsg(msgId) {
@@ -3787,8 +3906,9 @@ async function _deleteRR(id) {
 
 // ── Slash picker ────────────────────────────────────────────────────────────
 
-let _slashIdx     = -1;  // ítem seleccionado en el picker
-let _editingMsgId = null; // msgId del mensaje en edición inline
+let _slashIdx     = -1;    // ítem seleccionado en el picker
+let _editingMsgId = null;  // msgId del mensaje en edición inline
+let _replyingTo   = null;  // { msgId, texto, fromMe, nombre } | null
 
 function _slashPickerOpen() {
     return document.getElementById('wap-slash-picker')?.classList.contains('visible');
