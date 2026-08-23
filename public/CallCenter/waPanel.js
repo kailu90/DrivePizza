@@ -2826,9 +2826,9 @@ function _renderFiltros() {
 
     const actResuelto = f === 'resuelto' ? ' wap-filtro--active' : '';
     el.innerHTML =
-        badge(null,        'Todos',    total)    +
-        badge('en_espera', 'Espera',   espera)   +
         badge('asignado',  'Atención', asignado) +
+        badge('en_espera', 'Espera',   espera)   +
+        badge(null,        'Todos',    total)     +
         `<button class="wap-filtro${actResuelto}" data-filtro="resuelto">Resueltos</button>`;
 
     el.querySelectorAll('.wap-filtro[data-filtro]').forEach(btn => {
