@@ -767,8 +767,8 @@ function _injectStyles() {
 }
 .wap-filtro--active {
     background: transparent;
-    border: 2px solid var(--color-primario);
-    color: var(--color-primario);
+    border: 2px solid var(--color-quinto);
+    color: var(--color-quinto);
     font-weight: 700;
 }
 .wap-filtro--active:hover {
