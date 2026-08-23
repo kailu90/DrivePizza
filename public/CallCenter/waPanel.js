@@ -1959,8 +1959,8 @@ function _renderShell(body) {
                             <div class="wap-slash-picker" id="wap-slash-picker"></div>
                             <button class="wap-rec-cancel-btn" id="wap-rec-cancel-btn" title="Cancelar grabaci&#xF3;n" style="display:none">&#x2715;</button>
                             <div class="wap-input-wrapper">
-                                <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
                                 <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                                <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
                                 <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             </div>
                             <button id="wap-send" style="display:none">&#10148;</button>
