@@ -52,6 +52,13 @@ function _esMio(num, phone)     { return _getAsig(num, phone)?.asesor === _aseso
 let _editingNum    = null;  // numero cuya card está en modo edición
 let _pendingColors = {};   // { [numero]: colorHex } — selección temporal antes de guardar
 
+// ── Media / voz ─────────────────────────────────────────────────────────────
+let _pendingFile   = null;  // File a enviar como adjunto
+let _mediaRecorder = null;  // MediaRecorder activo (voz)
+let _recChunks     = [];
+let _recInterval   = null;
+let _recSeconds    = 0;
+
 const LS_KEY_META = 'wap_meta_v1';
 
 function _loadMeta() {
@@ -1344,6 +1351,59 @@ function _injectStyles() {
 }
 .wap-input-row button:hover { background: var(--color-cuaternario); }
 
+/* ── Botones adjuntar / voz ──────────────────────── */
+.wap-attach-btn,
+.wap-voice-btn,
+.wap-rec-cancel-btn {
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 1.4rem;
+}
+.wap-attach-btn:hover,
+.wap-voice-btn:hover,
+.wap-rec-cancel-btn:hover { background: #d1d5db; }
+.wap-voice-btn--rec {
+    background: #ef4444 !important;
+    color: #fff !important;
+    animation: wap-rec-pulse 1s ease-in-out infinite;
+}
+@keyframes wap-rec-pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.12); }
+}
+
+/* ── Preview de archivo adjunto ──────────────────── */
+.wap-media-preview {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #e0f2fe;
+    border-top: 1px solid #bae6fd;
+    font-size: 1.2rem;
+    color: #0369a1;
+    flex-shrink: 0;
+}
+.wap-media-preview-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+.wap-media-preview-cancel {
+    background: none !important;
+    border: none !important;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 1.4rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    width: auto !important;
+    height: auto !important;
+}
+.wap-media-preview-cancel:hover { background: #bae6fd !important; }
+
 /* ── Banner sesión desconectada (en chat) ────────── */
 .wap-offline-bar {
     display: none;
@@ -1856,9 +1916,17 @@ function _renderShell(body) {
                             </div>
                             <button class="wap-reply-cancel" id="wap-reply-cancel">&#x2715;</button>
                         </div>
+                        <div class="wap-media-preview" id="wap-media-preview">
+                            <span class="wap-media-preview-name" id="wap-media-preview-name"></span>
+                            <button class="wap-media-preview-cancel" id="wap-media-preview-cancel" title="Quitar archivo">&#x2715;</button>
+                        </div>
+                        <input type="file" id="wap-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
                         <div class="wap-input-row">
                             <div class="wap-slash-picker" id="wap-slash-picker"></div>
+                            <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
+                            <button class="wap-rec-cancel-btn" id="wap-rec-cancel-btn" title="Cancelar grabaci&#xF3;n" style="display:none">&#x2715;</button>
                             <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                            <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             <button id="wap-send">&#10148;</button>
                         </div>
                     </div>
@@ -1917,6 +1985,14 @@ function _renderShell(body) {
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
+    document.getElementById('wap-attach-btn').addEventListener('click', () => document.getElementById('wap-file-input').click());
+    document.getElementById('wap-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) _setPendingFile(f); });
+    document.getElementById('wap-media-preview-cancel').addEventListener('click', _clearPendingFile);
+    document.getElementById('wap-voice-btn').addEventListener('click', async () => {
+        if (_mediaRecorder?.state === 'recording') { await _stopRecording(true); }
+        else { await _startRecording(); }
+    });
+    document.getElementById('wap-rec-cancel-btn').addEventListener('click', () => _stopRecording(false));
     document.getElementById('wap-input').addEventListener('input', e => {
         _onInputSlash();
         _autoResizeTextarea(e.target);
@@ -3529,6 +3605,8 @@ function _updateOfflineBar() {
     const inputRow  = document.querySelector('.wap-input-row');
     const input     = document.getElementById('wap-input');
     const sendBtn   = document.getElementById('wap-send');
+    const attachBtn = document.getElementById('wap-attach-btn');
+    const voiceBtn  = document.getElementById('wap-voice-btn');
     const msgs      = document.getElementById('wap-msgs');
     if (!bar) return;
 
@@ -3549,8 +3627,10 @@ function _updateOfflineBar() {
 
     // Solo offline sin bloqueo: deshabilitar input
     if (!bloqueado) {
-        if (input)   input.disabled   = offline;
-        if (sendBtn) sendBtn.disabled = offline;
+        if (input)     input.disabled     = offline;
+        if (sendBtn)   sendBtn.disabled   = offline;
+        if (attachBtn) attachBtn.disabled = offline;
+        if (voiceBtn)  voiceBtn.disabled  = offline;
     }
 }
 
@@ -3567,6 +3647,7 @@ async function _reabrirChat(num, phone) {
 }
 
 async function _sendMessage() {
+    if (_pendingFile) { await _sendMedia(); return; }
     const input = document.getElementById('wap-input');
     const texto = input?.value.trim();
     if (!texto || !_state.activeNum || !_state.activeContact) return;
@@ -3662,6 +3743,156 @@ async function _retrySend(tmpId) {
     }
     _saveConv();
     _renderMsgs();
+}
+
+// ── Adjuntar archivos ───────────────────────────────────────────────────────
+function _clearPendingFile() {
+    _pendingFile = null;
+    const preview = document.getElementById('wap-media-preview');
+    const input   = document.getElementById('wap-file-input');
+    if (preview) preview.style.display = 'none';
+    if (input)   input.value = '';
+}
+
+function _setPendingFile(file) {
+    _pendingFile = file;
+    const preview = document.getElementById('wap-media-preview');
+    const name    = document.getElementById('wap-media-preview-name');
+    if (name)    name.textContent      = file.name;
+    if (preview) preview.style.display = 'flex';
+}
+
+async function _sendMedia() {
+    if (!_pendingFile || !_state.activeNum || !_state.activeContact) return;
+    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
+    if (sesStatus === 'desconectado' || sesStatus === 'reconectando') {
+        _showToast('Sesión desconectada — reconecta para enviar', 3500);
+        return;
+    }
+
+    const num    = _state.activeNum;
+    const phone  = _state.activeContact;
+    const file   = _pendingFile;
+    const inputEl = document.getElementById('wap-input');
+    const caption = inputEl?.value.trim() || null;
+
+    const base = file.type.split(';')[0].trim();
+    const tipo  = base.startsWith('image/') ? 'imagen'
+                : base.startsWith('video/') ? 'video'
+                : base.startsWith('audio/') ? 'voz'
+                : 'documento';
+    const textoDesc = tipo === 'imagen'   ? ('Imagen'  + (caption ? ': ' + caption : ''))
+                    : tipo === 'video'    ? ('Video'   + (caption ? ': ' + caption : ''))
+                    : tipo === 'voz'      ? 'Nota de voz'
+                    : file.name;
+
+    // Optimistic update
+    if (!_state.conv[num])        _state.conv[num]        = {};
+    if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+    const c   = _state.conv[num][phone];
+    const ts  = Math.floor(Date.now() / 1000);
+    const previewUrl = tipo === 'imagen' ? URL.createObjectURL(file) : null;
+    c.msgs.push({ text: textoDesc, ts, out: true, asesor: _asesorActual, pending: true, tipo, mediaUrl: previewUrl });
+    c.lastMsg = textoDesc;
+    c.lastTs  = ts;
+    _saveConv();
+    _renderMsgs();
+
+    _clearPendingFile();
+    if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); }
+
+    try {
+        const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
+        const fd = new FormData();
+        fd.append('numero', num);
+        fd.append('destinatario', destinatario);
+        fd.append('asesor', _asesorActual || '');
+        if (caption) fd.append('caption', caption);
+        fd.append('file', file);
+        const r = await fetch(`${HETZNER_URL}/wa/mensajes/media`, {
+            method: 'POST',
+            body:   fd,
+            signal: AbortSignal.timeout(30000),
+        });
+        const last = c.msgs[c.msgs.length - 1];
+        if (r.ok) {
+            if (last?.pending) { delete last.pending; }
+        } else {
+            if (last?.pending) { last.failed = true; delete last.pending; }
+            const err = await r.json().catch(() => ({}));
+            _showToast('Error al enviar archivo: ' + (err.error || 'intenta de nuevo'), 4000);
+        }
+    } catch {
+        const last = c.msgs[c.msgs.length - 1];
+        if (last?.pending) { last.failed = true; delete last.pending; }
+        _showToast('Error de conexión al enviar archivo', 4000);
+    }
+    _saveConv();
+    _renderMsgs();
+}
+
+// ── Grabación de voz ────────────────────────────────────────────────────────
+async function _startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _recChunks     = [];
+        _mediaRecorder = new MediaRecorder(stream);
+        _mediaRecorder.addEventListener('dataavailable', e => { if (e.data.size > 0) _recChunks.push(e.data); });
+        _mediaRecorder.start();
+        _recSeconds = 0;
+        _updateVoiceUI(true);
+        _recInterval = setInterval(() => {
+            _recSeconds++;
+            const m   = String(Math.floor(_recSeconds / 60)).padStart(2, '0');
+            const s   = String(_recSeconds % 60).padStart(2, '0');
+            const inp = document.getElementById('wap-input');
+            if (inp) inp.placeholder = `Grabando... ${m}:${s}`;
+        }, 1000);
+    } catch {
+        _showToast('No se pudo acceder al micrófono', 3000);
+    }
+}
+
+async function _stopRecording(send = true) {
+    if (!_mediaRecorder) return;
+    clearInterval(_recInterval);
+    _recInterval = null;
+    return new Promise(resolve => {
+        _mediaRecorder.addEventListener('stop', async () => {
+            const stream = _mediaRecorder.stream;
+            stream.getTracks().forEach(t => t.stop());
+            _updateVoiceUI(false);
+            if (send && _recChunks.length > 0) {
+                const blob = new Blob(_recChunks, { type: 'audio/webm' });
+                _pendingFile = new File([blob], 'nota-de-voz.webm', { type: 'audio/webm' });
+                await _sendMedia();
+            }
+            _mediaRecorder = null;
+            _recChunks     = [];
+            resolve();
+        }, { once: true });
+        _mediaRecorder.stop();
+    });
+}
+
+function _updateVoiceUI(recording) {
+    const voiceBtn    = document.getElementById('wap-voice-btn');
+    const attachBtn   = document.getElementById('wap-attach-btn');
+    const cancelBtn   = document.getElementById('wap-rec-cancel-btn');
+    const input       = document.getElementById('wap-input');
+    if (recording) {
+        voiceBtn?.classList.add('wap-voice-btn--rec');
+        if (voiceBtn)  voiceBtn.title        = 'Detener y enviar';
+        if (attachBtn) attachBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = '';
+        if (input)     { input.disabled = true; input.placeholder = 'Grabando... 0:00'; }
+    } else {
+        voiceBtn?.classList.remove('wap-voice-btn--rec');
+        if (voiceBtn)  voiceBtn.title          = 'Grabar audio';
+        if (attachBtn) attachBtn.style.display  = '';
+        if (cancelBtn) cancelBtn.style.display  = 'none';
+        if (input)     { input.disabled = false; input.placeholder = 'Escribe un mensaje...'; }
+    }
 }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
