@@ -1284,7 +1284,11 @@ function _injectStyles() {
     margin-bottom: 1px;
 }
 .wap-msg-text { color: var(--color-terciario); white-space: pre-wrap; word-break: break-word; }
-.wap-msg-img { display: block; max-width: 260px; max-height: 300px; border-radius: 8px; cursor: pointer; object-fit: cover; }
+.wap-msg-img { display: block; max-width: 260px; max-height: 300px; border-radius: 8px; cursor: zoom-in; object-fit: cover; }
+.wap-lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+.wap-lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; object-fit: contain; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+.wap-lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; line-height: 1; opacity: .8; }
+.wap-lightbox-close:hover { opacity: 1; }
 .wap-msg-sticker { display: block; width: 120px; height: 120px; object-fit: contain; }
 .wap-msg-audio { display: block; width: 240px; height: 36px; outline: none; }
 .wap-msg-video { display: block; max-width: 280px; max-height: 220px; border-radius: 8px; background: #000; }
@@ -1948,6 +1952,10 @@ function _renderShell(body) {
             if (!isOpen && dd) dd.classList.add('open');
             return;
         }
+
+        // Lightbox imagen
+        const lbImg = e.target.closest('[data-lightbox]');
+        if (lbImg) { _openLightbox(lbImg.dataset.lightbox); return; }
 
         // Responder
         const replyBtn = e.target.closest('[data-reply-msgid]');
@@ -3442,7 +3450,8 @@ function _renderMsgs() {
             const url = _esc(m.mediaUrl);
             if (m.tipo === 'imagen' || m.tipo === 'sticker') {
                 const cls = m.tipo === 'sticker' ? 'wap-msg-sticker' : 'wap-msg-img';
-                return `<img class="${cls}" src="${url}" alt="${m.tipo}" loading="lazy" onclick="window.open('${url}','_blank')">`;
+                const clickAttr = m.tipo === 'imagen' ? `data-lightbox="${url}"` : '';
+                return `<img class="${cls}" src="${url}" alt="${m.tipo}" loading="lazy" ${clickAttr}>`;
             }
             if (m.tipo === 'audio' || m.tipo === 'voz') {
                 return `<audio class="wap-msg-audio" controls src="${url}" preload="metadata"></audio>`;
@@ -3932,6 +3941,16 @@ function _showToast(msg, ms = 3000) {
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), ms);
+}
+
+// ── Lightbox imágenes ───────────────────────────────────────────────────────
+function _openLightbox(src) {
+    const lb = document.createElement('div');
+    lb.className = 'wap-lightbox';
+    lb.innerHTML = `<button class="wap-lightbox-close" title="Cerrar">&times;</button><img src="${src}" alt="imagen">`;
+    lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('wap-lightbox-close')) lb.remove(); });
+    document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onEsc); } });
+    document.body.appendChild(lb);
 }
 
 // ── Flash icono del panel (nuevo mensaje) ──────────────────────────────────
