@@ -412,19 +412,18 @@ function _injectStyles() {
     color: var(--color-primario);
     flex-shrink: 0;
 }
-/* ── Asesor pills (header) ───────────────────────── */
+/* ── Asesor dropdown (header) ────────────────────── */
 .wap-asesor-pills {
+    position: relative;
+    flex: 1;
+    padding: 0 6px;
+    min-width: 0;
+}
+.wap-asesor-btn {
     display: flex;
     align-items: center;
     gap: 5px;
-    overflow-x: auto;
-    flex: 1;
-    padding: 0 6px;
-    scrollbar-width: none;
-}
-.wap-asesor-pills::-webkit-scrollbar { display: none; }
-.wap-asesor-pill {
-    padding: 3px 10px;
+    padding: 4px 11px;
     border-radius: 20px;
     border: 1px solid rgba(0,0,0,.12);
     background: transparent;
@@ -433,15 +432,50 @@ function _injectStyles() {
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    flex-shrink: 0;
+    max-width: 100%;
     transition: all .15s;
 }
-.wap-asesor-pill:hover { background: rgba(0,0,0,.05); }
-.wap-asesor-pill--active {
+.wap-asesor-btn:hover { background: rgba(0,0,0,.05); }
+.wap-asesor-btn--active {
     border: 2px solid var(--color-quinto);
     color: var(--color-quinto);
-    font-weight: 700;
 }
+.wap-asesor-btn-arrow {
+    font-size: .8rem;
+    opacity: .6;
+    transition: transform .2s;
+    flex-shrink: 0;
+}
+.wap-asesor-btn--open .wap-asesor-btn-arrow { transform: rotate(180deg); }
+.wap-asesor-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 6px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.13);
+    z-index: 9999;
+    min-width: 160px;
+    padding: 4px 0;
+    display: none;
+}
+.wap-asesor-dropdown.open { display: block; }
+.wap-asesor-opt {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #374151;
+    font-weight: 500;
+    transition: background .1s;
+}
+.wap-asesor-opt:hover { background: #f3f4f6; }
+.wap-asesor-opt--active { color: var(--color-quinto); font-weight: 700; }
 .wap-sessions-icon {
     width: 28px; height: 28px;
     border: 1px solid rgba(0,0,0,.15);
@@ -1425,6 +1459,14 @@ function _renderShell(body) {
 
     document.getElementById('wap-qr-close').addEventListener('click', _closeQr);
 
+    // Cerrar dropdown de asesor al hacer click fuera
+    document.addEventListener('click', () => {
+        const dd = document.getElementById('wap-asesor-dropdown');
+        const btn = document.getElementById('wap-asesor-btn');
+        if (dd) dd.classList.remove('open');
+        if (btn) btn.classList.remove('wap-asesor-btn--open');
+    });
+
     if (isAdmin) {
         document.getElementById('wap-btn-connect').addEventListener('click', _toggleConnectForm);
     }
@@ -2084,38 +2126,62 @@ function _renderSessions() {
     });
 }
 
-// ── Render asesor pills en el header ───────────────────────────────────────
+// ── Render asesor dropdown en el header ────────────────────────────────────
 function _renderAsesorPills() {
-    const el = document.getElementById('wap-asesor-pills');
-    if (!el) return;
+    const wrap = document.getElementById('wap-asesor-pills');
+    if (!wrap) return;
 
-    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    const fa       = _state.filtroAsesor;
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const fa      = _state.filtroAsesor;
 
-    // Lista de asesores únicos con chats activos (solo para admin)
+    // Lista de asesores únicos con chats activos (solo admin)
     const asesores = isAdmin
         ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].sort()
         : [];
 
-    const pill = (key, label) => {
-        const activo = fa === key ? ' wap-asesor-pill--active' : '';
-        return `<button class="wap-asesor-pill${activo}" data-fa="${key ?? ''}">${label}</button>`;
-    };
+    const labelActual = fa === null ? 'Todos'
+                      : fa === 'mio' ? 'Míos'
+                      : fa;
+    const isActive = fa !== null;
 
-    el.innerHTML =
-        pill(null,  'Todos') +
-        pill('mio', 'Míos')  +
-        asesores.map(a => pill(a, a)).join('');
+    wrap.innerHTML = `
+        <button class="wap-asesor-btn${isActive ? ' wap-asesor-btn--active' : ''}" id="wap-asesor-btn">
+            <span>${labelActual}</span>
+            <span class="wap-asesor-btn-arrow">▾</span>
+        </button>
+        <div class="wap-asesor-dropdown" id="wap-asesor-dropdown">
+            ${_aOpt(null,  'Todos', fa)}
+            ${_aOpt('mio', 'Míos',  fa)}
+            ${asesores.map(a => _aOpt(a, a, fa)).join('')}
+        </div>
+    `;
 
-    el.querySelectorAll('.wap-asesor-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const key = btn.dataset.fa || null;
+    const btn      = wrap.querySelector('#wap-asesor-btn');
+    const dropdown = wrap.querySelector('#wap-asesor-dropdown');
+
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = dropdown.classList.toggle('open');
+        btn.classList.toggle('wap-asesor-btn--open', open);
+    });
+
+    dropdown.querySelectorAll('.wap-asesor-opt').forEach(opt => {
+        opt.addEventListener('click', e => {
+            e.stopPropagation();
+            const key = opt.dataset.fa || null;
             _state.filtroAsesor = (_state.filtroAsesor === key) ? null : key;
+            dropdown.classList.remove('open');
+            btn.classList.remove('wap-asesor-btn--open');
             _renderAsesorPills();
             _scheduleConteos();
             _renderList();
         });
     });
+}
+
+function _aOpt(key, label, fa) {
+    const activo = fa === key ? ' wap-asesor-opt--active' : '';
+    return `<button class="wap-asesor-opt${activo}" data-fa="${key ?? ''}">${label}</button>`;
 }
 
 // ── Render filtro asesor (solo admin) ─────────────────────────────────────
