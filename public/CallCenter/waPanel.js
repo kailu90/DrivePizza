@@ -2219,6 +2219,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
             if (msg.tipo === 'wa:msg_editado')   _onMsgEditado(msg);
             if (msg.tipo === 'wa:eliminado')     _onSesionEliminada(msg);
+            if (msg.tipo === 'wa:rr_update')     _onRrUpdate();
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -2469,6 +2470,11 @@ function _onSesionEliminada({ numero }) {
     _renderSesionesView();
     _scheduleConteos();
     _renderList();
+}
+
+async function _onRrUpdate() {
+    await _loadRespuestasRapidas();
+    _renderRRView();
 }
 
 function _onQr({ numero, sede, qr }) {
