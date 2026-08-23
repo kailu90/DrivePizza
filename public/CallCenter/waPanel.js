@@ -2546,7 +2546,7 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out ? _tickSvg(m.status) : '');
+            : (m.out && !m.celular ? _tickSvg(m.status) : '');
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             <span class="wap-msg-text">${_esc(m.text)}</span>
