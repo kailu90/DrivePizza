@@ -1040,6 +1040,7 @@ function _injectStyles() {
     background: #fff;
     align-self: flex-start;
     border-radius: 0 10px 10px 10px;
+    position: relative;
 }
 .wap-msg--out {
     background: #d9fdd3;
