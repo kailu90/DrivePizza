@@ -1047,27 +1047,96 @@ function _injectStyles() {
     border-radius: 10px 10px 0 10px;
     position: relative;
 }
-.wap-msg-del {
+.wap-msg-menu-btn {
     display: none;
     position: absolute;
-    top: -8px;
-    left: -8px;
+    top: 4px;
+    left: -22px;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #ef4444;
-    color: #fff;
+    background: rgba(0,0,0,.15);
+    color: #333;
     border: none;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1;
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,.2);
     transition: background .12s;
+    z-index: 2;
 }
-.wap-msg-del:hover { background: #dc2626; }
-.wap-msg--out:hover .wap-msg-del { display: flex; }
+.wap-msg-menu-btn:hover { background: rgba(0,0,0,.28); }
+.wap-msg--out:hover .wap-msg-menu-btn { display: flex; }
+.wap-msg-dropdown {
+    position: absolute;
+    top: 22px;
+    left: -22px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    z-index: 30;
+    min-width: 130px;
+    overflow: hidden;
+    display: none;
+}
+.wap-msg-dropdown.open { display: block; }
+.wap-msg-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #374151;
+    transition: background .1s;
+}
+.wap-msg-dropdown-item:hover { background: rgba(0,0,0,.06); }
+.wap-msg-dropdown-item--danger { color: #ef4444; }
+.wap-msg-dropdown-item--danger:hover { background: #fef2f2; }
+/* Edición inline */
+.wap-msg-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 2px;
+}
+.wap-msg-edit-form textarea {
+    border: 1px solid rgba(40,76,34,.4);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 1.2rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    background: #fff;
+    min-width: 160px;
+}
+.wap-msg-edit-form textarea:focus { border-color: var(--color-primario); }
+.wap-msg-edit-btns { display: flex; gap: 5px; justify-content: flex-end; }
+.wap-msg-edit-save {
+    background: var(--color-primario);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+.wap-msg-edit-save:hover { background: var(--color-cuaternario); }
+.wap-msg-edit-cancel {
+    background: none;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #555;
+}
+.wap-msg-edit-cancel:hover { background: rgba(0,0,0,.06); }
 .wap-msg--celular {
     background: #ede9fe;
     border-left: 3px solid #7c3aed;
@@ -1714,10 +1783,52 @@ function _renderShell(body) {
         if (delBtn)  _deleteRR(parseInt(delBtn.dataset.rrDel));
     });
     document.getElementById('wap-msgs').addEventListener('click', e => {
+        // Reintentar mensaje fallido
         const retryBtn = e.target.closest('.wap-msg-retry');
         if (retryBtn) { _retrySend(+retryBtn.dataset.tmp); return; }
-        const delBtn = e.target.closest('.wap-msg-del');
-        if (delBtn) _deleteMsg(delBtn.dataset.msgid);
+
+        // Abrir/cerrar menú de opciones
+        const menuBtn = e.target.closest('.wap-msg-menu-btn');
+        if (menuBtn) {
+            e.stopPropagation();
+            const msgId = menuBtn.dataset.menuMsgid;
+            const dd = document.getElementById(`wap-dd-${msgId}`);
+            const isOpen = dd?.classList.contains('open');
+            // Cerrar todos los dropdowns abiertos
+            document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
+            if (!isOpen && dd) dd.classList.add('open');
+            return;
+        }
+
+        // Editar
+        const editBtn = e.target.closest('[data-edit-msgid]');
+        if (editBtn) {
+            _editingMsgId = editBtn.dataset.editMsgid;
+            document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
+            _renderMsgs();
+            document.getElementById('wap-edit-ta')?.focus();
+            return;
+        }
+
+        // Cancelar edición
+        if (e.target.closest('[data-cancel-edit]')) {
+            _editingMsgId = null;
+            _renderMsgs();
+            return;
+        }
+
+        // Guardar edición
+        const saveBtn = e.target.closest('[data-save-edit]');
+        if (saveBtn) { _saveEditMsg(saveBtn.dataset.saveEdit); return; }
+
+        // Eliminar
+        const delBtn = e.target.closest('[data-del-msgid]');
+        if (delBtn) { _deleteMsg(delBtn.dataset.delMsgid); return; }
+    });
+
+    // Cerrar dropdown al hacer click fuera de los mensajes
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
     });
     // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
     // lo que lo convertiría en containing-block. Lo movemos al <body> para que
@@ -1942,6 +2053,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:config')        _onConfig(msg);
             if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
             if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
+            if (msg.tipo === 'wa:msg_editado')   _onMsgEditado(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
@@ -2971,6 +3083,7 @@ function _navTo(view) {
 }
 
 function _showListView() {
+    _editingMsgId = null;
     document.getElementById('wap-chat').style.display                    = 'none';
     document.getElementById('wap-list').style.display                    = '';
     document.getElementById('wap-search-wrap').style.display             = '';
@@ -3003,15 +3116,28 @@ function _renderMsgs() {
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
             : (m.out && !m.celular ? _tickSvg(m.status) : '');
-        const delBtn = m.out && m.msgId && !m.pending && !m.failed
-            ? `<button class="wap-msg-del" data-msgid="${_esc(m.msgId)}" title="Eliminar mensaje">&#x2715;</button>`
+        const isEditing = m.out && m.msgId === _editingMsgId;
+        const menuBtn = m.out && m.msgId && !m.pending && !m.failed && !isEditing
+            ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
+               <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
+                   <button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
+                   <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>
+               </div>`
             : '';
+        const msgContent = isEditing
+            ? `<div class="wap-msg-edit-form">
+                   <textarea id="wap-edit-ta" rows="3" style="width:100%">${_esc(m.text)}</textarea>
+                   <div class="wap-msg-edit-btns">
+                       <button class="wap-msg-edit-cancel" data-cancel-edit>Cancelar</button>
+                       <button class="wap-msg-edit-save"   data-save-edit="${_esc(m.msgId)}">Guardar</button>
+                   </div>
+               </div>`
+            : `<span class="wap-msg-text">${_esc(m.text)}</span>`;
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
-            ${delBtn}
+            ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
-            <span class="wap-msg-text">${_esc(m.text)}</span>
-            <span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>
-            ${statusEl}
+            ${msgContent}
+            ${isEditing ? '' : `<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>${statusEl}`}
         </div>`;
     }).join('');
     el.scrollTop = el.scrollHeight;
@@ -3479,7 +3605,41 @@ function _esc(str) {
         .replace(/>/g, '&gt;');
 }
 
-// ── Eliminar mensaje ────────────────────────────────────────────────────────
+// ── Editar / Eliminar mensaje ───────────────────────────────────────────────
+
+async function _saveEditMsg(msgId) {
+    const texto = document.getElementById('wap-edit-ta')?.value.trim();
+    if (!texto) { _showToast('El mensaje no puede estar vacío', 2500); return; }
+    const num   = _state.activeNum;
+    const phone = _state.activeContact;
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}/${encodeURIComponent(msgId)}`,
+            { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ texto, asesor: _asesorActual }) }
+        );
+        if (!r.ok) { _showToast('Error al editar', 3000); return; }
+        // Actualizar localmente
+        const c = _state.conv[num]?.[phone];
+        if (c) {
+            const m = c.msgs.find(x => x.msgId === msgId);
+            if (m) m.text = texto;
+            _saveConv();
+        }
+        _editingMsgId = null;
+        _renderMsgs();
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+function _onMsgEditado({ numero, contacto, msgId, texto }) {
+    const c = _state.conv[numero]?.[contacto];
+    if (!c) return;
+    const m = c.msgs.find(x => x.msgId === msgId);
+    if (!m) return;
+    m.text = texto;
+    _saveConv();
+    if (_state.activeNum === numero && _state.activeContact === contacto) _renderMsgs();
+}
 
 async function _deleteMsg(msgId) {
     if (!msgId || !_state.activeNum || !_state.activeContact) return;
@@ -3627,7 +3787,8 @@ async function _deleteRR(id) {
 
 // ── Slash picker ────────────────────────────────────────────────────────────
 
-let _slashIdx = -1; // ítem seleccionado en el picker
+let _slashIdx     = -1;  // ítem seleccionado en el picker
+let _editingMsgId = null; // msgId del mensaje en edición inline
 
 function _slashPickerOpen() {
     return document.getElementById('wap-slash-picker')?.classList.contains('visible');
