@@ -404,7 +404,7 @@ function _injectStyles() {
     padding: 9px 12px 8px;
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
-    background: #fff;
+    background: #f5f0e8;
 }
 .wap-panel-title {
     font-size: 1.35rem;
@@ -2053,7 +2053,7 @@ function _renderSessions() {
     let toggleDot   = '';
     let toggleLabel = '';
     if (sel.size === 0) {
-        toggleLabel = 'Conexiones';
+        toggleLabel = 'Todas las conexiones';
         toggleDot = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
     } else if (sel.size === 1) {
         const num = [...sel][0];
@@ -2353,7 +2353,6 @@ function _openChat(phone) {
     if (liberarBtn) liberarBtn.style.display = puedeResolver ? '' : 'none';
 
     document.getElementById('wap-list').style.display        = 'none';
-    document.getElementById('wap-search-wrap').style.display = 'none';
     document.getElementById('wap-chat').style.display        = 'flex';
 
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
@@ -2643,7 +2642,6 @@ function _navTo(view) {
 
 function _showListView() {
     document.getElementById('wap-list').style.display        = '';
-    document.getElementById('wap-search-wrap').style.display = '';
     document.getElementById('wap-chat').style.display        = 'none';
 }
 
