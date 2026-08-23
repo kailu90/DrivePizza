@@ -994,6 +994,14 @@ function _injectStyles() {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.wap-chat-conexion {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .wap-chat-via-dot {
     width: 7px;
     height: 7px;
@@ -1387,6 +1395,7 @@ function _renderShell(body) {
                                     <button class="wap-vincular-lid-btn" id="wap-vincular-lid-btn" title="Vincular a número real" style="display:none;">&#128279;</button>
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
+                                <span class="wap-chat-conexion" id="wap-chat-conexion"></span>
                             </div>
                             <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">&#10003; Resolver</button>
                         </div>
@@ -2531,6 +2540,10 @@ function _updateChatHeader(phone) {
         viaEl.className = cls;
         viaEl.innerHTML = `<span class="wap-chat-via-dot"></span>${text}`;
     }
+
+    // Nombre de la conexión (debajo del estado)
+    const conexionEl = document.getElementById('wap-chat-conexion');
+    if (conexionEl) conexionEl.textContent = '📡 ' + _sessionLabel(_state.activeNum);
 
     // Botón vincular: visible solo cuando el contacto es un @lid sin resolver (> 12 dígitos)
     const vincularBtn = document.getElementById('wap-vincular-lid-btn');
