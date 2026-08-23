@@ -70,6 +70,7 @@ let _qrNumero        = null;  // numero cuyo QR modal esta abierto
 let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
+const _pendingStatuses = new Map(); // msgId → {numero,status} para ACKs que llegan antes del echo
 
 const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
@@ -1601,7 +1602,12 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
         if (existing) {
             let changed = false;
             if (!existing.asesor && asesor) { existing.asesor = asesor; changed = true; }
-            if (msgId && !existing.msgId) { existing.msgId = msgId; existing.status = 2; changed = true; }
+            if (msgId && !existing.msgId) {
+                existing.msgId  = msgId;
+                existing.status = _pendingStatuses.has(msgId) ? _pendingStatuses.get(msgId).status : 2;
+                _pendingStatuses.delete(msgId);
+                changed = true;
+            }
             if (changed) { _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
             return;
         }
@@ -1670,7 +1676,11 @@ function _onMsgStatus({ numero, msgId, status }) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
         if (m) { m.status = status; updated = true; break; }
     }
-    if (!updated) return;
+    if (!updated) {
+        // Condición de carrera: ACK llegó antes que el echo asignara el msgId — guardar para aplicar después
+        _pendingStatuses.set(msgId, { numero, status });
+        return;
+    }
     _saveConv();
     if (_state.activeNum === numero) _renderMsgs();
 }
