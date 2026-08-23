@@ -38,6 +38,7 @@ const _state = {
     filtroSesiones:    new Set(), // Set<numero> vacío = todas las sesiones
     conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
     respuestasRapidas: [], // [{ id, titulo, texto }]
+    resueltas: { items: [], offset: 0, loading: false, done: false }, // paginación infinita
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -2823,26 +2824,120 @@ function _renderFiltros() {
         </button>`;
     };
 
+    const actResuelto = f === 'resuelto' ? ' wap-filtro--active' : '';
     el.innerHTML =
-        badge(null,        'Todos',     total)    +
-        badge('en_espera', 'Espera',    espera)   +
-        badge('asignado',  'Atención',  asignado) +
-        badge('resuelto',  'Resueltos', resuelto);
+        badge(null,        'Todos',    total)    +
+        badge('en_espera', 'Espera',   espera)   +
+        badge('asignado',  'Atención', asignado) +
+        `<button class="wap-filtro${actResuelto}" data-filtro="resuelto">Resueltos</button>`;
 
     el.querySelectorAll('.wap-filtro[data-filtro]').forEach(btn => {
         btn.addEventListener('click', () => {
             const key = btn.dataset.filtro || null;
-            _state.filtroEstado = (_state.filtroEstado === key) ? null : key;
+            const prev = _state.filtroEstado;
+            _state.filtroEstado = (prev === key) ? null : key;
+            if (_state.filtroEstado === 'resuelto') {
+                _state.resueltas = { items: [], offset: 0, loading: false, done: false };
+                _loadResueltas();
+            } else {
+                if (_resueltasObserver) { _resueltasObserver.disconnect(); _resueltasObserver = null; }
+            }
             _renderFiltros();
             _renderList();
         });
     });
 }
 
+// ── Resueltas — carga paginada ─────────────────────────────────────────────
+let _resueltasObserver = null;
+
+async function _loadResueltas() {
+    const r = _state.resueltas;
+    if (r.loading || r.done) return;
+    r.loading = true;
+    _renderResueltas(); // muestra spinner
+
+    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
+    if (!isAdmin) params.set('asesor', _asesorActual);
+
+    try {
+        const res  = await fetch(`${HETZNER_URL}/wa/conversaciones/resueltas?${params}`);
+        const data = res.ok ? await res.json() : [];
+        r.items.push(...(Array.isArray(data) ? data : []));
+        r.offset += data.length;
+        r.done    = data.length < 20;
+    } catch { /* sin conexión */ }
+
+    r.loading = false;
+    _renderResueltas();
+}
+
+function _renderResueltas() {
+    const el = document.getElementById('wap-list');
+    if (!el) return;
+    const r = _state.resueltas;
+
+    if (!r.items.length && !r.loading) {
+        el.innerHTML = `<div class="wap-empty">No hay chats resueltos</div>`;
+        return;
+    }
+
+    const html = r.items.map(c => {
+        const color   = _getColor(c.numero);
+        const display = c.nombre_cliente || c.nombre || _fmtPhone(c.contacto);
+        const ts      = c.ultimo_ts ? _fmtTs(c.ultimo_ts) : '';
+        const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
+        return `<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
+                    data-phone="${c.contacto}" data-num="${c.numero}"
+                    style="border-left:4px solid ${color};position:relative;padding-right:12px;">
+            <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
+            <div class="wap-conv-body">
+                <div class="wap-conv-top">
+                    <span class="wap-conv-name">${_esc(display)}</span>
+                    <span class="wap-conv-ts">${ts}</span>
+                </div>
+                <div class="wap-conv-bottom">
+                    <span class="wap-conv-last">${_esc(c.ultimo_mensaje || '')}</span>
+                    ${c.asesor ? `<span class="wap-estado wap-estado--resuelto" style="font-size:.9rem;padding:1px 5px;">${_esc(c.asesor)}</span>` : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const sentinel = r.done ? '' : `<div id="wap-resueltas-sentinel" style="height:1px;"></div>`;
+    const spinner  = r.loading ? `<div class="wap-empty" style="padding:10px;">Cargando...</div>` : '';
+    el.innerHTML   = html + sentinel + spinner;
+
+    // Listeners de click
+    el.querySelectorAll('.wap-conv-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const phone = item.dataset.phone;
+            const num   = item.dataset.num;
+            if (!_state.conv[num]) _state.conv[num] = {};
+            if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+            _openChat(num, phone);
+        });
+    });
+
+    // IntersectionObserver para cargar más al llegar al sentinel
+    if (_resueltasObserver) { _resueltasObserver.disconnect(); _resueltasObserver = null; }
+    const sentinel_el = el.querySelector('#wap-resueltas-sentinel');
+    if (sentinel_el) {
+        _resueltasObserver = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) _loadResueltas();
+        }, { threshold: 0.1 });
+        _resueltasObserver.observe(sentinel_el);
+    }
+}
+
 // ── Render conversation list ───────────────────────────────────────────────
 function _renderList() {
     const el = document.getElementById('wap-list');
     if (!el) return;
+
+    // Vista resueltas: paginación separada
+    if (_state.filtroEstado === 'resuelto') { _renderResueltas(); return; }
 
     // Recopilar conversaciones de todas las sesiones (o solo la activa si está filtrada)
     const sesionesActivas = new Set(_state.sesiones.map(s => s.numero));
