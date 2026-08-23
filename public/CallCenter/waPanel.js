@@ -3334,7 +3334,11 @@ async function _sendMessage() {
     if (!_state.conv[num])        _state.conv[num]        = {};
     if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
     const c = _state.conv[num][phone];
-    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId });
+    const replySnap = _replyingTo;  // capturar antes de _cancelReply()
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId,
+                  quotedMsgId:  replySnap?.msgId  || null,
+                  quotedTexto:  replySnap?.texto  || null,
+                  quotedFromMe: replySnap?.fromMe ?? null });
     c.lastMsg = texto;
     c.lastTs  = ts;
     _saveConv();
@@ -3345,7 +3349,7 @@ async function _sendMessage() {
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, quoted: _replyingTo }),
+            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, quoted: replySnap }),
             signal:  AbortSignal.timeout(10000),
         });
         _cancelReply();
