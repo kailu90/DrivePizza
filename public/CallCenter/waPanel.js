@@ -1351,17 +1351,20 @@ function _injectStyles() {
 }
 .wap-input-row button:hover { background: var(--color-cuaternario); }
 
-/* ── Botones adjuntar / voz ──────────────────────── */
+/* ── Botones adjuntar / cancelar grabación ───────── */
 .wap-attach-btn,
-.wap-voice-btn,
 .wap-rec-cancel-btn {
     background: #e5e7eb;
     color: #374151;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
 }
 .wap-attach-btn:hover,
-.wap-voice-btn:hover,
 .wap-rec-cancel-btn:hover { background: #d1d5db; }
+
+/* ── Botón voz (mismo estilo que enviar) ─────────── */
+.wap-voice-btn { font-size: 1.5rem; }
+
+/* ── Grabando ─────────────────────────────────────── */
 .wap-voice-btn--rec {
     background: #ef4444 !important;
     color: #fff !important;
@@ -1927,7 +1930,7 @@ function _renderShell(body) {
                             <button class="wap-rec-cancel-btn" id="wap-rec-cancel-btn" title="Cancelar grabaci&#xF3;n" style="display:none">&#x2715;</button>
                             <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
                             <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
-                            <button id="wap-send">&#10148;</button>
+                            <button id="wap-send" style="display:none">&#10148;</button>
                         </div>
                     </div>
                 </div>
@@ -1996,6 +1999,7 @@ function _renderShell(body) {
     document.getElementById('wap-input').addEventListener('input', e => {
         _onInputSlash();
         _autoResizeTextarea(e.target);
+        _updateSendVoiceBtn();
     });
     document.getElementById('wap-input').addEventListener('blur', () => setTimeout(_hideSlashPicker, 150));
     document.getElementById('wap-input').addEventListener('keydown', e => {
@@ -3661,6 +3665,7 @@ async function _sendMessage() {
 
     input.value = '';
     _autoResizeTextarea(input);
+    _updateSendVoiceBtn();
     const num   = _state.activeNum;
     const phone = _state.activeContact;
     const ts    = Math.floor(Date.now() / 1000);
@@ -3799,7 +3804,7 @@ async function _sendMedia() {
     _renderMsgs();
 
     _clearPendingFile();
-    if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); }
+    if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); _updateSendVoiceBtn(); }
 
     try {
         const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
@@ -3829,6 +3834,15 @@ async function _sendMedia() {
     }
     _saveConv();
     _renderMsgs();
+}
+
+// ── Toggle send ↔ mic (estilo WhatsApp) ────────────────────────────────────
+function _updateSendVoiceBtn() {
+    const hasText = !!document.getElementById('wap-input')?.value.trim();
+    const sendBtn  = document.getElementById('wap-send');
+    const voiceBtn = document.getElementById('wap-voice-btn');
+    if (sendBtn)  sendBtn.style.display  = hasText ? '' : 'none';
+    if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : '';
 }
 
 // ── Grabación de voz ────────────────────────────────────────────────────────
@@ -3877,21 +3891,24 @@ async function _stopRecording(send = true) {
 
 function _updateVoiceUI(recording) {
     const voiceBtn    = document.getElementById('wap-voice-btn');
+    const sendBtn     = document.getElementById('wap-send');
     const attachBtn   = document.getElementById('wap-attach-btn');
     const cancelBtn   = document.getElementById('wap-rec-cancel-btn');
     const input       = document.getElementById('wap-input');
     if (recording) {
         voiceBtn?.classList.add('wap-voice-btn--rec');
-        if (voiceBtn)  voiceBtn.title        = 'Detener y enviar';
+        if (voiceBtn)  { voiceBtn.style.display = ''; voiceBtn.title = 'Detener y enviar'; }
+        if (sendBtn)   sendBtn.style.display   = 'none';
         if (attachBtn) attachBtn.style.display = 'none';
         if (cancelBtn) cancelBtn.style.display = '';
         if (input)     { input.disabled = true; input.placeholder = 'Grabando... 0:00'; }
     } else {
         voiceBtn?.classList.remove('wap-voice-btn--rec');
         if (voiceBtn)  voiceBtn.title          = 'Grabar audio';
-        if (attachBtn) attachBtn.style.display  = '';
-        if (cancelBtn) cancelBtn.style.display  = 'none';
+        if (attachBtn) attachBtn.style.display = '';
+        if (cancelBtn) cancelBtn.style.display = 'none';
         if (input)     { input.disabled = false; input.placeholder = 'Escribe un mensaje...'; }
+        _updateSendVoiceBtn();  // restaura mic/send según si hay texto
     }
 }
 
