@@ -1284,6 +1284,12 @@ function _injectStyles() {
     margin-bottom: 1px;
 }
 .wap-msg-text { color: var(--color-terciario); white-space: pre-wrap; word-break: break-word; }
+.wap-msg-img { display: block; max-width: 260px; max-height: 300px; border-radius: 8px; cursor: pointer; object-fit: cover; }
+.wap-msg-sticker { display: block; width: 120px; height: 120px; object-fit: contain; }
+.wap-msg-audio { display: block; width: 240px; height: 36px; outline: none; }
+.wap-msg-video { display: block; max-width: 280px; max-height: 220px; border-radius: 8px; background: #000; }
+.wap-msg-doc { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(0,0,0,.06); border-radius: 8px; color: var(--color-terciario); text-decoration: none; font-size: 13px; word-break: break-all; }
+.wap-msg-doc:hover { background: rgba(0,0,0,.12); }
 .wap-msg-ts {
     font-size: 1rem;
     color: #9ca3af;
@@ -2227,7 +2233,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, msgId, quotedMsgId, quotedTexto, quotedFromMe }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, mediaUrl, msgId, quotedMsgId, quotedTexto, quotedFromMe }) {
     // Solo chats 1:1 — descartar grupos, canales, listas de difusión, etc.
     if (!remitente) return;
     const _rimSuffix = remitente.split('@')[1] || '';
@@ -2265,7 +2271,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', msgId: msgId || null, status: out ? 2 : undefined, quotedMsgId: quotedMsgId || null, quotedTexto: quotedTexto || null, quotedFromMe: quotedFromMe ?? null });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', mediaUrl: mediaUrl || null, msgId: msgId || null, status: out ? 2 : undefined, quotedMsgId: quotedMsgId || null, quotedTexto: quotedTexto || null, quotedFromMe: quotedFromMe ?? null });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -3121,6 +3127,7 @@ async function _loadMsgsSupabase(phone) {
                 asesor:       m.asesor || null,
                 celular:      !!m.desde_telefono,
                 tipo:         m.tipo || 'mensaje',
+                mediaUrl:     m.media_url      || null,
                 status:       Math.max(dbStat || 0, prev?.status || 0) || undefined,
                 quotedMsgId:  m.quoted_msg_id  || null,
                 quotedTexto:  m.quoted_texto   || null,
@@ -3430,6 +3437,25 @@ function _renderMsgs() {
                    <span class="wap-msg-quoted-text">${_esc(m.quotedTexto)}</span>
                </div>`
             : '';
+        const mediaBlock = (() => {
+            if (!m.mediaUrl) return '';
+            const url = _esc(m.mediaUrl);
+            if (m.tipo === 'imagen' || m.tipo === 'sticker') {
+                const cls = m.tipo === 'sticker' ? 'wap-msg-sticker' : 'wap-msg-img';
+                return `<img class="${cls}" src="${url}" alt="${m.tipo}" loading="lazy" onclick="window.open('${url}','_blank')">`;
+            }
+            if (m.tipo === 'audio' || m.tipo === 'voz') {
+                return `<audio class="wap-msg-audio" controls src="${url}" preload="none"></audio>`;
+            }
+            if (m.tipo === 'video') {
+                return `<video class="wap-msg-video" controls src="${url}" preload="none" playsinline></video>`;
+            }
+            if (m.tipo === 'documento') {
+                const nombre = _esc(m.text.replace('📄 ', '') || 'Documento');
+                return `<a class="wap-msg-doc" href="${url}" target="_blank" download>📄 ${nombre}</a>`;
+            }
+            return '';
+        })();
         const msgContent = isEditing
             ? `<div class="wap-msg-edit-form">
                    <textarea id="wap-edit-ta" rows="3" style="width:100%">${_esc(m.text)}</textarea>
@@ -3438,7 +3464,18 @@ function _renderMsgs() {
                        <button class="wap-msg-edit-save"   data-save-edit="${_esc(m.msgId)}">Guardar</button>
                    </div>
                </div>`
-            : `${quotedBlock}<span class="wap-msg-text">${_esc(m.text)}</span>`;
+            : (() => {
+                // Si hay media: extraer caption real (texto después de ": ") o no mostrar texto
+                let caption = '';
+                if (mediaBlock) {
+                    const sep = m.text.indexOf(': ');
+                    caption = sep !== -1 ? m.text.slice(sep + 2) : '';
+                } else {
+                    caption = m.text;
+                }
+                const textEl = caption ? `<span class="wap-msg-text">${_esc(caption)}</span>` : '';
+                return `${quotedBlock}${mediaBlock}${textEl}`;
+            })();
         return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
