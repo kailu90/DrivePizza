@@ -1313,34 +1313,45 @@ function _injectStyles() {
 .wap-input-row {
     display: flex;
     align-items: flex-end;
-    gap: 6px;
+    gap: 8px;
     padding: 8px 10px;
-    background: #f0f0f0;
+    background: transparent;
     flex-shrink: 0;
+}
+/* Contenedor blanco que envuelve attach + textarea */
+.wap-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background: #fff;
+    border-radius: 24px;
+    min-height: 38px;
+    overflow: hidden;
 }
 .wap-input-row textarea {
     flex: 1;
-    padding: 8px 12px;
+    padding: 8px 12px 8px 2px;
     border: none;
-    border-radius: 20px;
+    border-radius: 0;
     font-size: 1.3rem;
     font-family: inherit;
-    background: #fff;
+    background: transparent;
     resize: none;
     overflow-y: auto;
-    min-height: 36px;
+    min-height: 38px;
     max-height: 120px;
     line-height: 1.4;
     scrollbar-width: thin;
 }
 .wap-input-row textarea:focus { outline: none; }
+/* Botones circulares externos (voice y send) */
 .wap-input-row button {
     background: var(--color-primario);
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     font-size: 1.5rem;
     cursor: pointer;
     display: flex;
@@ -1351,18 +1362,31 @@ function _injectStyles() {
 }
 .wap-input-row button:hover { background: var(--color-cuaternario); }
 
-/* ── Botones adjuntar / cancelar grabación ───────── */
-.wap-attach-btn,
+/* ── Adjuntar — dentro del input, sin círculo ────── */
+.wap-attach-btn {
+    background: transparent;
+    color: #9ca3af;
+    border-radius: 0;
+    width: 38px;
+    height: 38px;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+.wap-attach-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
+
+/* ── Cancelar grabación (externo, gris) ──────────── */
 .wap-rec-cancel-btn {
     background: #e5e7eb;
     color: #374151;
-    font-size: 1.6rem;
+    font-size: 1.4rem;
 }
-.wap-attach-btn:hover,
 .wap-rec-cancel-btn:hover { background: #d1d5db; }
 
-/* ── Botón voz (mismo estilo que enviar) ─────────── */
-.wap-voice-btn { font-size: 1.5rem; }
+/* ── Voz y enviar — verde WA ─────────────────────── */
+.wap-voice-btn,
+#wap-send { background: #25D366; font-size: 1.5rem; }
+.wap-voice-btn:hover,
+#wap-send:hover { background: #1da851; }
 
 /* ── Grabando ─────────────────────────────────────── */
 .wap-voice-btn--rec {
@@ -1926,9 +1950,11 @@ function _renderShell(body) {
                         <input type="file" id="wap-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
                         <div class="wap-input-row">
                             <div class="wap-slash-picker" id="wap-slash-picker"></div>
-                            <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
                             <button class="wap-rec-cancel-btn" id="wap-rec-cancel-btn" title="Cancelar grabaci&#xF3;n" style="display:none">&#x2715;</button>
-                            <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                            <div class="wap-input-wrapper">
+                                <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
+                                <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                            </div>
                             <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             <button id="wap-send" style="display:none">&#10148;</button>
                         </div>
