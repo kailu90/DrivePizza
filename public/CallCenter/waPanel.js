@@ -409,7 +409,7 @@ function _injectStyles() {
 .wap-panel-title {
     font-size: 1.35rem;
     font-weight: 700;
-    color: var(--color-terciario);
+    color: var(--color-primario);
     flex-shrink: 0;
 }
 .wap-panel-sep {
