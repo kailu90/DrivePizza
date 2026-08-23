@@ -751,8 +751,8 @@ function _injectStyles() {
     gap: 4px;
     padding: 4px 11px;
     border-radius: 20px;
-    border: 1.5px solid #e5e7eb;
-    background: #f9fafb;
+    border: 1px solid rgba(0,0,0,.1);
+    background: transparent;
     color: #374151;
     font-size: 1.1rem;
     font-weight: 600;
@@ -762,17 +762,17 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-filtro:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    background: rgba(0,0,0,.04);
+    border-color: rgba(0,0,0,.18);
 }
 .wap-filtro--active {
-    background: var(--color-primario);
-    border-color: var(--color-primario);
+    background: #2d3748;
+    border-color: #2d3748;
     color: #fff;
 }
 .wap-filtro--active:hover {
-    background: var(--color-cuaternario);
-    border-color: var(--color-cuaternario);
+    background: #1a202c;
+    border-color: #1a202c;
 }
 .wap-filtro-count {
     font-size: 1.05rem;
