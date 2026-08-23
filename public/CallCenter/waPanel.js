@@ -1061,6 +1061,31 @@ function _injectStyles() {
     max-width: 85%;
     box-shadow: none;
 }
+.wap-espera-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #fffbeb;
+    border-top: 2px solid #fde68a;
+    font-size: 1.05rem;
+    color: #92400e;
+    flex-shrink: 0;
+}
+.wap-espera-bar.visible { display: flex; }
+.wap-tomar-chat-btn {
+    background: var(--color-primario);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.wap-tomar-chat-btn:hover { background: var(--color-cuaternario); }
 .wap-resuelto-bar {
     display: none;
     align-items: center;
@@ -1405,6 +1430,10 @@ function _renderShell(body) {
                         <div class="wap-offline-bar" id="wap-offline-bar">
                             ⚠️ Sesión desconectada — reconecta para responder
                         </div>
+                        <div class="wap-espera-bar" id="wap-espera-bar">
+                            <span>💬 En espera — toma el chat para responder</span>
+                            <button class="wap-tomar-chat-btn" id="wap-tomar-chat-btn">Tomar</button>
+                        </div>
                         <div class="wap-resuelto-bar" id="wap-resuelto-bar">
                             <span>✅ Chat resuelto — solo lectura</span>
                             <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir conversación</button>
@@ -1451,6 +1480,10 @@ function _renderShell(body) {
     document.getElementById('wap-abrir-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
             _reabrirChat(_state.activeNum, _state.activeContact);
+    });
+    document.getElementById('wap-tomar-chat-btn').addEventListener('click', () => {
+        if (_state.activeNum && _state.activeContact)
+            _tomarChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
@@ -2754,27 +2787,32 @@ function _renderMsgs() {
 }
 
 function _updateOfflineBar() {
-    const bar      = document.getElementById('wap-offline-bar');
-    const resBar   = document.getElementById('wap-resuelto-bar');
-    const inputRow = document.querySelector('.wap-input-row');
-    const input    = document.getElementById('wap-input');
-    const sendBtn  = document.getElementById('wap-send');
-    const msgs     = document.getElementById('wap-msgs');
+    const bar       = document.getElementById('wap-offline-bar');
+    const resBar    = document.getElementById('wap-resuelto-bar');
+    const esperaBar = document.getElementById('wap-espera-bar');
+    const inputRow  = document.querySelector('.wap-input-row');
+    const input     = document.getElementById('wap-input');
+    const sendBtn   = document.getElementById('wap-send');
+    const msgs      = document.getElementById('wap-msgs');
     if (!bar) return;
 
     const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
     const offline   = sesStatus === 'desconectado' || sesStatus === 'reconectando';
-    const resuelto  = _getEstado(_state.activeNum, _state.activeContact) === 'resuelto';
+    const estado    = _getEstado(_state.activeNum, _state.activeContact);
+    const resuelto  = estado === 'resuelto';
+    const enEspera  = estado === 'en_espera';
+    const bloqueado = resuelto || enEspera;
 
-    bar.classList.toggle('visible', offline && !resuelto);
-    if (resBar) resBar.classList.toggle('visible', resuelto);
+    bar.classList.toggle('visible', offline && !bloqueado);
+    if (resBar)    resBar.classList.toggle('visible', resuelto);
+    if (esperaBar) esperaBar.classList.toggle('visible', enEspera && !offline);
 
-    // Resuelto: ocultar input por completo y atenuar mensajes
-    if (inputRow) inputRow.style.display = resuelto ? 'none' : '';
-    if (msgs)     msgs.style.opacity     = resuelto ? '0.6'  : '';
+    // Bloqueado (resuelto o en espera): ocultar input y atenuar mensajes
+    if (inputRow) inputRow.style.display = bloqueado ? 'none' : '';
+    if (msgs)     msgs.style.opacity     = bloqueado ? '0.6' : '';
 
-    // Solo offline (no resuelto): deshabilitar input sin ocultarlo
-    if (!resuelto) {
+    // Solo offline sin bloqueo: deshabilitar input
+    if (!bloqueado) {
         if (input)   input.disabled   = offline;
         if (sendBtn) sendBtn.disabled = offline;
     }
