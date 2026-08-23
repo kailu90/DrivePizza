@@ -1436,6 +1436,19 @@ function _injectStyles() {
 }
 .wap-rr-form input:focus,
 .wap-rr-form textarea:focus { border-color: var(--color-primario); }
+.wap-rr-vars-hint {
+    font-size: 1.05rem;
+    color: #888;
+    margin: 0;
+}
+.wap-rr-vars-hint code {
+    background: rgba(40,76,34,.08);
+    color: #284c22;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 1rem;
+    margin-right: 4px;
+}
 .wap-rr-form-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
 .wap-rr-list {
     flex: 1;
@@ -3459,7 +3472,8 @@ function _openRRForm(id) {
     form.style.display = '';
     form.innerHTML = `
         <input  id="wap-rr-titulo"  type="text"    placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
-        <textarea id="wap-rr-texto" rows="3"       placeholder="Texto completo del mensaje">${_esc(rr?.texto || '')}</textarea>
+        <textarea id="wap-rr-texto" rows="3"       placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
+        <p class="wap-rr-vars-hint">Variables: <code>{nombreUsuario}</code> <code>{nombreAsesor}</code></p>
         <div class="wap-rr-form-btns">
             <button class="wap-btn-secondary" id="wap-rr-cancel">Cancelar</button>
             <button class="wap-btn-connect"   id="wap-rr-save" style="margin:0;font-size:1.1rem;padding:5px 14px;">${rr ? 'Guardar' : 'Crear'}</button>
@@ -3577,7 +3591,15 @@ function _applySlash(id) {
     const rr    = _state.respuestasRapidas.find(x => x.id === id);
     const input = document.getElementById('wap-input');
     if (!rr || !input) return;
-    input.value = rr.texto;
+
+    // Resolver variables
+    const c            = _state.conv[_state.activeNum]?.[_state.activeContact];
+    const nombreUsuario = c?.nombre || c?.name || _fmtPhone(_state.activeContact);
+    const nombreAsesor  = _asesorActual || '';
+
+    input.value = rr.texto
+        .replace(/\{nombreUsuario\}/gi, nombreUsuario)
+        .replace(/\{nombreAsesor\}/gi, nombreAsesor);
     input.focus();
     _hideSlashPicker();
 }
