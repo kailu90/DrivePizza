@@ -6,7 +6,24 @@
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
-const SESSION_COLORS = ['#25D366', '#0088cc', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+const SESSION_COLORS = [
+    '#25D366', // verde WA
+    '#0088cc', // azul
+    '#06b6d4', // cyan
+    '#6366f1', // indigo
+    '#8b5cf6', // violeta
+    '#ec4899', // rosa
+    '#ef4444', // rojo
+    '#f97316', // naranja
+    '#f59e0b', // amarillo
+    '#84cc16', // lima
+    '#14b8a6', // teal
+    '#64748b', // gris azulado
+    '#9ca3af', // gris claro
+    '#6b7280', // gris medio
+    '#1f2937', // gris oscuro / casi negro
+    '#ffffff', // blanco
+];
 
 const _state = {
     sesiones:      [],    // [{ numero, sede, status, tieneQr, color, respuesta_inicial }]
@@ -367,6 +384,7 @@ function _injectStyles() {
     height: 24px;
     border-radius: 50%;
     border: 2.5px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
     cursor: pointer;
     transition: transform .12s, border-color .12s;
     outline: none;
