@@ -1067,8 +1067,26 @@ function _injectStyles() {
     z-index: 2;
 }
 .wap-msg-menu-btn:hover { background: rgba(0,0,0,.28); }
-.wap-msg--out:hover .wap-msg-menu-btn,
-.wap-msg--in:hover  .wap-msg-menu-btn { display: flex; }
+.wap-msg--out:hover .wap-msg-menu-btn { display: flex; }
+.wap-msg-reply-direct {
+    display: none;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.12);
+    color: #374151;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s;
+}
+.wap-msg-reply-direct:hover { background: rgba(0,0,0,.22); }
+.wap-msg--in:hover .wap-msg-reply-direct { display: flex; }
 .wap-msg-dropdown {
     position: absolute;
     top: 26px;
@@ -3212,13 +3230,16 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
             : (m.out && !m.celular ? _tickSvg(m.status) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
+        const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
         const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
-            ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
-               <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
-                   <button class="wap-msg-dropdown-item" data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}">&#x21A9; Responder</button>
-                   ${m.out ? `<button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
-                   <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>` : ''}
-               </div>`
+            ? m.out
+                ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
+                   <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
+                       <button class="wap-msg-dropdown-item" ${replyAttrs}>&#x21A9; Responder</button>
+                       <button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
+                       <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>
+                   </div>`
+                : `<button class="wap-msg-reply-direct" ${replyAttrs} title="Responder">&#x21A9;</button>`
             : '';
         const quotedBlock = m.quotedTexto
             ? `<div class="wap-msg-quoted">
