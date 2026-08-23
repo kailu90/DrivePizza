@@ -2498,7 +2498,7 @@ function _renderSesionesView() {
                     data-color="${c}" style="background:${c};" title="${isUsed ? 'En uso por otra conexión' : c}"${isUsed ? ' disabled' : ''}></button>`;
             }).join('');
             const respActual = _esc(s.respuesta_inicial || '');
-            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
+            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};background:#f5f0e8;" data-num="${s.numero}">
                 <div class="wap-ses-edit-form">
                     <label class="wap-ses-edit-label">Nombre</label>
                     <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
