@@ -257,6 +257,7 @@ function _injectStyles() {
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
 }
 .wap-ses-card-info {
     flex: 1;
@@ -584,6 +585,7 @@ function _injectStyles() {
     height: 18px;
     border-radius: 2px;
     flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
 }
 .wap-sessions-name { flex: 1; }
 .wap-sessions-cb {
