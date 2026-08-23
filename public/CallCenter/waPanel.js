@@ -1294,9 +1294,10 @@ function _injectStyles() {
 .wap-msg-video { display: block; max-width: 280px; max-height: 220px; border-radius: 8px; background: #000; }
 .wap-msg-doc { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(0,0,0,.06); border-radius: 8px; color: var(--color-terciario); text-decoration: none; font-size: 13px; word-break: break-all; }
 .wap-msg-doc:hover { background: rgba(0,0,0,.12); }
-.wap-reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-.wap-reaction-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; background: rgba(0,0,0,.08); border-radius: 12px; font-size: 15px; cursor: default; border: 1px solid rgba(0,0,0,.10); }
-.wap-msg--out .wap-reactions { justify-content: flex-end; }
+.wap-msg:has(.wap-reactions) { margin-bottom: 16px; }
+.wap-reactions { position: absolute; bottom: -14px; right: 6px; display: flex; gap: 3px; z-index: 1; }
+.wap-msg--in .wap-reactions { right: auto; left: 6px; }
+.wap-reaction-badge { display: inline-flex; align-items: center; padding: 2px 6px; background: #fff; border-radius: 12px; font-size: 14px; cursor: default; box-shadow: 0 1px 3px rgba(0,0,0,.20); border: 1px solid rgba(0,0,0,.06); line-height: 1.4; }
 .wap-msg-ts {
     font-size: 1rem;
     color: #9ca3af;
