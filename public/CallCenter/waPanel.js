@@ -2337,8 +2337,12 @@ function _openChat(phone) {
     const liberarBtn   = document.getElementById('wap-liberar-btn');
     if (liberarBtn) liberarBtn.style.display = puedeResolver ? '' : 'none';
 
-    document.getElementById('wap-list').style.display        = 'none';
-    document.getElementById('wap-chat').style.display        = 'flex';
+    document.getElementById('wap-list').style.display                    = 'none';
+    document.getElementById('wap-search-wrap').style.display             = 'none';
+    document.querySelector('.wap-panel-header').style.display            = 'none';
+    document.querySelector('.wap-filtros-wrap').style.display            = 'none';
+    document.getElementById('wap-sessions-wrap').style.display           = 'none';
+    document.getElementById('wap-chat').style.display                    = 'flex';
 
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
     _renderMsgs();
@@ -2626,8 +2630,15 @@ function _navTo(view) {
 }
 
 function _showListView() {
-    document.getElementById('wap-list').style.display        = '';
-    document.getElementById('wap-chat').style.display        = 'none';
+    document.getElementById('wap-chat').style.display                    = 'none';
+    document.getElementById('wap-list').style.display                    = '';
+    document.getElementById('wap-search-wrap').style.display             = '';
+    document.querySelector('.wap-panel-header').style.display            = '';
+    document.querySelector('.wap-filtros-wrap').style.display            = '';
+    // sessions-wrap: solo restaurar si hay 2+ sesiones (renderSessions lo controla)
+    if (_state.sesiones.length > 1) {
+        document.getElementById('wap-sessions-wrap').style.display       = '';
+    }
 }
 
 function _renderMsgs() {
