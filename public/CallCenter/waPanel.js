@@ -396,6 +396,29 @@ function _injectStyles() {
 }
 .wap-ses-btn-save:hover { background: #75892a; }
 
+/* ── Panel header (WhatsApp + selector de conexión) ─ */
+.wap-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 9px 12px 8px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+    background: #fff;
+}
+.wap-panel-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    flex-shrink: 0;
+}
+.wap-panel-sep {
+    color: #9ca3af;
+    font-size: 1.2rem;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
 /* ── Sessions colapsable ─────────────────────────── */
 .wap-sessions-wrap {
     flex-shrink: 0;
@@ -404,19 +427,20 @@ function _injectStyles() {
 .wap-sessions-toggle {
     display: flex;
     align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 7px 12px;
+    gap: 5px;
+    padding: 0;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-primario);
     text-align: left;
+    min-width: 0;
 }
-.wap-sessions-toggle:hover { background: rgba(0,0,0,.04); }
-.wap-sessions-toggle-label { flex: 1; }
+.wap-sessions-toggle--static { cursor: default; }
+.wap-sessions-toggle:hover:not(.wap-sessions-toggle--static) { opacity: .75; }
+.wap-sessions-toggle-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wap-sessions-toggle-badge {
     background: #e5e7eb;
     color: #6b7280;
@@ -706,63 +730,56 @@ function _injectStyles() {
 /* ── Filtros wrap ────────────────────────────────── */
 .wap-filtros-wrap {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    padding: 6px 10px 4px;
+    padding: 7px 10px 6px;
     flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    overflow-x: auto;
 }
-.wap-filtros-wrap .wap-filtros {
-    padding: 0;
-    flex: 1;
-}
-
-/* ── Filtro asesor (admin) ───────────────────────── */
-.wap-filtro-asesor {
-    display: inline-flex;
-    gap: 6px;
-}
+.wap-filtros-wrap::-webkit-scrollbar { display: none; }
 
 /* ── Filtros de estado ───────────────────────────── */
 .wap-filtros {
     display: flex;
     gap: 6px;
     flex-shrink: 0;
-    flex-wrap: wrap;
 }
 .wap-filtro {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
+    gap: 4px;
+    padding: 4px 11px;
     border-radius: 20px;
-    border: 1.5px solid var(--color-cuaternario);
-    background: var(--color-secundario);
-    color: var(--color-primario);
-    font-size: 1.15rem;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background .15s, color .15s;
+    transition: background .15s, color .15s, border-color .15s;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 .wap-filtro:hover {
-    background: rgba(40,76,34,.08);
+    background: #f3f4f6;
+    border-color: #d1d5db;
 }
 .wap-filtro--active {
     background: var(--color-primario);
     border-color: var(--color-primario);
-    color: var(--color-secundario);
+    color: #fff;
+}
+.wap-filtro--active:hover {
+    background: var(--color-cuaternario);
+    border-color: var(--color-cuaternario);
 }
 .wap-filtro-count {
-    background: rgba(40,76,34,.15);
-    border-radius: 10px;
-    padding: 0 6px;
     font-size: 1.05rem;
     font-weight: 700;
+    opacity: .8;
 }
-.wap-filtro--active .wap-filtro-count {
-    background: rgba(244,236,223,.25);
-}
+.wap-filtro--active .wap-filtro-count { opacity: 1; }
 
 /* ── Tags de estado en conversación ─────────────── */
 .wap-estado-tag {
@@ -812,25 +829,22 @@ function _injectStyles() {
 }
 .wap-resolver-btn, .wap-liberar-btn {
     background: none;
-    border-radius: 14px;
-    padding: 3px 10px;
-    font-size: 1.1rem;
+    border: 1.5px solid #22c55e;
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 1.05rem;
     font-weight: 600;
+    color: #16a34a;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background .15s, color .15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background .15s;
+    white-space: nowrap;
 }
-.wap-resolver-btn {
-    margin-left: auto;
-    border: 1.5px solid #25D366;
-    color: #16a34a;
-}
-.wap-resolver-btn:hover { background: #dcfce7; }
-.wap-liberar-btn {
-    border: 1.5px solid rgba(40,76,34,.35);
-    color: var(--color-primario);
-}
-.wap-liberar-btn:hover { background: rgba(40,76,34,.08); }
+.wap-resolver-btn:hover,
+.wap-liberar-btn:hover { background: #dcfce7; }
 
 /* ── Chat view ───────────────────────────────────── */
 .wap-chat {
@@ -842,36 +856,52 @@ function _injectStyles() {
 .wap-chat-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: #f4ecdf;
+    gap: 9px;
+    padding: 8px 12px;
+    background: #fff;
     color: var(--color-terciario);
     flex-shrink: 0;
     border-left: 4px solid transparent;
-    border-bottom: 1px solid rgba(40,76,34,.12);
+    border-bottom: 1px solid rgba(0,0,0,.09);
 }
 .wap-back {
     background: none;
     border: none;
     color: var(--color-primario);
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     cursor: pointer;
-    padding: 0 4px;
+    padding: 0 2px;
     line-height: 1;
+    flex-shrink: 0;
+}
+.wap-chat-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-cuaternario);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-transform: uppercase;
 }
 .wap-chat-info {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    flex: 1;
 }
 .wap-chat-name-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 .wap-chat-name {
     font-weight: 700;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -911,7 +941,26 @@ function _injectStyles() {
 }
 .wap-name-input::placeholder { color: rgba(40,76,34,.4); }
 .wap-name-input:focus { outline: none; background: rgba(40,76,34,.12); }
-.wap-chat-via { font-size: 0.75rem; color: #6b7280; margin-top: 1px; }
+.wap-chat-via {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-chat-via-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.wap-chat-via--atencion .wap-chat-via-dot { background: #22c55e; }
+.wap-chat-via--resuelto .wap-chat-via-dot { background: #9ca3af; }
+.wap-chat-via--espera   .wap-chat-via-dot { background: #f59e0b; }
 .wap-msgs {
     flex: 1;
     overflow-y: auto;
@@ -1266,15 +1315,18 @@ function _renderShell(body) {
 
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
-                    <div class="wap-sessions-wrap" id="wap-sessions-wrap">
-                        <button class="wap-sessions-toggle" id="wap-sessions-toggle" style="display:none;"></button>
+                    <div class="wap-panel-header">
+                        <span class="wap-panel-title">WhatsApp</span>
+                        <span class="wap-panel-sep">·</span>
+                        <button class="wap-sessions-toggle" id="wap-sessions-toggle"></button>
+                    </div>
+                    <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
                         <div class="wap-sessions" id="wap-sessions"></div>
                     </div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
                     </div>
                     <div class="wap-filtros-wrap">
-                        <div class="wap-filtro-asesor" id="wap-filtro-asesor" style="display:none;"></div>
                         <div class="wap-filtros" id="wap-filtros"></div>
                     </div>
                     <div class="wap-list" id="wap-list">
@@ -1283,6 +1335,7 @@ function _renderShell(body) {
                     <div class="wap-chat" id="wap-chat">
                         <div class="wap-chat-header">
                             <button class="wap-back" id="wap-back">&#8592;</button>
+                            <div class="wap-chat-avatar" id="wap-chat-avatar"></div>
                             <div class="wap-chat-info" id="wap-chat-info">
                                 <div class="wap-chat-name-row">
                                     <span class="wap-chat-name" id="wap-chat-name"></span>
@@ -1291,7 +1344,7 @@ function _renderShell(body) {
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                             </div>
-                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">RESOLVER</button>
+                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">&#10003; Resolver</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
                         <div class="wap-offline-bar" id="wap-offline-bar">
@@ -1962,35 +2015,56 @@ function _renderSessions() {
     const wrap   = document.getElementById('wap-sessions-wrap');
     const toggle = document.getElementById('wap-sessions-toggle');
     const el     = document.getElementById('wap-sessions');
+    const sep    = document.querySelector('.wap-panel-sep');
     if (!wrap || !toggle || !el) return;
 
-    // Solo mostrar si hay más de 1 sesión
     const sesiones = _state.sesiones;
-    if (sesiones.length <= 1) {
+
+    // Sin sesiones: ocultar toggle y separador
+    if (sesiones.length === 0) {
+        toggle.style.display = 'none';
+        if (sep) sep.style.display = 'none';
         wrap.style.display = 'none';
         return;
     }
+
+    if (sep) sep.style.display = '';
+    toggle.style.display = '';
+
+    // Con 1 sola sesión: nombre estático, sin dropdown
+    if (sesiones.length === 1) {
+        const s     = sesiones[0];
+        const color = _getColor(s.numero);
+        toggle.className   = 'wap-sessions-toggle wap-sessions-toggle--static';
+        toggle._hasListener = false;
+        toggle.innerHTML = `
+            <span class="wap-sessions-active-dot" style="background:${color};"></span>
+            <span class="wap-sessions-toggle-label">${_sessionLabel(s.numero)}</span>
+        `;
+        wrap.style.display = 'none';
+        return;
+    }
+
+    // Con 2+ sesiones: dropdown interactivo
+    toggle.className = 'wap-sessions-toggle';
     wrap.style.display = '';
 
-    // ── Toggle button label según selección ─────────────────────────
     const sel = _state.filtroSesiones;
-    const connectedCount = sesiones.filter(s => s.status === 'conectado').length;
-    let toggleDot = '';
+    let toggleDot   = '';
     let toggleLabel = '';
     if (sel.size === 0) {
-        toggleLabel = 'CONEXIONES';
-        toggleDot = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+        toggleLabel = 'Conexiones';
+        toggleDot = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
     } else if (sel.size === 1) {
         const num = [...sel][0];
-        const c = _getColor(num);
+        const c   = _getColor(num);
         toggleLabel = _sessionLabel(num);
         toggleDot = `<span class="wap-sessions-active-dot" style="background:${c};"></span>`;
     } else {
         toggleLabel = `${sel.size} conexiones`;
-        toggleDot = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+        toggleDot = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
     }
 
-    toggle.style.display = '';
     toggle.innerHTML = `
         ${toggleDot}
         <span class="wap-sessions-toggle-label">${toggleLabel}</span>
@@ -2005,8 +2079,7 @@ function _renderSessions() {
     }
 
     // ── Lista vertical con multi-selección ──────────────────────────
-    const todasCls = sel.size === 0 ? ' wap-sessions-item--active' : '';
-
+    const todasCls     = sel.size === 0 ? ' wap-sessions-item--active' : '';
     const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked' : '';
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
@@ -2036,7 +2109,6 @@ function _renderSessions() {
         btn.addEventListener('click', () => {
             const num = btn.dataset.num;
             if (!num) {
-                // "Todas" — limpiar filtro y cerrar
                 sel.clear();
                 wrap.classList.remove('open');
             } else if (sel.has(num)) {
@@ -2111,32 +2183,48 @@ function _scheduleConteos() {
 
 // ── Render filtros de estado ───────────────────────────────────────────────
 function _renderFiltros() {
-    _renderFiltroAsesor();
     const el = document.getElementById('wap-filtros');
     if (!el) return;
 
     const { en_espera: espera, asignado, resuelto } = _state.conteos;
-    const f = _state.filtroEstado;
+    const total   = espera + asignado + resuelto;
+    const f       = _state.filtroEstado;
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const esMio   = _state.filtroAsesor === 'mio';
+
     const badge = (key, label, count, color) => {
         const activo = f === key ? ' wap-filtro--active' : '';
-        return `<button class="wap-filtro${activo}" data-filtro="${key}" style="--fc:${color};">
+        return `<button class="wap-filtro${activo}" data-filtro="${key ?? ''}" style="--fc:${color};">
             ${label} <span class="wap-filtro-count">${count}</span>
         </button>`;
     };
 
     el.innerHTML =
-        badge('en_espera', 'En espera',   espera,   '#f59e0b') +
-        badge('asignado',  'En atención', asignado, '#0088cc') +
-        badge('resuelto',  'Resuelto',    resuelto, '#25D366');
+        badge(null,        'Todos',    total,    '#6b7280') +
+        badge('en_espera', 'Espera',   espera,   '#f59e0b') +
+        badge('asignado',  'Atención', asignado, '#0088cc') +
+        badge('resuelto',  'Resueltos',resuelto, '#25D366') +
+        (isAdmin ? `<button class="wap-filtro${esMio ? ' wap-filtro--active' : ''}" id="wap-btn-fa" style="--fc:#6b7280;">
+            ${esMio ? 'Míos' : 'Todos los asesores'}
+        </button>` : '');
 
-    el.querySelectorAll('.wap-filtro').forEach(btn => {
+    el.querySelectorAll('.wap-filtro[data-filtro]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const key = btn.dataset.filtro;
+            const key = btn.dataset.filtro || null;
             _state.filtroEstado = (_state.filtroEstado === key) ? null : key;
             _renderFiltros();
             _renderList();
         });
     });
+
+    if (isAdmin) {
+        el.querySelector('#wap-btn-fa')?.addEventListener('click', () => {
+            _state.filtroAsesor = _state.filtroAsesor === 'mio' ? null : 'mio';
+            _scheduleConteos();
+            _renderFiltros();
+            _renderList();
+        });
+    }
 }
 
 // ── Render conversation list ───────────────────────────────────────────────
@@ -2342,6 +2430,14 @@ async function _loadMsgsSupabase(phone) {
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
     const display = c?.nombre || c?.name || _fmtPhone(phone);
+    const color   = _getColor(_state.activeNum);
+
+    // Avatar: inicial + color de sesión
+    const avatarEl = document.getElementById('wap-chat-avatar');
+    if (avatarEl) {
+        avatarEl.textContent      = (display[0] || '?').toUpperCase();
+        avatarEl.style.background = color;
+    }
 
     // El span puede haber sido reemplazado por un input de edición/vincular sin confirmar.
     // Lo restauramos aquí para garantizar que el header siempre sea navegable.
@@ -2353,7 +2449,6 @@ function _updateChatHeader(phone) {
         if (nameEl) nameEl.replaceWith(fresh);
         else document.querySelector('.wap-chat-name-row')?.prepend(fresh);
         nameEl = fresh;
-        // Restaurar botones de edición y vincular que pudo haber ocultado el input
         const eb = document.getElementById('wap-edit-name-btn');
         if (eb) eb.style.display = '';
         const vb = document.getElementById('wap-vincular-lid-btn');
@@ -2361,16 +2456,26 @@ function _updateChatHeader(phone) {
     }
     nameEl.textContent = display;
 
-    // Sub-línea: estado + asesor asignado
+    // Sub-línea: dot de color + estado + asesor
     const asig  = _getAsig(_state.activeNum, phone);
     const viaEl = document.getElementById('wap-chat-via');
     if (viaEl) {
+        let cls  = 'wap-chat-via';
+        let text = '';
         if (asig?.asesor) {
-            const label = asig.estado === 'resuelto' ? 'Resuelto' : 'En atención';
-            viaEl.textContent = `${label} · ${asig.asesor}`;
+            if (asig.estado === 'resuelto') {
+                cls  += ' wap-chat-via--resuelto';
+                text  = `Resuelto · ${asig.asesor}`;
+            } else {
+                cls  += ' wap-chat-via--atencion';
+                text  = `En atención · ${asig.asesor}`;
+            }
         } else {
-            viaEl.textContent = '';
+            cls  += ' wap-chat-via--espera';
+            text  = 'En espera';
         }
+        viaEl.className = cls;
+        viaEl.innerHTML = `<span class="wap-chat-via-dot"></span>${text}`;
     }
 
     // Botón vincular: visible solo cuando el contacto es un @lid sin resolver (> 12 dígitos)
@@ -2378,7 +2483,6 @@ function _updateChatHeader(phone) {
     if (vincularBtn) vincularBtn.style.display = phone.length > 12 ? '' : 'none';
 
     // Badge de color de la conexión en el borde izquierdo del header
-    const color  = _getColor(_state.activeNum);
     const header = document.querySelector('.wap-chat-header');
     if (header) header.style.borderLeftColor = color;
 }
