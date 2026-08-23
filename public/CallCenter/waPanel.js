@@ -1064,18 +1064,18 @@ function _injectStyles() {
 .wap-resuelto-bar {
     display: none;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 10px;
-    padding: 8px 12px;
-    background: #f0fdf4;
-    border-top: 1px solid #bbf7d0;
-    font-size: 1.1rem;
-    color: #16a34a;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    font-size: 1.05rem;
+    color: #64748b;
     flex-shrink: 0;
 }
 .wap-resuelto-bar.visible { display: flex; }
 .wap-abrir-btn {
-    background: #16a34a;
+    background: var(--color-primario);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -1406,8 +1406,8 @@ function _renderShell(body) {
                             ⚠️ Sesión desconectada — reconecta para responder
                         </div>
                         <div class="wap-resuelto-bar" id="wap-resuelto-bar">
-                            <span>Chat resuelto — solo lectura</span>
-                            <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir</button>
+                            <span>✅ Chat resuelto — solo lectura</span>
+                            <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir conversación</button>
                         </div>
                         <div class="wap-input-row">
                             <input type="text" id="wap-input" placeholder="Escribe un mensaje...">
@@ -2754,19 +2754,30 @@ function _renderMsgs() {
 }
 
 function _updateOfflineBar() {
-    const bar       = document.getElementById('wap-offline-bar');
-    const resBar    = document.getElementById('wap-resuelto-bar');
-    const input     = document.getElementById('wap-input');
-    const sendBtn   = document.getElementById('wap-send');
+    const bar      = document.getElementById('wap-offline-bar');
+    const resBar   = document.getElementById('wap-resuelto-bar');
+    const inputRow = document.querySelector('.wap-input-row');
+    const input    = document.getElementById('wap-input');
+    const sendBtn  = document.getElementById('wap-send');
+    const msgs     = document.getElementById('wap-msgs');
     if (!bar) return;
-    const sesStatus  = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
-    const offline    = sesStatus === 'desconectado' || sesStatus === 'reconectando';
-    const resuelto   = _getEstado(_state.activeNum, _state.activeContact) === 'resuelto';
-    const bloqueado  = offline || resuelto;
-    bar.classList.toggle('visible', offline);
-    if (resBar) resBar.classList.toggle('visible', !offline && resuelto);
-    if (input)   input.disabled   = bloqueado;
-    if (sendBtn) sendBtn.disabled = bloqueado;
+
+    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
+    const offline   = sesStatus === 'desconectado' || sesStatus === 'reconectando';
+    const resuelto  = _getEstado(_state.activeNum, _state.activeContact) === 'resuelto';
+
+    bar.classList.toggle('visible', offline && !resuelto);
+    if (resBar) resBar.classList.toggle('visible', resuelto);
+
+    // Resuelto: ocultar input por completo y atenuar mensajes
+    if (inputRow) inputRow.style.display = resuelto ? 'none' : '';
+    if (msgs)     msgs.style.opacity     = resuelto ? '0.6'  : '';
+
+    // Solo offline (no resuelto): deshabilitar input sin ocultarlo
+    if (!resuelto) {
+        if (input)   input.disabled   = offline;
+        if (sendBtn) sendBtn.disabled = offline;
+    }
 }
 
 async function _reabrirChat(num, phone) {
