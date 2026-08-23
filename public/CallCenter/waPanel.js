@@ -296,6 +296,20 @@ function _injectStyles() {
     transition: background .15s, color .15s;
 }
 .wap-ses-btn-des:hover { background: #ef4444; color: #fff; }
+.wap-ses-btn-del {
+    background: none;
+    border: none;
+    color: #ef4444;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity .15s, background .15s;
+}
+.wap-ses-btn-del:hover { opacity: 1; background: #fee2e2; }
 .wap-ses-btn-con {
     background: none;
     border: 1.5px solid #25D366;
@@ -2480,6 +2494,7 @@ function _renderSesionesView() {
                     </svg>
                 </button>
                 ${actionBtn}
+                ${isAdmin ? `<button class="wap-ses-btn-del" data-num="${s.numero}" title="Eliminar conexión">🗑️</button>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -2497,6 +2512,9 @@ function _renderSesionesView() {
         });
         el.querySelectorAll('.wap-ses-btn-con').forEach(btn => {
             btn.addEventListener('click', () => _reconectarSesion(btn.dataset.num));
+        });
+        el.querySelectorAll('.wap-ses-btn-del').forEach(btn => {
+            btn.addEventListener('click', () => _eliminarSesion(btn.dataset.num));
         });
     }
 
@@ -3532,6 +3550,35 @@ async function _desconectarSesion(numero) {
         _showToast('Sesión desconectada');
     } catch {
         _showToast('Error al desconectar');
+    }
+}
+
+// ── Eliminar sesion permanentemente (admin) ───────────────────────────────
+async function _eliminarSesion(numero) {
+    const label = _sessionLabel(numero);
+    if (!confirm(`¿Eliminar la conexión "${label}" permanentemente?\n\nSe eliminará la sesión, los archivos de autenticación y el registro en la base de datos. Las conversaciones pasadas se conservan.`)) return;
+    try {
+        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}?eliminar=true`, { method: 'DELETE' });
+
+        // Eliminar completamente del estado
+        _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
+        delete _state.conv[numero];
+
+        // Si era la sesión activa, cerrar chat
+        if (_state.activeNum === numero) {
+            _state.activeNum     = _state.sesiones.find(s => s.status === 'conectado')?.numero || null;
+            _state.activeContact = null;
+            _showListView();
+        }
+
+        _saveConv();
+        _renderSessions();
+        _renderSesionesView();
+        _scheduleConteos();
+        _renderList();
+        _showToast(`Conexión "${label}" eliminada`);
+    } catch {
+        _showToast('Error al eliminar la conexión');
     }
 }
 
