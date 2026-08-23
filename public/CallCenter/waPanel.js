@@ -3919,7 +3919,7 @@ function _fmtTs(ts) {
     if (d.toDateString() === now.toDateString()) {
         return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     }
-    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' });
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function _capitalizarSede(s) {
