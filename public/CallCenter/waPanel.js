@@ -1382,10 +1382,17 @@ function _injectStyles() {
 }
 .wap-rec-cancel-btn:hover { background: #d1d5db; }
 
-/* ── Voz y enviar — verde WA ─────────────────────── */
-.wap-voice-btn,
-#wap-send { background: #25D366; font-size: 1.5rem; }
-.wap-voice-btn:hover,
+/* ── Voz — dentro del input, fondo blanco/transparente */
+.wap-voice-btn {
+    background: transparent;
+    color: #9ca3af;
+    border-radius: 0;
+    font-size: 1.5rem;
+}
+.wap-voice-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
+
+/* ── Enviar — verde WA, fuera del wrapper ─────────── */
+#wap-send { background: #25D366; font-size: 1.4rem; }
 #wap-send:hover { background: #1da851; }
 
 /* ── Grabando ─────────────────────────────────────── */
@@ -1954,8 +1961,8 @@ function _renderShell(body) {
                             <div class="wap-input-wrapper">
                                 <button class="wap-attach-btn" id="wap-attach-btn" title="Adjuntar archivo">&#128206;</button>
                                 <textarea id="wap-input" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                                <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             </div>
-                            <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             <button id="wap-send" style="display:none">&#10148;</button>
                         </div>
                     </div>
