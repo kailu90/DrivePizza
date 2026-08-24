@@ -1363,7 +1363,7 @@ function _injectStyles() {
 .wap-input-row button:hover { background: var(--color-cuaternario); }
 
 /* ── Adjuntar — dentro del input, sin círculo ────── */
-.wap-attach-btn {
+.wap-input-row .wap-attach-btn {
     background: transparent;
     color: #9ca3af;
     border-radius: 0;
@@ -1372,31 +1372,31 @@ function _injectStyles() {
     font-size: 1.5rem;
     flex-shrink: 0;
 }
-.wap-attach-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
+.wap-input-row .wap-attach-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
 
 /* ── Cancelar grabación (externo, gris) ──────────── */
-.wap-rec-cancel-btn {
+.wap-input-row .wap-rec-cancel-btn {
     background: #e5e7eb;
     color: #374151;
     font-size: 1.4rem;
 }
-.wap-rec-cancel-btn:hover { background: #d1d5db; }
+.wap-input-row .wap-rec-cancel-btn:hover { background: #d1d5db; }
 
-/* ── Voz — dentro del input, fondo blanco/transparente */
-.wap-voice-btn {
+/* ── Voz — dentro del input, fondo transparente ───── */
+.wap-input-row .wap-voice-btn {
     background: transparent;
     color: #9ca3af;
     border-radius: 0;
     font-size: 1.5rem;
 }
-.wap-voice-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
+.wap-input-row .wap-voice-btn:hover { background: rgba(0,0,0,.04); color: #374151; }
 
 /* ── Enviar — verde WA, fuera del wrapper ─────────── */
 #wap-send { background: #25D366; font-size: 1.4rem; }
 #wap-send:hover { background: #1da851; }
 
 /* ── Grabando ─────────────────────────────────────── */
-.wap-voice-btn--rec {
+.wap-input-row .wap-voice-btn--rec {
     background: #ef4444 !important;
     color: #fff !important;
     animation: wap-rec-pulse 1s ease-in-out infinite;
