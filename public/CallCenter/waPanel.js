@@ -1251,6 +1251,24 @@ function _injectStyles() {
     color: var(--color-terciario);
     text-align: center;
     line-height: 1.3;
+    cursor: text;
+    border-bottom: 1.5px dashed transparent;
+    transition: border-color .15s;
+    padding-bottom: 1px;
+}
+.wap-cp-name:hover { border-bottom-color: #9ca3af; }
+.wap-cp-name-input {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    text-align: center;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--color-primario);
+    outline: none;
+    width: 100%;
+    padding: 0 4px 1px;
+    font-family: inherit;
 }
 .wap-cp-phone-hero {
     display: flex;
@@ -2629,15 +2647,6 @@ function _renderShell(body) {
                                 <div class="wap-cp-canal" id="wap-cp-canal"></div>
                             </div>
 
-                            <!-- Edición de nombre (inline, igual que banner LID) -->
-                            <div class="wap-cp-lid-section wap-cp-name-edit-wrap" id="wap-cp-name-edit-section" style="display:none;">
-                                <div class="wap-cp-lid-title" style="color:var(--color-primario);">&#9998; Editar nombre del cliente</div>
-                                <div class="wap-cp-lid-row">
-                                    <input class="wap-cp-lid-input" id="wap-cp-nombre-edit" type="text" placeholder="Nombre del cliente" style="border-color:var(--color-primario);" />
-                                    <button class="wap-cp-lid-ok" id="wap-cp-nombre-save" style="background:var(--color-primario);">Guardar</button>
-                                </div>
-                            </div>
-
                             <!-- Banner LID: número pendiente de confirmar -->
                             <div class="wap-cp-lid-section" id="wap-cp-lid-section" style="display:none;">
                                 <div class="wap-cp-lid-title">&#9888; N&#250;mero pendiente de confirmar</div>
@@ -2816,23 +2825,8 @@ function _renderShell(body) {
     document.getElementById('wap-chat-avatar').addEventListener('click', _openClientPanel);
     document.getElementById('wap-chat-info').addEventListener('click', _openClientPanel);
     document.getElementById('wap-cp-close').addEventListener('click', _closeClientPanel);
-    document.getElementById('wap-cp-save').addEventListener('click', () => {
-        const section = document.getElementById('wap-cp-name-edit-section');
-        const input   = document.getElementById('wap-cp-nombre-edit');
-        const btn     = document.getElementById('wap-cp-save');
-        const isOpen  = section.style.display !== 'none';
-        if (isOpen) {
-            section.style.display = 'none';
-            btn.textContent = 'Editar'; // restaurar icono lo maneja el HTML
-        } else {
-            const current = document.getElementById('wap-cp-nombre')?.value || '';
-            if (input) { input.value = current; }
-            section.style.display = 'flex';
-            input?.focus();
-            btn.textContent = 'Cancelar';
-        }
-    });
-    document.getElementById('wap-cp-nombre-save').addEventListener('click', _saveClientPanel);
+    document.getElementById('wap-cp-save').addEventListener('click', _startNameEdit);
+    document.getElementById('wap-cp-name-display').addEventListener('click', _startNameEdit);
     document.getElementById('wap-cp-copy').addEventListener('click', () => {
         const txt = document.getElementById('wap-cp-phone')?.textContent?.replace(/\s/g, '');
         if (txt) { navigator.clipboard.writeText(txt).then(() => _showToast('Número copiado', 1800)); }
@@ -4528,32 +4522,49 @@ async function _loadClientStats(phone) {
 
 function _closeClientPanel() {
     document.getElementById('wap-client-panel')?.classList.remove('wap-cp--open');
-    // Colapsar edición de nombre si quedó abierta
-    const section = document.getElementById('wap-cp-name-edit-section');
-    if (section) section.style.display = 'none';
-    const btn = document.getElementById('wap-cp-save');
-    if (btn) btn.textContent = 'Editar';
 }
 
-async function _saveClientPanel() {
+function _startNameEdit() {
+    const nameDiv = document.getElementById('wap-cp-name-display');
+    if (!nameDiv || nameDiv.querySelector('input')) return; // ya editando
+
+    const current = nameDiv.textContent.trim();
+    const input   = document.createElement('input');
+    input.type      = 'text';
+    input.value     = current;
+    input.className = 'wap-cp-name-input';
+
+    nameDiv.textContent = '';
+    nameDiv.appendChild(input);
+    input.select();
+
+    let committed = false;
+    const commit = (save) => {
+        if (committed) return;
+        committed = true;
+        const nuevo = input.value.trim();
+        nameDiv.textContent = save && nuevo ? nuevo : current;
+        if (save && nuevo && nuevo !== current) _saveClientPanel(nuevo);
+    };
+
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); commit(true); }
+        if (e.key === 'Escape') { commit(false); }
+    });
+    input.addEventListener('blur', () => commit(true));
+}
+
+async function _saveClientPanel(nuevo) {
     const phone   = _state.activeContact;
     const num     = _state.activeNum;
-    if (!phone || !num) return;
+    if (!phone || !num || !nuevo) return;
 
-    const nuevo   = document.getElementById('wap-cp-nombre-edit')?.value.trim();
     const c       = _state.conv[num]?.[phone];
     const current = c?.nombre || c?.name || '';
+    if (nuevo === current) return;
 
-    // Cerrar sección de edición y restaurar botón
-    const section = document.getElementById('wap-cp-name-edit-section');
-    const btn     = document.getElementById('wap-cp-save');
-    if (section) section.style.display = 'none';
-    if (btn) btn.textContent = 'Editar';
-    // Actualizar input oculto
     const hiddenInput = document.getElementById('wap-cp-nombre');
-    if (hiddenInput && nuevo) hiddenInput.value = nuevo;
-
-    if (!nuevo || nuevo === current) return;
+    if (hiddenInput) hiddenInput.value = nuevo;
 
     try {
         const r = await fetch(
@@ -4563,9 +4574,6 @@ async function _saveClientPanel() {
         );
         if (r.ok) {
             if (_state.conv[num]?.[phone]) { _state.conv[num][phone].nombre = nuevo; _saveConv(); }
-            // Actualizar nombre visible en el hero sin cerrar el panel
-            const nameDisplay = document.getElementById('wap-cp-name-display');
-            if (nameDisplay) nameDisplay.textContent = nuevo;
             const avatarEl = document.getElementById('wap-cp-avatar');
             if (avatarEl) avatarEl.textContent = _initials(nuevo);
             _renderList();
