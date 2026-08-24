@@ -2703,7 +2703,7 @@ async function _transferirChat(num, phone, asesorNuevo) {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ asesor_nuevo: asesorNuevo }),
+            body:    JSON.stringify({ asesor_nuevo: asesorNuevo, asesor_actual: _asesorActual }),
         });
         if (!r.ok) { _showToast('Error al transferir', 3000); return; }
         _showToast(`Chat transferido a ${asesorNuevo}`);
