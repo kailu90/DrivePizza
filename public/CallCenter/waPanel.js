@@ -3458,6 +3458,12 @@ function _onMerge({ numero, lidPhone, realPhone }) {
 
     _state.conv[numero][realPhone] = realConv;
     delete _state.conv[numero][lidPhone];
+
+    // Transferir asignación del lid al teléfono real en estado local
+    const lidAsig = _state.asignaciones[`${numero}:${lidPhone}`];
+    if (lidAsig) {
+        _state.asignaciones[`${numero}:${realPhone}`] = { ...lidAsig };
+    }
     delete _state.asignaciones[`${numero}:${lidPhone}`];
 
     // Si el chat lid estaba abierto, redirigir al teléfono real
