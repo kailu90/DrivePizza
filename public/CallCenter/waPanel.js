@@ -3784,7 +3784,7 @@ function _renderList() {
 
         const estadoTag = isOffline
                 ? `<span class="wap-offline-tag">Sesión caída</span>`
-                : esLibre
+                : esLibre && _state.filtroEstado !== 'en_espera'
                     ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
                     : estado === 'resuelto'
                         ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
