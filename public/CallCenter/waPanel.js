@@ -772,13 +772,21 @@ function _injectStyles() {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px 10px 10px;
+    padding: 10px 12px 10px 0;
     cursor: pointer;
     border-bottom: 1px solid rgba(0,0,0,.05);
     transition: background .12s;
-    border-left: 4px solid transparent;
 }
 .wap-conv-item:hover { background: rgba(0,0,0,.04); }
+.wap-conv-stripe {
+    width: 6px;
+    align-self: stretch;
+    flex-shrink: 0;
+    border-radius: 0 2px 2px 0;
+    cursor: default;
+    transition: width .15s;
+}
+.wap-conv-stripe:hover { width: 9px; }
 .wap-avatar {
     width: 38px;
     height: 38px;
@@ -3634,7 +3642,8 @@ function _renderResueltas() {
 
         return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
-                    style="border-left:4px solid ${color};align-items:flex-start;padding-right:12px;">
+                    style="align-items:flex-start;padding-right:12px;">
+            <div class="wap-conv-stripe" style="background:${color};" title="${_esc(sede)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};margin-top:2px;flex-shrink:0;">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
@@ -3738,6 +3747,8 @@ function _renderList() {
 
     el.innerHTML = filtered.map(({ num, phone, data }) => {
         const color      = _getColor(num);
+        const sesInfo    = _state.sesiones.find(s => s.numero === num);
+        const sedeLabel  = sesInfo?.sede ? _capitalizarSede(sesInfo.sede) : '';
         const estado     = _getEstado(num, phone);
         const asig       = _getAsig(num, phone);
         const esLibre    = estado === 'en_espera';
@@ -3762,7 +3773,8 @@ function _renderList() {
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="border-left:4px solid ${color}; position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
+        return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
+            <div class="wap-conv-stripe" style="background:${color};" title="${_esc(sedeLabel)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
