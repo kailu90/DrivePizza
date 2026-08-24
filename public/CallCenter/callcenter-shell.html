@@ -274,6 +274,7 @@
     let _sipState = 'offline';
     function postToFrame(state, extra = {}) {
         _sipState = state;
+        window._sipState = state; // expuesto para waPanel.js (módulo distinto)
         const frame = document.getElementById('cc-frame');
         if (!frame?.contentWindow) return;
         frame.contentWindow.postMessage({
