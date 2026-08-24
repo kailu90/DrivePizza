@@ -3302,7 +3302,12 @@ function _onMsgStatus({ numero, msgId, status }) {
     let updated = false;
     for (const convs of Object.values(_state.conv[numero] || {})) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
-        if (m) { m.status = status; updated = true; break; }
+        if (m) {
+            if ((m.status || 0) >= status) return; // no retroceder (evita 4→3 por reordenamiento WS)
+            m.status = status;
+            updated = true;
+            break;
+        }
     }
     if (!updated) {
         // Condición de carrera: ACK llegó antes que el echo asignara el msgId — guardar para aplicar después
@@ -3310,7 +3315,20 @@ function _onMsgStatus({ numero, msgId, status }) {
         return;
     }
     _saveConv();
-    if (_state.activeNum === numero) _renderMsgs();
+    // Actualizar solo el tick del bubble específico — evita re-render completo y pérdida de scroll
+    if (_state.activeNum === numero) {
+        const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+        const tickEl = bubble?.querySelector('.wap-msg-ticks');
+        if (tickEl) {
+            tickEl.outerHTML = _tickSvg(status) || '';
+        } else if (bubble && !bubble.querySelector('.wap-msg-ticks') && _tickSvg(status)) {
+            // El tick aún no existía (status pasó de undefined a >=2)
+            const tsSpan = bubble.querySelector('.wap-msg-ts');
+            if (tsSpan) tsSpan.insertAdjacentHTML('afterend', _tickSvg(status));
+        } else {
+            _renderMsgs(); // fallback si el bubble no está en DOM
+        }
+    }
 }
 
 function _tickSvg(status) {
@@ -4785,7 +4803,7 @@ function _renderMsgs() {
             const badges = Object.entries(r).map(([k, e]) => `<span class="wap-reaction-badge" title="${k === 'asesor' ? 'Tú' : 'Cliente'}">${e}</span>`).join('');
             return `<div class="wap-reactions">${badges}</div>`;
         })();
-        return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}">
+        return `<div class="wap-msg ${m.out ? 'wap-msg--out' : 'wap-msg--in'}${m.celular ? ' wap-msg--celular' : ''}${statusCls}"${m.msgId ? ` data-msgid="${_esc(m.msgId)}"` : ''}>
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             ${msgContent}
