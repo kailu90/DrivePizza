@@ -3889,11 +3889,18 @@ async function _sendMedia() {
     const c            = _state.conv[num][phone];
     const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
 
+    const base = file.type.split(';')[0].trim();
+    const tipo  = base.startsWith('image/') ? 'imagen' : base.startsWith('video/') ? 'video'
+                : base.startsWith('audio/') ? 'voz' : 'documento';
+    // imagen y video soportan caption en WA → un solo mensaje
+    // audio y documento NO soportan caption → texto separado primero
+    const soportaCaption = tipo === 'imagen' || tipo === 'video';
+
     _clearPendingFile();
     if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); _updateSendVoiceBtn(); }
 
-    // ── 1. Enviar texto primero (si hay) ───────────────────────────────────
-    if (texto) {
+    // ── 1. Texto separado solo para audio/documento ────────────────────────
+    if (texto && !soportaCaption) {
         const ts1   = Math.floor(Date.now() / 1000);
         const tmpId = ++_tmpMsgId;
         c.msgs.push({ text: texto, ts: ts1, out: true, asesor: _asesorActual, pending: true, tmpId });
@@ -3917,11 +3924,10 @@ async function _sendMedia() {
         _saveConv(); _renderMsgs();
     }
 
-    // ── 2. Enviar archivo ──────────────────────────────────────────────────
-    const base = file.type.split(';')[0].trim();
-    const tipo  = base.startsWith('image/') ? 'imagen' : base.startsWith('video/') ? 'video'
-                : base.startsWith('audio/') ? 'voz' : 'documento';
-    const textoDesc = tipo === 'voz' ? 'Nota de voz' : tipo === 'documento' ? file.name
+    // ── 2. Enviar archivo (con caption si imagen/video) ────────────────────
+    const caption   = (texto && soportaCaption) ? texto : null;
+    const textoDesc = caption ? caption
+                    : tipo === 'voz' ? 'Nota de voz' : tipo === 'documento' ? file.name
                     : tipo === 'imagen' ? 'Imagen' : 'Video';
 
     const ts2        = Math.floor(Date.now() / 1000);
@@ -3935,6 +3941,7 @@ async function _sendMedia() {
         fd.append('numero', num);
         fd.append('destinatario', destinatario);
         fd.append('asesor', _asesorActual || '');
+        if (caption) fd.append('caption', caption);
         fd.append('file', file);
         const r = await fetch(`${HETZNER_URL}/wa/mensajes/media`, {
             method: 'POST',
