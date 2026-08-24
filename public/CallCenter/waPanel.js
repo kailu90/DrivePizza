@@ -1330,7 +1330,7 @@ function _injectStyles() {
 }
 .wap-input-row textarea {
     flex: 1;
-    padding: 8px 12px 8px 2px;
+    padding: 8px 12px 8px 12px;
     border: none;
     border-radius: 0;
     font-size: 1.3rem;
