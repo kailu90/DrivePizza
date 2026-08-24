@@ -3252,8 +3252,11 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
     if (!out) {
-        const _estadoNotif  = _getEstado(numero, phone);
-        const _sipActivo    = window._sipState === 'incall' || window._sipState === 'ringing';
+        const _estadoNotif = _getEstado(numero, phone);
+        // Detectar llamada activa: DOM primario (mismo documento) + window._sipState como respaldo
+        const _sipActivo = document.getElementById('sip-btns-incall')?.style.display === 'flex'
+            || document.getElementById('sip-btns-incoming')?.style.display === 'flex'
+            || window._sipState === 'incall' || window._sipState === 'ringing';
         const _debeNotificar = !_sipActivo && (
             _estadoNotif === 'en_espera'
             || _estadoNotif === 'resuelto'

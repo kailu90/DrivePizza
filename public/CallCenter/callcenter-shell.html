@@ -272,9 +272,10 @@
 
     // ── postMessage al iframe ─────────────────────────────────────────────────
     let _sipState = 'offline';
+    window._sipState = 'offline'; // inicializado aquí — postToFrame lo actualiza en cada cambio
     function postToFrame(state, extra = {}) {
         _sipState = state;
-        window._sipState = state; // expuesto para waPanel.js (módulo distinto)
+        window._sipState = state;
         const frame = document.getElementById('cc-frame');
         if (!frame?.contentWindow) return;
         frame.contentWindow.postMessage({
