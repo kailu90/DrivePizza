@@ -783,6 +783,8 @@ function _injectStyles() {
     align-self: stretch;
     flex-shrink: 0;
     border-radius: 0 2px 2px 0;
+    margin-top: -10px;
+    margin-bottom: -10px;
     cursor: default;
     transition: width .15s;
 }
