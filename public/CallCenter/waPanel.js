@@ -181,7 +181,7 @@ function _injectStyles() {
     flex-direction: column;
     align-items: center;
     padding: 8px 0;
-    background: #f4ecdf;
+    background: var(--color-secundario);
     border-right: 1px solid rgba(40,76,34,.15);
     gap: 4px;
     overflow-y: auto;
@@ -279,7 +279,7 @@ function _injectStyles() {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: #f5f0e8;
+    background: var(--color-secundario);
     border-radius: 10px;
     border-left: 4px solid #ccc;
     border: 1px solid rgba(0,0,0,.08);
@@ -386,7 +386,7 @@ function _injectStyles() {
 .wap-ses-btn-con:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Edit form ───────────────────────────────────── */
-.wap-ses-card--editing { flex-direction: column; align-items: stretch; }
+.wap-ses-card--editing { flex-direction: column; align-items: stretch; background: var(--color-secundario); }
 .wap-ses-edit-form { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .wap-ses-edit-label {
     font-size: 1.05rem;
@@ -481,7 +481,7 @@ function _injectStyles() {
     padding: 9px 12px 8px;
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
-    background: #f5f0e8;
+    background: var(--color-secundario);
 }
 .wap-panel-title {
     font-size: 1.35rem;
@@ -1180,7 +1180,7 @@ function _injectStyles() {
 #wap-client-panel {
     position: absolute;
     inset: 0;
-    background: #f5f0e8;
+    background: var(--color-secundario);
     z-index: 20;
     display: flex;
     flex-direction: column;
@@ -1200,7 +1200,7 @@ function _injectStyles() {
     padding: 10px 14px;
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
-    background: #f5f0e8;
+    background: var(--color-secundario);
 }
 .wap-cp-back {
     background: none;
@@ -1483,7 +1483,7 @@ function _injectStyles() {
     padding: 11px 14px;
     border-top: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
-    background: #f5f0e8;
+    background: var(--color-secundario);
 }
 .wap-cp-btn-sec {
     flex: 1;
@@ -2362,7 +2362,7 @@ function _injectStyles() {
     color: var(--color-terciario);
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
-    background: #f4ecdf;
+    background: var(--color-secundario);
 }
 .wap-rr-form {
     padding: 10px 12px;
@@ -3530,7 +3530,7 @@ function _renderSesionesView() {
                     data-color="${c}" style="background:${c};" title="${isUsed ? 'En uso por otra conexión' : c}"${isUsed ? ' disabled' : ''}></button>`;
             }).join('');
             const respActual = _esc(s.respuesta_inicial || '');
-            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};background:#f5f0e8;" data-num="${s.numero}">
+            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
                 <div class="wap-ses-edit-form">
                     <label class="wap-ses-edit-label">Nombre</label>
                     <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
