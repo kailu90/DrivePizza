@@ -110,6 +110,7 @@ let _qrNumero        = null;  // numero cuyo QR modal esta abierto
 let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
+let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
 const _pendingStatuses = new Map(); // msgId → {numero,status} para ACKs que llegan antes del echo
 
 const LS_KEY      = 'wap_conv_v2';
@@ -134,8 +135,10 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _loadAsignaciones();
     _loadConversaciones(); // fuente de verdad — reconstruye conv desde Supabase
     _loadRespuestasRapidas();
+    _loadAsesores();
     _connectWs();
     setInterval(_loadConversaciones, 60_000); // re-sync cada 60s
+    setInterval(_loadAsesores, 5 * 60_000);   // refrescar lista asesores cada 5 min
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
@@ -2175,21 +2178,14 @@ function _renderShell(body) {
         const open = list.style.display !== 'none';
         if (open) { list.style.display = 'none'; return; }
         list.style.display = '';
-        list.innerHTML = `<button class="wap-asesor-item wap-asesor-item--loading">Cargando...</button>`;
-        try {
-            const r = await fetch(`${HETZNER_URL}/wa/asesores`);
-            const asesores = await r.json();
-            const asesorActivo = _getAsig(_state.activeNum, _state.activeContact)?.asesor;
-            list.innerHTML = asesores
-                .filter(a => a.username !== asesorActivo)
-                .map(a => `<button class="wap-asesor-item" data-username="${a.username}">${a.username}</button>`)
-                .join('') || `<button class="wap-asesor-item wap-asesor-item--loading">Sin asesores disponibles</button>`;
-            list.querySelectorAll('.wap-asesor-item:not(.wap-asesor-item--loading)').forEach(btn => {
-                btn.addEventListener('click', () => _transferirChat(_state.activeNum, _state.activeContact, btn.dataset.username));
-            });
-        } catch {
-            list.innerHTML = `<button class="wap-asesor-item wap-asesor-item--loading">Error al cargar</button>`;
-        }
+        const asesorActivo = _getAsig(_state.activeNum, _state.activeContact)?.asesor;
+        const opciones = _asesoresCache.filter(a => a.username !== asesorActivo);
+        list.innerHTML = opciones.length
+            ? opciones.map(a => `<button class="wap-asesor-item" data-username="${a.username}">${a.username}</button>`).join('')
+            : `<button class="wap-asesor-item wap-asesor-item--loading">Sin asesores disponibles</button>`;
+        list.querySelectorAll('.wap-asesor-item:not(.wap-asesor-item--loading)').forEach(btn => {
+            btn.addEventListener('click', () => _transferirChat(_state.activeNum, _state.activeContact, btn.dataset.username));
+        });
     });
     // Cerrar dropdown al hacer clic fuera
     document.addEventListener('click', e => {
@@ -2330,6 +2326,14 @@ function _renderShell(body) {
         if (!btn) return;
         _navTo(btn.dataset.view);
     });
+}
+
+// ── Asesores ───────────────────────────────────────────────────────────────
+async function _loadAsesores() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/asesores`);
+        if (r.ok) _asesoresCache = await r.json();
+    } catch { /* sin conexión */ }
 }
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
