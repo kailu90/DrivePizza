@@ -3353,9 +3353,10 @@ function _renderResueltas() {
     // Agrupar por fecha: insertar separador HOY / AYER / DD MMM YYYY
     let lastLabel = null;
     const html = r.items.map(c => {
-        const color   = _getColor(c.numero);
-        const display = c.nombre_cliente || c.nombre || _fmtPhone(c.contacto);
-        const ts      = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
+        const color    = _getColor(c.numero);
+        const convData = _state.conv[c.numero]?.[c.contacto];
+        const display  = c.nombre_cliente || convData?.nombre || convData?.name || c.nombre || _fmtPhone(c.contacto);
+        const ts       = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
         const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
 
         // Sede desde sesiones en memoria
