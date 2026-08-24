@@ -931,7 +931,7 @@ function _injectStyles() {
 .wap-resolver-btn, .wap-liberar-btn {
     background: none;
     border: 1.5px solid #22c55e;
-    border-radius: 16px;
+    border-radius: 16px 0 0 16px;
     padding: 4px 12px;
     font-size: 1.05rem;
     font-weight: 600;
@@ -946,6 +946,84 @@ function _injectStyles() {
 }
 .wap-resolver-btn:hover,
 .wap-liberar-btn:hover { background: #dcfce7; }
+
+/* ── Split button acciones chat ──────────────────── */
+.wap-chat-actions-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+.wap-chat-actions-split {
+    display: flex;
+    align-items: stretch;
+}
+.wap-actions-toggle {
+    background: none;
+    border: 1.5px solid #22c55e;
+    border-left: none;
+    border-radius: 0 16px 16px 0;
+    padding: 4px 9px;
+    color: #16a34a;
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: background .15s;
+    display: flex;
+    align-items: center;
+}
+.wap-actions-toggle:hover { background: #dcfce7; }
+.wap-actions-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.13);
+    min-width: 170px;
+    z-index: 200;
+    overflow: hidden;
+}
+.wap-actions-menu.open { display: block; }
+.wap-action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.93rem;
+    color: #374151;
+    transition: background .12s;
+    white-space: nowrap;
+}
+.wap-action-item:hover { background: #f3f4f6; }
+/* Sub-lista asesores */
+.wap-asesores-list {
+    border-top: 1px solid #f3f4f6;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.wap-asesor-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 15px 8px 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #374151;
+    text-align: left;
+    transition: background .12s;
+}
+.wap-asesor-item:hover { background: #eff6ff; color: #1d4ed8; }
+.wap-asesor-item--loading { color: #9ca3af; cursor: default; }
+.wap-asesor-item--loading:hover { background: none; color: #9ca3af; }
 
 /* ── Chat view ───────────────────────────────────── */
 .wap-chat {
@@ -1989,7 +2067,16 @@ function _renderShell(body) {
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                                 <span class="wap-chat-conexion" id="wap-chat-conexion"></span>
                             </div>
-                            <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver y liberar a bandeja" style="display:none;">&#10003; Resolver</button>
+                            <div class="wap-chat-actions-wrap" id="wap-chat-actions-wrap" style="display:none;">
+                                <div class="wap-chat-actions-split">
+                                    <button class="wap-liberar-btn" id="wap-liberar-btn" title="Resolver conversación">&#10003; Resolver</button>
+                                    <button class="wap-actions-toggle" id="wap-actions-toggle" title="Más opciones">&#9660;</button>
+                                </div>
+                                <div class="wap-actions-menu" id="wap-actions-menu">
+                                    <button class="wap-action-item" id="wap-action-transferir">&#8599; Transferir a...</button>
+                                    <div class="wap-asesores-list" id="wap-asesores-list" style="display:none;"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
                         <div class="wap-offline-bar" id="wap-offline-bar">
@@ -2074,6 +2161,39 @@ function _renderShell(body) {
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
             _liberarChat(_state.activeNum, _state.activeContact);
+    });
+    // ── Split button acciones ──────────────────────────────────────────────
+    document.getElementById('wap-actions-toggle').addEventListener('click', e => {
+        e.stopPropagation();
+        const menu = document.getElementById('wap-actions-menu');
+        const open = menu.classList.toggle('open');
+        if (!open) _closeActionsMenu();
+    });
+    document.getElementById('wap-action-transferir').addEventListener('click', async e => {
+        e.stopPropagation();
+        const list = document.getElementById('wap-asesores-list');
+        const open = list.style.display !== 'none';
+        if (open) { list.style.display = 'none'; return; }
+        list.style.display = '';
+        list.innerHTML = `<button class="wap-asesor-item wap-asesor-item--loading">Cargando...</button>`;
+        try {
+            const r = await fetch(`${HETZNER_URL}/wa/asesores`);
+            const asesores = await r.json();
+            const asesorActivo = _getAsig(_state.activeNum, _state.activeContact)?.asesor;
+            list.innerHTML = asesores
+                .filter(a => a.username !== asesorActivo)
+                .map(a => `<button class="wap-asesor-item" data-username="${a.username}">${a.username}</button>`)
+                .join('') || `<button class="wap-asesor-item wap-asesor-item--loading">Sin asesores disponibles</button>`;
+            list.querySelectorAll('.wap-asesor-item:not(.wap-asesor-item--loading)').forEach(btn => {
+                btn.addEventListener('click', () => _transferirChat(_state.activeNum, _state.activeContact, btn.dataset.username));
+            });
+        } catch {
+            list.innerHTML = `<button class="wap-asesor-item wap-asesor-item--loading">Error al cargar</button>`;
+        }
+    });
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#wap-chat-actions-wrap')) _closeActionsMenu();
     });
     document.getElementById('wap-abrir-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
@@ -2406,9 +2526,10 @@ function _connectWs() {
             if (msg.tipo === 'wa:status')     _onStatus(msg);
             if (msg.tipo === 'wa:qr')         _onQr(msg);
             if (msg.tipo === 'wa:contacto')   _onContacto(msg);
-            if (msg.tipo === 'wa:asignacion') _onAsignacion(msg);
-            if (msg.tipo === 'wa:liberacion') _onLiberacion(msg);
-            if (msg.tipo === 'wa:estado')     _onEstado(msg);
+            if (msg.tipo === 'wa:asignacion')   _onAsignacion(msg);
+            if (msg.tipo === 'wa:liberacion')   _onLiberacion(msg);
+            if (msg.tipo === 'wa:estado')       _onEstado(msg);
+            if (msg.tipo === 'wa:transferencia') _onTransferencia(msg);
             if (msg.tipo === 'wa:merge')         _onMerge(msg);
             if (msg.tipo === 'wa:config')        _onConfig(msg);
             if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
@@ -2569,6 +2690,49 @@ function _onContacto({ numero, phone, name, fuente }) {
     if (_state.activeContact === phone && _state.activeNum === numero) _updateChatHeader(phone);
 }
 
+function _closeActionsMenu() {
+    const menu = document.getElementById('wap-actions-menu');
+    const list = document.getElementById('wap-asesores-list');
+    if (menu) menu.classList.remove('open');
+    if (list) { list.style.display = 'none'; list.innerHTML = ''; }
+}
+
+async function _transferirChat(num, phone, asesorNuevo) {
+    _closeActionsMenu();
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
+            method:  'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ asesor_nuevo: asesorNuevo }),
+        });
+        if (!r.ok) { _showToast('Error al transferir', 3000); return; }
+        _showToast(`Chat transferido a ${asesorNuevo}`);
+    } catch {
+        _showToast('Error de conexión al transferir', 3000);
+    }
+}
+
+function _onTransferencia({ numero, contacto, asesor_nuevo }) {
+    const key = `${numero}:${contacto}`;
+    if (_state.asignaciones[key]) _state.asignaciones[key].asesor = asesor_nuevo;
+    _renderList();
+    _scheduleConteos();
+    // Si soy yo el que recibe el chat — actualizar header
+    if (_state.activeContact === contacto && _state.activeNum === numero) {
+        _updateOfflineBar();
+        _updateChatHeader(contacto);
+        const puedeResolver = _getEstado(numero, contacto) === 'asignado' && (_esMio(numero, contacto) || ['admin','callcenter-admin'].includes(_rolUsuario));
+        const wrap = document.getElementById('wap-chat-actions-wrap');
+        if (wrap) wrap.style.display = puedeResolver ? '' : 'none';
+        if (asesor_nuevo !== _asesorActual) {
+            _closeChat();
+            _showToast(`Chat transferido a ${asesor_nuevo}`);
+        }
+    } else if (asesor_nuevo === _asesorActual) {
+        _showToast(`Te transfirieron un chat de ${_fmtPhone(contacto)}`);
+    }
+}
+
 function _onAsignacion({ numero, contacto, asesor }) {
     _state.asignaciones[`${numero}:${contacto}`] = { asesor, estado: 'asignado' };
     _renderList();
@@ -2599,11 +2763,11 @@ function _onEstado({ numero, contacto, estado, asesor }) {
     if (_state.activeNum === numero && _state.activeContact === contacto) {
         _updateOfflineBar();
         _updateChatHeader(contacto);
-        const liberarBtn = document.getElementById('wap-liberar-btn');
-        if (liberarBtn) {
+        const actionsWrap = document.getElementById('wap-chat-actions-wrap');
+        if (actionsWrap) {
             const isAdminChat   = ['admin', 'callcenter-admin'].includes(_rolUsuario);
             const puedeResolver = estado === 'asignado' && (_esMio(numero, contacto) || isAdminChat);
-            liberarBtn.style.display = puedeResolver ? '' : 'none';
+            actionsWrap.style.display = puedeResolver ? '' : 'none';
         }
     }
 }
@@ -3283,8 +3447,8 @@ function _openChat(phone) {
     // Mostrar RESOLVER si el chat está asignado y: es mío, o soy admin/callcenter-admin
     const isAdminChat  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const puedeResolver = _getEstado(_state.activeNum, phone) === 'asignado' && (_esMio(_state.activeNum, phone) || isAdminChat);
-    const liberarBtn   = document.getElementById('wap-liberar-btn');
-    if (liberarBtn) liberarBtn.style.display = puedeResolver ? '' : 'none';
+    const actionsWrap  = document.getElementById('wap-chat-actions-wrap');
+    if (actionsWrap) actionsWrap.style.display = puedeResolver ? '' : 'none';
 
     document.getElementById('wap-list').style.display                    = 'none';
     document.getElementById('wap-search-wrap').style.display             = 'none';
