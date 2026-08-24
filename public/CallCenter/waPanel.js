@@ -3253,10 +3253,10 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (!isActive) _flashIcon();
     if (!out) {
         const _estadoNotif = _getEstado(numero, phone);
-        // Detectar llamada activa: DOM primario (mismo documento) + window._sipState como respaldo
-        const _sipActivo = document.getElementById('sip-btns-incall')?.style.display === 'flex'
-            || document.getElementById('sip-btns-incoming')?.style.display === 'flex'
-            || window._sipState === 'incall' || window._sipState === 'ringing';
+        // Dos fuentes independientes: window._sipState (postToFrame) + DOM del panel SIP
+        // hidePanel() resetea panel a 'none' explícitamente — nunca queda pegado
+        const _sipActivo = window._sipState === 'incall' || window._sipState === 'ringing'
+            || document.getElementById('sip-panel')?.style.display === 'block';
         const _debeNotificar = !_sipActivo && (
             _estadoNotif === 'en_espera'
             || _estadoNotif === 'resuelto'
