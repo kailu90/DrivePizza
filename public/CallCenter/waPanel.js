@@ -779,6 +779,7 @@ function _injectStyles() {
 }
 .wap-conv-item:hover { background: rgba(0,0,0,.04); }
 .wap-conv-stripe {
+    position: relative;
     width: 6px;
     align-self: stretch;
     flex-shrink: 0;
@@ -789,6 +790,24 @@ function _injectStyles() {
     transition: width .15s;
 }
 .wap-conv-stripe:hover { width: 9px; }
+.wap-conv-stripe::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.72);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .1s;
+    z-index: 9999;
+}
+.wap-conv-stripe:hover::after { opacity: 1; }
 .wap-avatar {
     width: 38px;
     height: 38px;
@@ -3645,7 +3664,7 @@ function _renderResueltas() {
         return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
                     style="align-items:flex-start;padding-right:12px;">
-            <div class="wap-conv-stripe" style="background:${color};" title="${_esc(sede)}"></div>
+            <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sede)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};margin-top:2px;flex-shrink:0;">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
@@ -3776,7 +3795,7 @@ function _renderList() {
             : '';
 
         return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
-            <div class="wap-conv-stripe" style="background:${color};" title="${_esc(sedeLabel)}"></div>
+            <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sedeLabel)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
