@@ -3251,7 +3251,16 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     if (esEntranteOCelular && (isNewConv || _getEstado(numero, phone) === 'resuelto')) _scheduleConteos();
     if (isActive) _renderMsgs();
     if (!isActive) _flashIcon();
-    if (!out && _getEstado(numero, phone) !== 'asignado') { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
+    if (!out) {
+        const _estadoNotif  = _getEstado(numero, phone);
+        const _sipActivo    = window._sipState === 'incall' || window._sipState === 'ringing';
+        const _debeNotificar = !_sipActivo && (
+            _estadoNotif === 'en_espera'
+            || _estadoNotif === 'resuelto'
+            || (_estadoNotif === 'asignado' && _esMio(numero, phone) && !isActive)
+        );
+        if (_debeNotificar) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
+    }
 }
 
 function _onStatus({ numero, sede, status }) {
