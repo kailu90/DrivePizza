@@ -99,19 +99,20 @@ html, body {
 .filtros-panel {
     position: fixed;
     top: 0;
-    left: -300px;
+    left: 420px;
     width: 280px;
     height: 100vh;
     background-color: var(--color-secundario);
     box-shadow: 4px 0 16px rgba(0,0,0,0.15);
     z-index: 201;
-    transition: left 0.3s ease;
+    transform: translateX(calc(-100% - 420px));
+    transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
 }
 
 .filtros-panel.open {
-    left: 0;
+    transform: translateX(0);
 }
 
 .filtros-panel__header {
