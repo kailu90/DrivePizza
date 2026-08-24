@@ -3754,6 +3754,9 @@ function _renderList() {
             return false;
         })
         .sort((a, b) => {
+            // Todos: orden puro por hora de llegada (más reciente primero)
+            if (_state.filtroEstado === null) return b.data.lastTs - a.data.lastTs;
+            // Filtros específicos: agrupar por estado y luego por hora
             const prioridad = e => e === 'en_espera' ? 0 : e === 'asignado' ? 1 : 2;
             const pa = prioridad(_getEstado(a.num, a.phone));
             const pb = prioridad(_getEstado(b.num, b.phone));
