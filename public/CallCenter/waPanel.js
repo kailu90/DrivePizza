@@ -3926,7 +3926,8 @@ async function _sendMedia() {
 
     // ── 2. Enviar archivo (con caption si imagen/video) ────────────────────
     const caption   = (texto && soportaCaption) ? texto : null;
-    const textoDesc = caption ? caption
+    // El render extrae caption buscando ": " — mismo formato que guarda el backend
+    const textoDesc = caption ? (tipo === 'imagen' ? 'Imagen: ' + caption : 'Video: ' + caption)
                     : tipo === 'voz' ? 'Nota de voz' : tipo === 'documento' ? file.name
                     : tipo === 'imagen' ? 'Imagen' : 'Video';
 
