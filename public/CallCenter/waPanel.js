@@ -15,7 +15,7 @@ const SESSION_COLORS = [
     '#ec4899', // rosa
     '#ef4444', // rojo
     '#f97316', // naranja
-    '#f59e0b', // amarillo
+    '#facc15', // amarillo
     '#84cc16', // lima
     '#14b8a6', // teal
     '#64748b', // gris azulado
