@@ -3362,6 +3362,16 @@ async function _loadResueltas() {
         r.items.push(...(Array.isArray(data) ? data : []));
         r.offset += data.length;
         r.done    = data.length < 20;
+
+        // Pre-poblar _state.conv con nombre_cliente/nombre para evitar mostrar el lid crudo
+        for (const c of (Array.isArray(data) ? data : [])) {
+            if (!c.numero || !c.contacto) continue;
+            if (!_state.conv[c.numero])           _state.conv[c.numero] = {};
+            if (!_state.conv[c.numero][c.contacto]) _state.conv[c.numero][c.contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+            const cv = _state.conv[c.numero][c.contacto];
+            if (c.nombre_cliente && !cv.nombre) cv.nombre = c.nombre_cliente;
+            if (c.nombre         && !cv.name)   cv.name   = c.nombre;
+        }
     } catch { /* sin conexión */ }
 
     r.loading = false;
