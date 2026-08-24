@@ -3409,9 +3409,6 @@ function _renderResueltas() {
             ? `<span class="wap-r-asesor">${WA_SVG}Resuelto por <strong>${_esc(c.asesor)}</strong></span>`
             : '';
 
-        // Último mensaje como razón
-        const razon = c.ultimo_mensaje ? _esc(c.ultimo_mensaje) : '';
-
         return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
                     style="border-left:4px solid ${color};align-items:flex-start;padding-right:12px;">
@@ -3423,10 +3420,6 @@ function _renderResueltas() {
                 </div>
                 ${sedeBadge}
                 ${asesorEl}
-                <div class="wap-r-bottom">
-                    <span class="wap-r-razon">${razon}</span>
-                    <span class="wap-r-badge-resuelto">Resuelto</span>
-                </div>
             </div>
         </div>`;
     }).join('');
