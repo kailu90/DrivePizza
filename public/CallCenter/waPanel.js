@@ -2567,6 +2567,11 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     // Actualizar nombre WA solo si el asesor no asigno uno manual
     if (pushName && !out && !c.nombre) c.name = pushName;
 
+    // Deduplicar mensajes de sistema (optimista ya insertado)
+    if (tipoMensaje === 'sistema') {
+        if (c.msgs.some(m => m.tipo === 'sistema' && m.text === texto)) return;
+    }
+
     // Deduplicar: si es saliente y ya existe en state (optimista), solo actualizar asesor si falta
     if (out) {
         const existing = [...c.msgs].reverse().find(m => m.out && m.text === texto);
@@ -2699,6 +2704,14 @@ function _closeActionsMenu() {
 
 async function _transferirChat(num, phone, asesorNuevo) {
     _closeActionsMenu();
+    // Optimista: mostrar mensaje de sistema inmediatamente sin esperar WS
+    const textoSistema = `${_asesorActual || 'Asesor'} transfirió la conversación a ${asesorNuevo}`;
+    if (!_state.conv[num]) _state.conv[num] = {};
+    if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+    const c = _state.conv[num][phone];
+    c.msgs.push({ text: textoSistema, ts: Math.floor(Date.now() / 1000), tipo: 'sistema' });
+    _saveConv();
+    if (_state.activeContact === phone && _state.activeNum === num) _renderMsgs();
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PATCH',
