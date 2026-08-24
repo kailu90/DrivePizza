@@ -4594,7 +4594,7 @@ async function _vincularLidConNumero(realPhone) {
         const r = await fetch(
             `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(lid)}/vincular`,
             { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ telefono: realPhone }) }
+              body: JSON.stringify({ realPhone }) }
         );
         if (r.ok) _showToast(`Vinculado a ${_fmtPhone(realPhone)}`, 2500);
         else _showToast('Error al vincular — revisa el número', 3000);
