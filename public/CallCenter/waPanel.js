@@ -1176,6 +1176,7 @@ function _injectStyles() {
 .wap-chat-info:hover { opacity: .82; }
 
 /* ── Panel datos del cliente ─────────────────────── */
+/* ── Panel datos del cliente ─────────────────────────── */
 #wap-client-panel {
     position: absolute;
     inset: 0;
@@ -1186,6 +1187,7 @@ function _injectStyles() {
     transform: translateX(100%);
     transition: transform .22s cubic-bezier(.4,0,.2,1);
     pointer-events: none;
+    overflow: hidden;
 }
 #wap-client-panel.wap-cp--open {
     transform: translateX(0);
@@ -1214,102 +1216,118 @@ function _injectStyles() {
     font-size: 1.3rem;
     color: var(--color-terciario);
 }
-.wap-cp-body {
+.wap-cp-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 20px 20px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
+    padding-bottom: 16px;
 }
-.wap-cp-avatar-wrap {
+/* Hero */
+.wap-cp-hero {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 22px 16px 14px;
 }
 .wap-cp-avatar {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 700;
+    flex-shrink: 0;
+    margin-bottom: 6px;
 }
-.wap-cp-field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-.wap-cp-label {
-    font-size: 1rem;
+.wap-cp-name {
+    font-size: 1.55rem;
     font-weight: 700;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-.wap-cp-input {
-    border: 1.5px solid rgba(0,0,0,.12);
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-size: 1.3rem;
-    outline: none;
-    width: 100%;
-    box-sizing: border-box;
     color: var(--color-terciario);
-    transition: border-color .15s;
+    text-align: center;
+    line-height: 1.3;
 }
-.wap-cp-input:focus { border-color: var(--color-primario); }
-.wap-cp-phone-row {
+.wap-cp-phone-hero {
     display: flex;
     align-items: center;
-    gap: 8px;
-    border: 1.5px solid rgba(0,0,0,.12);
-    border-radius: 10px;
-    padding: 8px 12px;
-    background: #f9fafb;
-}
-.wap-cp-phone-text {
-    flex: 1;
-    font-size: 1.3rem;
-    color: var(--color-terciario);
-    font-weight: 500;
+    gap: 5px;
+    color: #6b7280;
+    font-size: 1.2rem;
 }
 .wap-cp-copy-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: #6b7280;
-    font-size: 1.3rem;
-    padding: 0 2px;
+    color: #9ca3af;
+    padding: 2px;
     transition: color .15s;
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 .wap-cp-copy-btn:hover { color: var(--color-primario); }
+.wap-cp-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+}
+.wap-cp-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.wap-cp-badge--frecuente   { background: #fef3c7; color: #b45309; }
+.wap-cp-badge--identificado{ background: #dcfce7; color: #15803d; }
+.wap-cp-canal {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 1.1rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+/* Banner LID */
 .wap-cp-lid-section {
+    margin: 0 14px;
     background: #fffbeb;
     border: 1px solid #fde68a;
-    border-radius: 10px;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
-.wap-cp-lid-note {
-    font-size: 1.1rem;
+.wap-cp-lid-title {
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #92400e;
+}
+.wap-cp-lid-desc {
+    font-size: 1.05rem;
+    color: #a16207;
+    line-height: 1.4;
 }
 .wap-cp-lid-row {
     display: flex;
-    gap: 6px;
+    gap: 8px;
 }
 .wap-cp-lid-input {
     flex: 1;
     border: 1.5px solid #fcd34d;
     border-radius: 8px;
-    padding: 6px 10px;
+    padding: 7px 10px;
     font-size: 1.2rem;
     outline: none;
+    background: #fff;
 }
 .wap-cp-lid-input:focus { border-color: #f59e0b; }
 .wap-cp-lid-ok {
@@ -1317,24 +1335,190 @@ function _injectStyles() {
     color: #fff;
     border: none;
     border-radius: 8px;
-    padding: 6px 14px;
+    padding: 7px 14px;
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
 }
-.wap-cp-save-btn {
+.wap-cp-lid-ok:hover { background: #d97706; }
+/* Sections */
+.wap-cp-section { padding: 0 14px; }
+.wap-cp-section-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 9px;
+}
+.wap-cp-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.wap-cp-ver-todos {
+    font-size: 1.05rem;
+    color: var(--color-primario);
+    text-decoration: none;
+    font-weight: 600;
+}
+/* Stats */
+.wap-cp-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.wap-cp-stat {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.wap-cp-stat--full { grid-column: 1 / -1; }
+.wap-cp-stat-label {
+    font-size: 1rem;
+    color: #9ca3af;
+    margin-bottom: 3px;
+}
+.wap-cp-stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+}
+/* Dirección */
+.wap-cp-address {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+}
+.wap-cp-address-info { flex: 1; min-width: 0; }
+.wap-cp-address-text {
+    font-size: 1.2rem;
+    color: var(--color-terciario);
+    font-weight: 500;
+}
+.wap-cp-address-sub {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+.wap-cp-edit-btn {
+    background: none;
+    border: 1.5px solid rgba(0,0,0,.15);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--color-terciario);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color .15s, color .15s;
+}
+.wap-cp-edit-btn:hover { border-color: var(--color-primario); color: var(--color-primario); }
+/* Pedidos */
+.wap-cp-order {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    background: #fff;
+    border-radius: 10px;
+    margin-bottom: 6px;
+}
+.wap-cp-order:last-child { margin-bottom: 0; }
+.wap-cp-order-left { display: flex; align-items: center; gap: 8px; }
+.wap-cp-order-date { font-size: 1.1rem; color: var(--color-terciario); font-weight: 500; }
+.wap-cp-order-sede { font-size: 1rem; color: #9ca3af; }
+.wap-cp-order-total { font-size: 1.2rem; font-weight: 700; color: var(--color-terciario); }
+.wap-cp-orders-empty { font-size: 1.1rem; color: #9ca3af; padding: 6px 0; }
+/* Tags / notas */
+.wap-cp-tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+}
+.wap-cp-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 1.1rem;
+    color: var(--color-terciario);
+}
+.wap-cp-tag-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    transition: color .12s;
+}
+.wap-cp-tag-remove:hover { color: #ef4444; }
+.wap-cp-add-note {
+    background: none;
+    border: 1.5px dashed #d1d5db;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 1.1rem;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.wap-cp-add-note:hover { border-color: var(--color-primario); color: var(--color-primario); }
+/* Actions footer */
+.wap-cp-actions {
+    display: flex;
+    gap: 7px;
+    padding: 11px 14px;
+    border-top: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+    background: #f5f0e8;
+}
+.wap-cp-btn-sec {
+    flex: 1;
+    background: #fff;
+    border: 1.5px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    padding: 9px 4px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    color: var(--color-terciario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: border-color .15s, color .15s;
+}
+.wap-cp-btn-sec:hover { border-color: var(--color-primario); color: var(--color-primario); }
+.wap-cp-btn-primary {
+    flex: 1.3;
     background: var(--color-primario);
     color: #fff;
     border: none;
-    border-radius: 12px;
-    padding: 11px;
-    font-size: 1.3rem;
+    border-radius: 10px;
+    padding: 9px 4px;
+    font-size: 1.05rem;
     font-weight: 700;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     transition: background .15s;
-    margin-top: auto;
 }
-.wap-cp-save-btn:hover { background: var(--color-cuaternario); }
+.wap-cp-btn-primary:hover { background: var(--color-cuaternario); }
 .wap-chat-header {
     display: flex;
     align-items: center;
@@ -2427,31 +2611,117 @@ function _renderShell(body) {
                             <button class="wap-cp-back" id="wap-cp-close">&#8592;</button>
                             <span class="wap-cp-title">Datos del cliente</span>
                         </div>
-                        <div class="wap-cp-body">
-                            <div class="wap-cp-avatar-wrap">
+
+                        <div class="wap-cp-scroll">
+
+                            <!-- Hero: avatar + nombre + teléfono + badges + canal -->
+                            <div class="wap-cp-hero">
                                 <div class="wap-cp-avatar" id="wap-cp-avatar"></div>
-                            </div>
-                            <div class="wap-cp-field">
-                                <span class="wap-cp-label">Nombre</span>
-                                <input class="wap-cp-input" id="wap-cp-nombre" type="text" placeholder="Nombre del contacto" />
-                            </div>
-                            <div class="wap-cp-field">
-                                <span class="wap-cp-label">Tel&#233;fono</span>
-                                <div class="wap-cp-phone-row">
-                                    <span class="wap-cp-phone-text" id="wap-cp-phone"></span>
+                                <div class="wap-cp-name" id="wap-cp-name-display"></div>
+                                <div class="wap-cp-phone-hero">
+                                    <span id="wap-cp-phone"></span>
                                     <button class="wap-cp-copy-btn" id="wap-cp-copy" title="Copiar n&#250;mero">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                     </button>
                                 </div>
+                                <div class="wap-cp-badges" id="wap-cp-badges"></div>
+                                <div class="wap-cp-canal" id="wap-cp-canal"></div>
                             </div>
+
+                            <!-- Banner LID: número pendiente de confirmar -->
                             <div class="wap-cp-lid-section" id="wap-cp-lid-section" style="display:none;">
-                                <span class="wap-cp-lid-note">&#128279; Contacto no identificado &#8212; vincular a n&#250;mero real:</span>
+                                <div class="wap-cp-lid-title">&#9888; N&#250;mero pendiente de confirmar</div>
+                                <div class="wap-cp-lid-desc">Confirma que este es el n&#250;mero correcto del cliente.</div>
                                 <div class="wap-cp-lid-row">
                                     <input class="wap-cp-lid-input" id="wap-cp-lid-input" type="tel" placeholder="Ej: 3001234567" />
-                                    <button class="wap-cp-lid-ok" id="wap-cp-lid-ok">Vincular</button>
+                                    <button class="wap-cp-lid-ok" id="wap-cp-lid-ok">Confirmar</button>
                                 </div>
                             </div>
-                            <button class="wap-cp-save-btn" id="wap-cp-save">Guardar</button>
+
+                            <!-- Resumen -->
+                            <div class="wap-cp-section">
+                                <div class="wap-cp-section-hdr">
+                                    <span class="wap-cp-section-title">Resumen</span>
+                                </div>
+                                <div class="wap-cp-stats">
+                                    <div class="wap-cp-stat">
+                                        <div class="wap-cp-stat-label">Total pedidos</div>
+                                        <div class="wap-cp-stat-value" id="wap-cp-stat-pedidos">&#8212;</div>
+                                    </div>
+                                    <div class="wap-cp-stat">
+                                        <div class="wap-cp-stat-label">Total gastado</div>
+                                        <div class="wap-cp-stat-value" id="wap-cp-stat-total">&#8212;</div>
+                                    </div>
+                                    <div class="wap-cp-stat">
+                                        <div class="wap-cp-stat-label">Ticket promedio</div>
+                                        <div class="wap-cp-stat-value" id="wap-cp-stat-ticket">&#8212;</div>
+                                    </div>
+                                    <div class="wap-cp-stat">
+                                        <div class="wap-cp-stat-label">&#218;ltima compra</div>
+                                        <div class="wap-cp-stat-value" id="wap-cp-stat-ultima">&#8212;</div>
+                                    </div>
+                                    <div class="wap-cp-stat wap-cp-stat--full">
+                                        <div class="wap-cp-stat-label">D&#237;as sin comprar</div>
+                                        <div class="wap-cp-stat-value" id="wap-cp-stat-dias">&#8212;</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dirección principal -->
+                            <div class="wap-cp-section">
+                                <div class="wap-cp-section-hdr">
+                                    <span class="wap-cp-section-title">Direcci&#243;n principal</span>
+                                    <a class="wap-cp-ver-todos" id="wap-cp-ver-dirs" href="#" style="display:none;">Ver todos</a>
+                                </div>
+                                <div class="wap-cp-address" id="wap-cp-address" style="display:none;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <div class="wap-cp-address-info">
+                                        <div class="wap-cp-address-text" id="wap-cp-address-text"></div>
+                                        <div class="wap-cp-address-sub" id="wap-cp-address-sub"></div>
+                                    </div>
+                                    <button class="wap-cp-edit-btn" id="wap-cp-addr-edit">Editar</button>
+                                </div>
+                            </div>
+
+                            <!-- Últimos pedidos -->
+                            <div class="wap-cp-section">
+                                <div class="wap-cp-section-hdr">
+                                    <span class="wap-cp-section-title">&#218;ltimos pedidos</span>
+                                </div>
+                                <div id="wap-cp-orders">
+                                    <div class="wap-cp-orders-empty">Sin pedidos registrados</div>
+                                </div>
+                            </div>
+
+                            <!-- Preferencias / notas -->
+                            <div class="wap-cp-section">
+                                <div class="wap-cp-section-hdr">
+                                    <span class="wap-cp-section-title">Preferencias / notas</span>
+                                </div>
+                                <div class="wap-cp-tags-wrap" id="wap-cp-tags">
+                                    <button class="wap-cp-add-note" id="wap-cp-add-note">+ Agregar nota</button>
+                                </div>
+                            </div>
+
+                        </div><!-- /.wap-cp-scroll -->
+
+                        <!-- Input oculto para guardar nombre (compatibilidad interna) -->
+                        <input type="hidden" id="wap-cp-nombre" />
+
+                        <!-- Acciones -->
+                        <div class="wap-cp-actions">
+                            <button class="wap-cp-btn-sec" id="wap-cp-btn-historial">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Ver historial
+                            </button>
+                            <button class="wap-cp-btn-sec" id="wap-cp-save">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Editar
+                            </button>
+                            <button class="wap-cp-btn-primary" id="wap-cp-btn-pedido">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="11" y2="16"/></svg>
+                                Nuevo pedido
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2546,6 +2816,10 @@ function _renderShell(body) {
         if (val && val.length >= 10) { _closeClientPanel(); _vincularLidConNumero(val); }
         else _showToast('Ingresa un número válido (10 dígitos)', 2500);
     });
+    document.getElementById('wap-cp-btn-historial').addEventListener('click', () => _showToast('Próximamente', 2000));
+    document.getElementById('wap-cp-btn-pedido').addEventListener('click', () => _showToast('Próximamente', 2000));
+    document.getElementById('wap-cp-add-note').addEventListener('click', () => _showToast('Próximamente', 2000));
+    document.getElementById('wap-cp-addr-edit').addEventListener('click', () => _showToast('Próximamente', 2000));
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-attach-btn').addEventListener('click', () => document.getElementById('wap-file-input').click());
@@ -4094,6 +4368,8 @@ function _openClientPanel() {
     const display = c?.nombre || c?.name || '';
     const color   = _getColor(num);
     const isLid   = phone.length > 12;
+    const sesInfo = _state.sesiones.find(s => s.numero === num);
+    const sede    = sesInfo?.sede ? _capitalizarSede(sesInfo.sede) : '';
 
     // Avatar
     const avatarEl = document.getElementById('wap-cp-avatar');
@@ -4103,22 +4379,45 @@ function _openClientPanel() {
         avatarEl.style.color      = _textColorForBg(color);
     }
 
-    // Nombre
+    // Nombre (display + input oculto)
+    const nameDisplay = document.getElementById('wap-cp-name-display');
+    if (nameDisplay) nameDisplay.textContent = display || _fmtPhone(phone);
     const nombreInput = document.getElementById('wap-cp-nombre');
-    if (nombreInput) { nombreInput.value = display; nombreInput.disabled = isLid; }
+    if (nombreInput) nombreInput.value = display;
 
     // Teléfono
     const phoneEl = document.getElementById('wap-cp-phone');
-    if (phoneEl) phoneEl.textContent = isLid ? phone : _fmtPhone(phone);
+    if (phoneEl) phoneEl.textContent = isLid ? 'Sin teléfono registrado' : _fmtPhone(phone);
 
-    // Sección LID (vincular)
+    // Badges
+    const badgesEl = document.getElementById('wap-cp-badges');
+    if (badgesEl) {
+        badgesEl.innerHTML = isLid
+            ? ''
+            : `<span class="wap-cp-badge wap-cp-badge--identificado">&#10003; Identificado</span>`;
+    }
+
+    // Canal (WA + sede)
+    const canalEl = document.getElementById('wap-cp-canal');
+    if (canalEl) {
+        const WA_DOT = `<svg width="12" height="12" viewBox="0 0 32 32" fill="#25D366" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.833.738 5.494 2.027 7.808L0 32l8.418-2.004A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0z"/></svg>`;
+        canalEl.innerHTML = `${WA_DOT} WhatsApp${sede ? ' · ' + _esc(sede) : ''}`;
+    }
+
+    // Banner LID
     const lidSection = document.getElementById('wap-cp-lid-section');
-    if (lidSection) lidSection.style.display = isLid ? '' : 'none';
+    if (lidSection) lidSection.style.display = isLid ? 'flex' : 'none';
     if (isLid) { const li = document.getElementById('wap-cp-lid-input'); if (li) li.value = ''; }
 
-    // Botón guardar: oculto para lid sin resolver
-    const saveBtn = document.getElementById('wap-cp-save');
-    if (saveBtn) saveBtn.style.display = isLid ? 'none' : '';
+    // Resetear stats y secciones dinámicas al abrir
+    ['wap-cp-stat-pedidos','wap-cp-stat-total','wap-cp-stat-ticket',
+     'wap-cp-stat-ultima','wap-cp-stat-dias'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    const ordersEl = document.getElementById('wap-cp-orders');
+    if (ordersEl) ordersEl.innerHTML = '<div class="wap-cp-orders-empty">Sin pedidos registrados</div>';
+    const addrEl = document.getElementById('wap-cp-address');
+    if (addrEl) addrEl.style.display = 'none';
 
     document.getElementById('wap-client-panel')?.classList.add('wap-cp--open');
 }
