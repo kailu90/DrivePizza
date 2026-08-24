@@ -3878,44 +3878,63 @@ async function _sendMedia() {
         return;
     }
 
-    const num    = _state.activeNum;
-    const phone  = _state.activeContact;
-    const file   = _pendingFile;
+    const num     = _state.activeNum;
+    const phone   = _state.activeContact;
+    const file    = _pendingFile;
     const inputEl = document.getElementById('wap-input');
-    const caption = inputEl?.value.trim() || null;
+    const texto   = inputEl?.value.trim() || null;
 
-    const base = file.type.split(';')[0].trim();
-    const tipo  = base.startsWith('image/') ? 'imagen'
-                : base.startsWith('video/') ? 'video'
-                : base.startsWith('audio/') ? 'voz'
-                : 'documento';
-    const textoDesc = tipo === 'imagen'   ? ('Imagen'  + (caption ? ': ' + caption : ''))
-                    : tipo === 'video'    ? ('Video'   + (caption ? ': ' + caption : ''))
-                    : tipo === 'voz'      ? 'Nota de voz'
-                    : file.name;
-
-    // Optimistic update
     if (!_state.conv[num])        _state.conv[num]        = {};
     if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
-    const c   = _state.conv[num][phone];
-    const ts  = Math.floor(Date.now() / 1000);
-    const previewUrl = tipo === 'imagen' ? URL.createObjectURL(file) : null;
-    c.msgs.push({ text: textoDesc, ts, out: true, asesor: _asesorActual, pending: true, tipo, mediaUrl: previewUrl });
-    c.lastMsg = textoDesc;
-    c.lastTs  = ts;
-    _saveConv();
-    _renderMsgs();
+    const c            = _state.conv[num][phone];
+    const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
 
     _clearPendingFile();
     if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); _updateSendVoiceBtn(); }
 
+    // ── 1. Enviar texto primero (si hay) ───────────────────────────────────
+    if (texto) {
+        const ts1   = Math.floor(Date.now() / 1000);
+        const tmpId = ++_tmpMsgId;
+        c.msgs.push({ text: texto, ts: ts1, out: true, asesor: _asesorActual, pending: true, tmpId });
+        c.lastMsg = texto; c.lastTs = ts1;
+        _saveConv(); _renderMsgs();
+
+        try {
+            const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual }),
+                signal:  AbortSignal.timeout(10000),
+            });
+            const m = c.msgs.find(x => x.tmpId === tmpId);
+            if (r.ok) { if (m) { delete m.pending; delete m.tmpId; } }
+            else      { if (m) { m.failed = true; delete m.pending; } }
+        } catch {
+            const m = c.msgs.find(x => x.tmpId === tmpId);
+            if (m) { m.failed = true; delete m.pending; }
+        }
+        _saveConv(); _renderMsgs();
+    }
+
+    // ── 2. Enviar archivo ──────────────────────────────────────────────────
+    const base = file.type.split(';')[0].trim();
+    const tipo  = base.startsWith('image/') ? 'imagen' : base.startsWith('video/') ? 'video'
+                : base.startsWith('audio/') ? 'voz' : 'documento';
+    const textoDesc = tipo === 'voz' ? 'Nota de voz' : tipo === 'documento' ? file.name
+                    : tipo === 'imagen' ? 'Imagen' : 'Video';
+
+    const ts2        = Math.floor(Date.now() / 1000);
+    const previewUrl = tipo === 'imagen' ? URL.createObjectURL(file) : null;
+    c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tipo, mediaUrl: previewUrl });
+    c.lastMsg = textoDesc; c.lastTs = ts2;
+    _saveConv(); _renderMsgs();
+
     try {
-        const destinatario = phone + (c?.jidSuffix || '@s.whatsapp.net');
         const fd = new FormData();
         fd.append('numero', num);
         fd.append('destinatario', destinatario);
         fd.append('asesor', _asesorActual || '');
-        if (caption) fd.append('caption', caption);
         fd.append('file', file);
         const r = await fetch(`${HETZNER_URL}/wa/mensajes/media`, {
             method: 'POST',
