@@ -1656,6 +1656,24 @@ function _injectStyles() {
 .wap-chat-via--atencion .wap-chat-via-dot { background: #22c55e; }
 .wap-chat-via--resuelto .wap-chat-via-dot { background: #9ca3af; }
 .wap-chat-via--espera   .wap-chat-via-dot { background: #f59e0b; }
+.wap-fecha-sep {
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    top: 6px;
+    z-index: 10;
+    pointer-events: none;
+    margin: 6px 0 2px;
+}
+.wap-fecha-sep span {
+    background: rgba(0,0,0,0.32);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    padding: 3px 10px;
+    backdrop-filter: blur(3px);
+    white-space: nowrap;
+}
 .wap-msgs {
     flex: 1;
     overflow-y: auto;
@@ -4739,10 +4757,18 @@ function _renderMsgs() {
         el.innerHTML = `<p class="wap-empty" style="background:transparent;">Inicio de la conversacion</p>`;
         return;
     }
-    el.innerHTML = c.msgs.map(m => {
+    const _parts = [];
+    let _lastDay = null;
+    for (const m of c.msgs) {
+        const dk = m.ts ? _dayKey(m.ts) : null;
+        if (dk && dk !== _lastDay) {
+            _lastDay = dk;
+            _parts.push(`<div class="wap-fecha-sep"><span>${_dateLabelChat(m.ts)}</span></div>`);
+        }
+        _parts.push((() => {
         if (m.tipo === 'sistema') {
             return `<div class="wap-msg wap-msg--sistema">
-                ${_esc(m.text)}${m.ts ? ' · ' + _fmtTs(m.ts) : ''}
+                ${_esc(m.text)}${m.ts ? ' · ' + _fmtTsHora(m.ts) : ''}
             </div>`;
         }
         const statusCls = m.pending ? ' wap-msg--pending' : m.failed ? ' wap-msg--failed' : '';
@@ -4819,10 +4845,12 @@ function _renderMsgs() {
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             ${msgContent}
-            ${isEditing ? '' : `<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTs(m.ts) : '')}</span>${statusEl}`}
+            ${isEditing ? '' : `<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTsHora(m.ts) : '')}</span>${statusEl}`}
             ${reactionBadges}
         </div>`;
-    }).join('');
+        })());
+    }
+    el.innerHTML = _parts.join('');
     el.scrollTop = el.scrollHeight;
 }
 
@@ -5518,6 +5546,28 @@ function _fmtTs(ts) {
         return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     }
     return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Clave de día para agrupar mensajes: "YYYY-M-D"
+function _dayKey(ts) {
+    const ms = typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts;
+    const d  = new Date(ms);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+// Etiqueta de fecha para separadores en el chat de mensajes
+function _dateLabelChat(ts) {
+    const ms  = typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts;
+    const d   = new Date(ms);
+    const now = new Date();
+    const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(+today - 86400000);
+    const itemDay   = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (+itemDay === +today)     return 'Hoy';
+    if (+itemDay === +yesterday) return 'Ayer';
+    const diffDays = Math.floor((+today - +itemDay) / 86400000);
+    if (diffDays < 7) return d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 // Solo hora HH:MM (para lista resueltas donde la fecha va como separador)
