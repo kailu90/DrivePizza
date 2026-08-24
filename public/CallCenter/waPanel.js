@@ -3418,8 +3418,8 @@ function _renderResueltas() {
                     <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
-                ${sedeBadge}
-                ${asesorEl}
+                ${sedeBadge ? `<div style="margin-top:3px;">${sedeBadge}</div>` : ''}
+                ${asesorEl ? `<div>${asesorEl}</div>` : ''}
             </div>
         </div>`;
     }).join('');
