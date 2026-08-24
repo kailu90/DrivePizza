@@ -1408,6 +1408,48 @@ function _injectStyles() {
     50%       { transform: scale(1.12); }
 }
 
+/* ── Barra de carga adjunto RR ───────────────────── */
+.wap-media-loading {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border-top: 1px solid #e5e7eb;
+    font-size: 1.15rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+.wap-media-loading-name {
+    flex: 0 1 auto;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wap-media-loading-bar {
+    flex: 1;
+    height: 3px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.wap-media-loading-fill {
+    height: 100%;
+    background: var(--color-primario);
+    border-radius: 2px;
+    width: 0%;
+    transition: width .1s linear;
+}
+.wap-media-loading-pct {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 34px;
+    text-align: right;
+    color: #6b7280;
+}
+
 /* ── Preview de archivo adjunto ──────────────────── */
 .wap-media-preview {
     display: none;
@@ -1971,6 +2013,11 @@ function _renderShell(body) {
                         <div class="wap-media-preview" id="wap-media-preview">
                             <span class="wap-media-preview-name" id="wap-media-preview-name"></span>
                             <button class="wap-media-preview-cancel" id="wap-media-preview-cancel" title="Quitar archivo">&#x2715;</button>
+                        </div>
+                        <div class="wap-media-loading" id="wap-media-loading">
+                            <span class="wap-media-loading-name" id="wap-media-loading-name"></span>
+                            <div class="wap-media-loading-bar"><div class="wap-media-loading-fill" id="wap-media-loading-fill"></div></div>
+                            <span class="wap-media-loading-pct" id="wap-media-loading-pct">0%</span>
                         </div>
                         <input type="file" id="wap-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
                         <div class="wap-input-row">
@@ -4667,16 +4714,53 @@ async function _applySlash(id) {
     _updateSendVoiceBtn();
     _hideSlashPicker();
 
-    // Si la RR tiene adjunto, descargarlo en background y dejar promise para que send espere
+    // Si la RR tiene adjunto, descargarlo con progreso visible sobre el input
     if (rr.media_url) {
-        _showToast('Cargando adjunto...', 2000);
-        _pendingMediaFetch = fetch(rr.media_url)
-            .then(res => res.blob())
-            .then(blob => {
-                _setPendingFile(new File([blob], rr.media_nombre || 'archivo', { type: blob.type }));
-            })
-            .catch(() => { _showToast('No se pudo cargar el adjunto', 3000); })
-            .finally(() => { _pendingMediaFetch = null; });
+        const bar   = document.getElementById('wap-media-loading');
+        const name  = document.getElementById('wap-media-loading-name');
+        const fill  = document.getElementById('wap-media-loading-fill');
+        const pct   = document.getElementById('wap-media-loading-pct');
+
+        if (bar) {
+            if (name) name.textContent = rr.media_nombre || 'Adjunto';
+            if (fill) fill.style.width = '0%';
+            if (pct)  pct.textContent  = '0%';
+            bar.style.display = 'flex';
+        }
+
+        _pendingMediaFetch = (async () => {
+            try {
+                const response = await fetch(rr.media_url);
+                const total    = parseInt(response.headers.get('Content-Length') || '0', 10);
+                const reader   = response.body.getReader();
+                const chunks   = [];
+                let received   = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+                    if (total && fill && pct) {
+                        const p = Math.min(99, Math.round((received / total) * 100));
+                        fill.style.width = p + '%';
+                        pct.textContent  = p + '%';
+                    }
+                }
+
+                if (fill) fill.style.width = '100%';
+                if (pct)  pct.textContent  = '100%';
+
+                const mime = (response.headers.get('Content-Type') || 'application/octet-stream').split(';')[0].trim();
+                const blob = new Blob(chunks, { type: mime });
+                _setPendingFile(new File([blob], rr.media_nombre || 'archivo', { type: mime }));
+            } catch {
+                _showToast('No se pudo cargar el adjunto', 3000);
+            } finally {
+                if (bar) bar.style.display = 'none';
+                _pendingMediaFetch = null;
+            }
+        })();
     }
 
     input.focus();
