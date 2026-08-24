@@ -53,8 +53,9 @@ let _editingNum    = null;  // numero cuya card está en modo edición
 let _pendingColors = {};   // { [numero]: colorHex } — selección temporal antes de guardar
 
 // ── Media / voz ─────────────────────────────────────────────────────────────
-let _pendingFile   = null;  // File a enviar como adjunto
-let _rrPendingFile = null;  // File seleccionado en el form de RR
+let _pendingFile      = null;   // File a enviar como adjunto
+let _rrPendingFile    = null;   // File seleccionado en el form de RR
+let _pendingMediaFetch = null;  // Promise del fetch del adjunto de RR (para esperar antes de enviar)
 let _mediaRecorder = null;  // MediaRecorder activo (voz)
 let _recChunks     = [];
 let _recInterval   = null;
@@ -3701,6 +3702,11 @@ async function _reabrirChat(num, phone) {
 }
 
 async function _sendMessage() {
+    // Esperar a que termine el fetch del adjunto de RR (si está en curso)
+    if (_pendingMediaFetch) {
+        _showToast('Cargando adjunto...', 1500);
+        await _pendingMediaFetch;
+    }
     if (_pendingFile) { await _sendMedia(); return; }
     const input = document.getElementById('wap-input');
     const texto = input?.value.trim();
@@ -4510,17 +4516,20 @@ function _openRRForm(id) {
 }
 
 async function _saveRR(id) {
-    const titulo = document.getElementById('wap-rr-titulo')?.value.trim();
-    const texto  = document.getElementById('wap-rr-texto')?.value.trim();
+    const titulo  = document.getElementById('wap-rr-titulo')?.value.trim();
+    const texto   = document.getElementById('wap-rr-texto')?.value.trim();
     if (!titulo || !texto) { _showToast('Completa título y texto', 2500); return; }
+
+    // Feedback en el botón mientras guarda
+    const saveBtn = document.getElementById('wap-rr-save');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Guardando...'; }
 
     const method = id ? 'PUT' : 'POST';
     const url    = id ? `${HETZNER_URL}/wa/respuestas-rapidas/${id}` : `${HETZNER_URL}/wa/respuestas-rapidas`;
 
-    // Verificar si el adjunto fue eliminado (había media y ahora no hay row visible)
-    const rr = id ? _state.respuestasRapidas.find(x => x.id === id) : null;
-    const mediaRow = document.getElementById('wap-rr-media-row');
-    const mediaEliminada = rr?.media_url && !_rrPendingFile && mediaRow?.style.display === 'none';
+    const rrActual     = id ? _state.respuestasRapidas.find(x => x.id === id) : null;
+    const mediaRow     = document.getElementById('wap-rr-media-row');
+    const mediaEliminada = rrActual?.media_url && !_rrPendingFile && mediaRow?.style.display === 'none';
 
     try {
         let r;
@@ -4537,10 +4546,16 @@ async function _saveRR(id) {
                 body: JSON.stringify({ titulo, texto }),
             });
         }
-        if (!r.ok) { _showToast('Error al guardar', 3000); return; }
+
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            _showToast('Error al guardar: ' + (err.error || r.status), 4000);
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = id ? 'Guardar' : 'Crear'; }
+            return;
+        }
+
         const saved = await r.json();
 
-        // Si eliminó el adjunto, llamar al endpoint de borrado
         if (mediaEliminada) {
             await fetch(`${HETZNER_URL}/wa/respuestas-rapidas/${id}/media`, { method: 'DELETE' }).catch(() => {});
             saved.media_url = null; saved.media_tipo = null; saved.media_nombre = null;
@@ -4556,8 +4571,11 @@ async function _saveRR(id) {
         const form = document.getElementById('wap-rr-form');
         if (form) { form.style.display = 'none'; form.innerHTML = ''; }
         _renderRRView();
-        _showToast(id ? 'Respuesta actualizada' : 'Respuesta creada');
-    } catch { _showToast('Error de conexión', 3000); }
+        _showToast(id ? 'Respuesta actualizada ✓' : 'Respuesta creada ✓', 2500);
+    } catch (e) {
+        _showToast('Error de conexión: ' + e.message, 4000);
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = id ? 'Guardar' : 'Crear'; }
+    }
 }
 
 async function _deleteRR(id) {
@@ -4649,16 +4667,16 @@ async function _applySlash(id) {
     _updateSendVoiceBtn();
     _hideSlashPicker();
 
-    // Si la RR tiene adjunto, descargarlo y dejarlo listo como pendingFile
+    // Si la RR tiene adjunto, descargarlo en background y dejar promise para que send espere
     if (rr.media_url) {
-        try {
-            const res  = await fetch(rr.media_url);
-            const blob = await res.blob();
-            const nombre = rr.media_nombre || 'archivo';
-            _setPendingFile(new File([blob], nombre, { type: blob.type }));
-        } catch {
-            _showToast('No se pudo cargar el adjunto de la respuesta rápida', 3000);
-        }
+        _showToast('Cargando adjunto...', 2000);
+        _pendingMediaFetch = fetch(rr.media_url)
+            .then(res => res.blob())
+            .then(blob => {
+                _setPendingFile(new File([blob], rr.media_nombre || 'archivo', { type: blob.type }));
+            })
+            .catch(() => { _showToast('No se pudo cargar el adjunto', 3000); })
+            .finally(() => { _pendingMediaFetch = null; });
     }
 
     input.focus();
