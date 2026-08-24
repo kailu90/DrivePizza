@@ -903,6 +903,66 @@ function _injectStyles() {
 .wap-estado--mio     { background: #dbeafe; color: #1d4ed8; }
 .wap-estado--resuelto{ background: #dcfce7; color: #16a34a; }
 
+/* ── Resueltas — lista enriquecida ───────────────── */
+.wap-r-date-sep {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: .1em;
+    padding: 10px 0 4px;
+}
+.wap-r-mid {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+}
+.wap-r-asesor {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 1.05rem;
+    color: #16a34a;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.wap-r-sede-badge {
+    display: inline-block;
+    font-size: .95rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+.wap-r-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 3px;
+}
+.wap-r-razon {
+    font-size: 1.1rem;
+    color: #9ca3af;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+.wap-r-badge-resuelto {
+    display: inline-block;
+    background: #374151;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
 /* ── Asignaciones ────────────────────────────────── */
 .wap-conv-item--libre {
     background: #fffbeb;
@@ -3290,23 +3350,54 @@ function _renderResueltas() {
         return;
     }
 
+    // Agrupar por fecha: insertar separador HOY / AYER / DD MMM YYYY
+    let lastLabel = null;
     const html = r.items.map(c => {
         const color   = _getColor(c.numero);
         const display = c.nombre_cliente || c.nombre || _fmtPhone(c.contacto);
-        const ts      = c.ultimo_ts ? _fmtTs(c.ultimo_ts) : '';
+        const ts      = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
         const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
-        return `<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
+
+        // Sede desde sesiones en memoria
+        const sesInfo = _state.sesiones.find(s => s.numero === c.numero);
+        const sede    = sesInfo?.sede ? _capitalizarSede(sesInfo.sede) : '';
+
+        // Separador de fecha
+        const dateLabel = c.ultimo_ts ? _dateLabelResueltas(c.ultimo_ts) : null;
+        const sep = (dateLabel && dateLabel !== lastLabel)
+            ? `<div class="wap-r-date-sep">${dateLabel}</div>`
+            : '';
+        if (dateLabel) lastLabel = dateLabel;
+
+        // Badge de sede con color de sesión translúcido
+        const sedeBadge = sede
+            ? `<span class="wap-r-sede-badge" style="background:${color}22;color:${color};border:1px solid ${color}55;">${_esc(sede)}</span>`
+            : '';
+
+        // Asesor con ícono persona
+        const asesorEl = c.asesor
+            ? `<span class="wap-r-asesor"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${_esc(c.asesor)}</span>`
+            : '';
+
+        // Último mensaje como razón
+        const razon = c.ultimo_mensaje ? _esc(c.ultimo_mensaje) : '';
+
+        return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
-                    style="border-left:4px solid ${color};position:relative;padding-right:12px;">
-            <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
-            <div class="wap-conv-body">
-                <div class="wap-conv-top">
+                    style="border-left:4px solid ${color};align-items:flex-start;padding-right:12px;">
+            <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};margin-top:2px;flex-shrink:0;">${_initials(display)}</div>
+            <div class="wap-conv-info">
+                <div class="wap-conv-row">
                     <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
-                <div class="wap-conv-bottom">
-                    <span class="wap-conv-last">${_esc(c.ultimo_mensaje || '')}</span>
-                    ${c.asesor ? `<span class="wap-estado wap-estado--resuelto" style="font-size:.9rem;padding:1px 5px;">${_esc(c.asesor)}</span>` : ''}
+                <div class="wap-r-mid">
+                    ${asesorEl}
+                    ${sedeBadge}
+                </div>
+                <div class="wap-r-bottom">
+                    <span class="wap-r-razon">${razon}</span>
+                    <span class="wap-r-badge-resuelto">Resuelto</span>
                 </div>
             </div>
         </div>`;
@@ -3316,16 +3407,17 @@ function _renderResueltas() {
     const spinner  = r.loading ? `<div class="wap-empty" style="padding:10px;">Cargando...</div>` : '';
     el.innerHTML   = html + sentinel + spinner;
 
-    // Listeners de click
-    el.querySelectorAll('.wap-conv-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const phone = item.dataset.phone;
-            const num   = item.dataset.num;
-            if (!_state.conv[num]) _state.conv[num] = {};
-            if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
-            _openChat(num, phone);
-        });
-    });
+    // Click con event delegation (evita acumular listeners en re-renders)
+    el.onclick = e => {
+        const item = e.target.closest('.wap-conv-item');
+        if (!item) return;
+        const phone = item.dataset.phone;
+        const num   = item.dataset.num;
+        if (!_state.conv[num]) _state.conv[num] = {};
+        if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
+        _state.activeNum = num;
+        _openChat(phone);
+    };
 
     // IntersectionObserver para cargar más al llegar al sentinel
     if (_resueltasObserver) { _resueltasObserver.disconnect(); _resueltasObserver = null; }
@@ -4579,6 +4671,25 @@ function _fmtTs(ts) {
         return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     }
     return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Solo hora HH:MM (para lista resueltas donde la fecha va como separador)
+function _fmtTsHora(ts) {
+    const ms = typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts;
+    return new Date(ms).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Etiqueta de fecha para separadores en lista resueltas: HOY / AYER / DD MMM YYYY
+function _dateLabelResueltas(ts) {
+    const ms = typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts;
+    const d  = new Date(ms);
+    const now = new Date();
+    const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(+today - 86400000);
+    const itemDay   = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (+itemDay === +today)     return 'HOY';
+    if (+itemDay === +yesterday) return 'AYER';
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 }
 
 function _capitalizarSede(s) {
