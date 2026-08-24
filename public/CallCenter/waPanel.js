@@ -4,6 +4,7 @@
  * Renderiza lista de conversaciones + chat inline dentro del panel lateral.
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
+import { supabase } from '../Api/supabaseConfig.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
 const SESSION_COLORS = [
@@ -4419,7 +4420,85 @@ function _openClientPanel() {
     const addrEl = document.getElementById('wap-cp-address');
     if (addrEl) addrEl.style.display = 'none';
 
+    // Cargar stats si tiene teléfono real
+    if (!isLid) _loadClientStats(phone);
+
     document.getElementById('wap-client-panel')?.classList.add('wap-cp--open');
+}
+
+// ── Carga stats del cliente desde pedidos_callcenter ───────────────────────
+async function _loadClientStats(phone) {
+    if (!supabase) return;
+    const n   = phone.replace(/\D/g, '');
+    const n10 = n.startsWith('57') && n.length === 12 ? n.slice(2) : n;
+
+    // Estado "cargando"
+    ['wap-cp-stat-pedidos','wap-cp-stat-total','wap-cp-stat-ticket',
+     'wap-cp-stat-ultima','wap-cp-stat-dias'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '...';
+    });
+
+    try {
+        const { data, error } = await supabase
+            .from('pedidos_callcenter')
+            .select('total, fecha, sede')
+            .or(`telefono.eq.${n},telefono.eq.${n10}`)
+            .neq('estado', 'cancelado')
+            .order('fecha', { ascending: false })
+            .limit(50);
+
+        if (error || !data) return;
+
+        // Stats
+        const count   = data.length;
+        const gastado = data.reduce((s, r) => s + (r.total || 0), 0);
+        const ticket  = count ? Math.round(gastado / count) : 0;
+        const ultima  = data[0]?.fecha ? new Date(data[0].fecha) : null;
+        const dias    = ultima ? Math.floor((Date.now() - ultima.getTime()) / 86400000) : null;
+
+        const fmtCOP   = n => n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+        const fmtFecha = d => d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        set('wap-cp-stat-pedidos', count > 0 ? count : '0');
+        set('wap-cp-stat-total',   count > 0 ? fmtCOP(gastado) : '—');
+        set('wap-cp-stat-ticket',  count > 0 ? fmtCOP(ticket)  : '—');
+        set('wap-cp-stat-ultima',  ultima ? fmtFecha(ultima) : '—');
+        set('wap-cp-stat-dias',    dias !== null ? `${dias} días` : '—');
+
+        // Últimos 3 pedidos
+        const ordersEl = document.getElementById('wap-cp-orders');
+        if (ordersEl) {
+            if (!count) {
+                ordersEl.innerHTML = '<div class="wap-cp-orders-empty">Sin pedidos registrados</div>';
+            } else {
+                ordersEl.innerHTML = data.slice(0, 3).map(p => {
+                    const f       = p.fecha ? new Date(p.fecha) : null;
+                    const fechaStr = f ? f.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+                    const sedeStr  = p.sede ? _capitalizarSede(p.sede) : '—';
+                    const totalStr = p.total ? fmtCOP(p.total) : '—';
+                    return `<div class="wap-cp-order">
+                        <div class="wap-cp-order-left">
+                            <div>
+                                <div class="wap-cp-order-date">${_esc(fechaStr)}</div>
+                                <div class="wap-cp-order-sede">${_esc(sedeStr)}</div>
+                            </div>
+                        </div>
+                        <div class="wap-cp-order-total">${_esc(totalStr)}</div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        // Badge "Cliente frecuente" si tiene 5+ pedidos
+        if (count >= 5) {
+            const badgesEl = document.getElementById('wap-cp-badges');
+            if (badgesEl && !badgesEl.querySelector('.wap-cp-badge--frecuente')) {
+                badgesEl.insertAdjacentHTML('afterbegin',
+                    `<span class="wap-cp-badge wap-cp-badge--frecuente">&#11088; Cliente frecuente</span>`);
+            }
+        }
+    } catch { /* sin conexión — mantener estado */}
 }
 
 function _closeClientPanel() {
