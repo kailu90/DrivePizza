@@ -419,7 +419,7 @@ import { initNavButtons } from "./navCallCenter.js";
     document.getElementById("btn-logout").addEventListener("click", async () => {
         if (confirm("¿Cerrar sesión?")) {
             await supabase.auth.signOut();
-            window.location.href = "../index.html";
+            window.parent.postMessage({ type: 'logout' }, '*');
         }
     });
 

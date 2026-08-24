@@ -117,6 +117,12 @@ const LS_KEY      = 'wap_conv_v2';
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
+export function destroyWaPanel() {
+    // Cerrar WS sin reconectar y silenciar audio
+    if (_ws) { _ws.onclose = null; _ws.onerror = null; _ws.close(); _ws = null; }
+    _notifAudio.pause();
+}
+
 export function resetWaView() {
     _state.activeContact = null;
     _showListView();

@@ -225,7 +225,8 @@
     import { PBX_URL, WS_URL } from '../Api/config.js';
 
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
-    let _resetWaView = null; // se asigna al importar waPanel.js
+    let _resetWaView    = null; // se asigna al importar waPanel.js
+    let _destroyWaPanel = null; // se asigna al importar waPanel.js
 
     function _waOffset() {
         const panel = document.getElementById('wa-panel');
@@ -311,6 +312,11 @@
 
     // Mensajes desde el iframe
     window.addEventListener('message', (e) => {
+        if (e.data?.type === 'logout') {
+            _destroyWaPanel?.();
+            window.location.href = '../index.html';
+            return;
+        }
         if (e.data?.type === 'wa-visible') {
             _setWaVisible(e.data.show !== false);
         }
@@ -365,8 +371,9 @@
                 sipPassword: data.sip_password || null
             };
             // Inicializar WA panel en el drawer persistente
-            const { initWaPanel, resetWaView } = await import('./waPanel.js');
-            _resetWaView = resetWaView;
+            const { initWaPanel, resetWaView, destroyWaPanel } = await import('./waPanel.js');
+            _resetWaView    = resetWaView;
+            _destroyWaPanel = destroyWaPanel;
             initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
             return window._usuarioCC;
@@ -379,6 +386,7 @@
 
     // ── Desconexión al cerrar el navegador ───────────────────────────────────
     window.addEventListener('pagehide', () => {
+        _destroyWaPanel?.();
         const u = window._usuarioCC;
         if (!u?.extension) return;
         const body = JSON.stringify({ extension: u.extension, username: u.username || '' });
