@@ -1140,7 +1140,7 @@ function _injectStyles() {
 #wap-client-panel {
     position: absolute;
     inset: 0;
-    background: #fff;
+    background: #f5f0e8;
     z-index: 20;
     display: flex;
     flex-direction: column;
