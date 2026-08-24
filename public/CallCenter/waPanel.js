@@ -1128,7 +1128,174 @@ function _injectStyles() {
     flex-direction: column;
     height: 100%;
     min-height: 0;
+    position: relative;
 }
+/* Header clickable (avatar + info) */
+.wap-chat-avatar { cursor: pointer; }
+.wap-chat-info   { cursor: pointer; }
+.wap-chat-avatar:hover,
+.wap-chat-info:hover { opacity: .82; }
+
+/* ── Panel datos del cliente ─────────────────────── */
+#wap-client-panel {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+}
+#wap-client-panel.wap-cp--open {
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.wap-cp-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+    background: #f5f0e8;
+}
+.wap-cp-back {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: var(--color-primario);
+    padding: 0;
+    line-height: 1;
+}
+.wap-cp-title {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+}
+.wap-cp-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.wap-cp-avatar-wrap {
+    display: flex;
+    justify-content: center;
+}
+.wap-cp-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+}
+.wap-cp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.wap-cp-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.wap-cp-input {
+    border: 1.5px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 1.3rem;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--color-terciario);
+    transition: border-color .15s;
+}
+.wap-cp-input:focus { border-color: var(--color-primario); }
+.wap-cp-phone-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    padding: 8px 12px;
+    background: #f9fafb;
+}
+.wap-cp-phone-text {
+    flex: 1;
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+    font-weight: 500;
+}
+.wap-cp-copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 1.3rem;
+    padding: 0 2px;
+    transition: color .15s;
+    flex-shrink: 0;
+}
+.wap-cp-copy-btn:hover { color: var(--color-primario); }
+.wap-cp-lid-section {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.wap-cp-lid-note {
+    font-size: 1.1rem;
+    color: #92400e;
+}
+.wap-cp-lid-row {
+    display: flex;
+    gap: 6px;
+}
+.wap-cp-lid-input {
+    flex: 1;
+    border: 1.5px solid #fcd34d;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 1.2rem;
+    outline: none;
+}
+.wap-cp-lid-input:focus { border-color: #f59e0b; }
+.wap-cp-lid-ok {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.wap-cp-save-btn {
+    background: var(--color-primario);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 11px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+    margin-top: auto;
+}
+.wap-cp-save-btn:hover { background: var(--color-cuaternario); }
 .wap-chat-header {
     display: flex;
     align-items: center;
@@ -2154,12 +2321,11 @@ function _renderShell(body) {
                     <div class="wap-chat" id="wap-chat">
                         <div class="wap-chat-header">
                             <button class="wap-back" id="wap-back">&#8592;</button>
-                            <div class="wap-chat-avatar" id="wap-chat-avatar"></div>
-                            <div class="wap-chat-info" id="wap-chat-info">
+                            <div class="wap-chat-avatar" id="wap-chat-avatar" title="Ver datos del cliente"></div>
+                            <div class="wap-chat-info" id="wap-chat-info" title="Ver datos del cliente">
                                 <div class="wap-chat-name-row">
                                     <span class="wap-chat-name" id="wap-chat-name"></span>
-                                    <button class="wap-edit-name-btn" id="wap-edit-name-btn" title="Editar nombre">&#9998;</button>
-                                    <button class="wap-vincular-lid-btn" id="wap-vincular-lid-btn" title="Vincular a número real" style="display:none;">&#128279;</button>
+                                    <button class="wap-vincular-lid-btn" id="wap-vincular-lid-btn" style="display:none;"></button>
                                 </div>
                                 <span class="wap-chat-via" id="wap-chat-via"></span>
                                 <span class="wap-chat-conexion" id="wap-chat-conexion"></span>
@@ -2213,6 +2379,40 @@ function _renderShell(body) {
                                 <button class="wap-voice-btn" id="wap-voice-btn" title="Grabar audio">&#127908;</button>
                             </div>
                             <button id="wap-send" style="display:none">&#10148;</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel datos del cliente (slide-in sobre el chat) -->
+                    <div id="wap-client-panel">
+                        <div class="wap-cp-header">
+                            <button class="wap-cp-back" id="wap-cp-close">&#8592;</button>
+                            <span class="wap-cp-title">Datos del cliente</span>
+                        </div>
+                        <div class="wap-cp-body">
+                            <div class="wap-cp-avatar-wrap">
+                                <div class="wap-cp-avatar" id="wap-cp-avatar"></div>
+                            </div>
+                            <div class="wap-cp-field">
+                                <span class="wap-cp-label">Nombre</span>
+                                <input class="wap-cp-input" id="wap-cp-nombre" type="text" placeholder="Nombre del contacto" />
+                            </div>
+                            <div class="wap-cp-field">
+                                <span class="wap-cp-label">Tel&#233;fono</span>
+                                <div class="wap-cp-phone-row">
+                                    <span class="wap-cp-phone-text" id="wap-cp-phone"></span>
+                                    <button class="wap-cp-copy-btn" id="wap-cp-copy" title="Copiar n&#250;mero">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="wap-cp-lid-section" id="wap-cp-lid-section" style="display:none;">
+                                <span class="wap-cp-lid-note">&#128279; Contacto no identificado &#8212; vincular a n&#250;mero real:</span>
+                                <div class="wap-cp-lid-row">
+                                    <input class="wap-cp-lid-input" id="wap-cp-lid-input" type="tel" placeholder="Ej: 3001234567" />
+                                    <button class="wap-cp-lid-ok" id="wap-cp-lid-ok">Vincular</button>
+                                </div>
+                            </div>
+                            <button class="wap-cp-save-btn" id="wap-cp-save">Guardar</button>
                         </div>
                     </div>
                 </div>
@@ -2293,7 +2493,20 @@ function _renderShell(body) {
         if (_state.activeNum && _state.activeContact)
             _tomarChat(_state.activeNum, _state.activeContact);
     });
-    document.getElementById('wap-edit-name-btn').addEventListener('click', _editContactName);
+    // Header del chat clickable → panel datos del cliente
+    document.getElementById('wap-chat-avatar').addEventListener('click', _openClientPanel);
+    document.getElementById('wap-chat-info').addEventListener('click', _openClientPanel);
+    document.getElementById('wap-cp-close').addEventListener('click', _closeClientPanel);
+    document.getElementById('wap-cp-save').addEventListener('click', _saveClientPanel);
+    document.getElementById('wap-cp-copy').addEventListener('click', () => {
+        const txt = document.getElementById('wap-cp-phone')?.textContent?.replace(/\s/g, '');
+        if (txt) { navigator.clipboard.writeText(txt).then(() => _showToast('Número copiado', 1800)); }
+    });
+    document.getElementById('wap-cp-lid-ok').addEventListener('click', () => {
+        const val = document.getElementById('wap-cp-lid-input')?.value.trim().replace(/\D/g, '');
+        if (val && val.length >= 10) { _closeClientPanel(); _vincularLidConNumero(val); }
+        else _showToast('Ingresa un número válido (10 dígitos)', 2500);
+    });
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-attach-btn').addEventListener('click', () => document.getElementById('wap-file-input').click());
@@ -3702,10 +3915,8 @@ function _updateChatHeader(phone) {
         if (nameEl) nameEl.replaceWith(fresh);
         else document.querySelector('.wap-chat-name-row')?.prepend(fresh);
         nameEl = fresh;
-        const eb = document.getElementById('wap-edit-name-btn');
-        if (eb) eb.style.display = '';
         const vb = document.getElementById('wap-vincular-lid-btn');
-        if (vb) vb.style.display = phone.length > 12 ? '' : 'none';
+        if (vb) vb.style.display = 'none';
     }
     nameEl.textContent = display;
 
@@ -3735,9 +3946,9 @@ function _updateChatHeader(phone) {
     const conexionEl = document.getElementById('wap-chat-conexion');
     if (conexionEl) conexionEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="#25D366" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.057 23.48a.75.75 0 00.916.919l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 01-4.953-1.354l-.355-.211-3.683.953.982-3.594-.232-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>${_sessionLabel(_state.activeNum)}`;
 
-    // Botón vincular: visible solo cuando el contacto es un @lid sin resolver (> 12 dígitos)
+    // Botón vincular: siempre oculto (se maneja desde el panel de datos del cliente)
     const vincularBtn = document.getElementById('wap-vincular-lid-btn');
-    if (vincularBtn) vincularBtn.style.display = phone.length > 12 ? '' : 'none';
+    if (vincularBtn) vincularBtn.style.display = 'none';
 
     // Badge de color de la conexión en el borde izquierdo del header
     const header = document.querySelector('.wap-chat-header');
@@ -3822,6 +4033,93 @@ function _vincularLid() {
     });
 }
 
+// ── Panel datos del cliente ─────────────────────────────────────────────────
+function _openClientPanel() {
+    const phone = _state.activeContact;
+    const num   = _state.activeNum;
+    if (!phone || !num) return;
+
+    const c       = _state.conv[num]?.[phone];
+    const display = c?.nombre || c?.name || '';
+    const color   = _getColor(num);
+    const isLid   = phone.length > 12;
+
+    // Avatar
+    const avatarEl = document.getElementById('wap-cp-avatar');
+    if (avatarEl) {
+        avatarEl.textContent      = _initials(display || _fmtPhone(phone));
+        avatarEl.style.background = color;
+        avatarEl.style.color      = _textColorForBg(color);
+    }
+
+    // Nombre
+    const nombreInput = document.getElementById('wap-cp-nombre');
+    if (nombreInput) { nombreInput.value = display; nombreInput.disabled = isLid; }
+
+    // Teléfono
+    const phoneEl = document.getElementById('wap-cp-phone');
+    if (phoneEl) phoneEl.textContent = isLid ? phone : _fmtPhone(phone);
+
+    // Sección LID (vincular)
+    const lidSection = document.getElementById('wap-cp-lid-section');
+    if (lidSection) lidSection.style.display = isLid ? '' : 'none';
+    if (isLid) { const li = document.getElementById('wap-cp-lid-input'); if (li) li.value = ''; }
+
+    // Botón guardar: oculto para lid sin resolver
+    const saveBtn = document.getElementById('wap-cp-save');
+    if (saveBtn) saveBtn.style.display = isLid ? 'none' : '';
+
+    document.getElementById('wap-client-panel')?.classList.add('wap-cp--open');
+}
+
+function _closeClientPanel() {
+    document.getElementById('wap-client-panel')?.classList.remove('wap-cp--open');
+}
+
+async function _saveClientPanel() {
+    const phone   = _state.activeContact;
+    const num     = _state.activeNum;
+    if (!phone || !num) return;
+
+    const nuevo   = document.getElementById('wap-cp-nombre')?.value.trim();
+    const c       = _state.conv[num]?.[phone];
+    const current = c?.nombre || c?.name || '';
+
+    _closeClientPanel();
+    if (!nuevo || nuevo === current) return;
+
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`,
+            { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ nombre: nuevo }) }
+        );
+        if (r.ok) {
+            if (_state.conv[num]?.[phone]) { _state.conv[num][phone].nombre = nuevo; _saveConv(); }
+            _renderList();
+        } else {
+            _showToast('Error al guardar el nombre', 3000);
+        }
+    } catch { _showToast('Error de conexión', 3000); }
+    _updateChatHeader(phone);
+}
+
+// Vincular lid desde el panel (equivalente a _vincularLid pero con el número ya dado)
+async function _vincularLidConNumero(realPhone) {
+    const lid = _state.activeContact;
+    const num  = _state.activeNum;
+    if (!lid || !num || lid.length <= 12) return;
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(lid)}/vincular`,
+            { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ telefono: realPhone }) }
+        );
+        if (r.ok) _showToast(`Vinculado a ${_fmtPhone(realPhone)}`, 2500);
+        else _showToast('Error al vincular — revisa el número', 3000);
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
 function _editContactName() {
     const phone = _state.activeContact;
     const num   = _state.activeNum;
@@ -3885,6 +4183,7 @@ function _editContactName() {
 }
 
 function _closeChat() {
+    _closeClientPanel();
     _state.activeContact = null;
     _showListView();
 }
