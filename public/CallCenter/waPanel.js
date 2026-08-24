@@ -54,6 +54,7 @@ let _pendingColors = {};   // { [numero]: colorHex } — selección temporal ant
 
 // ── Media / voz ─────────────────────────────────────────────────────────────
 let _pendingFile   = null;  // File a enviar como adjunto
+let _rrPendingFile = null;  // File seleccionado en el form de RR
 let _mediaRecorder = null;  // MediaRecorder activo (voz)
 let _recChunks     = [];
 let _recInterval   = null;
@@ -1795,6 +1796,22 @@ function _injectStyles() {
 }
 .wap-rr-vars-hint code:hover { background: rgba(40,76,34,.18); }
 .wap-rr-form-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
+/* ── Media adjunta en RR ─────────────────────────── */
+.wap-rr-media-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    font-size: 1.15rem;
+}
+.wap-rr-media-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #166534; }
+.wap-rr-media-del { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; padding: 0 2px; flex-shrink: 0; }
+.wap-rr-attach-btn { align-self: flex-start; background: none; border: 1px dashed #9ca3af; border-radius: 6px; padding: 5px 10px; font-size: 1.15rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; }
+.wap-rr-attach-btn:hover { border-color: var(--color-primario); color: var(--color-primario); }
+.wap-rr-media-badge { font-size: 1rem; margin-left: 4px; }
 .wap-rr-list {
     flex: 1;
     overflow-y: auto;
@@ -4421,7 +4438,7 @@ function _renderRRView() {
     list.innerHTML = _state.respuestasRapidas.map(rr => `
         <div class="wap-rr-item" data-id="${rr.id}">
             <div class="wap-rr-item-body">
-                <div class="wap-rr-item-titulo">${_esc(rr.titulo)}</div>
+                <div class="wap-rr-item-titulo">${_esc(rr.titulo)}${rr.media_url ? '<span class="wap-rr-media-badge">&#128206;</span>' : ''}</div>
                 <div class="wap-rr-item-texto">${_esc(rr.texto)}</div>
             </div>
             <div class="wap-rr-item-btns">
@@ -4434,28 +4451,57 @@ function _renderRRView() {
 function _openRRForm(id) {
     const form = document.getElementById('wap-rr-form');
     if (!form) return;
+    _rrPendingFile = null;
     const rr = id ? _state.respuestasRapidas.find(x => x.id === id) : null;
+    const mediaIcon = t => t === 'imagen' ? '🖼️' : t === 'video' ? '🎬' : t === 'audio' ? '🎵' : '📄';
     form.style.display = '';
     form.innerHTML = `
-        <input  id="wap-rr-titulo"  type="text"    placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
-        <textarea id="wap-rr-texto" rows="3"       placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
+        <input  id="wap-rr-titulo" type="text" placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
+        <textarea id="wap-rr-texto" rows="3"   placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
         <p class="wap-rr-vars-hint">Insertar: <code class="wap-rr-var" data-var="{nombreUsuario}">{nombreUsuario}</code><code class="wap-rr-var" data-var="{nombreAsesor}">{nombreAsesor}</code></p>
+        <input type="file" id="wap-rr-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
+        ${rr?.media_url
+            ? `<div class="wap-rr-media-row" id="wap-rr-media-row">
+                   <span>${mediaIcon(rr.media_tipo)} ${_esc(rr.media_nombre || rr.media_tipo || 'Archivo adjunto')}</span>
+                   <button class="wap-rr-media-del" id="wap-rr-media-del" title="Quitar adjunto">&#x2715;</button>
+               </div>`
+            : `<div class="wap-rr-media-row" id="wap-rr-media-row" style="display:none"></div>`
+        }
+        <button class="wap-rr-attach-btn" id="wap-rr-attach-btn">&#128206; Adjuntar archivo</button>
         <div class="wap-rr-form-btns">
             <button class="wap-btn-secondary" id="wap-rr-cancel">Cancelar</button>
             <button class="wap-btn-connect"   id="wap-rr-save" style="margin:0;font-size:1.1rem;padding:5px 14px;">${rr ? 'Guardar' : 'Crear'}</button>
         </div>`;
+
     form.querySelector('#wap-rr-cancel').addEventListener('click', () => {
+        _rrPendingFile = null;
         form.style.display = 'none';
         form.innerHTML = '';
     });
     form.querySelector('#wap-rr-save').addEventListener('click', () => _saveRR(id));
+    form.querySelector('#wap-rr-attach-btn').addEventListener('click', () => form.querySelector('#wap-rr-file-input').click());
+    form.querySelector('#wap-rr-file-input').addEventListener('change', e => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        _rrPendingFile = file;
+        const mediaIcon = t => t === 'imagen' ? '🖼️' : t === 'video' ? '🎬' : t === 'audio' ? '🎵' : '📄';
+        const tipo = file.type.startsWith('image/') ? 'imagen' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : 'documento';
+        const row = form.querySelector('#wap-rr-media-row');
+        row.innerHTML = `<span>${mediaIcon(tipo)} ${_esc(file.name)}</span><button class="wap-rr-media-del" id="wap-rr-media-del" title="Quitar adjunto">&#x2715;</button>`;
+        row.style.display = 'flex';
+        row.querySelector('#wap-rr-media-del').addEventListener('click', () => { _rrPendingFile = null; row.style.display = 'none'; row.innerHTML = ''; });
+    });
+    const delBtn = form.querySelector('#wap-rr-media-del');
+    if (delBtn) delBtn.addEventListener('click', () => {
+        _rrPendingFile = null;
+        const row = form.querySelector('#wap-rr-media-row');
+        row.style.display = 'none'; row.innerHTML = '';
+    });
     form.querySelectorAll('.wap-rr-var').forEach(badge => {
         badge.addEventListener('click', () => {
-            const ta    = form.querySelector('#wap-rr-texto');
-            const start = ta.selectionStart;
-            const end   = ta.selectionEnd;
-            const v     = badge.dataset.var;
-            ta.value    = ta.value.slice(0, start) + v + ta.value.slice(end);
+            const ta = form.querySelector('#wap-rr-texto');
+            const start = ta.selectionStart, end = ta.selectionEnd, v = badge.dataset.var;
+            ta.value = ta.value.slice(0, start) + v + ta.value.slice(end);
             ta.selectionStart = ta.selectionEnd = start + v.length;
             ta.focus();
         });
@@ -4469,24 +4515,44 @@ async function _saveRR(id) {
     if (!titulo || !texto) { _showToast('Completa título y texto', 2500); return; }
 
     const method = id ? 'PUT' : 'POST';
-    const url    = id
-        ? `${HETZNER_URL}/wa/respuestas-rapidas/${id}`
-        : `${HETZNER_URL}/wa/respuestas-rapidas`;
+    const url    = id ? `${HETZNER_URL}/wa/respuestas-rapidas/${id}` : `${HETZNER_URL}/wa/respuestas-rapidas`;
+
+    // Verificar si el adjunto fue eliminado (había media y ahora no hay row visible)
+    const rr = id ? _state.respuestasRapidas.find(x => x.id === id) : null;
+    const mediaRow = document.getElementById('wap-rr-media-row');
+    const mediaEliminada = rr?.media_url && !_rrPendingFile && mediaRow?.style.display === 'none';
 
     try {
-        const r = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ titulo, texto }),
-        });
+        let r;
+        if (_rrPendingFile) {
+            const fd = new FormData();
+            fd.append('titulo', titulo);
+            fd.append('texto', texto);
+            fd.append('file', _rrPendingFile);
+            r = await fetch(url, { method, body: fd });
+        } else {
+            r = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, texto }),
+            });
+        }
         if (!r.ok) { _showToast('Error al guardar', 3000); return; }
         const saved = await r.json();
+
+        // Si eliminó el adjunto, llamar al endpoint de borrado
+        if (mediaEliminada) {
+            await fetch(`${HETZNER_URL}/wa/respuestas-rapidas/${id}/media`, { method: 'DELETE' }).catch(() => {});
+            saved.media_url = null; saved.media_tipo = null; saved.media_nombre = null;
+        }
+
         if (id) {
             const idx = _state.respuestasRapidas.findIndex(x => x.id === id);
             if (idx !== -1) _state.respuestasRapidas[idx] = saved;
         } else {
             _state.respuestasRapidas.push(saved);
         }
+        _rrPendingFile = null;
         const form = document.getElementById('wap-rr-form');
         if (form) { form.style.display = 'none'; form.innerHTML = ''; }
         _renderRRView();
@@ -4533,7 +4599,7 @@ function _onInputSlash() {
 
     picker.innerHTML = matches.map((rr, i) => `
         <div class="wap-slash-item${i === 0 ? ' wap-slash-selected' : ''}" data-slash-idx="${i}" data-slash-id="${rr.id}">
-            <span class="wap-slash-item-titulo">${_esc(rr.titulo)}</span>
+            <span class="wap-slash-item-titulo">${_esc(rr.titulo)}${rr.media_url ? ' &#128206;' : ''}</span>
             <span class="wap-slash-item-texto">${_esc(rr.texto)}</span>
         </div>`).join('');
 
@@ -4566,13 +4632,13 @@ function _slashConfirm() {
     _applySlash(id);
 }
 
-function _applySlash(id) {
+async function _applySlash(id) {
     const rr    = _state.respuestasRapidas.find(x => x.id === id);
     const input = document.getElementById('wap-input');
     if (!rr || !input) return;
 
     // Resolver variables
-    const c            = _state.conv[_state.activeNum]?.[_state.activeContact];
+    const c             = _state.conv[_state.activeNum]?.[_state.activeContact];
     const nombreUsuario = c?.nombre || c?.name || _fmtPhone(_state.activeContact);
     const nombreAsesor  = _asesorActual || '';
 
@@ -4580,8 +4646,22 @@ function _applySlash(id) {
         .replace(/\{nombreUsuario\}/gi, nombreUsuario)
         .replace(/\{nombreAsesor\}/gi, nombreAsesor);
     _autoResizeTextarea(input);
-    input.focus();
+    _updateSendVoiceBtn();
     _hideSlashPicker();
+
+    // Si la RR tiene adjunto, descargarlo y dejarlo listo como pendingFile
+    if (rr.media_url) {
+        try {
+            const res  = await fetch(rr.media_url);
+            const blob = await res.blob();
+            const nombre = rr.media_nombre || 'archivo';
+            _setPendingFile(new File([blob], nombre, { type: blob.type }));
+        } catch {
+            _showToast('No se pudo cargar el adjunto de la respuesta rápida', 3000);
+        }
+    }
+
+    input.focus();
 }
 
 function _hideSlashPicker() {
