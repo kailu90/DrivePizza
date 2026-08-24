@@ -791,6 +791,28 @@ function _injectStyles() {
     font-size: 1.3rem;
     font-weight: 700;
     flex-shrink: 0;
+    position: relative;
+}
+/* Mini-avatar del asesor asignado, superpuesto sobre el avatar del contacto */
+.wap-asesor-dot {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    font-size: .65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+/* Prefijo asesor en preview de último mensaje */
+.wap-conv-asesor-pre {
+    color: #374151;
+    font-weight: 600;
 }
 .wap-conv-info {
     flex: 1;
@@ -922,19 +944,24 @@ function _injectStyles() {
 .wap-r-asesor {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     font-size: 1.05rem;
     color: #16a34a;
     font-weight: 600;
     white-space: nowrap;
+    margin-top: 2px;
 }
 .wap-r-sede-badge {
     display: inline-block;
     font-size: .95rem;
     font-weight: 700;
-    padding: 1px 7px;
+    padding: 1px 8px;
     border-radius: 10px;
     white-space: nowrap;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    margin-top: 2px;
 }
 .wap-r-bottom {
     display: flex;
@@ -954,8 +981,9 @@ function _injectStyles() {
 }
 .wap-r-badge-resuelto {
     display: inline-block;
-    background: #374151;
-    color: #fff;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
     font-size: .9rem;
     font-weight: 700;
     padding: 2px 9px;
@@ -3370,14 +3398,15 @@ function _renderResueltas() {
             : '';
         if (dateLabel) lastLabel = dateLabel;
 
-        // Badge de sede con color de sesión translúcido
+        // Badge de sede (verde fijo)
         const sedeBadge = sede
-            ? `<span class="wap-r-sede-badge" style="background:${color}22;color:${color};border:1px solid ${color}55;">${_esc(sede)}</span>`
+            ? `<span class="wap-r-sede-badge">${_esc(sede)}</span>`
             : '';
 
-        // Asesor con ícono persona
+        // Asesor con ícono WA
+        const WA_SVG = `<svg width="12" height="12" viewBox="0 0 32 32" fill="#16a34a" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.833.738 5.494 2.027 7.808L0 32l8.418-2.004A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.267 13.267 0 0 1-6.74-1.833l-.484-.287-5.002 1.19 1.224-4.867-.315-.5A13.28 13.28 0 0 1 2.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.874c-.398-.199-2.355-1.162-2.72-1.294-.365-.133-.63-.199-.895.199-.266.398-1.029 1.294-1.261 1.56-.232.265-.465.298-.863.1-.398-.2-1.681-.62-3.202-1.977-1.184-1.056-1.983-2.36-2.215-2.758-.232-.398-.025-.613.174-.811.179-.178.398-.465.597-.698.2-.232.266-.398.398-.663.133-.266.067-.498-.033-.697-.1-.2-.895-2.158-1.227-2.955-.323-.776-.651-.671-.895-.683l-.763-.013c-.265 0-.696.1-.1.06 1.494-.265 1.96-.199 2.657.199.697.398 2.456 2.357 2.456 5.748 0 3.39-2.456 6.681-2.821 6.946z"/></svg>`;
         const asesorEl = c.asesor
-            ? `<span class="wap-r-asesor"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${_esc(c.asesor)}</span>`
+            ? `<span class="wap-r-asesor">${WA_SVG}Resuelto por <strong>${_esc(c.asesor)}</strong></span>`
             : '';
 
         // Último mensaje como razón
@@ -3392,10 +3421,8 @@ function _renderResueltas() {
                     <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
-                <div class="wap-r-mid">
-                    ${asesorEl}
-                    ${sedeBadge}
-                </div>
+                ${sedeBadge}
+                ${asesorEl}
                 <div class="wap-r-bottom">
                     <span class="wap-r-razon">${razon}</span>
                     <span class="wap-r-badge-resuelto">Resuelto</span>
