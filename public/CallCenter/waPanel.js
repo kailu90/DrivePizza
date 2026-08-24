@@ -114,6 +114,7 @@ let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
 const _pendingStatuses = new Map(); // msgId → {numero,status} para ACKs que llegan antes del echo
 
 const LS_KEY      = 'wap_conv_v2';
+const LS_KEY_SES  = 'wap_ses_v1';    // caché de sesiones para render instantáneo
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
@@ -136,7 +137,16 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _injectStyles();
     _loadMeta();          // restaurar nombres personalizados desde localStorage
     _loadConv();          // caché de msgs para mostrar rápido mientras llega Supabase
+    // Restaurar sesiones del caché — permite render instantáneo sin esperar red
+    try {
+        const rawSes = localStorage.getItem(LS_KEY_SES);
+        if (rawSes) {
+            _state.sesiones = JSON.parse(rawSes);
+            _state.sesiones.forEach(s => _getColor(s.numero)); // restaurar colores
+        }
+    } catch { /* ignorar */ }
     _renderShell(body);
+    _renderList();        // render inmediato con caché de localStorage
     _loadSessions();
     _loadAsignaciones();
     _loadConversaciones(); // fuente de verdad — reconstruye conv desde Supabase
@@ -2747,6 +2757,8 @@ async function _loadSessions() {
         _state.sesiones = data;
         // Asignar color a cada sesión al cargar
         data.forEach(s => _getColor(s.numero));
+        // Persistir sesiones para render instantáneo en próxima recarga
+        try { localStorage.setItem(LS_KEY_SES, JSON.stringify(data)); } catch { /* ignorar */ }
         _renderSessions();
         _renderList();
         _scheduleConteos();
@@ -2798,9 +2810,12 @@ async function _loadConversaciones() {
         }
 
         // Descartar conversaciones de sesiones que ya no existen
-        const _sesActivas = new Set(_state.sesiones.map(s => s.numero));
-        for (const num of Object.keys(newConv)) {
-            if (!_sesActivas.has(num)) delete newConv[num];
+        // Guard: solo filtrar si las sesiones ya cargaron (evita borrar todo por race condition)
+        if (_state.sesiones.length > 0) {
+            const _sesActivas = new Set(_state.sesiones.map(s => s.numero));
+            for (const num of Object.keys(newConv)) {
+                if (!_sesActivas.has(num)) delete newConv[num];
+            }
         }
 
         _state.conv = newConv;
