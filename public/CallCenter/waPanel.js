@@ -5676,6 +5676,11 @@ async function _doForward(num, phone) {
     if (!_fwdMsg) return;
     const m = _fwdMsg;
     _closeFwdModal();
+
+    // Navegar a la conversación destino primero
+    _state.activeNum = num;
+    _openChat(phone);
+
     try {
         if (m.mediaUrl) {
             // Media: descargar desde Storage y reenviar como multipart
@@ -5703,7 +5708,6 @@ async function _doForward(num, phone) {
                 body:    JSON.stringify({ numero: num, destinatario: phone, texto: m.text, asesor: _asesorActual || '' }),
             });
         }
-        _showToast('Mensaje reenviado', 2000);
     } catch (err) {
         console.error('[fwd]', err);
         _showToast('Error al reenviar', 3000);
