@@ -1994,6 +1994,12 @@ function _injectStyles() {
     color: #9ca3af;
     align-self: flex-end;
 }
+.wap-msg-edited {
+    font-size: 1rem;
+    color: #9ca3af;
+    font-style: italic;
+    align-self: flex-end;
+}
 .wap-input-row {
     display: flex;
     align-items: flex-end;
@@ -3296,6 +3302,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
             if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
             if (msg.tipo === 'wa:msg_editado')   _onMsgEditado(msg);
+            if (msg.tipo === 'wa:msg_edit')      _onMsgEdit(msg);
             if (msg.tipo === 'wa:eliminado')     _onSesionEliminada(msg);
             if (msg.tipo === 'wa:rr_update')     _onRrUpdate();
             if (msg.tipo === 'wa:reaccion')      _onReaccion(msg);
@@ -4354,6 +4361,7 @@ async function _loadMsgsSupabase(phone) {
                 quotedMsgId:  m.quoted_msg_id  || null,
                 quotedTexto:  m.quoted_texto   || null,
                 quotedFromMe: m.quoted_from_me ?? null,
+                editado:      !!m.editado,
             };
         });
 
@@ -4944,7 +4952,7 @@ function _renderMsgs() {
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             ${msgContent}
-            ${isEditing ? '' : `<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTsHora(m.ts) : '')}</span>${statusEl}`}
+            ${isEditing ? '' : `${m.editado ? '<span class="wap-msg-edited">Editado</span>' : ''}<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTsHora(m.ts) : '')}</span>${statusEl}`}
             ${reactionBadges}
         </div>`;
         })());
@@ -5862,6 +5870,29 @@ function _onMsgEditado({ numero, contacto, msgId, texto }) {
     m.text = texto;
     _saveConv();
     if (_state.activeNum === numero && _state.activeContact === contacto) _renderMsgs();
+}
+
+// Edición de mensaje por el cliente desde WhatsApp
+function _onMsgEdit({ numero, contacto, msgId, textoNuevo }) {
+    const c = _state.conv[numero]?.[contacto];
+    if (!c) return;
+    const m = c.msgs.find(x => x.msgId === msgId);
+    if (!m) return;
+    m.text    = textoNuevo;
+    m.editado = true;
+    _saveConv();
+    if (_state.activeNum === numero && _state.activeContact === contacto) {
+        const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+        const textEl = bubble?.querySelector('.wap-msg-text');
+        if (textEl) {
+            textEl.textContent = textoNuevo;
+            if (!bubble.querySelector('.wap-msg-edited')) {
+                bubble.querySelector('.wap-msg-ts')?.insertAdjacentHTML('beforebegin', '<span class="wap-msg-edited">Editado</span>');
+            }
+        } else {
+            _renderMsgs();
+        }
+    }
 }
 
 async function _deleteMsg(msgId) {
