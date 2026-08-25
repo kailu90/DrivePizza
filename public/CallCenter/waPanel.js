@@ -5850,11 +5850,11 @@ async function _saveEditMsg(msgId) {
               body: JSON.stringify({ texto, asesor: _asesorActual }) }
         );
         if (!r.ok) { _showToast('Error al editar', 3000); return; }
-        // Actualizar localmente
+        // Actualizar localmente (optimistic)
         const c = _state.conv[num]?.[phone];
         if (c) {
             const m = c.msgs.find(x => x.msgId === msgId);
-            if (m) m.text = texto;
+            if (m) { m.text = texto; m.editado = true; }
             _saveConv();
         }
         _editingMsgId = null;
@@ -5867,9 +5867,21 @@ function _onMsgEditado({ numero, contacto, msgId, texto }) {
     if (!c) return;
     const m = c.msgs.find(x => x.msgId === msgId);
     if (!m) return;
-    m.text = texto;
+    m.text    = texto;
+    m.editado = true;
     _saveConv();
-    if (_state.activeNum === numero && _state.activeContact === contacto) _renderMsgs();
+    if (_state.activeNum === numero && _state.activeContact === contacto) {
+        const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+        const textEl = bubble?.querySelector('.wap-msg-text');
+        if (textEl) {
+            textEl.textContent = texto;
+            if (!bubble.querySelector('.wap-msg-edited')) {
+                bubble.querySelector('.wap-msg-ts')?.insertAdjacentHTML('beforebegin', '<span class="wap-msg-edited">Editado</span>');
+            }
+        } else {
+            _renderMsgs();
+        }
+    }
 }
 
 // Edición de mensaje por el cliente desde WhatsApp
