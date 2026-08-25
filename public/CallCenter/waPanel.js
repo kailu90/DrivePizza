@@ -1727,7 +1727,8 @@ function _injectStyles() {
     z-index: 2;
 }
 .wap-msg-menu-btn:hover { background: rgba(0,0,0,.28); }
-.wap-msg--out:hover .wap-msg-menu-btn { display: flex; }
+.wap-msg--out:hover .wap-msg-menu-btn,
+.wap-msg--in:hover  .wap-msg-menu-btn  { display: flex; }
 .wap-msg-reply-direct {
     display: none;
     position: absolute;
@@ -1776,6 +1777,85 @@ function _injectStyles() {
 .wap-msg-dropdown-item:hover { background: rgba(0,0,0,.06); }
 .wap-msg-dropdown-item--danger { color: #ef4444; }
 .wap-msg-dropdown-item--danger:hover { background: #fef2f2; }
+/* Modal reenvío */
+.wap-fwd-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+}
+.wap-fwd-overlay.open { display: flex; }
+.wap-fwd-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 320px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    overflow: hidden;
+}
+.wap-fwd-header {
+    padding: 14px 16px 10px;
+    font-weight: 600;
+    font-size: 1.4rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.wap-fwd-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: #6b7280;
+    line-height: 1;
+    padding: 0 2px;
+}
+.wap-fwd-search {
+    margin: 10px 12px 6px;
+    padding: 7px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    outline: none;
+}
+.wap-fwd-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 0 8px;
+}
+.wap-fwd-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: background .12s;
+}
+.wap-fwd-item:hover { background: #f3f4f6; }
+.wap-fwd-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.wap-fwd-name {
+    font-size: 1.25rem;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wap-fwd-sub {
+    font-size: 1.05rem;
+    color: #9ca3af;
+}
 /* Edición inline */
 .wap-msg-edit-form {
     display: flex;
@@ -2913,6 +2993,14 @@ function _renderShell(body) {
         const lbImg = e.target.closest('[data-lightbox]');
         if (lbImg) { _openLightbox(lbImg.dataset.lightbox); return; }
 
+        // Reenviar
+        const fwdBtn = e.target.closest('[data-fwd-msgid]');
+        if (fwdBtn) {
+            document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
+            _openFwdModal(fwdBtn.dataset.fwdMsgid);
+            return;
+        }
+
         // Responder
         const replyBtn = e.target.closest('[data-reply-msgid]');
         if (replyBtn) {
@@ -2957,6 +3045,12 @@ function _renderShell(body) {
     // Cerrar dropdown al hacer click fuera de los mensajes
     document.addEventListener('click', () => {
         document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
+    // Seleccionar destino en modal de reenvío (event delegation en body)
+    document.body.addEventListener('click', e => {
+        const item = e.target.closest('[data-fwd-num]');
+        if (item) { _doForward(item.dataset.fwdNum, item.dataset.fwdPhone); }
     });
     // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
     // lo que lo convertiría en containing-block. Lo movemos al <body> para que
@@ -4784,10 +4878,15 @@ function _renderMsgs() {
                 ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
                    <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
                        <button class="wap-msg-dropdown-item" ${replyAttrs}>&#x21A9; Responder</button>
+                       <button class="wap-msg-dropdown-item" data-fwd-msgid="${_esc(m.msgId)}">&#x21AA; Reenviar</button>
                        <button class="wap-msg-dropdown-item" data-edit-msgid="${_esc(m.msgId)}">&#9998; Editar</button>
                        <button class="wap-msg-dropdown-item wap-msg-dropdown-item--danger" data-del-msgid="${_esc(m.msgId)}">&#x1F5D1; Eliminar</button>
                    </div>`
-                : `<button class="wap-msg-reply-direct" ${replyAttrs} title="Responder">&#x21A9;</button>`
+                : `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
+                   <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
+                       <button class="wap-msg-dropdown-item" ${replyAttrs}>&#x21A9; Responder</button>
+                       <button class="wap-msg-dropdown-item" data-fwd-msgid="${_esc(m.msgId)}">&#x21AA; Reenviar</button>
+                   </div>`
             : '';
         const quotedBlock = m.quotedTexto
             ? `<div class="wap-msg-quoted">
@@ -5500,6 +5599,115 @@ function _showToast(msg, ms = 3000) {
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), ms);
+}
+
+// ── Reenvío de mensajes ─────────────────────────────────────────────────────
+let _fwdMsg = null; // mensaje a reenviar
+
+function _openFwdModal(msgId) {
+    // Buscar el mensaje en _state.conv
+    let found = null;
+    for (const phones of Object.values(_state.conv[_state.activeNum] || {})) {
+        found = phones.msgs?.find(x => x.msgId === msgId);
+        if (found) break;
+    }
+    if (!found) return;
+    _fwdMsg = found;
+
+    // Construir y mostrar modal
+    let overlay = document.getElementById('wap-fwd-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id  = 'wap-fwd-overlay';
+        overlay.className = 'wap-fwd-overlay';
+        overlay.innerHTML = `
+            <div class="wap-fwd-modal">
+                <div class="wap-fwd-header">
+                    <span>Reenviar a...</span>
+                    <button class="wap-fwd-close" id="wap-fwd-close">&times;</button>
+                </div>
+                <input class="wap-fwd-search" id="wap-fwd-search" placeholder="Buscar conversación..." autocomplete="off">
+                <div class="wap-fwd-list" id="wap-fwd-list"></div>
+            </div>`;
+        overlay.addEventListener('click', e => { if (e.target === overlay) _closeFwdModal(); });
+        document.getElementById('wap-fwd-close', overlay)?.addEventListener('click', _closeFwdModal);
+        document.body.appendChild(overlay);
+        document.getElementById('wap-fwd-close').addEventListener('click', _closeFwdModal);
+        document.getElementById('wap-fwd-search').addEventListener('input', e => _renderFwdList(e.target.value));
+    }
+    overlay.classList.add('open');
+    document.getElementById('wap-fwd-search').value = '';
+    _renderFwdList('');
+}
+
+function _closeFwdModal() {
+    document.getElementById('wap-fwd-overlay')?.classList.remove('open');
+    _fwdMsg = null;
+}
+
+function _renderFwdList(q) {
+    const list = document.getElementById('wap-fwd-list');
+    if (!list) return;
+    const lq = q.toLowerCase();
+    const items = [];
+    for (const [num, phones] of Object.entries(_state.conv)) {
+        for (const [phone, c] of Object.entries(phones)) {
+            // Excluir la conversación activa
+            if (num === _state.activeNum && phone === _state.activeContact) continue;
+            const label = c.nombre || c.name || _fmtPhone(phone);
+            if (lq && !label.toLowerCase().includes(lq)) continue;
+            const sesLabel = _sessionLabel(num);
+            const color = _getColor(num);
+            const initials = _initials(label);
+            const textColor = _textColorForBg(color);
+            items.push(`<div class="wap-fwd-item" data-fwd-num="${_esc(num)}" data-fwd-phone="${_esc(phone)}">
+                <div class="wap-fwd-avatar" style="background:${color};color:${textColor}">${_esc(initials)}</div>
+                <div>
+                    <div class="wap-fwd-name">${_esc(label)}</div>
+                    <div class="wap-fwd-sub">${_esc(sesLabel)}</div>
+                </div>
+            </div>`);
+        }
+    }
+    list.innerHTML = items.length ? items.join('') : `<p style="padding:16px;color:#9ca3af;font-size:1.2rem;text-align:center">Sin conversaciones</p>`;
+}
+
+async function _doForward(num, phone) {
+    if (!_fwdMsg) return;
+    const m = _fwdMsg;
+    _closeFwdModal();
+    try {
+        if (m.mediaUrl) {
+            // Media: descargar desde Storage y reenviar como multipart
+            const resp = await fetch(m.mediaUrl);
+            if (!resp.ok) throw new Error('No se pudo descargar el archivo');
+            const blob = await resp.blob();
+            const ext  = m.mediaUrl.split('.').pop().split('?')[0] || 'bin';
+            const file = new File([blob], `reenvio.${ext}`, { type: blob.type });
+            const fd   = new FormData();
+            fd.append('numero',       num);
+            fd.append('destinatario', phone);
+            fd.append('asesor',       _asesorActual || '');
+            if (m.text) {
+                const sep = m.text.indexOf(': ');
+                const caption = sep !== -1 ? m.text.slice(sep + 2) : '';
+                if (caption) fd.append('caption', caption);
+            }
+            fd.append('file', file);
+            await fetch(`${HETZNER_URL}/wa/mensajes/media`, { method: 'POST', body: fd });
+        } else {
+            // Texto plano
+            await fetch(`${HETZNER_URL}/wa/mensajes`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ numero: num, destinatario: phone, texto: m.text, asesor: _asesorActual || '' }),
+            });
+        }
+        _showToast('Mensaje reenviado', 2000);
+    } catch (err) {
+        console.error('[fwd]', err);
+        _showToast('Error al reenviar', 3000);
+    }
 }
 
 // ── Lightbox imágenes ───────────────────────────────────────────────────────
