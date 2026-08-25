@@ -5677,9 +5677,8 @@ async function _doForward(num, phone) {
     const m = _fwdMsg;
     _closeFwdModal();
 
-    // Navegar a la conversación destino primero
-    _state.activeNum = num;
-    _openChat(phone);
+    // Tomar el chat (asigna al asesor actual, lo pone en atención y navega)
+    await _tomarChat(num, phone);
 
     try {
         if (m.mediaUrl) {
