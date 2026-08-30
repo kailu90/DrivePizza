@@ -2765,13 +2765,13 @@ function _renderShell(body) {
                             </svg>
                             Conexión
                         </button>
+                        <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
+                            <div class="wap-sessions" id="wap-sessions"></div>
+                        </div>
                         <div class="wap-header-filtros">
                             <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
                             <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
                         </div>
-                    </div>
-                    <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
-                        <div class="wap-sessions" id="wap-sessions"></div>
                     </div>
                     <div class="wap-search" id="wap-search-wrap">
                         <input type="text" id="wap-search" placeholder="Buscar conversacion...">
