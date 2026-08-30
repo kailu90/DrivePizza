@@ -227,6 +227,7 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     let _resetWaView    = null; // se asigna al importar waPanel.js
     let _destroyWaPanel = null; // se asigna al importar waPanel.js
+    let _historialFrame = null; // iframe lazy para historialPedidos
 
     function _waOffset() {
         const panel = document.getElementById('wa-panel');
@@ -360,8 +361,6 @@
     });
 
     // ── Gestión de vistas (cc-frame / frame-historial) ───────────────────────
-    let _historialFrame = null;
-
     function _switchView(target) {
         const ccFrame = document.getElementById('cc-frame');
         if (target === 'historial') {
