@@ -22,8 +22,8 @@
   --color-quinto: #e67318;
   --color-sexto: #1e2be4;
   /* Ciudades */
-  --color-bga: #1d4ed8;
-  --color-bga-light: #dbeafe;
+  --color-bga: var(--color-primario);
+  --color-bga-light: #d1fae5;
   --color-ctg: #92400e;
   --color-ctg-light: #fef3c7;
 }
