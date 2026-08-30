@@ -4097,9 +4097,9 @@ function _renderCiudadPills() {
             <span class="wap-ciudad-btn-arrow">▾</span>
         </button>
         <div class="wap-ciudad-dropdown" id="wap-ciudad-dropdown">
-            ${_cOpt(null,           'Todas',        fc)}
-            ${_cOpt('bucaramanga', 'Bucaramanga',  fc)}
-            ${_cOpt('cartago',     'Cartago',       fc)}
+            ${_cOpt(null,           'Todas',              fc)}
+            ${_cOpt('bucaramanga', 'Bucaramanga · BGA',  fc)}
+            ${_cOpt('cartago',     'Cartago · CAR',      fc)}
         </div>
     `;
 
