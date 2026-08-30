@@ -3,6 +3,7 @@
 import { supabase } from '../Api/supabaseConfig.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
 import { mostrarOverlay, ocultarOverlay } from '../Shared/overlay.js'
+import { getSedes } from '../Shared/sedesService.js'
 
 mostrarSkeleton('login')
 const login_form              = document.getElementById("login_form")
@@ -30,7 +31,91 @@ const REDIRECT_ROL = {
 
 /***************************LÓGICA DE CREACIÓN DE USUARIO******************************/
 
-if (btnCreateAccount) btnCreateAccount.addEventListener('click', () => registrationModal.classList.add('active'))
+// ── Registro: ciudad → sede dinámica ────────────────────────────────────────
+let _regInited = false;
+let _regCiudad = 'bucaramanga';
+let _regSedes  = [];
+
+// Sedes operativas que no están en la tabla sedes (solo Bucaramanga)
+const _SEDES_ESPECIALES_BGA = [
+    { value: 'planta',      label: 'Planta de Producción', grupo: 'Operaciones Centrales' },
+    { value: 'callcenter',  label: 'Callcenter',           grupo: 'Operaciones Centrales' },
+];
+
+async function _initRegForm() {
+    if (!_regInited) {
+        _regSedes = await getSedes();
+        document.getElementById('reg-ciudad-toggle')?.addEventListener('click', e => {
+            const btn = e.target.closest('.ciudad-btn');
+            if (!btn) return;
+            _regCiudad = btn.dataset.ciudad;
+            document.querySelectorAll('#reg-ciudad-toggle .ciudad-btn').forEach(b =>
+                b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === _regCiudad)
+            );
+            document.getElementById('reg_sede').value = '';
+            _renderRegSedes();
+        });
+        _regInited = true;
+    }
+    _regCiudad = 'bucaramanga';
+    _renderRegCiudad();
+    _renderRegSedes();
+}
+
+function _renderRegCiudad() {
+    const wrap = document.getElementById('reg-ciudad-toggle');
+    if (!wrap) return;
+    wrap.innerHTML = [
+        { key: 'bucaramanga', label: 'BUCARAMANGA' },
+        { key: 'cartago',     label: 'CARTAGO' },
+    ].map(c => `<button type="button" class="ciudad-btn${c.key === _regCiudad ? ' ciudad-btn--active' : ''}" data-ciudad="${c.key}">${c.label}</button>`).join('');
+}
+
+function _renderRegSedes() {
+    const sel = document.getElementById('reg_sede');
+    if (!sel) return;
+    sel.innerHTML = '<option value="" disabled selected>Selecciona tu sede</option>';
+
+    if (_regCiudad === 'bucaramanga') {
+        const og = document.createElement('optgroup');
+        og.label = 'Operaciones Centrales';
+        _SEDES_ESPECIALES_BGA.forEach(({ value, label }) => {
+            const o = document.createElement('option');
+            o.value = value; o.textContent = label;
+            og.appendChild(o);
+        });
+        sel.appendChild(og);
+    }
+
+    const eventos = _regSedes.filter(s => s.ciudad === _regCiudad && s.name.toLowerCase() === 'gastrofusion');
+    if (eventos.length) {
+        const og = document.createElement('optgroup');
+        og.label = 'Eventos';
+        eventos.forEach(s => {
+            const o = document.createElement('option');
+            o.value = s.name.toLowerCase(); o.textContent = s.name;
+            og.appendChild(o);
+        });
+        sel.appendChild(og);
+    }
+
+    const pizzerias = _regSedes.filter(s => s.ciudad === _regCiudad && s.name.toLowerCase() !== 'gastrofusion');
+    if (pizzerias.length) {
+        const og = document.createElement('optgroup');
+        og.label = 'Pizzerías';
+        pizzerias.forEach(s => {
+            const o = document.createElement('option');
+            o.value = s.name.toLowerCase(); o.textContent = s.name;
+            og.appendChild(o);
+        });
+        sel.appendChild(og);
+    }
+}
+
+if (btnCreateAccount) btnCreateAccount.addEventListener('click', () => {
+    registrationModal.classList.add('active');
+    _initRegForm();
+})
 if (closeRegistrationModalBtn) closeRegistrationModalBtn.addEventListener('click', () => registrationModal.classList.remove('active'))
 
 const registerForm = document.getElementById("register_form")
@@ -41,6 +126,7 @@ registerForm.addEventListener("submit", async (e) => {
     const pass        = document.getElementById("reg_pass").value
     const confirmPass = document.getElementById("reg_confirm_pass").value
     const sede        = document.getElementById("reg_sede").value
+    const ciudad      = _regCiudad
 
     if (username.length < 5)  { displayLoginError("El usuario es muy corto."); return }
     if (pass !== confirmPass)  { displayLoginError("Las contraseñas no coinciden."); return }
@@ -53,7 +139,7 @@ registerForm.addEventListener("submit", async (e) => {
         if (error) throw error
 
         await supabase.from('usuarios').insert({
-            id: data.user.id, username, email, sede,
+            id: data.user.id, username, email, sede, ciudad,
             rol: 'pending', active: false, status: 'pending',
         })
 
