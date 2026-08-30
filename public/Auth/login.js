@@ -45,7 +45,6 @@ const _SEDES_ESPECIALES_BGA = [
 async function _initRegForm() {
     if (!_regInited) {
         _regSedes = await getSedes();
-        console.log('[registro] primera sede completa:', JSON.stringify(_regSedes[0]));
         document.getElementById('reg_ciudad')?.addEventListener('change', e => {
             _regCiudad = e.target.value;
             document.getElementById('reg_sede').value = '';
@@ -75,7 +74,7 @@ function _renderRegSedes() {
         sel.appendChild(og);
     }
 
-    const eventos = _regSedes.filter(s => s.ciudad === _regCiudad && s.name.toLowerCase() === 'gastrofusion');
+    const eventos = _regSedes.filter(s => s.ciudad?.toLowerCase() === _regCiudad && s.name.toLowerCase() === 'gastrofusion');
     if (eventos.length) {
         const og = document.createElement('optgroup');
         og.label = 'Eventos';
@@ -87,7 +86,7 @@ function _renderRegSedes() {
         sel.appendChild(og);
     }
 
-    const pizzerias = _regSedes.filter(s => s.ciudad === _regCiudad && s.name.toLowerCase() !== 'gastrofusion');
+    const pizzerias = _regSedes.filter(s => s.ciudad?.toLowerCase() === _regCiudad && s.name.toLowerCase() !== 'gastrofusion');
     if (pizzerias.length) {
         const og = document.createElement('optgroup');
         og.label = 'Pizzerías';

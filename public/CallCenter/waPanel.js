@@ -164,7 +164,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
         SEDES_CIUDAD = Object.fromEntries(
             sedes.map(s => [
                 s.name.toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
-                s.ciudad || 'bucaramanga'
+                (s.ciudad || 'bucaramanga').toLowerCase()
             ])
         );
     });
