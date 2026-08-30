@@ -45,30 +45,17 @@ const _SEDES_ESPECIALES_BGA = [
 async function _initRegForm() {
     if (!_regInited) {
         _regSedes = await getSedes();
-        document.getElementById('reg-ciudad-toggle')?.addEventListener('click', e => {
-            const btn = e.target.closest('.ciudad-btn');
-            if (!btn) return;
-            _regCiudad = btn.dataset.ciudad;
-            document.querySelectorAll('#reg-ciudad-toggle .ciudad-btn').forEach(b =>
-                b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === _regCiudad)
-            );
+        document.getElementById('reg_ciudad')?.addEventListener('change', e => {
+            _regCiudad = e.target.value;
             document.getElementById('reg_sede').value = '';
             _renderRegSedes();
         });
         _regInited = true;
     }
     _regCiudad = 'bucaramanga';
-    _renderRegCiudad();
+    document.getElementById('reg_ciudad').value = '';
+    document.getElementById('reg_sede').value = '';
     _renderRegSedes();
-}
-
-function _renderRegCiudad() {
-    const wrap = document.getElementById('reg-ciudad-toggle');
-    if (!wrap) return;
-    wrap.innerHTML = [
-        { key: 'bucaramanga', label: 'BUCARAMANGA' },
-        { key: 'cartago',     label: 'CARTAGO' },
-    ].map(c => `<button type="button" class="ciudad-btn${c.key === _regCiudad ? ' ciudad-btn--active' : ''}" data-ciudad="${c.key}">${c.label}</button>`).join('');
 }
 
 function _renderRegSedes() {
@@ -126,7 +113,7 @@ registerForm.addEventListener("submit", async (e) => {
     const pass        = document.getElementById("reg_pass").value
     const confirmPass = document.getElementById("reg_confirm_pass").value
     const sede        = document.getElementById("reg_sede").value
-    const ciudad      = _regCiudad
+    const ciudad      = document.getElementById("reg_ciudad").value
 
     if (username.length < 5)  { displayLoginError("El usuario es muy corto."); return }
     if (pass !== confirmPass)  { displayLoginError("Las contraseñas no coinciden."); return }
