@@ -315,9 +315,34 @@
     // load del iframe puede llegar tarde o nav-loading puede re-mostrar el overlay.
     // Si load llega antes de 3s, hideOverlay() cancela este timer. Si no, fuerza cierre.
     _overlayFallback = setTimeout(() => hideOverlay(), 3000);
+
+    // _listenForFrameNav: adjunta pagehide al iframe para mostrar el overlay.
+    // pagehide siempre dispara ANTES de que cargue la nueva página, eliminando
+    // el race condition donde nav-loading (postMessage async) llegaba tarde y
+    // re-mostraba el overlay después de que cc-frame.load ya lo había ocultado.
+    function _listenForFrameNav(frame) {
+        try {
+            frame.contentWindow?.addEventListener('pagehide', () => {
+                _setWaVisible(false);
+                clearTimeout(_overlayHideTimer);
+                _overlayHideTimer = null;
+                _overlayShownAt = performance.now();
+                _overlay.classList.add('visible');
+                _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {
+                    el.style.animation = 'none';
+                    el.offsetHeight;
+                    el.style.animation = '';
+                });
+                clearTimeout(_overlayFallback);
+                _overlayFallback = setTimeout(() => hideOverlay(), 3000);
+            }, { once: true });
+        } catch(e) {}
+    }
+
     document.getElementById('cc-frame').addEventListener('load', () => {
         hideOverlay();
         _postWaOffset();
+        _listenForFrameNav(document.getElementById('cc-frame'));
     });
 
     // Mensajes desde el iframe
@@ -334,22 +359,7 @@
             _switchView(e.data.page);
             return;
         }
-        if (e.data?.type === 'nav-loading') {
-            _setWaVisible(false); // ocultar por defecto — cada página lo muestra si lo necesita
-            clearTimeout(_overlayHideTimer);
-            _overlayHideTimer = null;
-            _overlayShownAt = performance.now();
-            _overlay.classList.add('visible');
-            _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {
-                el.style.animation = 'none';
-                el.offsetHeight; // fuerza reflow para resetear la animación
-                el.style.animation = '';
-            });
-            // Fallback: si load ya disparó antes que nav-loading (caché muy rápido),
-            // el overlay quedaría atascado. Forzar cierre en 3s (antes era 6s).
-            clearTimeout(_overlayFallback);
-            _overlayFallback = setTimeout(() => hideOverlay(), 3000);
-        }
+        // nav-loading: ya no muestra el overlay (lo hace pagehide, sin race condition)
         if (e.data?.type === 'frame-ready')       { postToFrame(_sipState); _postWaOffset(); }
         if (e.data?.type === 'sip-reconnect')     sipReconnect();
         if (e.data?.type === 'reactivacion-hecha') {
@@ -387,6 +397,7 @@
                     hideOverlay();
                     _postWaOffset();
                     _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                    _listenForFrameNav(_historialFrame);
                 });
                 _historialFrame.src = './historialPedidos.html';
                 document.getElementById('cc-wrap').appendChild(_historialFrame);

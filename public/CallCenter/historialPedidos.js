@@ -997,7 +997,6 @@ async function obtenerUsuarioCC() {
                       ? '../Pizzerias/pizzerias.html'
                       : './callcenter.html';
         document.getElementById('btn-home').onclick = () => {
-            window.parent.postMessage({ type: 'nav-loading' }, '*');
             window.location.href = homeUrl;
         };
         document.getElementById('btn-logout').addEventListener('click', async () => {

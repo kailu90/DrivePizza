@@ -601,7 +601,6 @@ async function obtenerUsuarioCC() {
             document.getElementById('btn-ir-motivos').style.display = '';
         }
         document.getElementById('btn-home').onclick = () => {
-            window.parent.postMessage({ type: 'nav-loading' }, '*');
             window.location.href = './callcenter.html';
         };
         document.getElementById('btn-logout').addEventListener('click', async () => {

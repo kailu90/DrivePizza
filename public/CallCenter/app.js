@@ -639,7 +639,6 @@ window.addEventListener('click', function(event) {
 const btnHome = document.getElementById('btn-home'); 
 
 function regresarHome() {
-    window.parent.postMessage({ type: 'nav-loading' }, '*');
     window.location.href = '../CallCenter/callcenter.html';
 }
 

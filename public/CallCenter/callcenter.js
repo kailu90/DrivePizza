@@ -15,7 +15,6 @@ import { supabase } from '../Api/supabaseConfig.js';
 })();
 
 function navTo(href) {
-    window.parent.postMessage({ type: 'nav-loading' }, '*');
     window.location.href = href;
 }
 

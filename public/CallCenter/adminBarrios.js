@@ -49,7 +49,6 @@ mostrarSkeleton('historial');
 
         document.getElementById('username').textContent = _usuario;
         document.getElementById('btn-home').onclick = () => {
-            window.parent.postMessage({ type: 'nav-loading' }, '*');
             window.location.href = './callcenter.html';
         };
         document.getElementById('btn-logout').addEventListener('click', async () => {

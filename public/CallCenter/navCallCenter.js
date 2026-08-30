@@ -87,10 +87,7 @@ export function initNavButtons(paginaActual, { onBarrios } = {}) {
                 ? onBarrios
                 : ['historial', 'pedidos'].includes(key)
                     ? () => window.parent.postMessage({ type: 'nav-switch', page: key }, '*')
-                    : () => {
-                        window.parent.postMessage({ type: 'nav-loading' }, '*');
-                        window.location.href = page.href;
-                    }
+                    : () => { window.location.href = page.href; }
             );
             fragment.appendChild(btn);
         });
