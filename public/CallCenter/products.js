@@ -165,9 +165,9 @@ const menuData = {
         { nombre: "Super Estofada Hawaiana", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón y piña." },
     ],
     "Pizzas Estofadas": [
-        { nombre: "Estofada de Carnes", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Jamón, salchicha, salami, pollo, champiñon, queso y salsa napolitana." },
-        { nombre: "Estofada Hawaiana", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Jamón, piña, queso y salsa napolitana." },
-        { nombre: "Estofada Suprema", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Jamón, salchicha, salami, cebolla, pimentón asado, queso y salsa napolitana." },
+        { nombre: "Estofada de Carnes", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Queso mozarella, jamón, cabano, salami, pollo, champiñon y salsa napolitana." },
+        { nombre: "Estofada Hawaiana", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Queso mozarella. jamón, piña y salsa napolitana." },
+        { nombre: "Estofada Suprema", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Queso mozarella, jamón, cabano, salami, cebolla, pimentón asado, queso y salsa napolitana." },
         { nombre: "Estofada Triple Queso", opciones: preciosPizzas.estofada, esEstofada: true, descripcion: "Triple porción de queso mozarella." }
     ],
     "Pizzas Especiales": [
