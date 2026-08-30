@@ -582,6 +582,7 @@
     window.addEventListener('message', e => {
         if (e.data?.type !== 'frame-visible') return;
         const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+        window.ciudadActual = ciudad;
         document.querySelectorAll('.ciudad-btn').forEach(b =>
             b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
         );
@@ -597,6 +598,7 @@
     window.addEventListener('storage', e => {
         if (e.key !== 'cc_ciudad' || !e.newValue) return;
         const ciudad = e.newValue;
+        window.ciudadActual = ciudad;
         document.querySelectorAll('.ciudad-btn').forEach(b =>
             b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
         );

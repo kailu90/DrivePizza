@@ -1021,6 +1021,7 @@ async function obtenerUsuarioCC() {
         window.addEventListener('message', e => {
             if (e.data?.type !== 'frame-visible') return;
             const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+            window.ciudadActual = ciudad;
             document.querySelectorAll('.ciudad-btn').forEach(b =>
                 b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
             );
@@ -1030,6 +1031,7 @@ async function obtenerUsuarioCC() {
         // storage: ciudad cambiada desde pedidos
         window.addEventListener('storage', e => {
             if (e.key !== 'cc_ciudad' || !e.newValue) return;
+            window.ciudadActual = e.newValue;
             document.querySelectorAll('.ciudad-btn').forEach(b =>
                 b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === e.newValue)
             );
