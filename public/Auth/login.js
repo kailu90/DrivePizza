@@ -92,7 +92,7 @@ function _renderRegSedes() {
         og.label = 'Pizzerías';
         pizzerias.forEach(s => {
             const o = document.createElement('option');
-            o.value = s.name.toLowerCase(); o.textContent = s.name;
+            o.value = s.name.toLowerCase(); o.textContent = s.nombre_display || s.name;
             og.appendChild(o);
         });
         sel.appendChild(og);
