@@ -1013,10 +1013,8 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
-        // Para roles con sede fija, sincronizar ciudad del perfil antes de montar el toggle
-        if (['pizzeria', 'gastrofusion'].includes(rol) && usuario.ciudad) {
-            localStorage.setItem('cc_ciudad', usuario.ciudad);
-        }
+        // Sincronizar ciudad desde el perfil siempre, para todos los roles
+        if (usuario.ciudad) localStorage.setItem('cc_ciudad', usuario.ciudad);
         initCiudadToggle('ciudad-toggle');
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
 
