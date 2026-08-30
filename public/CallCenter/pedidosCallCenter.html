@@ -524,7 +524,14 @@
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
 
             // ── Toggle ciudad (ciudad ya sincronizada por el shell) ───────
-            initCiudadToggle('ciudad-toggle');
+            initCiudadToggle('ciudad-toggle', {
+                onBeforeChange: () => {
+                    if (!window._carritoLen?.()) return true;
+                    const ok = confirm('Cambiar de ciudad vaciará el carrito. ¿Continuar?');
+                    if (ok && typeof vaciarCarrito === 'function') vaciarCarrito();
+                    return ok;
+                }
+            });
             document.addEventListener('ciudad:change', e => {
                 if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(e.detail.ciudad);
                 _filtrarSedesPorCiudad(e.detail.ciudad);

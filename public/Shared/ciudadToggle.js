@@ -30,7 +30,7 @@ const CIUDADES = [
  * @param {string|HTMLElement} container — ID del elemento o el elemento directamente
  * @returns {string} ciudad actualmente seleccionada
  */
-export function initCiudadToggle(container) {
+export function initCiudadToggle(container, { onBeforeChange } = {}) {
     const el = typeof container === 'string'
         ? document.getElementById(container)
         : container;
@@ -50,6 +50,7 @@ export function initCiudadToggle(container) {
         if (!btn) return;
         const ciudad = btn.dataset.ciudad;
         if (ciudad === window.ciudadActual) return;
+        if (onBeforeChange && !onBeforeChange(ciudad)) return;
         window.ciudadActual = ciudad;
         localStorage.setItem(LS_KEY, ciudad);
         el.querySelectorAll('.ciudad-btn').forEach(b =>

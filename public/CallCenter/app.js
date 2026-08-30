@@ -1,5 +1,6 @@
 //********FUNCION DE RENDERIZADO DE TODOS LOS PRODUCTOS DISPONIBLE*******/
 let carrito = [];
+window._carritoLen = () => carrito.length;
 let _modoReserva = false;
 let _toppingsCC = new Set();
 
