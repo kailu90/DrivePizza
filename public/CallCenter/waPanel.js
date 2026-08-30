@@ -498,30 +498,25 @@ function _injectStyles() {
 .wap-panel-header {
     display: flex;
     align-items: center;
-    gap: 0;
-    padding: 9px 12px 8px;
+    gap: 8px;
+    padding: 8px 10px;
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
     background: var(--color-secundario);
-}
-.wap-panel-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--color-primario);
-    flex-shrink: 0;
 }
 /* ── Asesor dropdown (header) ────────────────────── */
 .wap-asesor-pills {
     position: relative;
     flex: 1;
-    padding: 0 6px;
+    padding: 0;
     min-width: 0;
 }
 .wap-asesor-btn {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 5px;
-    padding: 4px 11px;
+    padding: 5px 12px;
     border-radius: 20px;
     border: 1px solid rgba(0,0,0,.12);
     background: transparent;
@@ -530,7 +525,7 @@ function _injectStyles() {
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    max-width: 100%;
+    width: 100%;
     transition: all .15s;
 }
 .wap-asesor-btn:hover { background: rgba(0,0,0,.05); }
@@ -579,19 +574,21 @@ function _injectStyles() {
     display: flex;
     align-items: center;
     flex: 1;
+    gap: 6px;
     min-width: 0;
 }
 /* ── Ciudad dropdown (header) ───────────────────── */
 .wap-ciudad-pills {
     position: relative;
-    padding: 0 6px;
-    flex-shrink: 0;
+    padding: 0;
+    flex: 1;
 }
 .wap-ciudad-btn {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 5px;
-    padding: 4px 11px;
+    padding: 5px 12px;
     border-radius: 20px;
     border: 1px solid rgba(0,0,0,.12);
     background: transparent;
@@ -600,6 +597,7 @@ function _injectStyles() {
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
+    width: 100%;
     transition: all .15s;
 }
 .wap-ciudad-btn:hover { background: rgba(0,0,0,.05); }
@@ -2750,7 +2748,6 @@ function _renderShell(body) {
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
                     <div class="wap-panel-header">
-                        <span class="wap-panel-title">WhatsApp</span>
                         <div class="wap-header-filtros">
                             <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
                             <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
