@@ -511,7 +511,7 @@
         if (!user) return null;
         const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
         if (!data) return null;
-        return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "" };
+        return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "", ciudad: (data.ciudad || 'bucaramanga').toLowerCase() };
     }
 
     (async () => {
@@ -523,8 +523,14 @@
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
 
-            // ── Toggle ciudad ─────────────────────────────────────────
+            // ── Toggle ciudad — sincronizar desde perfil al iniciar ───
+            localStorage.setItem('cc_ciudad', usuario.ciudad);
             initCiudadToggle('ciudad-toggle');
+            // Re-renderizar menú con la ciudad real del perfil (init() corrió antes del auth)
+            if (typeof renderCategories === 'function') {
+                renderCategories();
+                seleccionarCategoria('Pizzas');
+            }
             document.addEventListener('ciudad:change', e => {
                 if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(e.detail.ciudad);
                 _filtrarSedesPorCiudad(e.detail.ciudad);
