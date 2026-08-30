@@ -3988,7 +3988,6 @@ function _renderSessions() {
     const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked'  : '';
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
-            <span class="wap-sessions-status wap-sessions-status--green"></span>
             <span class="wap-sessions-name">Todas las conexiones</span>
             <span class="wap-sessions-cb${todasChecked}"></span>
         </button>
@@ -3997,11 +3996,7 @@ function _renderSessions() {
             const checked   = sel.has(s.numero);
             const activeCls = checked ? ' wap-sessions-item--active' : '';
             const cbCls     = checked ? ' wap-sessions-cb--checked'  : '';
-            const statusCls = s.status === 'conectado'    ? 'wap-sessions-status--green'
-                            : s.status === 'esperando_qr' ? 'wap-sessions-status--yellow'
-                            : 'wap-sessions-status--red';
             return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
-                <span class="wap-sessions-status ${statusCls}"></span>
                 <span class="wap-sessions-color-bar" style="background:${color};"></span>
                 <span class="wap-sessions-name">${_sessionLabel(s.numero)}</span>
                 <span class="wap-sessions-cb${cbCls}"></span>
