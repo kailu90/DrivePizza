@@ -604,9 +604,11 @@
     // y llamamos /pbx/queue/connect para restaurar el estado en el nuevo proceso.
     let _wsShellFirst = true;
     let _ws = null;
+    let _wsRetry = 0;
     function initShellWs() {
         _ws = new WebSocket(WS_URL);
         _ws.onopen = () => {
+            _wsRetry = 0;
             if (_wsShellFirst) { _wsShellFirst = false; return; }
             // Reconexión = backend reiniciado → re-anunciar si SIP registrado
             const u = window._usuarioCC;
@@ -637,7 +639,11 @@
                 }
             } catch {}
         };
-        _ws.onclose = () => setTimeout(initShellWs, 5000);
+        _ws.onclose = () => {
+            const delay = Math.min(1000 * 2 ** _wsRetry, 30_000);
+            _wsRetry++;
+            setTimeout(initShellWs, delay);
+        };
     }
     initShellWs();
 

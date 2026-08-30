@@ -120,6 +120,7 @@ function _ciudadDeSesion(numero) {
 }
 let _ws              = null;
 let _wsEverConnected = false; // true después de la primera conexión exitosa
+let _wsRetry         = 0;
 let _qrNumero        = null;  // numero cuyo QR modal esta abierto
 let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
@@ -3404,6 +3405,7 @@ function _connectWs() {
     _setWsStatus('reconectando');
     _ws = new WebSocket(WS_URL);
     _ws.onopen = () => {
+        _wsRetry = 0;
         _setWsStatus('ok');
         if (_wsEverConnected) {
             // Reconexión — recuperar mensajes perdidos durante la desconexión
@@ -3439,7 +3441,12 @@ function _connectWs() {
             if (msg.tipo === 'wa:reaccion')      _onReaccion(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
-    _ws.onclose = () => { _setWsStatus('desconectado'); setTimeout(_connectWs, 5000); };
+    _ws.onclose = () => {
+        _setWsStatus('desconectado');
+        const delay = Math.min(1000 * 2 ** _wsRetry, 30_000);
+        _wsRetry++;
+        setTimeout(_connectWs, delay);
+    };
     _ws.onerror = () => { _setWsStatus('desconectado'); };
 }
 
