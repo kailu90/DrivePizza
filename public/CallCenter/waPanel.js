@@ -4014,9 +4014,9 @@ function _renderAsesorPills() {
         ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].filter(a => a !== _asesorActual).sort()
         : [];
 
-    const labelActual = fa === null ? 'Todos'
-                      : fa === 'mio' ? 'Míos'
-                      : fa;
+    const labelActual = fa === null ? '👤 Asesor'
+                      : fa === 'mio' ? '👤 Míos'
+                      : `👤 ${fa}`;
     const isActive = fa !== null;
 
     wrap.innerHTML = `
