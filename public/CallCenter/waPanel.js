@@ -4337,14 +4337,32 @@ function _renderResueltas() {
     if (!el) return;
     const r = _state.resueltas;
 
-    if (!r.items.length && !r.loading) {
+    // Aplicar filtros transversales (asesor, ciudad, sesión)
+    let items = r.items;
+    if (_state.filtroSesiones.size > 0) {
+        items = items.filter(c => _state.filtroSesiones.has(c.numero));
+    }
+    if (_state.filtroCiudad.size > 0) {
+        items = items.filter(c => _state.filtroCiudad.has(_ciudadDeSesion(c.numero)));
+    }
+    if (_state.filtroAsesor.size > 0) {
+        const fa     = _state.filtroAsesor;
+        const hasMio = fa.has('mio');
+        const otros  = [...fa].filter(a => a !== 'mio');
+        items = items.filter(c =>
+            (hasMio && c.asesor === _asesorActual) ||
+            otros.some(a => a === c.asesor)
+        );
+    }
+
+    if (!items.length && !r.loading) {
         el.innerHTML = `<div class="wap-empty">No hay chats resueltos</div>`;
         return;
     }
 
     // Agrupar por fecha: insertar separador HOY / AYER / DD MMM YYYY
     let lastLabel = null;
-    const html = r.items.map(c => {
+    const html = items.map(c => {
         const color    = _getColor(c.numero);
         const convData = _state.conv[c.numero]?.[c.contacto];
         const display  = c.nombre_cliente || convData?.nombre || convData?.name || c.nombre || _fmtPhone(c.contacto);
