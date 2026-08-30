@@ -296,15 +296,20 @@
     }
     // ── Overlay de navegación ─────────────────────────────────────────────────
     const _overlay = document.getElementById('nav-overlay');
-    const MIN_OVERLAY_MS = 1800;
+    const MIN_OVERLAY_MS = 600;
     let _overlayShownAt = performance.now(); // cubre la primera carga
     let _overlayFallback = null;
+    let _overlayHideTimer = null;
     function hideOverlay() {
         clearTimeout(_overlayFallback);
+        clearTimeout(_overlayHideTimer);
         _overlayFallback = null;
         const elapsed = performance.now() - _overlayShownAt;
         const wait = Math.max(0, MIN_OVERLAY_MS - elapsed);
-        setTimeout(() => _overlay.classList.remove('visible'), wait);
+        _overlayHideTimer = setTimeout(() => {
+            _overlayHideTimer = null;
+            _overlay.classList.remove('visible');
+        }, wait);
     }
     // Fallback inicial: cubre race condition en recarga (location.reload) donde el evento
     // load del iframe puede llegar tarde o nav-loading puede re-mostrar el overlay.
@@ -331,6 +336,8 @@
         }
         if (e.data?.type === 'nav-loading') {
             _setWaVisible(false); // ocultar por defecto — cada página lo muestra si lo necesita
+            clearTimeout(_overlayHideTimer);
+            _overlayHideTimer = null;
             _overlayShownAt = performance.now();
             _overlay.classList.add('visible');
             _overlay.querySelectorAll('.nav-slogan-left, .nav-slogan-right').forEach(el => {
@@ -367,6 +374,8 @@
         if (target === 'historial') {
             if (!_historialFrame) {
                 // Primera vez — lazy load con overlay
+                clearTimeout(_overlayHideTimer);
+                _overlayHideTimer = null;
                 _overlayShownAt = performance.now();
                 _overlay.classList.add('visible');
                 clearTimeout(_overlayFallback);
