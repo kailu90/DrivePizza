@@ -8,6 +8,7 @@ import { openBarriosModal } from "./modalBarrios.js";
 import { PBX_URL, WS_URL } from "../Api/config.js";
 import { getSedes } from "../Shared/sedesService.js";
 import { revelarSplash } from '../Shared/components.js';
+import { initCiudadToggle, getCiudadActual } from '../Shared/ciudadToggle.js';
 
 let pedidosCargados = [];
 let sedeUsuario     = null;
@@ -20,6 +21,30 @@ const FILTRO_TELEFONO = new URLSearchParams(window.location.search).get('telefon
 if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
 
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
+
+// ── CIUDAD ─────────────────────────────────────────────────────────────
+let _sedesCiudadMap = {};
+
+function _ciudadDeSede(sede) {
+    const key = (sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return _sedesCiudadMap[key] || 'bucaramanga';
+}
+
+// ── CIUDAD ─────────────────────────────────────────────────────────────
+const SEDES_CIUDAD = {
+    cabecera:    'bucaramanga',
+    canaveral:   'bucaramanga',
+    acropolis:   'bucaramanga',
+    piedecuesta: 'bucaramanga',
+    megamall:    'bucaramanga',
+    unico:       'bucaramanga',
+    // sedes cartago: 'cartago'
+};
+
+function _ciudadDeSede(sede) {
+    const key = (sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return SEDES_CIUDAD[key] || 'bucaramanga';
+}
 
 // ── SESSION STORAGE CACHÉ ──────────────────────────────────────────────
 const CACHE_TTL     = 5 * 60 * 1000;
@@ -852,6 +877,8 @@ function filtrarColumnas(reiniciarPagina = false) {
         ? pedidosCargados.filter(p => p.tipo === "reserva")
         : pedidosCargados;
 
+    const ciudadActual = getCiudadActual();
+
     const filtrados = base.filter(p =>
         (!npedido   || String(p.nPedido ?? "").includes(npedido)) &&
         (!fecha     || formatFecha(p.fecha).toLowerCase().includes(fecha)) &&
@@ -860,7 +887,8 @@ function filtrarColumnas(reiniciarPagina = false) {
         (!canal     || (p.canal    ?? "").toLowerCase() === canal) &&
         (!sede      || (p.sede     ?? "").toLowerCase().includes(sede)) &&
         (!asesor    || (p.asesor   ?? "").toLowerCase().includes(asesor)) &&
-        (!estado    || (p.estado   ?? "").toLowerCase() === estado)
+        (!estado    || (p.estado   ?? "").toLowerCase() === estado) &&
+        _ciudadDeSede(p.sede) === ciudadActual
     );
     renderTabla(filtrados);
     renderResumen(filtrados);
@@ -921,6 +949,15 @@ mostrarSkeleton("historial");
 
 async function poblarSelectsSedes() {
     const sedes = await getSedes();
+
+    // Construir mapa sede→ciudad desde la BD
+    _sedesCiudadMap = Object.fromEntries(
+        sedes.map(s => [
+            s.name.toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+            s.ciudad || 'bucaramanga'
+        ])
+    );
+
     ['filtro-sede', 'cf-sede'].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
@@ -992,6 +1029,8 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
+        initCiudadToggle('ciudad-toggle');
+        document.addEventListener('ciudad:change', () => filtrarColumnas(true));
 
         if (rol === "pizzeria") {
             sedeUsuario = sede;

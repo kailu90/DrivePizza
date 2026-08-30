@@ -5,6 +5,7 @@
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
 import { supabase } from '../Api/supabaseConfig.js';
+import { getSedes } from '../Shared/sedesService.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
 const SESSION_COLORS = [
@@ -107,16 +108,8 @@ function _textColorForBg(hex) {
 let _rolUsuario   = '';
 let _asesorActual = '';
 
-// Mapa sede → ciudad (actualizar cuando se agreguen sedes de Cartago)
-const SEDES_CIUDAD = {
-    cabecera:    'bucaramanga',
-    canaveral:   'bucaramanga',
-    acropolis:   'bucaramanga',
-    piedecuesta: 'bucaramanga',
-    megamall:    'bucaramanga',
-    unico:       'bucaramanga',
-    // sedes cartago: 'cartago'
-};
+// Mapa sede → ciudad — se construye dinámicamente desde Supabase en initWaPanel
+let SEDES_CIUDAD = {};
 const CIUDAD_BADGE = { bucaramanga: 'BGA', cartago: 'CAR' };
 const CIUDAD_LABEL = { bucaramanga: 'Bucaramanga', cartago: 'Cartago' };
 
@@ -166,6 +159,15 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
             _state.sesiones.forEach(s => _getColor(s.numero)); // restaurar colores
         }
     } catch { /* ignorar */ }
+    // Cargar mapa sede→ciudad desde Supabase (fire-and-forget; defecto 'bucaramanga')
+    getSedes().then(sedes => {
+        SEDES_CIUDAD = Object.fromEntries(
+            sedes.map(s => [
+                s.name.toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+                s.ciudad || 'bucaramanga'
+            ])
+        );
+    });
     _renderShell(body);
     _renderList();        // render inmediato con caché de localStorage
     _loadSessions();
