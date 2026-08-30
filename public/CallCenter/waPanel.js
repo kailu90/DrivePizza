@@ -2045,6 +2045,7 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-espera-bar.visible { display: flex; }
+.wap-espera-btns { display: flex; gap: 6px; flex-shrink: 0; }
 .wap-tomar-chat-btn {
     background: var(--color-primario);
     color: #fff;
@@ -2057,6 +2058,18 @@ function _injectStyles() {
     white-space: nowrap;
 }
 .wap-tomar-chat-btn:hover { background: var(--color-cuaternario); }
+.wap-resolver-espera-btn {
+    background: none;
+    border: 1.5px solid #22c55e;
+    border-radius: 8px;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #16a34a;
+    white-space: nowrap;
+}
+.wap-resolver-espera-btn:hover { background: #dcfce7; }
 .wap-resuelto-bar {
     display: none;
     align-items: center;
@@ -2817,8 +2830,11 @@ function _renderShell(body) {
                             ⚠️ Sesión desconectada — reconecta para responder
                         </div>
                         <div class="wap-espera-bar" id="wap-espera-bar">
-                            <span>💬 En espera — toma el chat para responder</span>
-                            <button class="wap-tomar-chat-btn" id="wap-tomar-chat-btn">Tomar</button>
+                            <span id="wap-espera-label">💬 En espera — toma el chat para responder</span>
+                            <div class="wap-espera-btns">
+                                <button class="wap-tomar-chat-btn" id="wap-tomar-chat-btn">Tomar</button>
+                                <button class="wap-resolver-espera-btn" id="wap-resolver-espera-btn">&#10003; Resolver</button>
+                            </div>
                         </div>
                         <div class="wap-resuelto-bar" id="wap-resuelto-bar">
                             <span>✅ Chat resuelto — solo lectura</span>
@@ -3050,6 +3066,10 @@ function _renderShell(body) {
         if (_state.activeNum && _state.activeContact)
             _tomarChat(_state.activeNum, _state.activeContact);
     });
+    document.getElementById('wap-resolver-espera-btn').addEventListener('click', () => {
+        if (_state.activeNum && _state.activeContact)
+            _resolverDesdeEspera(_state.activeNum, _state.activeContact);
+    });
     // Header del chat clickable → panel datos del cliente
     document.getElementById('wap-chat-avatar').addEventListener('click', _openClientPanel);
     document.getElementById('wap-chat-info').addEventListener('click', _openClientPanel);
@@ -3260,6 +3280,30 @@ async function _resolverChat(num, phone) {
         _renderList();
         _scheduleConteos();
         _showToast('Chat marcado como resuelto');
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _resolverDesdeEspera(num, phone) {
+    if (!_asesorActual) return;
+    try {
+        // Crear asignación y resolverla en secuencia (sin depender de la sesión WA)
+        const r1 = await fetch(`${HETZNER_URL}/wa/asignaciones`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero: num, contacto: phone, asesor: _asesorActual }),
+        });
+        if (!r1.ok) return _showToast('Error al resolver', 3000);
+        const r2 = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ estado: 'resuelto' }),
+        });
+        if (!r2.ok) return _showToast('Error al resolver', 3000);
+        _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'resuelto' };
+        _closeChat();
+        _renderList();
+        _scheduleConteos();
+        _showToast('Chat resuelto ✓');
     } catch { _showToast('Error de conexión', 3000); }
 }
 
@@ -5257,7 +5301,16 @@ function _updateOfflineBar() {
 
     bar.classList.toggle('visible', offline && !bloqueado);
     if (resBar)    resBar.classList.toggle('visible', resuelto);
-    if (esperaBar) esperaBar.classList.toggle('visible', enEspera && !offline);
+    if (esperaBar) {
+        esperaBar.classList.toggle('visible', enEspera);
+        // Cuando offline: ocultar Tomar (requiere sesión), dejar visible Resolver
+        const tomarBtn    = document.getElementById('wap-tomar-chat-btn');
+        const esperaLabel = document.getElementById('wap-espera-label');
+        if (tomarBtn)    tomarBtn.style.display    = offline ? 'none' : '';
+        if (esperaLabel) esperaLabel.textContent   = offline
+            ? '⚠️ Sesión caída — puedes resolver el chat'
+            : '💬 En espera — toma el chat para responder';
+    }
 
     // Bloqueado (resuelto o en espera): ocultar input y atenuar mensajes
     if (inputRow) inputRow.style.display = bloqueado ? 'none' : '';
