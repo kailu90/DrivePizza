@@ -3192,17 +3192,7 @@ function _renderShell(body) {
     document.getElementById('wap-qr-close').addEventListener('click', _closeQr);
 
     // Cerrar dropdowns al hacer click fuera
-    document.addEventListener('click', () => {
-        if (_asesorDdEl) _asesorDdEl.classList.remove('open');
-        const btn = document.getElementById('wap-asesor-btn');
-        if (btn) btn.classList.remove('wap-asesor-btn--open');
-        const ddc = document.getElementById('wap-ciudad-dropdown');
-        const btnc = document.getElementById('wap-ciudad-btn');
-        if (ddc) ddc.classList.remove('open');
-        if (btnc) btnc.classList.remove('wap-ciudad-btn--open');
-        const wrap = document.getElementById('wap-sessions-wrap');
-        if (wrap && wrap.style.display !== 'none') wrap.style.display = 'none';
-    });
+    document.addEventListener('click', () => _closeAllDropdowns());
 
     if (isAdmin) {
         document.getElementById('wap-btn-connect').addEventListener('click', _toggleConnectForm);
@@ -3988,8 +3978,12 @@ function _renderSessions() {
         toggle._hasListener = true;
         toggle.addEventListener('click', e => {
             e.stopPropagation();
-            const isOpen = wrap.classList.toggle('open');
-            wrap.style.display = isOpen ? '' : 'none';
+            const wasOpen = wrap.classList.contains('open');
+            _closeAllDropdowns();
+            if (!wasOpen) {
+                wrap.classList.add('open');
+                wrap.style.display = '';
+            }
         });
         wrap.addEventListener('click', e => e.stopPropagation());
     }
@@ -4027,6 +4021,19 @@ function _renderSessions() {
             _renderList();
         });
     });
+}
+
+// ── Cerrar todos los dropdowns del header ──────────────────────────────────
+function _closeAllDropdowns() {
+    if (_asesorDdEl) _asesorDdEl.classList.remove('open');
+    const aBtn = document.getElementById('wap-asesor-btn');
+    if (aBtn) aBtn.classList.remove('wap-asesor-btn--open');
+    const ciudadDd  = document.getElementById('wap-ciudad-dropdown');
+    const ciudadBtn = document.getElementById('wap-ciudad-btn');
+    if (ciudadDd)  ciudadDd.classList.remove('open');
+    if (ciudadBtn) ciudadBtn.classList.remove('wap-ciudad-btn--open');
+    const sesWrap = document.getElementById('wap-sessions-wrap');
+    if (sesWrap) { sesWrap.classList.remove('open'); sesWrap.style.display = 'none'; }
 }
 
 // ── Render asesor dropdown en el header ────────────────────────────────────
@@ -4091,9 +4098,11 @@ function _renderAsesorPills(keepOpen = false) {
 
     btn.addEventListener('click', e => {
         e.stopPropagation();
-        const open = _asesorDdEl.classList.toggle('open');
-        btn.classList.toggle('wap-asesor-btn--open', open);
-        if (open) {
+        const wasOpen = _asesorDdEl.classList.contains('open');
+        _closeAllDropdowns();
+        if (!wasOpen) {
+            _asesorDdEl.classList.add('open');
+            btn.classList.add('wap-asesor-btn--open');
             const r = btn.getBoundingClientRect();
             _asesorDdEl.style.top  = (r.bottom + 6) + 'px';
             _asesorDdEl.style.left = r.left + 'px';
@@ -4152,8 +4161,12 @@ function _renderCiudadPills(keepOpen = false) {
 
     btn.addEventListener('click', e => {
         e.stopPropagation();
-        const open = dropdown.classList.toggle('open');
-        btn.classList.toggle('wap-ciudad-btn--open', open);
+        const wasOpen = dropdown.classList.contains('open');
+        _closeAllDropdowns();
+        if (!wasOpen) {
+            dropdown.classList.add('open');
+            btn.classList.add('wap-ciudad-btn--open');
+        }
     });
 
     dropdown.querySelectorAll('.wap-ciudad-opt').forEach(opt => {
