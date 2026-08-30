@@ -52,15 +52,15 @@ async function _initRegForm() {
         });
         _regInited = true;
     }
-    _regCiudad = 'bucaramanga';
+    _regCiudad = '';
     document.getElementById('reg_ciudad').value = '';
-    document.getElementById('reg_sede').value = '';
-    _renderRegSedes();
+    const _selSede = document.getElementById('reg_sede');
+    _selSede.innerHTML = '<option value="" disabled selected>Selecciona tu sede</option>';
 }
 
 function _renderRegSedes() {
     const sel = document.getElementById('reg_sede');
-    if (!sel) return;
+    if (!sel || !_regCiudad) return;
     sel.innerHTML = '<option value="" disabled selected>Selecciona tu sede</option>';
 
     if (_regCiudad === 'bucaramanga') {
