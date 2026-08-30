@@ -557,6 +557,13 @@
                     btn.classList.remove('active');
                 }
             });
+            const btnDatafono = document.querySelector('.pago-btn[data-pago="Datafono"]');
+            if (btnDatafono) {
+                btnDatafono.style.display = ciudad === 'cartago' ? 'none' : '';
+                if (ciudad === 'cartago' && btnDatafono.classList.contains('active')) {
+                    btnDatafono.classList.remove('active');
+                }
+            }
         }
         window._filtrarSedesPorCiudad = _filtrarSedesPorCiudad;
         _filtrarSedesPorCiudad(getCiudadActual());
