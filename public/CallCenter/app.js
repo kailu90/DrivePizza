@@ -4,6 +4,26 @@ window._carritoLen = () => carrito.length;
 let _modoReserva = false;
 let _toppingsCC = new Set();
 
+const ACOMP_POR_CIUDAD = {
+    bucaramanga: ['Salsa Tártara', 'Orégano', 'Sal de Ajo'],
+    cartago:     ['Salsa Rosada', 'Miel'],
+};
+function _renderAcomps(ciudad) {
+    _toppingsCC = new Set();
+    const pills = ACOMP_POR_CIUDAD[ciudad] || ACOMP_POR_CIUDAD.bucaramanga;
+    const container = document.getElementById('acomp-pills');
+    container.innerHTML = pills.map(t =>
+        `<button type="button" class="acomp-pill" data-topping="${t}">${t}</button>`
+    ).join('');
+    container.querySelectorAll('.acomp-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            const t = pill.dataset.topping;
+            if (_toppingsCC.has(t)) { _toppingsCC.delete(t); pill.classList.remove('active'); }
+            else                    { _toppingsCC.add(t);    pill.classList.add('active'); }
+        });
+    });
+}
+
 // Sedes donde aplican las promos especiales (65K, Pepperoni, Lasaña)
 const SEDES_PROMO_ESPECIAL = new Set(['acropolis', 'megamall', 'unico']);
 
@@ -916,6 +936,7 @@ function abrirCheckout() {
 
     const modal = document.getElementById('modal-checkout');
     modal.style.display = 'flex';
+    _renderAcomps(window.ciudadActual || 'bucaramanga');
     actualizarTotalCheckout();
 
     // IMPORTANTE: El foco automático
