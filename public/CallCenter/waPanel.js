@@ -38,8 +38,8 @@ const _state = {
     customNames:   {},    // { [numero]: nombre personalizado } — localStorage
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:    null,  // null | 'en_espera' | 'asignado' | 'resuelto'
-    filtroAsesor:    null,  // null = todos | 'nombre' = solo ese asesor (admin)
-    filtroCiudad:    null,  // null = todas | 'bucaramanga' | 'cartago'
+    filtroAsesor:    new Set(), // Set vacío = todos | Set<key> multiselección
+    filtroCiudad:    new Set(), // Set vacío = todas | Set<key> multiselección
     filtroSesiones:    new Set(), // Set<numero> vacío = todas las sesiones
     conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
     respuestasRapidas: [], // [{ id, titulo, texto }]
@@ -556,7 +556,9 @@ function _injectStyles() {
 }
 .wap-asesor-dropdown.open { display: block; }
 .wap-asesor-opt {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     padding: 8px 16px;
     text-align: left;
@@ -628,7 +630,9 @@ function _injectStyles() {
 }
 .wap-ciudad-dropdown.open { display: block; }
 .wap-ciudad-opt {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     padding: 8px 16px;
     text-align: left;
@@ -4018,22 +4022,22 @@ function _renderSessions() {
 }
 
 // ── Render asesor dropdown en el header ────────────────────────────────────
-function _renderAsesorPills() {
+function _renderAsesorPills(keepOpen = false) {
     const wrap = document.getElementById('wap-asesor-pills');
     if (!wrap) return;
 
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const fa      = _state.filtroAsesor;
 
-    // Lista de asesores únicos con chats activos (solo admin)
     const asesores = isAdmin
         ? [...new Set(Object.values(_state.asignaciones).map(a => a.asesor).filter(Boolean))].filter(a => a !== _asesorActual).sort()
         : [];
 
-    const labelActual = fa === null ? '👤 Asesor'
-                      : fa === 'mio' ? '👤 Míos'
-                      : `👤 ${fa}`;
-    const isActive = fa !== null;
+    const labelActual = fa.size === 0              ? '👤 Asesor'
+                      : fa.size === 1 && fa.has('mio') ? '👤 Míos'
+                      : fa.size === 1              ? `👤 ${[...fa][0]}`
+                      : `👤 ${fa.size} asesores`;
+    const isActive = fa.size > 0;
 
     wrap.innerHTML = `
         <button class="wap-asesor-btn${isActive ? ' wap-asesor-btn--active' : ''}" id="wap-asesor-btn">
@@ -4046,6 +4050,11 @@ function _renderAsesorPills() {
             ${asesores.map(a => _aOpt(a, a, fa)).join('')}
         </div>
     `;
+
+    if (keepOpen) {
+        wrap.querySelector('#wap-asesor-dropdown')?.classList.add('open');
+        wrap.querySelector('#wap-asesor-btn')?.classList.add('wap-asesor-btn--open');
+    }
 
     const btn      = wrap.querySelector('#wap-asesor-btn');
     const dropdown = wrap.querySelector('#wap-asesor-dropdown');
@@ -4060,10 +4069,13 @@ function _renderAsesorPills() {
         opt.addEventListener('click', e => {
             e.stopPropagation();
             const key = opt.dataset.fa || null;
-            _state.filtroAsesor = (_state.filtroAsesor === key) ? null : key;
-            dropdown.classList.remove('open');
-            btn.classList.remove('wap-asesor-btn--open');
-            _renderAsesorPills();
+            if (key === null) {
+                _state.filtroAsesor.clear();
+            } else {
+                if (_state.filtroAsesor.has(key)) _state.filtroAsesor.delete(key);
+                else _state.filtroAsesor.add(key);
+            }
+            _renderAsesorPills(key !== null);
             _renderCiudadPills();
             _scheduleConteos();
             _renderList();
@@ -4072,19 +4084,25 @@ function _renderAsesorPills() {
 }
 
 function _aOpt(key, label, fa) {
-    const activo = fa === key ? ' wap-asesor-opt--active' : '';
-    return `<button class="wap-asesor-opt${activo}" data-fa="${key ?? ''}">${label}</button>`;
+    const checked = key === null ? fa.size === 0 : fa.has(key);
+    const cbCls   = checked ? ' wap-sessions-cb--checked' : '';
+    const activo  = checked ? ' wap-asesor-opt--active' : '';
+    return `<button class="wap-asesor-opt${activo}" data-fa="${key ?? ''}">
+        <span style="flex:1">${label}</span>
+        <span class="wap-sessions-cb${cbCls}"></span>
+    </button>`;
 }
 
 // ── Render ciudad dropdown en el header ────────────────────────────────────
-function _renderCiudadPills() {
+function _renderCiudadPills(keepOpen = false) {
     const wrap = document.getElementById('wap-ciudad-pills');
     if (!wrap) return;
 
     const fc = _state.filtroCiudad;
-    const labelActual = fc === null ? 'Ciudad'
-                      : CIUDAD_LABEL[fc] || fc;
-    const isActive = fc !== null;
+    const labelActual = fc.size === 0 ? 'Ciudad'
+                      : fc.size === 1 ? (CIUDAD_BADGE[[...fc][0]] || [...fc][0])
+                      : `${fc.size} ciudades`;
+    const isActive = fc.size > 0;
 
     wrap.innerHTML = `
         <button class="wap-ciudad-btn${isActive ? ' wap-ciudad-btn--active' : ''}" id="wap-ciudad-btn">
@@ -4092,11 +4110,16 @@ function _renderCiudadPills() {
             <span class="wap-ciudad-btn-arrow">▾</span>
         </button>
         <div class="wap-ciudad-dropdown" id="wap-ciudad-dropdown">
-            ${_cOpt(null,           'Todas',              fc)}
+            ${_cOpt(null,          'Todas',              fc)}
             ${_cOpt('bucaramanga', 'Bucaramanga · BGA',  fc)}
             ${_cOpt('cartago',     'Cartago · CAR',      fc)}
         </div>
     `;
+
+    if (keepOpen) {
+        wrap.querySelector('#wap-ciudad-dropdown')?.classList.add('open');
+        wrap.querySelector('#wap-ciudad-btn')?.classList.add('wap-ciudad-btn--open');
+    }
 
     const btn      = wrap.querySelector('#wap-ciudad-btn');
     const dropdown = wrap.querySelector('#wap-ciudad-dropdown');
@@ -4111,18 +4134,26 @@ function _renderCiudadPills() {
         opt.addEventListener('click', e => {
             e.stopPropagation();
             const key = opt.dataset.fc || null;
-            _state.filtroCiudad = (_state.filtroCiudad === key) ? null : key;
-            dropdown.classList.remove('open');
-            btn.classList.remove('wap-ciudad-btn--open');
-            _renderCiudadPills();
+            if (key === null) {
+                _state.filtroCiudad.clear();
+            } else {
+                if (_state.filtroCiudad.has(key)) _state.filtroCiudad.delete(key);
+                else _state.filtroCiudad.add(key);
+            }
+            _renderCiudadPills(key !== null);
             _renderList();
         });
     });
 }
 
 function _cOpt(key, label, fc) {
-    const activo = fc === key ? ' wap-ciudad-opt--active' : '';
-    return `<button class="wap-ciudad-opt${activo}" data-fc="${key ?? ''}">${label}</button>`;
+    const checked = key === null ? fc.size === 0 : fc.has(key);
+    const cbCls   = checked ? ' wap-sessions-cb--checked' : '';
+    const activo  = checked ? ' wap-ciudad-opt--active' : '';
+    return `<button class="wap-ciudad-opt${activo}" data-fc="${key ?? ''}">
+        <span style="flex:1">${label}</span>
+        <span class="wap-sessions-cb${cbCls}"></span>
+    </button>`;
 }
 
 // ── Render filtro asesor (solo admin) ─────────────────────────────────────
@@ -4133,13 +4164,14 @@ function _renderFiltroAsesor() {
     if (!isAdmin) { el.style.display = 'none'; return; }
 
     el.style.display = '';
-    const esMio = _state.filtroAsesor === 'mio';
+    const esMio = _state.filtroAsesor.has('mio');
     el.innerHTML = `<button class="wap-filtro wap-filtro--active" id="wap-btn-fa" style="--fc:#6b7280;">
         ${esMio ? 'Míos' : 'Todos'}
     </button>`;
 
     el.querySelector('#wap-btn-fa').addEventListener('click', () => {
-        _state.filtroAsesor = _state.filtroAsesor === 'mio' ? null : 'mio';
+        if (_state.filtroAsesor.has('mio')) _state.filtroAsesor.delete('mio');
+        else { _state.filtroAsesor.clear(); _state.filtroAsesor.add('mio'); }
         _scheduleConteos();
         _renderFiltros();
         _renderList();
@@ -4150,9 +4182,10 @@ function _renderFiltroAsesor() {
 // Calcula desde _state.conv + _state.asignaciones sin llamar al servidor,
 // así los badges reflejan exactamente el filtro de sesiones activo.
 function _computeConteos() {
-    const asesorTarget = _state.filtroAsesor === 'mio' ? _asesorActual
-                       : _state.filtroAsesor            ? _state.filtroAsesor
-                       : null;
+    const fa           = _state.filtroAsesor;
+    const asesorTarget = fa.has('mio')  ? _asesorActual
+                       : fa.size === 1  ? [...fa][0]
+                       : null; // null = sin restricción (todos o multi)
     const numeros = _state.filtroSesiones.size > 0
         ? _state.filtroSesiones
         : new Set(Object.keys(_state.conv));
@@ -4374,16 +4407,18 @@ function _renderList() {
             const estado = _getEstado(num, phone);
             const asig   = _getAsig(num, phone);
 
-            // Filtro asesor — con 'mio': las en_espera pasan siempre (disponibles para tomar)
-            if (_state.filtroAsesor) {
-                const target   = _state.filtroAsesor === 'mio' ? _asesorActual : _state.filtroAsesor;
-                const esMio    = _state.filtroAsesor === 'mio';
+            // Filtro asesor — multiselección; 'mio' incluye en_espera
+            if (_state.filtroAsesor.size > 0) {
+                const fa       = _state.filtroAsesor;
+                const hasMio   = fa.has('mio');
                 const esEspera = estado === 'en_espera';
-                if (!(esMio && esEspera) && asig?.asesor !== target) return false;
+                const esMioChat = hasMio && (esEspera || asig?.asesor === _asesorActual);
+                const otrosMatch = [...fa].filter(a => a !== 'mio').some(a => a === asig?.asesor);
+                if (!esMioChat && !otrosMatch) return false;
             }
 
-            // Filtro ciudad
-            if (_state.filtroCiudad && _ciudadDeSesion(num) !== _state.filtroCiudad) return false;
+            // Filtro ciudad — multiselección
+            if (_state.filtroCiudad.size > 0 && !_state.filtroCiudad.has(_ciudadDeSesion(num))) return false;
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
