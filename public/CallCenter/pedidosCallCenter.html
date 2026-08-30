@@ -313,7 +313,7 @@
     import { PBX_URL, WS_URL } from "../Api/config.js";
     import { buscarClientes, cargarCliente, upsertCliente } from "./clientesCall.js";
     import { getSedes } from "../Shared/sedesService.js";
-    import { initCiudadToggle } from "../Shared/ciudadToggle.js";
+    import { initCiudadToggle, getCiudadActual } from "../Shared/ciudadToggle.js";
 
     // ── Paneles laterales ─────────────────────────────────────────
     const panelPBX = initPanel('panel-pbx', 'strip-pbx', 'dp_panel_pbx');
@@ -527,6 +527,7 @@
             initCiudadToggle('ciudad-toggle');
             document.addEventListener('ciudad:change', e => {
                 if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(e.detail.ciudad);
+                _filtrarSedesPorCiudad(e.detail.ciudad);
             });
         } catch (err) {
             console.error("Error cargando usuario:", err);
@@ -540,11 +541,25 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'sede-btn';
-                btn.dataset.sede = s.name.toLowerCase();
-                btn.textContent  = s.name;
+                btn.dataset.sede   = s.name.toLowerCase();
+                btn.dataset.ciudad = (s.ciudad || 'bucaramanga').toLowerCase();
+                btn.textContent    = s.nombre_display || s.name;
                 container.appendChild(btn);
             });
         });
+
+        // Filtrar sedes según ciudad activa al cargar
+        function _filtrarSedesPorCiudad(ciudad) {
+            document.querySelectorAll('.sede-btn').forEach(btn => {
+                const visible = btn.dataset.ciudad === ciudad;
+                btn.style.display = visible ? '' : 'none';
+                if (!visible && btn.classList.contains('active')) {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        window._filtrarSedesPorCiudad = _filtrarSedesPorCiudad;
+        _filtrarSedesPorCiudad(getCiudadActual());
 
         ocultarSkeleton('contenido-principal');
         document.body.classList.add('loaded');
