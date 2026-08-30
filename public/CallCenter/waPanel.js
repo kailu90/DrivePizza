@@ -503,6 +503,7 @@ function _injectStyles() {
     border-bottom: 1px solid rgba(0,0,0,.08);
     flex-shrink: 0;
     background: var(--color-secundario);
+    position: relative;
 }
 /* ── Asesor dropdown (header) ────────────────────── */
 .wap-asesor-pills {
@@ -675,10 +676,18 @@ function _injectStyles() {
 }
 .wap-sessions-icon:hover { background: rgba(0,0,0,.05); }
 
-/* ── Sessions colapsable ─────────────────────────── */
+/* ── Sessions colapsable (dropdown flotante) ─────── */
 .wap-sessions-wrap {
-    flex-shrink: 0;
-    border-bottom: 1px solid rgba(0,0,0,.08);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.13);
+    z-index: 9999;
+    min-width: 220px;
+    padding: 4px 0;
 }
 .wap-sessions-active-dot {
     width: 8px; height: 8px;
@@ -686,29 +695,27 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-sessions {
-    display: none;
+    display: flex;
     flex-direction: column;
-    padding: 4px 0 6px;
 }
-.wap-sessions-wrap.open .wap-sessions { display: flex; }
 .wap-sessions-item {
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 7px 14px;
-    background: none;
+    padding: 8px 16px;
+    background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 500;
     color: #374151;
     text-align: left;
-    transition: background .12s;
+    transition: background .1s;
 }
-.wap-sessions-item:hover { background: rgba(0,0,0,.04); }
+.wap-sessions-item:hover { background: #f3f4f6; }
 .wap-sessions-item--active {
-    background: rgba(0,0,0,.06);
+    color: var(--color-quinto);
     font-weight: 700;
 }
 .wap-sessions-status {
@@ -3187,6 +3194,8 @@ function _renderShell(body) {
         const btnc = document.getElementById('wap-ciudad-btn');
         if (ddc) ddc.classList.remove('open');
         if (btnc) btnc.classList.remove('wap-ciudad-btn--open');
+        const wrap = document.getElementById('wap-sessions-wrap');
+        if (wrap && wrap.style.display !== 'none') wrap.style.display = 'none';
     });
 
     if (isAdmin) {
@@ -3965,10 +3974,12 @@ function _renderSessions() {
     toggle.style.display = '';
     if (!toggle._hasListener) {
         toggle._hasListener = true;
-        toggle.addEventListener('click', () => {
+        toggle.addEventListener('click', e => {
+            e.stopPropagation();
             const isOpen = wrap.classList.toggle('open');
             wrap.style.display = isOpen ? '' : 'none';
         });
+        wrap.addEventListener('click', e => e.stopPropagation());
     }
 
     // ── Lista vertical con multi-selección ──────────────────────────
