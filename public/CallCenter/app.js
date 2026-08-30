@@ -442,7 +442,10 @@ function prepararSeleccion(producto, categoria) {
 
 // Nueva función para manejar la lógica de tamaños/opciones
 function abrirSeleccion(producto) {
-    const opciones = Object.keys(producto.opciones);
+    // opcionesCiudad permite variantes distintas por ciudad (ej: Hamburguesa Mixta en Cartago)
+    const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const opciones = Object.keys(opEfectivas);
 
     // Si solo tiene una opción (ej: "Unidad"), se agrega directo
     if (opciones.length === 1) {
@@ -450,7 +453,7 @@ function abrirSeleccion(producto) {
         const meta = producto.esAdicionable
             ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || tamano }
             : {};
-        confirmarAgregar(producto.nombre, tamano, producto.opciones[tamano], meta);
+        confirmarAgregar(producto.nombre, tamano, opEfectivas[tamano], meta);
         return;
     }
 
@@ -496,7 +499,7 @@ function abrirSeleccion(producto) {
     } else {
         // Layout para no-pizzas (con soporte de meta para adicionables)
         gridOpciones.className = 'opciones-grid';
-        gridOpciones.innerHTML = Object.entries(producto.opciones).map(([tam, pre]) => `
+        gridOpciones.innerHTML = Object.entries(opEfectivas).map(([tam, pre]) => `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${pre}">
                 ${tam} <br> <strong>$${pre.toLocaleString()}</strong>
             </button>

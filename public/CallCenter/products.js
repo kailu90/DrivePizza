@@ -274,14 +274,13 @@ const menuData = {
       "Hamburguesas": [
         { nombre: "hamburguesa Clasica", opciones: preciosHamburguesas.hamburguesaClasica , descripcion: "Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "filete de pollo, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
-        { nombre: "Hamburguesa Mixta", opciones: preciosHamburguesas.hamburguesaMixta , descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
+        { nombre: "Hamburguesa Mixta", opciones: { "Filete de pollo": 32000 }, opcionesCiudad: { cartago: { "Filete de pollo": 32000, "Pollo desmechado": 29000 } }, descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa."},
         // ── Solo Cartago ──────────────────────────────────────────────────────
         { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
         { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
         { nombre: "La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
-        { nombre: "Hamburguesa Mixta Pollo Desmechado", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [
@@ -339,7 +338,7 @@ const menuData = {
 const MENU_EXCLUIR = {
     bucaramanga: {
         categorias: [],
-        productos:  ['La Propia', 'La Golosa', 'La Gladiadora', 'Hamburguesa Mixta Pollo Desmechado', 'Malteada']
+        productos:  ['La Propia', 'La Golosa', 'La Gladiadora', 'Malteada']
     },
     cartago: {
         categorias: ['Promociones'],
