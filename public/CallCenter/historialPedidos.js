@@ -30,22 +30,6 @@ function _ciudadDeSede(sede) {
     return _sedesCiudadMap[key] || 'bucaramanga';
 }
 
-// ── CIUDAD ─────────────────────────────────────────────────────────────
-const SEDES_CIUDAD = {
-    cabecera:    'bucaramanga',
-    canaveral:   'bucaramanga',
-    acropolis:   'bucaramanga',
-    piedecuesta: 'bucaramanga',
-    megamall:    'bucaramanga',
-    unico:       'bucaramanga',
-    // sedes cartago: 'cartago'
-};
-
-function _ciudadDeSede(sede) {
-    const key = (sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return SEDES_CIUDAD[key] || 'bucaramanga';
-}
-
 // ── SESSION STORAGE CACHÉ ──────────────────────────────────────────────
 const CACHE_TTL     = 5 * 60 * 1000;
 const CACHE_VERSION = "v4";  // bump: Supabase devuelve ISO strings, sin conversión
