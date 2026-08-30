@@ -215,14 +215,14 @@ body {
     gap: 4px;
     margin-top: 8px;
     padding: 14px 20px;
-    background-color: var(--color-primario);
+    background-color: var(--color-bga);
     border-radius: 10px;
     color: #fff;
     text-align: center;
 }
 
 .ciudad-alerta[data-ciudad="cartago"] {
-    background-color: #c97a00;
+    background-color: var(--color-ctg);
 }
 
 .ciudad-alerta__top {

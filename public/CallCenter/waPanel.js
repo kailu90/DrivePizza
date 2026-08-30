@@ -654,8 +654,8 @@ function _injectStyles() {
     background: rgba(0,0,0,.06);
     color: #6b7280;
 }
-.wap-ciudad-badge--bga { background: #dbeafe; color: #1d4ed8; }
-.wap-ciudad-badge--ctg { background: #fef3c7; color: #92400e; }
+.wap-ciudad-badge--bga { background: var(--color-bga-light); color: var(--color-bga); }
+.wap-ciudad-badge--ctg { background: var(--color-ctg-light); color: var(--color-ctg); }
 .wap-sessions-icon {
     width: 28px; height: 28px;
     border: 1px solid rgba(0,0,0,.15);
