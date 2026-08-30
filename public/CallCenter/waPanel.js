@@ -657,20 +657,23 @@ function _injectStyles() {
 .wap-ciudad-badge--bga { background: var(--color-bga-light); color: var(--color-bga); }
 .wap-ciudad-badge--ctg { background: var(--color-ctg-light); color: var(--color-ctg); }
 .wap-sessions-icon {
-    width: 28px; height: 28px;
-    border: 1px solid rgba(0,0,0,.15);
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: transparent;
     color: #374151;
-    padding: 0;
-    transition: background .15s;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all .15s;
 }
-.wap-sessions-icon:hover { background: rgba(0,0,0,.06); }
+.wap-sessions-icon:hover { background: rgba(0,0,0,.05); }
 
 /* ── Sessions colapsable ─────────────────────────── */
 .wap-sessions-wrap {
@@ -2752,8 +2755,8 @@ function _renderShell(body) {
                             <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
                             <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
                         </div>
-                        <button class="wap-sessions-icon" id="wap-sessions-toggle" title="Conexiones" style="display:none;">
-                            <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+                        <button class="wap-sessions-icon" id="wap-sessions-toggle" style="display:none;">
+                            🔌 Conexión
                         </button>
                     </div>
                     <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
