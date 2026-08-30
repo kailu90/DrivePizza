@@ -2751,13 +2751,17 @@ function _renderShell(body) {
                 <!-- Vista: Conversaciones -->
                 <div class="wap-view" id="wap-view-conv">
                     <div class="wap-panel-header">
-                        <div class="wap-header-filtros">
-                            <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
-                            <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
-                        </div>
                         <button class="wap-sessions-icon" id="wap-sessions-toggle" style="display:none;">
-                            🔌 Conexión
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/>
+                                <path d="M17 6H7a4 4 0 000 8h1v4a2 2 0 004 0v-4h2v4a2 2 0 004 0v-4h1a4 4 0 000-8z"/>
+                            </svg>
+                            Conexión
                         </button>
+                        <div class="wap-header-filtros">
+                            <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
+                            <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
+                        </div>
                     </div>
                     <div class="wap-sessions-wrap" id="wap-sessions-wrap" style="display:none;">
                         <div class="wap-sessions" id="wap-sessions"></div>
@@ -3961,7 +3965,10 @@ function _renderSessions() {
     toggle.style.display = '';
     if (!toggle._hasListener) {
         toggle._hasListener = true;
-        toggle.addEventListener('click', () => wrap.classList.toggle('open'));
+        toggle.addEventListener('click', () => {
+            const isOpen = wrap.classList.toggle('open');
+            wrap.style.display = isOpen ? '' : 'none';
+        });
     }
 
     // ── Lista vertical con multi-selección ──────────────────────────
