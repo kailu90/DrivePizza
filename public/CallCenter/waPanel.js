@@ -39,6 +39,7 @@ const _state = {
     asignaciones:  {},    // { 'numero:contacto': { asesor, estado } }
     filtroEstado:    null,  // null | 'en_espera' | 'asignado' | 'resuelto'
     filtroAsesor:    null,  // null = todos | 'nombre' = solo ese asesor (admin)
+    filtroCiudad:    null,  // null = todas | 'bucaramanga' | 'cartago'
     filtroSesiones:    new Set(), // Set<numero> vacío = todas las sesiones
     conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
     respuestasRapidas: [], // [{ id, titulo, texto }]
@@ -105,6 +106,25 @@ function _textColorForBg(hex) {
 
 let _rolUsuario   = '';
 let _asesorActual = '';
+
+// Mapa sede → ciudad (actualizar cuando se agreguen sedes de Cartago)
+const SEDES_CIUDAD = {
+    cabecera:    'bucaramanga',
+    canaveral:   'bucaramanga',
+    acropolis:   'bucaramanga',
+    piedecuesta: 'bucaramanga',
+    megamall:    'bucaramanga',
+    unico:       'bucaramanga',
+    // sedes cartago: 'cartago'
+};
+const CIUDAD_BADGE = { bucaramanga: 'BGA', cartago: 'CTG' };
+const CIUDAD_LABEL = { bucaramanga: 'Bucaramanga', cartago: 'Cartago' };
+
+function _ciudadDeSesion(numero) {
+    const s    = _state.sesiones.find(s => s.numero === numero);
+    const sede = (s?.sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return SEDES_CIUDAD[sede] || 'bucaramanga';
+}
 let _ws              = null;
 let _wsEverConnected = false; // true después de la primera conexión exitosa
 let _qrNumero        = null;  // numero cuyo QR modal esta abierto
@@ -554,6 +574,90 @@ function _injectStyles() {
 }
 .wap-asesor-opt:hover { background: #f3f4f6; }
 .wap-asesor-opt--active { color: var(--color-quinto); font-weight: 700; }
+/* ── Wrapper filtros header ──────────────────────── */
+.wap-header-filtros {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+/* ── Ciudad dropdown (header) ───────────────────── */
+.wap-ciudad-pills {
+    position: relative;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+.wap-ciudad-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: transparent;
+    color: #374151;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+}
+.wap-ciudad-btn:hover { background: rgba(0,0,0,.05); }
+.wap-ciudad-btn--active {
+    border: 2px solid #c97a00;
+    color: #c97a00;
+}
+.wap-ciudad-btn-arrow {
+    font-size: .8rem;
+    opacity: .6;
+    transition: transform .2s;
+    flex-shrink: 0;
+}
+.wap-ciudad-btn--open .wap-ciudad-btn-arrow { transform: rotate(180deg); }
+.wap-ciudad-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.13);
+    z-index: 9999;
+    min-width: 140px;
+    padding: 4px 0;
+    display: none;
+}
+.wap-ciudad-dropdown.open { display: block; }
+.wap-ciudad-opt {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #374151;
+    font-weight: 500;
+    transition: background .1s;
+}
+.wap-ciudad-opt:hover { background: #f3f4f6; }
+.wap-ciudad-opt--active { color: #c97a00; font-weight: 700; }
+/* Badge BGA/CTG en tarjeta de conversación */
+.wap-ciudad-badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+    vertical-align: middle;
+    background: rgba(0,0,0,.06);
+    color: #6b7280;
+}
+.wap-ciudad-badge--bga { background: #dbeafe; color: #1d4ed8; }
+.wap-ciudad-badge--ctg { background: #fef3c7; color: #92400e; }
 .wap-sessions-icon {
     width: 28px; height: 28px;
     border: 1px solid rgba(0,0,0,.15);
@@ -2647,7 +2751,10 @@ function _renderShell(body) {
                 <div class="wap-view" id="wap-view-conv">
                     <div class="wap-panel-header">
                         <span class="wap-panel-title">WhatsApp</span>
-                        <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
+                        <div class="wap-header-filtros">
+                            <div class="wap-asesor-pills" id="wap-asesor-pills"></div>
+                            <div class="wap-ciudad-pills" id="wap-ciudad-pills"></div>
+                        </div>
                         <button class="wap-sessions-icon" id="wap-sessions-toggle" title="Conexiones" style="display:none;">
                             <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
                         </button>
@@ -3066,12 +3173,16 @@ function _renderShell(body) {
 
     document.getElementById('wap-qr-close').addEventListener('click', _closeQr);
 
-    // Cerrar dropdown de asesor al hacer click fuera
+    // Cerrar dropdowns al hacer click fuera
     document.addEventListener('click', () => {
         const dd = document.getElementById('wap-asesor-dropdown');
         const btn = document.getElementById('wap-asesor-btn');
         if (dd) dd.classList.remove('open');
         if (btn) btn.classList.remove('wap-asesor-btn--open');
+        const ddc = document.getElementById('wap-ciudad-dropdown');
+        const btnc = document.getElementById('wap-ciudad-btn');
+        if (ddc) ddc.classList.remove('open');
+        if (btnc) btnc.classList.remove('wap-ciudad-btn--open');
     });
 
     if (isAdmin) {
@@ -3105,6 +3216,7 @@ async function _loadAsignaciones() {
         _renderList();
         _scheduleConteos();
         _renderAsesorPills();
+        _renderCiudadPills();
     } catch { /* sin conexión */ }
 }
 
@@ -3352,6 +3464,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
                 _pendingStatuses.delete(msgId);
                 changed = true;
             }
+            if (mediaUrl && !existing.mediaUrl) { existing.mediaUrl = mediaUrl; existing.tipo = tipoMensaje || existing.tipo; changed = true; }
             if (changed) { _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
             return;
         }
@@ -3938,6 +4051,7 @@ function _renderAsesorPills() {
             dropdown.classList.remove('open');
             btn.classList.remove('wap-asesor-btn--open');
             _renderAsesorPills();
+            _renderCiudadPills();
             _scheduleConteos();
             _renderList();
         });
@@ -3947,6 +4061,55 @@ function _renderAsesorPills() {
 function _aOpt(key, label, fa) {
     const activo = fa === key ? ' wap-asesor-opt--active' : '';
     return `<button class="wap-asesor-opt${activo}" data-fa="${key ?? ''}">${label}</button>`;
+}
+
+// ── Render ciudad dropdown en el header ────────────────────────────────────
+function _renderCiudadPills() {
+    const wrap = document.getElementById('wap-ciudad-pills');
+    if (!wrap) return;
+
+    const fc = _state.filtroCiudad;
+    const labelActual = fc === null ? 'Todas'
+                      : CIUDAD_LABEL[fc] || fc;
+    const isActive = fc !== null;
+
+    wrap.innerHTML = `
+        <button class="wap-ciudad-btn${isActive ? ' wap-ciudad-btn--active' : ''}" id="wap-ciudad-btn">
+            <span>📍 ${labelActual}</span>
+            <span class="wap-ciudad-btn-arrow">▾</span>
+        </button>
+        <div class="wap-ciudad-dropdown" id="wap-ciudad-dropdown">
+            ${_cOpt(null,           'Todas',        fc)}
+            ${_cOpt('bucaramanga', 'Bucaramanga',  fc)}
+            ${_cOpt('cartago',     'Cartago',       fc)}
+        </div>
+    `;
+
+    const btn      = wrap.querySelector('#wap-ciudad-btn');
+    const dropdown = wrap.querySelector('#wap-ciudad-dropdown');
+
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = dropdown.classList.toggle('open');
+        btn.classList.toggle('wap-ciudad-btn--open', open);
+    });
+
+    dropdown.querySelectorAll('.wap-ciudad-opt').forEach(opt => {
+        opt.addEventListener('click', e => {
+            e.stopPropagation();
+            const key = opt.dataset.fc || null;
+            _state.filtroCiudad = (_state.filtroCiudad === key) ? null : key;
+            dropdown.classList.remove('open');
+            btn.classList.remove('wap-ciudad-btn--open');
+            _renderCiudadPills();
+            _renderList();
+        });
+    });
+}
+
+function _cOpt(key, label, fc) {
+    const activo = fc === key ? ' wap-ciudad-opt--active' : '';
+    return `<button class="wap-ciudad-opt${activo}" data-fc="${key ?? ''}">${label}</button>`;
 }
 
 // ── Render filtro asesor (solo admin) ─────────────────────────────────────
@@ -4005,7 +4168,7 @@ function _computeConteos() {
 let _conteoTimer = null;
 function _scheduleConteos() {
     clearTimeout(_conteoTimer);
-    _conteoTimer = setTimeout(() => { _computeConteos(); _renderFiltros(); _renderAsesorPills(); }, 100);
+    _conteoTimer = setTimeout(() => { _computeConteos(); _renderFiltros(); _renderAsesorPills(); _renderCiudadPills(); }, 100);
 }
 
 // ── Render filtros de estado ───────────────────────────────────────────────
@@ -4206,6 +4369,9 @@ function _renderList() {
                 if (!(esMio && esEspera) && asig?.asesor !== target) return false;
             }
 
+            // Filtro ciudad
+            if (_state.filtroCiudad && _ciudadDeSesion(num) !== _state.filtroCiudad) return false;
+
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
             if (_state.filtroEstado === 'asignado')  return estado === 'asignado' && (isAdmin || asig?.asesor === _asesorActual);
@@ -4248,6 +4414,10 @@ function _renderList() {
         const display = data.nombre || data.name || _fmtPhone(phone);
         const hasName = !!(data.nombre || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
+        const ciudad  = _ciudadDeSesion(num);
+        const badgeTxt = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
+        const badgeCls = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
+        const ciudadBadge = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
 
         const estadoTag = isOffline
                 ? `<span class="wap-offline-tag">Sesión caída</span>`
@@ -4266,7 +4436,7 @@ function _renderList() {
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
-                    <span class="wap-conv-name">${_esc(display)}</span>
+                    <span class="wap-conv-name">${_esc(display)}${ciudadBadge}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
                 <div class="wap-conv-row">
@@ -5193,7 +5363,7 @@ async function _sendMedia() {
                     : tipo === 'imagen' ? 'Imagen' : 'Video';
 
     const ts2        = Math.floor(Date.now() / 1000);
-    const previewUrl = tipo === 'imagen' ? URL.createObjectURL(file) : null;
+    const previewUrl = (tipo === 'imagen' || tipo === 'voz') ? URL.createObjectURL(file) : null;
     c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tipo, mediaUrl: previewUrl });
     c.lastMsg = textoDesc; c.lastTs = ts2;
     _saveConv(); _renderMsgs();

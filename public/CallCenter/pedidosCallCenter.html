@@ -47,7 +47,21 @@
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
             </button>
-            <div class="header-username" id="username">Hola</div>        
+            <div class="header-username" id="username">Hola</div>
+            <div class="ciudad-toggle" id="ciudad-toggle">
+                <button class="ciudad-btn ciudad-btn--active" id="btn-ciudad-bga" data-ciudad="bucaramanga">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                    </svg>
+                    BUCARAMANGA
+                </button>
+                <button class="ciudad-btn" id="btn-ciudad-cartago" data-ciudad="cartago">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                    </svg>
+                    CARTAGO
+                </button>
+            </div>
         </div>
 
         <div class="header-controls">
@@ -425,6 +439,17 @@ import { initNavButtons } from "./navCallCenter.js";
 
     let asesorActual = "";
 
+    // ── TOGGLE CIUDAD ─────────────────────────────────────────────
+    function _aplicarCiudad(ciudad) {
+        document.querySelectorAll('.ciudad-btn').forEach(b => {
+            b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad);
+        });
+        // Actualizar badge bajo el buscador
+        if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(ciudad);
+        // Aquí se conectará el filtro de productos y sedes cuando se implemente
+        console.log(`[Ciudad] Cambiado a: ${ciudad}`);
+    }
+
     // ── TOGGLE ACOMPAÑAMIENTOS ────────────────────────────────────
     document.querySelectorAll('#acomp-pills .acomp-pill').forEach(pill => {
         pill.addEventListener('click', () => {
@@ -519,6 +544,19 @@ import { initNavButtons } from "./navCallCenter.js";
             asesorActual = usuario.username;
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
+
+            // ── Toggle ciudad ─────────────────────────────────────────
+            window.ciudadActual = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+            _aplicarCiudad(window.ciudadActual);
+            document.getElementById('ciudad-toggle').addEventListener('click', e => {
+                const btn = e.target.closest('.ciudad-btn');
+                if (!btn) return;
+                const ciudad = btn.dataset.ciudad;
+                if (ciudad === window.ciudadActual) return;
+                window.ciudadActual = ciudad;
+                localStorage.setItem('cc_ciudad', ciudad);
+                _aplicarCiudad(ciudad);
+            });
         } catch (err) {
             console.error("Error cargando usuario:", err);
         }

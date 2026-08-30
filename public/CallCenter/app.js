@@ -125,9 +125,43 @@ function crearBuscador() {
                    placeholder="🔍 Buscar producto (ej: Hawaiana, Pollo, Carne...)"
                    oninput="ejecutarFiltro()"
                    style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+            <div class="ciudad-alerta" id="ciudad-badge">
+                <div class="ciudad-alerta__top">
+                    <div class="ciudad-alerta__icono">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                        </svg>
+                    </div>
+                    <span class="ciudad-alerta__label">Ciudad actual:</span>
+                    <span class="ciudad-alerta__ciudad" id="ciudad-badge-texto">BUCARAMANGA</span>
+                    <span class="ciudad-alerta__sedes" id="ciudad-badge-sedes">· 6 SEDES</span>
+                </div>
+                <div class="ciudad-alerta__aviso">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Verifica la ciudad antes de tomar el pedido
+                </div>
+            </div>
         </div>
     `;
     wrapper.innerHTML = buscadorHTML;
+    _actualizarCiudadBadge(window.ciudadActual || 'bucaramanga');
+}
+
+const CIUDAD_CONFIG = {
+    bucaramanga: { label: 'BUCARAMANGA', sedes: 6 },
+    cartago:     { label: 'CARTAGO',     sedes: 2 },
+};
+
+function _actualizarCiudadBadge(ciudad) {
+    const cfg = CIUDAD_CONFIG[ciudad] || CIUDAD_CONFIG.bucaramanga;
+    const elCiudad = document.getElementById('ciudad-badge-texto');
+    const elSedes  = document.getElementById('ciudad-badge-sedes');
+    const elBadge  = document.getElementById('ciudad-badge');
+    if (elCiudad) elCiudad.textContent = cfg.label;
+    if (elSedes)  elSedes.textContent  = `· ${cfg.sedes} SEDES`;
+    if (elBadge)  elBadge.dataset.ciudad = ciudad;
 }
 
 //Función para mostrar el sidebar lado izquierdo.
