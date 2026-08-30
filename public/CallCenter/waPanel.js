@@ -121,6 +121,7 @@ function _ciudadDeSesion(numero) {
 let _ws              = null;
 let _wsEverConnected = false; // true después de la primera conexión exitosa
 let _wsRetry         = 0;
+let _asesorDdEl      = null;  // dropdown asesor singleton en <body> (escapa overflow:hidden del panel)
 let _qrNumero        = null;  // numero cuyo QR modal esta abierto
 let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
@@ -137,6 +138,7 @@ export function destroyWaPanel() {
     // Cerrar WS sin reconectar y silenciar audio
     if (_ws) { _ws.onclose = null; _ws.onerror = null; _ws.close(); _ws = null; }
     _notifAudio.pause();
+    if (_asesorDdEl) { _asesorDdEl.remove(); _asesorDdEl = null; }
 }
 
 export function resetWaView() {
@@ -545,14 +547,12 @@ function _injectStyles() {
 }
 .wap-asesor-btn--open .wap-asesor-btn-arrow { transform: rotate(180deg); }
 .wap-asesor-dropdown {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 6px;
+    position: fixed;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     box-shadow: 0 6px 20px rgba(0,0,0,.13);
-    z-index: 9999;
+    z-index: 99999;
     min-width: 160px;
     padding: 4px 0;
     display: none;
@@ -3193,9 +3193,8 @@ function _renderShell(body) {
 
     // Cerrar dropdowns al hacer click fuera
     document.addEventListener('click', () => {
-        const dd = document.getElementById('wap-asesor-dropdown');
+        if (_asesorDdEl) _asesorDdEl.classList.remove('open');
         const btn = document.getElementById('wap-asesor-btn');
-        if (dd) dd.classList.remove('open');
         if (btn) btn.classList.remove('wap-asesor-btn--open');
         const ddc = document.getElementById('wap-ciudad-dropdown');
         const btnc = document.getElementById('wap-ciudad-btn');
@@ -4031,6 +4030,8 @@ function _renderSessions() {
 }
 
 // ── Render asesor dropdown en el header ────────────────────────────────────
+// El dropdown vive en <body> para escapar overflow:hidden del panel y el
+// transform de #wa-panel (igual que wap-qr-modal). Se posiciona con getBoundingClientRect.
 function _renderAsesorPills(keepOpen = false) {
     const wrap = document.getElementById('wap-asesor-pills');
     if (!wrap) return;
@@ -4048,33 +4049,28 @@ function _renderAsesorPills(keepOpen = false) {
                       : `👤 ${fa.size} asesores`;
     const isActive = fa.size > 0;
 
+    // Solo el botón en el wrap
     wrap.innerHTML = `
         <button class="wap-asesor-btn${isActive ? ' wap-asesor-btn--active' : ''}" id="wap-asesor-btn">
             <span>${labelActual}</span>
             <span class="wap-asesor-btn-arrow">▾</span>
         </button>
-        <div class="wap-asesor-dropdown" id="wap-asesor-dropdown">
-            ${_aOpt(null,  'Todos', fa)}
-            ${_aOpt('mio', 'Míos',  fa)}
-            ${asesores.map(a => _aOpt(a, a, fa)).join('')}
-        </div>
     `;
 
-    if (keepOpen) {
-        wrap.querySelector('#wap-asesor-dropdown')?.classList.add('open');
-        wrap.querySelector('#wap-asesor-btn')?.classList.add('wap-asesor-btn--open');
+    // Singleton en <body>
+    if (!_asesorDdEl) {
+        _asesorDdEl = document.createElement('div');
+        _asesorDdEl.className = 'wap-asesor-dropdown';
+        document.body.appendChild(_asesorDdEl);
     }
 
-    const btn      = wrap.querySelector('#wap-asesor-btn');
-    const dropdown = wrap.querySelector('#wap-asesor-dropdown');
-
-    btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const open = dropdown.classList.toggle('open');
-        btn.classList.toggle('wap-asesor-btn--open', open);
-    });
-
-    dropdown.querySelectorAll('.wap-asesor-opt').forEach(opt => {
+    // Actualizar opciones
+    _asesorDdEl.innerHTML = `
+        ${_aOpt(null,  'Todos', fa)}
+        ${_aOpt('mio', 'Míos',  fa)}
+        ${asesores.map(a => _aOpt(a, a, fa)).join('')}
+    `;
+    _asesorDdEl.querySelectorAll('.wap-asesor-opt').forEach(opt => {
         opt.addEventListener('click', e => {
             e.stopPropagation();
             const key = opt.dataset.fa || null;
@@ -4090,6 +4086,27 @@ function _renderAsesorPills(keepOpen = false) {
             _renderList();
         });
     });
+
+    const btn = wrap.querySelector('#wap-asesor-btn');
+
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = _asesorDdEl.classList.toggle('open');
+        btn.classList.toggle('wap-asesor-btn--open', open);
+        if (open) {
+            const r = btn.getBoundingClientRect();
+            _asesorDdEl.style.top  = (r.bottom + 6) + 'px';
+            _asesorDdEl.style.left = r.left + 'px';
+        }
+    });
+
+    if (keepOpen) {
+        _asesorDdEl.classList.add('open');
+        btn.classList.add('wap-asesor-btn--open');
+        const r = btn.getBoundingClientRect();
+        _asesorDdEl.style.top  = (r.bottom + 6) + 'px';
+        _asesorDdEl.style.left = r.left + 'px';
+    }
 }
 
 function _aOpt(key, label, fa) {
