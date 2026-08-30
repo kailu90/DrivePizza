@@ -117,7 +117,7 @@ const SEDES_CIUDAD = {
     unico:       'bucaramanga',
     // sedes cartago: 'cartago'
 };
-const CIUDAD_BADGE = { bucaramanga: 'BGA', cartago: 'CTG' };
+const CIUDAD_BADGE = { bucaramanga: 'BGA', cartago: 'CAR' };
 const CIUDAD_LABEL = { bucaramanga: 'Bucaramanga', cartago: 'Cartago' };
 
 function _ciudadDeSesion(numero) {
@@ -642,7 +642,7 @@ function _injectStyles() {
 }
 .wap-ciudad-opt:hover { background: #f3f4f6; }
 .wap-ciudad-opt--active { color: #c97a00; font-weight: 700; }
-/* Badge BGA/CTG en tarjeta de conversación */
+/* Badge BGA/CAR en tarjeta de conversación */
 .wap-ciudad-badge {
     display: inline-block;
     font-size: .72rem;
