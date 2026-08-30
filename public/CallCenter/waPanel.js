@@ -5163,10 +5163,7 @@ function _showListView() {
     document.getElementById('wap-search-wrap').style.display             = '';
     document.querySelector('.wap-panel-header').style.display            = '';
     document.querySelector('.wap-filtros-wrap').style.display            = '';
-    // sessions-wrap: solo restaurar si hay 2+ sesiones (renderSessions lo controla)
-    if (_state.sesiones.length > 1) {
-        document.getElementById('wap-sessions-wrap').style.display       = '';
-    }
+    // sessions-wrap: NO restaurar — el usuario lo abre explícitamente con el botón Conexión
 }
 
 function _renderMsgs() {
