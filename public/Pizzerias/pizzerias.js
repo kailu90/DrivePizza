@@ -9,8 +9,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
         const { data: perfil } = await supabase
-            .from('usuarios').select('rol').eq('id', user.id).single();
+            .from('usuarios').select('rol, ciudad').eq('id', user.id).single();
         rolUsuario = perfil?.rol ?? null;
+        if ((perfil?.ciudad || '').toLowerCase() === 'cartago') {
+            ['btn_pedidos_sedes', 'btn_historial_planta'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
     }
 
     const esGastrofusion = rolUsuario === 'gastrofusion';
