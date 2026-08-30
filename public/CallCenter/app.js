@@ -114,6 +114,14 @@ function init() {
     renderCategories();
     crearBuscador();
     seleccionarCategoria("Pizzas");
+
+    // Re-renderizar menú cuando cambia la ciudad
+    document.addEventListener('ciudad:change', () => {
+        renderCategories();
+        const activaCat = document.querySelector('.cat-btn.active');
+        const cat = activaCat ? activaCat.textContent.trim() : 'Pizzas';
+        seleccionarCategoria(cat);
+    });
 }
 
 // Inyeccción de barra buscadora por nombre de productos
@@ -167,23 +175,25 @@ function _actualizarCiudadBadge(ciudad) {
 //Función para mostrar el sidebar lado izquierdo.
 function renderCategories() {
     const nav = document.getElementById('categoryNav');
+    const _ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const _excluirCat = new Set(MENU_EXCLUIR?.[_ciudad]?.categorias || []);
     const categoriasVisibles = [
         "Promociones",
         "Pizzas",
         "Bebidas",
         "Calzones Clásicos",
         "Calzones Especiales",
-        "Lasañas", 
-        "Pastas", 
+        "Lasañas",
+        "Pastas",
         "Maicitos",
-        "Hamburguesas",         
+        "Hamburguesas",
         "Stromboli Clásico",
         "Stromboli Especial",
-        "Sandwiches", 
-        "Ensaladas",   
-        "Entradas/Adición",    
-    ];
-    
+        "Sandwiches",
+        "Ensaladas",
+        "Entradas/Adición",
+    ].filter(c => !_excluirCat.has(c));
+
     nav.innerHTML = categoriasVisibles.map(c =>
         `<button class="cat-btn" onclick="seleccionarCategoria('${c}')">${c}</button>`
     ).join('');
@@ -339,6 +349,11 @@ function renderProducts(categoria) {
             : base;
     }
 
+    // Filtrar por ciudad activa
+    const _ciudadMenu = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const _excluirProds = new Set(MENU_EXCLUIR?.[_ciudadMenu]?.productos || []);
+    if (_excluirProds.size) productos = productos.filter(p => !_excluirProds.has(p.nombre));
+
     // 2. Renderizamos las tarjetas
     grid.innerHTML = productos.map(p => {
         // SEGURIDAD: Validamos que p.opciones exista antes de usar Object.values
@@ -370,7 +385,7 @@ function renderProducts(categoria) {
         return `
             <div class="card" data-nombre="${nombreCompleto}" onclick='prepararSeleccion(${JSON.stringify(p)}, ${modoCalzoneActivo})'>
                 <h4>${nombreCompleto}</h4>
-                ${p.descripcion ? `<p class="product-desc">${p.descripcion}</p>` : ''}
+                ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[localStorage.getItem('cc_ciudad') || 'bucaramanga'] || p.descripcion}</p>` : ''}
                 <p class="price">${precioMostrar}</p>
             </div>
         `;

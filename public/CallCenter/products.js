@@ -45,10 +45,11 @@ const preciosStromboli = {
 };
 const preciosHamburguesas = {
     hamburguesaClasica: { "Unidad": 24000 },
-    hamburguesaPollo: { "Unidad": 24000 },    
-    hamburguesaMixta: { "Unidad": 32000 },  
+    hamburguesaPollo: { "Unidad": 24000 },
+    hamburguesaMixta: { "Unidad": 32000 },
     hamburguesaDobleCarne: { "Unidad": 35000 },
-    hamburguesaEstofada: { "Res": 28000, "Pollo": 28000, "Mixta": 35000, }
+    hamburguesaEstofada: { "Res": 28000, "Pollo": 28000, "Mixta": 35000, },
+    hamburguesaCartago: { "Unidad": 29000 }
 };
 const preciosEnsaladas = {
     ensaladaDrive:      { "Unidad": 28000 },
@@ -160,7 +161,7 @@ const menuData = {
     ],
 //*****Variedades de los sabores de las pizzas********/
     "Pizzas Super Estofadas": [
-        { nombre: "Super Estofada de Carnes", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón, cabano, salami y pollo." },
+        { nombre: "Super Estofada de Carnes", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón, cabano, salami y pollo.", descripcionCiudad: { cartago: "Doble porción de queso mozarella, queso crema, jamón, ranchera, salami y pollo." } },
         { nombre: "Super Estofada Hawaiana", opciones: preciosPizzas.superEstofada, esEstofada: true, descripcion: "Doble porción de queso mozarella, queso crema, jamón y piña." },
     ],
     "Pizzas Estofadas": [
@@ -175,7 +176,7 @@ const menuData = {
         { nombre: "Mexicana", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa, jamón, tomate, cilantro, jalapeño y tostacos." },
         { nombre: "Hawaiana Chic", opciones: preciosPizzas.especial , descripcion: "Queso mozarella, piña, tocineta, jamón y salsa BBQ."},
         { nombre: "Suprema Pepperoni", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, ranchera, pepperoni, pimentón, cebolla y oregano"},
-        { nombre: "Especial de carnes", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, cabano, salami, pollo y champiñones."},
+        { nombre: "Especial de carnes", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, jamón, cabano, salami, pollo y champiñones.", descripcionCiudad: { cartago: "Queso mozzarella, jamón, ranchera, salami, pollo y champiñones." } },
         { nombre: "Carnivora", opciones: preciosPizzas.especial , descripcion: "Jamón, salchicha, salami, chorizo de ternera y tocineta." },
         { nombre: "Teriyaki", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa o pollo desmechado, vegetales al wok (cebolla, zuquini y pimentón asado) eb salsa teriyaki."},
         { nombre: "Paisa", opciones: preciosPizzas.especial , descripcion: "Tocineta, chorizo de ternera, jamón y maiz tierno."},
@@ -188,7 +189,7 @@ const menuData = {
     "Pizzas Clásicas": [
         { nombre: "Pollo", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y pollo." },
         { nombre: "Hawaiana", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, jamón y piña."},
-        { nombre: "Tres Carnes", opciones: preciosPizzas.clasica , descripcion: "Queso Mozzarella, jamón, cabano y salami."},
+        { nombre: "Tres Carnes", opciones: preciosPizzas.clasica , descripcion: "Queso Mozzarella, jamón, cabano y salami.", descripcionCiudad: { cartago: "Queso Mozzarella, jamón, ranchera y salami." } },
         { nombre: "Jamon", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y jamón." },
         { nombre: "Margarita", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella y orégano." },
         { nombre: "Napolitana", opciones: preciosPizzas.clasica , descripcion: "Queso mozzarella, tomate y orégano."},
@@ -276,6 +277,11 @@ const menuData = {
         { nombre: "Hamburguesa Mixta", opciones: preciosHamburguesas.hamburguesaMixta , descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa."},
+        // ── Solo Cartago ──────────────────────────────────────────────────────
+        { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
+        { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
+        { nombre: "La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
+        { nombre: "Hamburguesa Mixta Pollo Desmechado", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [
@@ -321,6 +327,22 @@ const menuData = {
         { nombre: "H2OH", opciones: preciosBebidas.H2OH },
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda },
         { nombre: "Hatsu", opciones: preciosBebidas.Hatsu },
-        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml }
+        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml },
+        // ── Solo Cartago ──────────────────────────────────────────────────────
+        { nombre: "Malteada", opciones: { "Oreo": 16000, "Café": 16000, "Frutos Rojos": 16000, "Vainilla": 16000 } },
     ],
     };
+
+// ── Configuración de menú por ciudad ──────────────────────────────────────────
+// Agrega categorías o productos exactos a excluir por ciudad.
+// Las promos son exclusivas de Bucaramanga (sedes BGA), por eso se ocultan en Cartago.
+const MENU_EXCLUIR = {
+    bucaramanga: {
+        categorias: [],
+        productos:  ['La Propia', 'La Golosa', 'La Gladiadora', 'Hamburguesa Mixta Pollo Desmechado', 'Malteada']
+    },
+    cartago: {
+        categorias: ['Promociones'],
+        productos:  []
+    }
+};
