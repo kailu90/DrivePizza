@@ -231,7 +231,7 @@ body {
     grid-template-rows: auto 1fr;
     height: calc(100vh - 100px);
     background-color: var(--color-secundario);
-    padding-top: 10px;
+    padding: 10px;
 }
 
 /* Wrapper columna izquierda — toma la posición original de categories en el grid */
