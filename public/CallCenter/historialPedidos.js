@@ -963,7 +963,7 @@ async function obtenerUsuarioCC() {
     if (!user) return null;
     const { data } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
     if (!data) return null;
-    return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "" };
+    return { uid: user.id, email: user.email, username: data.username || "", sede: data.sede || "", rol: data.rol || "", ciudad: (data.ciudad || 'bucaramanga').toLowerCase() };
 }
 
 (async () => {
@@ -1013,6 +1013,10 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
+        // Para roles con sede fija, sincronizar ciudad del perfil antes de montar el toggle
+        if (['pizzeria', 'gastrofusion'].includes(rol) && usuario.ciudad) {
+            localStorage.setItem('cc_ciudad', usuario.ciudad);
+        }
         initCiudadToggle('ciudad-toggle');
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
 

@@ -77,8 +77,11 @@ mostrarSkeleton('callcenter');
 
     const { username = '', sede = '' } = data;
 
+    const { data: sedeData } = await supabase.from('sedes').select('nombre_display').eq('name', sede).single();
+    const sedeLabel = sedeData?.nombre_display || sede.toUpperCase();
+
     document.getElementById('username').textContent   = `Hola ${username}`;
-    document.getElementById('sede-label').textContent = sede.toUpperCase();
+    document.getElementById('sede-label').textContent = sedeLabel;
 
     ocultarSkeleton('contenido-principal');
     iniciarListener(sede);
