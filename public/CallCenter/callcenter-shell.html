@@ -278,15 +278,16 @@
     function postToFrame(state, extra = {}) {
         _sipState = state;
         window._sipState = state;
-        const frame = document.getElementById('cc-frame');
-        if (!frame?.contentWindow) return;
-        frame.contentWindow.postMessage({
+        const msg = {
             type:      'sip-state',
             state,
             username:  window._usuarioCC?.username  || '',
             extension: window._usuarioCC?.extension || '',
             ...extra
-        }, '*');
+        };
+        [document.getElementById('cc-frame'), _historialFrame]
+            .filter(Boolean)
+            .forEach(f => f.contentWindow?.postMessage(msg, '*'));
     }
     function sipReconnect() {
         if (window._sipUA) {
@@ -384,6 +385,11 @@
                 // Ya cargado — switch instantáneo
                 _historialFrame.style.display = 'block';
                 _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                _historialFrame.contentWindow?.postMessage({
+                    type: 'sip-state', state: _sipState,
+                    username: window._usuarioCC?.username || '',
+                    extension: window._usuarioCC?.extension || ''
+                }, '*');
             }
             ccFrame.style.display = 'none';
             _postWaOffset();
