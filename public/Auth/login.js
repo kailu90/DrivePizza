@@ -45,7 +45,7 @@ const _SEDES_ESPECIALES_BGA = [
 async function _initRegForm() {
     if (!_regInited) {
         _regSedes = await getSedes();
-        console.log('[registro] sedes cargadas:', _regSedes);
+        console.log('[registro] primera sede completa:', JSON.stringify(_regSedes[0]));
         document.getElementById('reg_ciudad')?.addEventListener('change', e => {
             _regCiudad = e.target.value;
             document.getElementById('reg_sede').value = '';
