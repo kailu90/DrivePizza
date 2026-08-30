@@ -234,9 +234,10 @@
         return panel.classList.contains('expanded') ? 420 : 60;
     }
     function _postWaOffset() {
-        document.getElementById('cc-frame')?.contentWindow?.postMessage(
-            { type: 'wa-workspace-offset', offset: _waOffset() }, '*'
-        );
+        const offset = _waOffset();
+        [document.getElementById('cc-frame'), _historialFrame]
+            .filter(Boolean)
+            .forEach(f => f.contentWindow?.postMessage({ type: 'wa-workspace-offset', offset }, '*'));
     }
     function _setWaVisible(show) {
         const panel = document.getElementById('wa-panel');
@@ -322,6 +323,10 @@
         if (e.data?.type === 'wa-visible') {
             _setWaVisible(e.data.show !== false);
         }
+        if (e.data?.type === 'nav-switch') {
+            _switchView(e.data.page);
+            return;
+        }
         if (e.data?.type === 'nav-loading') {
             _setWaVisible(false); // ocultar por defecto — cada página lo muestra si lo necesita
             _overlayShownAt = performance.now();
@@ -354,6 +359,44 @@
         if (e.data?.type === 'sip-decline') { if (_session) _session.terminate(); hidePanel(); }
     });
 
+    // ── Gestión de vistas (cc-frame / frame-historial) ───────────────────────
+    let _historialFrame = null;
+
+    function _switchView(target) {
+        const ccFrame = document.getElementById('cc-frame');
+        if (target === 'historial') {
+            if (!_historialFrame) {
+                // Primera vez — lazy load con overlay
+                _overlayShownAt = performance.now();
+                _overlay.classList.add('visible');
+                clearTimeout(_overlayFallback);
+                _overlayFallback = setTimeout(() => hideOverlay(), 3000);
+
+                _historialFrame = document.createElement('iframe');
+                _historialFrame.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:block;';
+                _historialFrame.addEventListener('load', () => {
+                    hideOverlay();
+                    _postWaOffset();
+                    _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                });
+                _historialFrame.src = './historialPedidos.html';
+                document.getElementById('cc-wrap').appendChild(_historialFrame);
+            } else {
+                // Ya cargado — switch instantáneo
+                _historialFrame.style.display = 'block';
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+            }
+            ccFrame.style.display = 'none';
+            _postWaOffset();
+        } else {
+            // Volver a pedidos
+            if (_historialFrame) _historialFrame.style.display = 'none';
+            ccFrame.style.display = 'block';
+            ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+            _postWaOffset();
+        }
+    }
+
     // ── Auth + usuario ────────────────────────────────────────────────────────
     window._usuarioCCPromise = (async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -363,12 +406,15 @@
             if (error || !data) { window.location.href = '../index.html'; return; }
             const ROLES_CC = ['callcenter', 'callcenter-admin', 'admin'];
             if (!ROLES_CC.includes(data.rol)) { window.location.href = '../index.html'; return; }
+            // Sincronizar ciudad desde perfil — una vez por sesión, antes de que los iframes la lean
+            localStorage.setItem('cc_ciudad', (data.ciudad || 'bucaramanga').toLowerCase());
             window._usuarioCC = {
                 uid:         user.id,
                 email:       user.email,
                 username:    data.username    || user.email,
                 sede:        data.sede        || '',
                 rol:         data.rol         || '',
+                ciudad:      (data.ciudad     || 'bucaramanga').toLowerCase(),
                 extension:   data.extension   || null,
                 sipPassword: data.sip_password || null
             };

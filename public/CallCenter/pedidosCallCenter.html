@@ -523,14 +523,8 @@
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
 
-            // ── Toggle ciudad — sincronizar desde perfil al iniciar ───
-            localStorage.setItem('cc_ciudad', usuario.ciudad);
+            // ── Toggle ciudad (ciudad ya sincronizada por el shell) ───────
             initCiudadToggle('ciudad-toggle');
-            // Re-renderizar menú con la ciudad real del perfil (init() corrió antes del auth)
-            if (typeof renderCategories === 'function') {
-                renderCategories();
-                seleccionarCategoria('Pizzas');
-            }
             document.addEventListener('ciudad:change', e => {
                 if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(e.detail.ciudad);
                 _filtrarSedesPorCiudad(e.detail.ciudad);
@@ -583,6 +577,31 @@
             splash.addEventListener('animationend', () => splash.remove(), { once: true });
         }
     })();
+
+    // ── frame-visible: re-aplicar filtros al volver desde historial ──────────
+    window.addEventListener('message', e => {
+        if (e.data?.type !== 'frame-visible') return;
+        const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+        document.querySelectorAll('.ciudad-btn').forEach(b =>
+            b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
+        );
+        if (typeof _actualizarCiudadBadge === 'function') _actualizarCiudadBadge(ciudad);
+        if (typeof _filtrarSedesPorCiudad === 'function') _filtrarSedesPorCiudad(ciudad);
+        if (typeof renderCategories === 'function') renderCategories();
+        const activaCat = document.querySelector('.cat-btn.active');
+        if (typeof seleccionarCategoria === 'function')
+            seleccionarCategoria(activaCat ? activaCat.textContent.trim() : 'Pizzas');
+    });
+
+    // ── storage: ciudad cambiada desde historial ──────────────────────────────
+    window.addEventListener('storage', e => {
+        if (e.key !== 'cc_ciudad' || !e.newValue) return;
+        const ciudad = e.newValue;
+        document.querySelectorAll('.ciudad-btn').forEach(b =>
+            b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
+        );
+        document.dispatchEvent(new CustomEvent('ciudad:change', { detail: { ciudad } }));
+    });
 
     // ── Estado SIP desde el shell padre ──────────────────────────────────────
     const SIP_LABELS = { registered: 'Registrado', incall: 'En llamada', ringing: 'Llamada entrante', offline: 'Desconectado' };

@@ -1013,10 +1013,28 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
-        // Sincronizar ciudad desde el perfil siempre, para todos los roles
-        if (usuario.ciudad) localStorage.setItem('cc_ciudad', usuario.ciudad);
+        // Ciudad ya sincronizada por el shell — solo montar el toggle
         initCiudadToggle('ciudad-toggle');
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
+
+        // frame-visible: re-aplicar filtros al entrar desde pedidos
+        window.addEventListener('message', e => {
+            if (e.data?.type !== 'frame-visible') return;
+            const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+            document.querySelectorAll('.ciudad-btn').forEach(b =>
+                b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
+            );
+            filtrarColumnas(true);
+        });
+
+        // storage: ciudad cambiada desde pedidos
+        window.addEventListener('storage', e => {
+            if (e.key !== 'cc_ciudad' || !e.newValue) return;
+            document.querySelectorAll('.ciudad-btn').forEach(b =>
+                b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === e.newValue)
+            );
+            filtrarColumnas(true);
+        });
 
         if (rol === "pizzeria") {
             sedeUsuario = sede;
