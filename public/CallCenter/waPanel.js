@@ -4066,7 +4066,7 @@ function _renderCiudadPills() {
     if (!wrap) return;
 
     const fc = _state.filtroCiudad;
-    const labelActual = fc === null ? 'Todas'
+    const labelActual = fc === null ? 'Ciudad'
                       : CIUDAD_LABEL[fc] || fc;
     const isActive = fc !== null;
 
