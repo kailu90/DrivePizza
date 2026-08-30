@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 
-const CACHE_KEY = 'planta_sedes_sup';
+const CACHE_KEY = 'planta_sedes_sup_v2';
 const CACHE_TTL = 60 * 60 * 1000; // 60 min
 
 export async function getSedes() {
