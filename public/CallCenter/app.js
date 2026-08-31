@@ -1679,6 +1679,12 @@ function abrirPromo3x2() {
     _promo3x2AbrirModal();
 }
 
+// Categorías que pueden mezclarse entre sí en la promo 3x2
+const PROMO3X2_CATEGORIAS_COMPATIBLES = {
+    'Lasañas': ['Lasañas', 'Pastas'],
+    'Pastas':  ['Lasañas', 'Pastas'],
+};
+
 // Productos permitidos como obsequio por categoría en la promo 3x2
 const PROMO3X2_OBSEQUIO_PIZZAS    = ["Hawaiana", "Tres Carnes"];
 const PROMO3X2_OBSEQUIO_ENSALADAS = ["Ensalada Cesar"];
@@ -1692,8 +1698,11 @@ const PROMO3X2_OBSEQUIO_SANDWICHES     = ["Sandwiche Jamon"];
 function _promo3x2GetFlat(tamanoFijo, soloCategoria) {
     const esObsequio = _promo3x2State?.step === 3;
     let todos = [];
+    const categoriasPermitidas = soloCategoria
+        ? (PROMO3X2_CATEGORIAS_COMPATIBLES[soloCategoria] || [soloCategoria])
+        : null;
     Object.entries(getProductosPromo3x2()).forEach(([cat, prods]) => {
-        if (soloCategoria && cat !== soloCategoria) return;
+        if (categoriasPermitidas && !categoriasPermitidas.includes(cat)) return;
         // Ignorar filtro de tamaño cuando las variantes son incompatibles entre tipos
         const ignorarTamano = cat === "Lasañas" || cat === "Pastas" || cat === "Hamburguesas" || cat === "Sandwiches";
         let filtrados = (tamanoFijo && !ignorarTamano) ? prods.filter(p => p.opciones?.[tamanoFijo] !== undefined) : prods;
@@ -1704,17 +1713,7 @@ function _promo3x2GetFlat(tamanoFijo, soloCategoria) {
         if (esObsequio && cat === "Calzones")  filtrados = filtrados.filter(p => PROMO3X2_OBSEQUIO_CALZONES.includes(p.nombre));
         if (cat === "Pastas") {
             filtrados = filtrados.filter(p => !PROMO3X2_PASTAS_EXCLUIDAS.includes(p.nombre));
-            const prod1Nombre = (_promo3x2State?.prod1?.nombre || '').toLowerCase();
-            const esFetuccine  = prod1Nombre.includes('fetuccine');
-            const esSpaguetti  = prod1Nombre.includes('spaguetti');
-            const esMacaroni   = prod1Nombre.includes('macaroni');
-            const esP2 = _promo3x2State?.step === 2;
-            if (esP2 && esFetuccine)  filtrados = filtrados.filter(p => p.nombre.toLowerCase().includes('fetuccine'));
-            if (esP2 && esSpaguetti)  filtrados = filtrados.filter(p => p.nombre.toLowerCase().includes('spaguetti'));
-            if (esP2 && esMacaroni)   filtrados = filtrados.filter(p => p.nombre.toLowerCase().includes('macaroni'));
-            if (esObsequio && esFetuccine)  filtrados = filtrados.filter(p => p.nombre === "Fetuccine sencillo");
-            if (esObsequio && esMacaroni)   filtrados = filtrados.filter(p => p.nombre === "Pasta Macaroni");
-            if (esObsequio && !esFetuccine && !esMacaroni) filtrados = filtrados.filter(p => PROMO3X2_OBSEQUIO_PASTAS.includes(p.nombre));
+            if (esObsequio) filtrados = filtrados.filter(p => PROMO3X2_OBSEQUIO_PASTAS.includes(p.nombre));
         }
         if (esObsequio && cat === "Hamburguesas")   filtrados = filtrados.filter(p => PROMO3X2_OBSEQUIO_HAMBURGUESAS.includes(p.nombre));
         if (esObsequio && cat === "Sandwiches")     filtrados = filtrados.filter(p => PROMO3X2_OBSEQUIO_SANDWICHES.includes(p.nombre));
