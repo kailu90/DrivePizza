@@ -2739,18 +2739,17 @@ function _injectStyles() {
 
 /* ── Nueva conversación ──────────────────────────── */
 .wap-new-btn {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: var(--color-primario, #284c22);
-    color: #fff;
-    border: none; cursor: pointer;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: rgba(40,76,34,.4);
+    cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; line-height: 1;
-    box-shadow: 0 2px 8px rgba(0,0,0,.25);
-    transition: background .15s, transform .15s;
     flex-shrink: 0;
+    transition: background .15s, color .15s;
 }
-.wap-new-btn:hover { background: #1a3317; transform: scale(1.08); }
+.wap-new-btn:hover { background: rgba(40,76,34,.1); color: #284c22; }
 
 .wap-nc-backdrop {
     display: none;
@@ -2835,7 +2834,12 @@ function _renderShell(body) {
             <nav class="wap-nav" id="wap-nav">
                 <div class="wap-ws-dot wap-ws-dot--reconectando" id="wap-ws-dot" title="Tiempo real: conectando..."></div>
 
-                <button class="wap-new-btn" id="wap-new-conv-btn" title="Nueva conversación">+</button>
+                <button class="wap-new-btn" id="wap-new-conv-btn" title="Iniciar conversación">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="10" y1="11" x2="14" y2="11"/>
+                    </svg>
+                </button>
 
                 <button class="wap-nav-icon wap-nav-icon--active" data-view="conv" title="Conversaciones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
