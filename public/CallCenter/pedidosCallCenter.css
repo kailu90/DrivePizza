@@ -2105,10 +2105,13 @@ body {
 }
 .pbx-ccard__time--topleft {
     position: absolute;
-    top: -9px;
+    top: -3px;
     left: 6px;
     font-size: 1rem;
     color: #bbb;
+}
+.pbx-ccard .pbx-avatar {
+    margin-top: 8px;
 }
 
 .pbx-ccard__dur {
