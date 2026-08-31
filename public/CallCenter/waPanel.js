@@ -6742,8 +6742,7 @@ function _onInputSlash() {
 
     const query   = val.slice(1).toLowerCase();
     const matches = _state.respuestasRapidas.filter(rr =>
-        rr.titulo.toLowerCase().includes(query) ||
-        rr.texto.toLowerCase().includes(query)
+        rr.titulo.toLowerCase().includes(query)
     );
 
     if (!matches.length) { _hideSlashPicker(); return; }
