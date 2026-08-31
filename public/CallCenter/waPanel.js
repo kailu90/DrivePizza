@@ -4508,13 +4508,21 @@ async function _loadResueltas() {
         r.done    = data.length < 20;
 
         // Pre-poblar _state.conv con nombre_cliente/nombre para evitar mostrar el lid crudo
+        // También marcar en _state.asignaciones como resuelto para que _getEstado no los
+        // muestre como 'en_espera' si el usuario vuelve a otra tab.
         for (const c of (Array.isArray(data) ? data : [])) {
             if (!c.numero || !c.contacto) continue;
-            if (!_state.conv[c.numero])           _state.conv[c.numero] = {};
+            if (!_state.conv[c.numero])             _state.conv[c.numero] = {};
             if (!_state.conv[c.numero][c.contacto]) _state.conv[c.numero][c.contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
-            const cv = _state.conv[c.numero][c.contacto];
+            const cv  = _state.conv[c.numero][c.contacto];
             if (c.nombre_cliente && !cv.nombre) cv.nombre = c.nombre_cliente;
             if (c.nombre         && !cv.name)   cv.name   = c.nombre;
+            const key = `${c.numero}:${c.contacto}`;
+            if (!_state.asignaciones[key]) {
+                _state.asignaciones[key] = { asesor: c.asesor || null, estado: 'resuelto' };
+            } else if (_state.asignaciones[key].estado !== 'asignado') {
+                _state.asignaciones[key].estado = 'resuelto';
+            }
         }
     } catch { /* sin conexión */ }
 
