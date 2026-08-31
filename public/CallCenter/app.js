@@ -9,11 +9,10 @@ const ACOMP_POR_CIUDAD = {
     cartago:     ['Salsa Rosada', 'Miel'],
 };
 function _renderAcomps(ciudad) {
-    _toppingsCC = new Set();
     const pills = ACOMP_POR_CIUDAD[ciudad] || ACOMP_POR_CIUDAD.bucaramanga;
     const container = document.getElementById('acomp-pills');
     container.innerHTML = pills.map(t =>
-        `<button type="button" class="acomp-pill" data-topping="${t}">${t}</button>`
+        `<button type="button" class="acomp-pill${_toppingsCC.has(t) ? ' active' : ''}" data-topping="${t}">${t}</button>`
     ).join('');
     container.querySelectorAll('.acomp-pill').forEach(pill => {
         pill.addEventListener('click', () => {
