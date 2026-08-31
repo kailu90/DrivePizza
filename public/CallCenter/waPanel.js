@@ -3376,14 +3376,14 @@ async function _loadAsesores() {
 }
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
-async function _loadAsignaciones() {
+async function _loadAsignaciones(suppressRender = false) {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones`);
         if (!r.ok) return;
         const data = await r.json(); // [{ numero, contacto, asesor, estado }]
         _state.asignaciones = {};
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
-        _renderList();
+        if (!suppressRender) _renderList();
         _scheduleConteos();
         _renderAsesorPills();
         _renderCiudadPills();
@@ -3488,7 +3488,7 @@ async function _loadSessions() {
 // Reconstruye _state.conv completo desde Supabase. Preserva solo msgs y
 // customName del estado anterior (caché local). Ejecuta cada 60s para
 // garantizar que todos los asesores ven la misma bandeja.
-async function _loadConversaciones() {
+async function _loadConversaciones(suppressRender = false) {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/conversaciones`);
         if (!r.ok) return;
@@ -3516,11 +3516,13 @@ async function _loadConversaciones() {
         }
 
         // Conversaciones recién llegadas por WS aún no confirmadas en Supabase:
-        // si están en _state.conv pero no en newConv, conservarlas temporalmente
+        // si están en _state.conv pero no en newConv, conservarlas temporalmente.
+        // Excluir resueltas para evitar que aparezcan como 'en_espera' por race condition.
         for (const [num, contactos] of Object.entries(_state.conv)) {
             for (const [phone, data] of Object.entries(contactos)) {
                 if (!newConv[num]?.[phone] && data.lastTs > (Date.now() / 1000 - 120)) {
-                    // Llegó en los últimos 2 minutos — puede ser lag de Supabase
+                    const asig = _state.asignaciones[`${num}:${phone}`];
+                    if (asig?.estado === 'resuelto') continue; // no restaurar resueltas
                     if (!newConv[num]) newConv[num] = {};
                     newConv[num][phone] = data;
                 }
@@ -3538,7 +3540,7 @@ async function _loadConversaciones() {
 
         _state.conv = newConv;
         _saveConv();
-        _renderList();
+        if (!suppressRender) _renderList();
     } catch { /* sin conexión — mantener estado actual */ }
 }
 
@@ -3582,9 +3584,10 @@ function _connectWs() {
         _wsRetry = 0;
         _setWsStatus('ok');
         if (_wsEverConnected) {
-            // Reconexión — recuperar mensajes perdidos durante la desconexión
-            _loadConversaciones();
-            _loadAsignaciones();
+            // Reconexión — cargar ambas en paralelo y renderizar solo cuando ambas terminan
+            // (evita race condition donde resueltos aparecen como en_espera)
+            Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
+                .then(() => _renderList());
             // Si hay un chat abierto, recargar sus mensajes desde Supabase
             if (_state.activeContact && _state.activeNum) {
                 _loadMsgsSupabase(_state.activeContact);
