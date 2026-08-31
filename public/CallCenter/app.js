@@ -274,18 +274,6 @@ function renderProducts(categoria) {
                 <h4>25K</h4>
                 <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
             </div>
-            <div class="card card-promo" onclick="abrirPromoCombola10()">
-                <div class="promo-badge">PROMO</div>
-                <h4>99K</h4>
-                <p class="product-desc">Combo La 10<br>Pizza Grande Criolla + 6 Cervezas Heineken</p>
-            </div>
-            <div class="card card-promo ${esFechaBerrionda ? '' : 'card-promo--inactiva'}" onclick="${esFechaBerrionda ? 'abrirPromoBerrionda()' : ''}">
-                <div class="promo-badge">PROMO</div>
-                <div class="promo-sede-badge">SOLO PIEDECUESTA</div>
-                <h4>35K</h4>
-                <p class="product-desc">Pizza Berrionda Pequeña<br>Mozarella · Maíz · Chicharrón · Chorizo</p>
-                <p class="promo-elegibles">${esFechaBerrionda ? 'Solo Piedecuesta · 22 y 23 Jul' : 'No disponible hoy'}</p>
-            </div>
         `;
         return;
     }
