@@ -1391,12 +1391,25 @@ document.getElementById('btn-consulta-domicilio').addEventListener('click', () =
     document.querySelectorAll('#domicilio-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
 });
 
-document.getElementById('domicilio-sede-toggle').addEventListener('click', e => {
+document.getElementById('domicilio-sede-toggle').addEventListener('click', async e => {
     const btn = e.target.closest('.sede-btn');
     if (!btn) return;
     document.querySelectorAll('#domicilio-sede-toggle .sede-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     _consultaSede = btn.dataset.sede;
+
+    // Si window.domicilios aún no tiene esta sede, cargar on-demand
+    if (!window.domicilios?.[_consultaSede]) {
+        document.getElementById('domicilio-resultados').innerHTML =
+            '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
+        if (typeof window.cargarBarriosSede === 'function') {
+            try {
+                const data = await window.cargarBarriosSede(_consultaSede);
+                if (!window.domicilios) window.domicilios = {};
+                window.domicilios[_consultaSede] = Object.fromEntries(data.map(r => [r.barrio, r.valor]));
+            } catch {}
+        }
+    }
     filtrarConsultaDomicilio();
     document.getElementById('domicilio-buscador').focus();
 });

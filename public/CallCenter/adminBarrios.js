@@ -13,6 +13,9 @@ import { invalidarCacheBarrios }            from './barriosService.js';
 import { getSedes }                         from '../Shared/sedesService.js';
 import { revelarSplash }                    from '../Shared/components.js';
 
+const _barriosBC = (() => { try { return new BroadcastChannel('barrios'); } catch { return null; } })();
+function _broadcastBarrios(sede) { _barriosBC?.postMessage({ sede: sede ?? null }); }
+
 const ROLES_PERMITIDOS = ['admin', 'callcenter-admin', 'callcenter'];
 const ROLES_EDITOR     = ['admin', 'callcenter-admin'];
 
@@ -266,6 +269,7 @@ async function _guardarModalDetalle() {
     const idx = _barrios.findIndex(b => b.id === id);
     if (idx >= 0) _barrios[idx] = { ...item, ...updateObj, id };
     invalidarCacheBarrios(_sede);
+    _broadcastBarrios(_sede);
     _registrarLog('editar', _sede, barrio, valorAnterior, valor);
     _cerrarModalDetalle();
     _toast(`✓ "${barrio}" actualizado correctamente`);
@@ -331,6 +335,7 @@ async function _eliminar(id, tr) {
     _registrarLog('eliminar', _sede, nombreEliminado, item.valor, null);
     _barrios = _barrios.filter(b => b.id !== id);
     invalidarCacheBarrios(_sede);
+    _broadcastBarrios(_sede);
     _toast(`🗑 "${nombreEliminado}" eliminado`);
     _setStatus('Eliminado.', 'ok');
     _renderTabla();
@@ -397,6 +402,7 @@ async function _guardarNuevo() {
     _barrios.push(data);
     _barrios.sort((a, b) => a.barrio.localeCompare(b.barrio));
     invalidarCacheBarrios(_sede);
+    _broadcastBarrios(_sede);
     _toast(`✓ "${barrio}" agregado correctamente`);
     _setStatus('Barrio agregado.', 'ok');
     _renderTabla();
@@ -428,6 +434,7 @@ document.getElementById('btn-migrar').addEventListener('click', async () => {
     }
 
     invalidarCacheBarrios();
+    _broadcastBarrios(null); // null = todas las sedes
     btn.disabled    = false;
     btn.textContent = 'Importar datos locales';
 

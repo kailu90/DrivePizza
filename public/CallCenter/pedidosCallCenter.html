@@ -301,7 +301,7 @@
     <script type="module">
     import { supabase } from '../Api/supabaseConfig.js';
     import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
-    import { cargarTodosBarrios } from "./barriosService.js";
+    import { cargarTodosBarrios, cargarBarriosSede, invalidarCacheBarrios } from "./barriosService.js";
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";
     import { initPanel }    from "../Shared/panelToggle.js";
     import { initPbxPanel }  from "./pbxPanel.js";
@@ -407,7 +407,22 @@
         if (!e.target.closest('.tel-wrap')) telDropdown.style.display = 'none';
     });
     window.domicilios = {};
+    window.cargarBarriosSede = cargarBarriosSede;
     cargarTodosBarrios().then(d => { window.domicilios = d; });
+
+    // Escuchar cambios de barrios desde adminBarrios (otra pestaña)
+    try {
+        new BroadcastChannel('barrios').onmessage = ({ data }) => {
+            const sede = data?.sede;
+            if (sede) {
+                delete window.domicilios[sede];
+                invalidarCacheBarrios(sede);
+            } else {
+                window.domicilios = {};
+                invalidarCacheBarrios();
+            }
+        };
+    } catch {}
     window.mostrarOverlay  = mostrarOverlay;
     window.actualizarOverlay = actualizarOverlay;
     window.ocultarOverlay  = ocultarOverlay;
@@ -443,13 +458,21 @@
     });
 
     // ── TOGGLE SEDE ───────────────────────────────────────────────
-    document.addEventListener('click', e => {
+    document.addEventListener('click', async e => {
         const btn = e.target.closest('.sede-btn');
         if (!btn) return;
         document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        // Poblar datalist de barrios para esta sede
-        const barrios  = window.domicilios?.[btn.dataset.sede] || {};
+        // Poblar datalist de barrios para esta sede — cargar on-demand si window.domicilios aún no tiene esta sede
+        let barrios = window.domicilios?.[btn.dataset.sede];
+        if (!barrios) {
+            try {
+                const data = await cargarBarriosSede(btn.dataset.sede);
+                barrios = Object.fromEntries(data.map(r => [r.barrio, r.valor]));
+                if (!window.domicilios) window.domicilios = {};
+                window.domicilios[btn.dataset.sede] = barrios;
+            } catch { barrios = {}; }
+        }
         const datalist = document.getElementById('barrios-list');
         datalist.innerHTML = Object.keys(barrios).map(b => `<option value="${b}">`).join('');
         document.getElementById('barrioInput').value = '';

@@ -6235,6 +6235,10 @@ async function _doForward(num, phone) {
     const m = _fwdMsg;
     _fwdMsg = null;
 
+    // Construir JID válido: usar sufijo guardado en conv, o @s.whatsapp.net por defecto
+    const jidSuffix    = _state.conv[num]?.[phone]?.jidSuffix || '@s.whatsapp.net';
+    const destinatario = phone + jidSuffix;
+
     // Navegar al chat destino
     _state.activeNum = num;
     _navTo('conv');
@@ -6255,7 +6259,7 @@ async function _doForward(num, phone) {
             const file = new File([blob], `reenvio.${ext}`, { type: blob.type });
             const fd   = new FormData();
             fd.append('numero',       num);
-            fd.append('destinatario', phone);
+            fd.append('destinatario', destinatario);
             fd.append('asesor',       _asesorActual || '');
             if (m.text) {
                 const sep = m.text.indexOf(': ');
@@ -6269,7 +6273,7 @@ async function _doForward(num, phone) {
             await fetch(`${HETZNER_URL}/wa/mensajes`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ numero: num, destinatario: phone, texto: m.text, asesor: _asesorActual || '' }),
+                body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual || '' }),
             });
         }
     } catch (err) {

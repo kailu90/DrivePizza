@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js'
-import { CargarHeader, MostrarBotonSelector, revelarSplash } from '../Shared/components.js'
+import { CargarHeader, MostrarBotonSelector, MostrarBotonMonitor, revelarSplash } from '../Shared/components.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
 
 const skeletonType = document.body.dataset.skeleton
@@ -14,6 +14,7 @@ if (skeletonType) mostrarSkeleton(skeletonType)
             const mostrarSala = ['callcenter', 'callcenter-admin', 'admin'].includes(perfil.rol)
             CargarHeader(perfil.sede, null, mostrarSala)
             if (perfil.rol === 'admin') MostrarBotonSelector()
+            if (['admin', 'callcenter-admin'].includes(perfil.rol)) MostrarBotonMonitor()
         }
         ocultarSkeleton('contenido-principal')
         document.body.classList.add('loaded')

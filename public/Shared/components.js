@@ -84,6 +84,17 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
                             </svg>
                         </button>
                     </li>
+                    <li class="header-item" id="header-item-monitor" style="display:none">
+                        <button id="btn-monitor" class="header-link with-tooltip" data-tooltip="WA Monitor" title="WA Monitor" onclick="window.open('/CallCenter/waMonitor.html','_blank')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                <polyline points="8 21 12 17 16 21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                                <circle cx="12" cy="10" r="2" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </button>
+                    </li>
                     <li class="header-item">
                         <button id="link_logout" class="header-link header-logout-btn" title="Cerrar Sesión">
                             <svg class="header-logout-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
@@ -110,6 +121,11 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
 
 export function MostrarBotonSelector() {
     const item = document.getElementById('header-item-selector');
+    if (item) item.style.display = '';
+}
+
+export function MostrarBotonMonitor() {
+    const item = document.getElementById('header-item-monitor');
     if (item) item.style.display = '';
 }
 
