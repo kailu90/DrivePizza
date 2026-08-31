@@ -363,6 +363,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
                         </span>
                     </div>
                     <div class="pbx-ccard__meta">
+                        <span class="pbx-ccard__time">${fmtTime(entry.time)}</span>
                         <span class="pbx-status-badge pbx-status-badge--${estado}">${badgeLabel}</span>
                         <span class="pbx-ccard__dur" ${durAttr}>${fmtDuration(elapsed)}</span>
                     </div>
