@@ -44,7 +44,7 @@ const _state = {
     filtroSesiones:    new Set(), // Set<numero> vacío = todas las sesiones
     conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
     respuestasRapidas: [], // [{ id, titulo, texto }]
-    resueltas: { items: [], offset: 0, loading: false, done: false }, // paginación infinita
+    resueltas: { items: [], offset: 0, loading: false, done: false, busqueda: '' }, // paginación infinita
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -3156,7 +3156,13 @@ function _renderShell(body) {
 
     document.getElementById('wap-search').addEventListener('input', e => {
         _state.filterText = e.target.value.toLowerCase();
-        _renderList();
+        if (_state.filtroEstado === 'resuelto') {
+            _state.resueltas = { items: [], offset: 0, loading: false, done: false, busqueda: e.target.value.trim() };
+            if (_resueltasObserver) { _resueltasObserver.disconnect(); _resueltasObserver = null; }
+            _loadResueltas();
+        } else {
+            _renderList();
+        }
     });
     document.getElementById('wap-new-conv-btn').addEventListener('click', _openNuevaConvModal);
     document.getElementById('wap-nc-close').addEventListener('click', _closeNuevaConvModal);
@@ -4493,6 +4499,7 @@ async function _loadResueltas() {
     const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
     if (!isAdmin) params.set('asesor', _asesorActual);
+    if (r.busqueda) params.set('busqueda', r.busqueda);
 
     try {
         const res  = await fetch(`${HETZNER_URL}/wa/conversaciones/resueltas?${params}`);
@@ -4521,15 +4528,8 @@ function _renderResueltas() {
     if (!el) return;
     const r = _state.resueltas;
 
-    // Aplicar filtros transversales (texto, asesor, ciudad, sesión)
+    // Aplicar filtros transversales (asesor, ciudad, sesión) — texto lo filtra el backend
     let items = r.items;
-    const q = _state.filterText;
-    if (q) {
-        items = items.filter(c => {
-            const display = (c.nombre_cliente || c.nombre || '').toLowerCase();
-            return c.contacto.includes(q) || display.includes(q);
-        });
-    }
     if (_state.filtroSesiones.size > 0) {
         items = items.filter(c => _state.filtroSesiones.has(c.numero));
     }
