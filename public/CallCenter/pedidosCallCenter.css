@@ -2103,6 +2103,11 @@ body {
     color: #999;
     white-space: nowrap;
 }
+.pbx-ccard__time--topleft {
+    font-size: 1.05rem;
+    color: #bbb;
+    margin-bottom: -1px;
+}
 
 .pbx-ccard__dur {
     font-size: 1.1rem;

@@ -356,6 +356,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
                 <div class="pbx-ccard">
                     ${avatarHtml(entry.number)}
                     <div class="pbx-ccard__body">
+                        <span class="pbx-ccard__time pbx-ccard__time--topleft">${fmtTime(entry.time)}</span>
                         <span class="pbx-ccard__name">${entry.number || '—'}${sedeLabel ? `<span style="font-size:10px;background:rgba(40,76,34,0.1);color:var(--color-primario);padding:2px 6px;border-radius:10px;margin-left:6px;font-weight:500;vertical-align:middle;">${sedeLabel}</span>` : ''}</span>
                         <span class="pbx-ccard__sub">
                             <span class="pbx-ccard__arrow ${dirCls}">${arrowSvg(dir)}</span>
@@ -363,7 +364,6 @@ export function initPbxPanel(containerId = 'pbx-body') {
                         </span>
                     </div>
                     <div class="pbx-ccard__meta">
-                        <span class="pbx-ccard__time">${fmtTime(entry.time)}</span>
                         <span class="pbx-status-badge pbx-status-badge--${estado}">${badgeLabel}</span>
                         <span class="pbx-ccard__dur" ${durAttr}>${fmtDuration(elapsed)}</span>
                     </div>
