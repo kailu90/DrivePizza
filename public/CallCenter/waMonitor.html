@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WA Monitor — Everest Central</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    .mon-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; background: #1e293b;
+      border-bottom: 1px solid #334155; flex-shrink: 0;
+    }
+    .mon-header h1 { font-size: 1rem; font-weight: 600; color: #f8fafc; flex: 1; }
+    .mon-ws-dot { width: 10px; height: 10px; border-radius: 50%; background: #64748b; flex-shrink: 0; transition: background .3s; }
+    .mon-ws-dot--ok          { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    .mon-ws-dot--reconectando{ background: #f59e0b; animation: blink 1s infinite; }
+    .mon-ws-dot--desconectado{ background: #ef4444; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .mon-clock { font-size: .8rem; color: #64748b; font-variant-numeric: tabular-nums; }
+    .mon-btn { padding: 5px 14px; background: #334155; border: none; border-radius: 6px; color: #94a3b8; cursor: pointer; font-size: .78rem; }
+    .mon-btn:hover { background: #475569; color: #f1f5f9; }
+
+    /* ── Main layout ── */
+    .mon-main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* ── Cards ── */
+    .mon-section-label {
+      font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: #475569;
+      padding: 12px 20px 8px;
+    }
+    .mon-cards { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 20px 14px; flex-shrink: 0; }
+
+    .mon-card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+      padding: 12px 15px; min-width: 180px; flex: 1; max-width: 240px;
+      transition: border-color .4s;
+    }
+    .mon-card--conectado    { border-color: #16653488; }
+    .mon-card--reconectando,
+    .mon-card--conectando   { border-color: #92400e88; }
+    .mon-card--esperando_qr { border-color: #9a341288; }
+    .mon-card--desconectado { border-color: #7f1d1d88; }
+
+    .mon-card-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+    .mon-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .mon-dot--conectado    { background: #22c55e; box-shadow: 0 0 5px #22c55e66; }
+    .mon-dot--reconectando,
+    .mon-dot--conectando   { background: #f59e0b; animation: blink 1s infinite; }
+    .mon-dot--esperando_qr { background: #f97316; animation: blink 1s infinite; }
+    .mon-dot--desconectado { background: #ef4444; }
+
+    .mon-card-num   { font-size: .7rem; color: #64748b; font-variant-numeric: tabular-nums; }
+    .mon-card-sede  { font-size: .95rem; font-weight: 700; color: #f1f5f9; text-transform: capitalize; margin-bottom: 3px; }
+    .mon-card-stat  { font-size: .73rem; }
+    .mon-card-stat--conectado    { color: #4ade80; }
+    .mon-card-stat--reconectando,
+    .mon-card-stat--conectando   { color: #fbbf24; }
+    .mon-card-stat--esperando_qr { color: #fb923c; }
+    .mon-card-stat--desconectado { color: #f87171; }
+
+    .mon-card-meta { font-size: .68rem; color: #475569; margin-top: 6px; line-height: 1.6; }
+    .mon-card-meta b { color: #60a5fa; }
+
+    /* ── Log ── */
+    .mon-log-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; border-top: 1px solid #1e293b; }
+    .mon-log-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 20px 4px; flex-shrink: 0; }
+    .mon-log-count { font-size: .7rem; color: #475569; }
+    .mon-log {
+      flex: 1; overflow-y: auto; padding: 4px 12px 16px;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .mon-log::-webkit-scrollbar { width: 4px; }
+    .mon-log::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    .mon-entry {
+      display: grid; grid-template-columns: 62px 100px 1fr;
+      gap: 8px; align-items: baseline;
+      padding: 3px 8px; border-radius: 4px; font-size: .77rem;
+    }
+    .mon-entry:hover { background: #1e293b; }
+    .mon-entry-time { color: #475569; font-variant-numeric: tabular-nums; font-size: .7rem; white-space: nowrap; }
+    .mon-entry-sede { font-weight: 600; text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mon-entry-msg  { color: #94a3b8; }
+
+    .mon-entry--conectado    .mon-entry-sede { color: #4ade80; }
+    .mon-entry--reconectando .mon-entry-sede { color: #fbbf24; }
+    .mon-entry--desconectado .mon-entry-sede { color: #f87171; }
+    .mon-entry--qr           .mon-entry-sede { color: #fb923c; }
+    .mon-entry--info         .mon-entry-sede { color: #60a5fa; }
+
+    .mon-empty { color: #475569; font-size: .82rem; padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <header class="mon-header">
+    <span class="mon-ws-dot mon-ws-dot--reconectando" id="ws-dot"></span>
+    <h1>WA Monitor</h1>
+    <span class="mon-clock" id="mon-clock">--:--:--</span>
+    <button class="mon-btn" id="btn-refresh">Actualizar</button>
+  </header>
+
+  <main class="mon-main">
+
+    <div>
+      <div class="mon-section-label">Estado de conexiones</div>
+      <div class="mon-cards" id="mon-cards">
+        <div class="mon-empty">Cargando...</div>
+      </div>
+    </div>
+
+    <div class="mon-log-wrap">
+      <div class="mon-log-head">
+        <div class="mon-section-label" style="padding:0">Log de eventos</div>
+        <span class="mon-log-count" id="log-count">0 eventos</span>
+      </div>
+      <div class="mon-log" id="mon-log">
+        <div class="mon-empty">Esperando eventos...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module" src="waMonitor.js"></script>
+</body>
+</html>
