@@ -2792,20 +2792,17 @@ function _injectStyles() {
 .wap-nc-sessions {
     display: flex; flex-wrap: wrap; gap: 6px;
 }
-.wap-nc-ses-pill {
-    padding: 4px 10px; border-radius: 20px;
-    font-size: 1rem; font-weight: 600; cursor: pointer;
-    border: 2px solid rgba(40,76,34,.25);
-    background: rgba(40,76,34,.06); color: var(--color-primario);
-    transition: border-color .15s, background .15s;
-    text-transform: capitalize;
-}
-.wap-nc-ses-pill.selected {
-    border-color: var(--color-primario);
-    background: var(--color-bga-light);
-    color: var(--color-primario);
-}
+.wap-nc-ses-pill { text-transform: capitalize; }
 .wap-nc-ses-pill:disabled { opacity: .4; cursor: not-allowed; }
+.wap-nc-new-num {
+    padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    border: 1.5px dashed rgba(40,76,34,.3);
+    background: transparent; width: 100%; box-sizing: border-box;
+    transition: background .12s, border-color .12s;
+}
+.wap-nc-new-num:hover { background: var(--color-bga-light); border-color: var(--color-primario); }
+.wap-nc-new-num-text { font-size: 1.05rem; color: var(--color-primario); font-weight: 600; }
 
 .wap-nc-search {
     width: 100%; padding: 7px 10px;
@@ -4524,8 +4521,15 @@ function _renderResueltas() {
     if (!el) return;
     const r = _state.resueltas;
 
-    // Aplicar filtros transversales (asesor, ciudad, sesión)
+    // Aplicar filtros transversales (texto, asesor, ciudad, sesión)
     let items = r.items;
+    const q = _state.filterText;
+    if (q) {
+        items = items.filter(c => {
+            const display = (c.nombre_cliente || c.nombre || '').toLowerCase();
+            return c.contacto.includes(q) || display.includes(q);
+        });
+    }
     if (_state.filtroSesiones.size > 0) {
         items = items.filter(c => _state.filtroSesiones.has(c.numero));
     }
@@ -5311,14 +5315,14 @@ function _openNuevaConvModal() {
         sesEl.innerHTML = '<span style="font-size:1rem;color:#9ca3af;">Sin sesiones conectadas</span>';
     } else {
         sesEl.innerHTML = conectadas.map(s => `
-            <button class="wap-nc-ses-pill" data-num="${s.numero}" title="${s.numero}">
+            <button class="wap-filtro wap-nc-ses-pill" data-num="${s.numero}" title="${s.numero}">
                 ${s.sede || s.numero}
             </button>
         `).join('');
         sesEl.querySelectorAll('.wap-nc-ses-pill').forEach(btn => {
             btn.addEventListener('click', () => {
-                sesEl.querySelectorAll('.wap-nc-ses-pill').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
+                sesEl.querySelectorAll('.wap-nc-ses-pill').forEach(b => b.classList.remove('wap-filtro--active'));
+                btn.classList.add('wap-filtro--active');
                 _ncSesionSeleccionada = btn.dataset.num;
             });
         });
@@ -5351,28 +5355,45 @@ async function _buscarClientes(q) {
         .select('nombre, telefono, ciudad')
         .or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`)
         .limit(20);
-    if (error || !data?.length) {
+    const _iniciarConNum = (phone) => {
+        if (!_ncSesionSeleccionada) { alert('Selecciona una sesión primero'); return; }
+        _state.activeNum = _ncSesionSeleccionada;
+        _closeNuevaConvModal();
+        _navTo('conv');
+        _openChat(phone);
+    };
+
+    const clientes = (!error && data?.length) ? data : [];
+    const numLimpio = q.replace(/\D/g, '');
+    const esNumero = numLimpio.length >= 7;
+    // ¿Ya está en resultados?
+    const yaEnResultados = clientes.some(c => c.telefono === numLimpio || c.telefono === q);
+
+    const htmlResultados = clientes.map(c => `
+        <div class="wap-nc-result" data-phone="${c.telefono}">
+            <span class="wap-nc-result-name">${_esc(c.nombre || '—')}</span>
+            <span class="wap-nc-result-phone">${_esc(c.telefono)}${c.ciudad ? ' · ' + _esc(c.ciudad) : ''}</span>
+        </div>
+    `).join('');
+
+    const htmlNuevoNum = (esNumero && !yaEnResultados) ? `
+        <button class="wap-nc-new-num" data-phone="${numLimpio}">
+            <span class="wap-nc-new-num-text">💬 Iniciar con ${_esc(numLimpio)}</span>
+        </button>
+    ` : '';
+
+    if (!htmlResultados && !htmlNuevoNum) {
         res.innerHTML = '<p class="wap-nc-empty">Sin resultados</p>';
         return;
     }
-    res.innerHTML = data.map(c => `
-        <div class="wap-nc-result" data-phone="${c.telefono}">
-            <span class="wap-nc-result-name">${c.nombre || '—'}</span>
-            <span class="wap-nc-result-phone">${c.telefono}${c.ciudad ? ' · ' + c.ciudad : ''}</span>
-        </div>
-    `).join('');
+
+    res.innerHTML = htmlResultados + htmlNuevoNum;
+
     res.querySelectorAll('.wap-nc-result').forEach(el => {
-        el.addEventListener('click', () => {
-            const phone = el.dataset.phone;
-            if (!_ncSesionSeleccionada) {
-                alert('Selecciona una sesión primero');
-                return;
-            }
-            _state.activeNum = _ncSesionSeleccionada;
-            _closeNuevaConvModal();
-            _navTo('conv');
-            _openChat(phone);
-        });
+        el.addEventListener('click', () => _iniciarConNum(el.dataset.phone));
+    });
+    res.querySelector('.wap-nc-new-num')?.addEventListener('click', e => {
+        _iniciarConNum(e.currentTarget.dataset.phone);
     });
 }
 
