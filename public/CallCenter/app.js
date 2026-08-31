@@ -243,7 +243,7 @@ function renderProducts(categoria) {
     let productos = [];
 
     if (categoria === "Promociones") {
-        const esMartes = new Date().getDay() === 2;
+        const esMartes = true; // TEMPORAL: habilitado para pruebas — restaurar a: new Date().getDay() === 2
         const _hoyB = new Date();
         const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
         grid.innerHTML = `
