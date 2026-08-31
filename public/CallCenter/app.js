@@ -1398,17 +1398,15 @@ document.getElementById('domicilio-sede-toggle').addEventListener('click', async
     btn.classList.add('active');
     _consultaSede = btn.dataset.sede;
 
-    // Si window.domicilios aún no tiene esta sede, cargar on-demand
-    if (!window.domicilios?.[_consultaSede]) {
+    // Siempre recargar por sede (evita límite 1000 filas de cargarTodosBarrios)
+    if (typeof window.cargarBarriosSede === 'function') {
         document.getElementById('domicilio-resultados').innerHTML =
             '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
-        if (typeof window.cargarBarriosSede === 'function') {
-            try {
-                const data = await window.cargarBarriosSede(_consultaSede);
-                if (!window.domicilios) window.domicilios = {};
-                window.domicilios[_consultaSede] = Object.fromEntries(data.map(r => [r.barrio, r.valor]));
-            } catch {}
-        }
+        try {
+            const data = await window.cargarBarriosSede(_consultaSede);
+            if (!window.domicilios) window.domicilios = {};
+            window.domicilios[_consultaSede] = Object.fromEntries(data.map(r => [r.barrio, r.valor]));
+        } catch {}
     }
     filtrarConsultaDomicilio();
     document.getElementById('domicilio-buscador').focus();

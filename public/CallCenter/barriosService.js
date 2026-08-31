@@ -27,17 +27,27 @@ export async function cargarBarriosSede(sede) {
 }
 
 export async function cargarTodosBarrios() {
-    const { data, error } = await supabase
-        .from('barrios_domicilio')
-        .select('sede, barrio, valor, lat, lng')
-        .order('barrio');
-    if (error) throw error;
+    // Paginar de a 1000 para superar el límite de PostgREST (PGRST max_rows=1000)
+    const allData = [];
+    const PAGE = 1000;
+    let offset = 0;
+    while (true) {
+        const { data, error } = await supabase
+            .from('barrios_domicilio')
+            .select('sede, barrio, valor, lat, lng')
+            .order('barrio')
+            .range(offset, offset + PAGE - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < PAGE) break;
+        offset += PAGE;
+    }
 
-    const result  = {};
-    const bySede  = {};
+    const result = {};
+    const bySede = {};
     _coordsCache  = {};
 
-    for (const { sede, barrio, valor, lat, lng } of (data ?? [])) {
+    for (const { sede, barrio, valor, lat, lng } of allData) {
         if (!result[sede]) { result[sede] = {}; bySede[sede] = []; }
         result[sede][barrio] = valor;
         bySede[sede].push({ barrio, valor, lat, lng });
@@ -61,3 +71,13 @@ export function invalidarCacheBarrios(sede) {
     else Object.keys(_cache).forEach(k => delete _cache[k]);
     _coordsCache = null;
 }
+
+// Receptor BroadcastChannel — invalida caché en CUALQUIER página que importe este módulo
+// cuando adminBarrios crea/edita/elimina un barrio.
+try {
+    new BroadcastChannel('barrios').onmessage = ({ data }) => {
+        const sede = data?.sede;
+        if (sede) delete _cache[sede];
+        else { Object.keys(_cache).forEach(k => delete _cache[k]); _coordsCache = null; }
+    };
+} catch { /* navegadores que no soporten BroadcastChannel */ }
