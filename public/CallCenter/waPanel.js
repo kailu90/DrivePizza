@@ -4437,9 +4437,9 @@ function _computeConteos() {
     const asesorTarget = fa.has('mio')  ? _asesorActual
                        : fa.size === 1  ? [...fa][0]
                        : null; // null = sin restricción (todos o multi)
-    const numeros = _state.filtroSesiones.size > 0
-        ? _state.filtroSesiones
-        : new Set(Object.keys(_state.conv));
+    const sesionesActivas = new Set(_state.sesiones.map(s => s.numero));
+    const base    = _state.filtroSesiones.size > 0 ? _state.filtroSesiones : sesionesActivas;
+    const numeros = new Set([...base].filter(n => sesionesActivas.has(n)));
 
     let en_espera = 0, asignado = 0, resuelto = 0;
 
