@@ -227,7 +227,11 @@ async function convertirHTMLaPDF(html, rutaPDF) {
 }
 
 async function imprimirPDF(rutaPDF) {
-    const opts = { printer: NOMBRE_IMPRESORA, sumatraPDFPath: path.join(__dirname, 'SumatraPDF.exe') };
+    const localSumatrapdf = path.join(__dirname, 'SumatraPDF.exe');
+    const opts = {
+        printer: NOMBRE_IMPRESORA,
+        ...(fs.existsSync(localSumatrapdf) && { sumatraPDFPath: localSumatrapdf })
+    };
     await print(rutaPDF, opts);
     log('Copia 1 impresa correctamente');
     await print(rutaPDF, opts);
