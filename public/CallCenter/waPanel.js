@@ -2607,6 +2607,25 @@ function _injectStyles() {
 }
 
 /* ── Vista Respuestas Rápidas ────────────────────── */
+.wap-rr-search-wrap {
+    padding: 8px 12px;
+    background: var(--color-secundario);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+}
+.wap-rr-search-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid rgba(40,76,34,.25);
+    border-radius: 20px;
+    font-size: 1.15rem;
+    outline: none;
+    background: #fff;
+    color: #1a1a1a;
+    transition: border-color .15s;
+}
+.wap-rr-search-wrap input:focus { border-color: var(--color-primario); }
 .wap-rr-header {
     display: flex;
     align-items: center;
@@ -3127,6 +3146,9 @@ function _renderShell(body) {
                         <span>Respuestas rápidas</span>
                         <button class="wap-btn-connect" id="wap-rr-new-btn" style="margin:0;font-size:1.1rem;padding:5px 10px;">+ Nueva</button>
                     </div>
+                    <div class="wap-rr-search-wrap">
+                        <input type="search" id="wap-rr-search" placeholder="Buscar respuesta..." autocomplete="off">
+                    </div>
                     <div class="wap-rr-form" id="wap-rr-form" style="display:none;"></div>
                     <div class="wap-rr-list" id="wap-rr-list"></div>
                 </div>
@@ -3262,6 +3284,7 @@ function _renderShell(body) {
     });
     document.getElementById('wap-reply-cancel').addEventListener('click', _cancelReply);
     document.getElementById('wap-rr-new-btn').addEventListener('click', () => _openRRForm(null));
+    document.getElementById('wap-rr-search').addEventListener('input', () => _renderRRView());
     document.getElementById('wap-rr-list').addEventListener('click', e => {
         const editBtn = e.target.closest('[data-rr-edit]');
         const delBtn  = e.target.closest('[data-rr-del]');
@@ -6536,7 +6559,16 @@ function _renderRRView() {
         list.innerHTML = `<p class="wap-rr-empty">Sin respuestas rápidas — crea la primera con "+ Nueva"</p>`;
         return;
     }
-    list.innerHTML = _state.respuestasRapidas.map(rr => `
+    const q = (document.getElementById('wap-rr-search')?.value || '').toLowerCase().trim();
+    const items = q
+        ? _state.respuestasRapidas.filter(rr =>
+            rr.titulo.toLowerCase().includes(q) || rr.texto.toLowerCase().includes(q))
+        : _state.respuestasRapidas;
+    if (!items.length) {
+        list.innerHTML = `<p class="wap-rr-empty">Sin resultados para "${_esc(q)}"</p>`;
+        return;
+    }
+    list.innerHTML = items.map(rr => `
         <div class="wap-rr-item" data-id="${rr.id}">
             <div class="wap-rr-item-body">
                 <div class="wap-rr-item-titulo">${_esc(rr.titulo)}${rr.media_url ? '<span class="wap-rr-media-badge">&#128206;</span>' : ''}</div>
@@ -6558,6 +6590,7 @@ function _openRRForm(id) {
     form.style.display = '';
     form.innerHTML = `
         <input  id="wap-rr-titulo" type="text" placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
+        <small id="wap-rr-titulo-warn" style="display:none;color:#dc2626;font-size:1.05rem;margin-top:-2px;">Ya existe una respuesta con ese título</small>
         <textarea id="wap-rr-texto" rows="3"   placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
         <p class="wap-rr-vars-hint">Insertar: <code class="wap-rr-var" data-var="{nombreUsuario}">{nombreUsuario}</code><code class="wap-rr-var" data-var="{nombreAsesor}">{nombreAsesor}</code></p>
         <input type="file" id="wap-rr-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
@@ -6607,6 +6640,12 @@ function _openRRForm(id) {
             ta.focus();
         });
     });
+    form.querySelector('#wap-rr-titulo').addEventListener('input', e => {
+        const val = e.target.value.trim().toLowerCase();
+        const warn = form.querySelector('#wap-rr-titulo-warn');
+        const dup = val && _state.respuestasRapidas.some(x => x.id !== id && x.titulo.toLowerCase() === val);
+        warn.style.display = dup ? '' : 'none';
+    });
     form.querySelector('#wap-rr-titulo').focus();
 }
 
@@ -6614,6 +6653,8 @@ async function _saveRR(id) {
     const titulo  = document.getElementById('wap-rr-titulo')?.value.trim();
     const texto   = document.getElementById('wap-rr-texto')?.value.trim();
     if (!titulo || !texto) { _showToast('Completa título y texto', 2500); return; }
+    const dup = _state.respuestasRapidas.find(x => x.id !== id && x.titulo.toLowerCase() === titulo.toLowerCase());
+    if (dup) { _showToast('Ya existe una respuesta con ese título', 3000); return; }
 
     // Feedback en el botón mientras guarda
     const saveBtn = document.getElementById('wap-rr-save');
