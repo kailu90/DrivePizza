@@ -5355,12 +5355,19 @@ async function _buscarClientes(q) {
         .select('nombre, telefono, ciudad')
         .or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`)
         .limit(20);
+    // Normalizar a JID colombiano completo: 3XXXXXXXXX → 573XXXXXXXXX
+    const _normPhone = (p) => {
+        const d = p.replace(/\D/g, '');
+        if (d.startsWith('57') && d.length === 12) return d;
+        if (d.startsWith('3')  && d.length === 10) return `57${d}`;
+        return d;
+    };
     const _iniciarConNum = (phone) => {
         if (!_ncSesionSeleccionada) { alert('Selecciona una sesión primero'); return; }
         _state.activeNum = _ncSesionSeleccionada;
         _closeNuevaConvModal();
         _navTo('conv');
-        _openChat(phone);
+        _openChat(_normPhone(phone));
     };
 
     const clientes = (!error && data?.length) ? data : [];
