@@ -1343,8 +1343,10 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         return;
     }
 
-    const esCalzoneGrande = itemPadre.nombre?.toLowerCase().includes('calzone') && tamanoRaw === 'Grande';
-    const multiplicador   = esCalzoneGrande ? 2 : 1;
+    const nombreLower     = itemPadre.nombre?.toLowerCase() || '';
+    const esCalzoneGrande = nombreLower.includes('calzone') && itemPadre.nombre.includes('(Grande)');
+    const esStromboli     = nombreLower.includes('stromboli');
+    const multiplicador   = (esCalzoneGrande || esStromboli) ? 2 : 1;
 
     const renderBtn = (prod) => {
         const precio = prod.opciones[tamanoRaw] * multiplicador;
