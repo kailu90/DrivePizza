@@ -2754,7 +2754,7 @@ function _injectStyles() {
 .wap-nc-backdrop {
     display: none;
     position: absolute; inset: 0;
-    background: rgba(40,76,34,.55);
+    background: rgba(0,0,0,.55);
     z-index: 100;
     align-items: center; justify-content: center;
 }
@@ -2764,19 +2764,29 @@ function _injectStyles() {
     background: var(--color-secundario);
     border-radius: 14px;
     width: 88%; max-width: 340px;
-    padding: 18px 16px 14px;
-    display: flex; flex-direction: column; gap: 12px;
-    box-shadow: 0 8px 32px rgba(40,76,34,.3);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
     max-height: 80%;
-    border: 1px solid rgba(40,76,34,.15);
+}
+.wap-nc-modal-header {
+    background: var(--color-primario);
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
 }
 .wap-nc-title {
     font-size: 1.3rem; font-weight: 700;
-    color: var(--color-primario);
+    color: var(--color-secundario);
     margin: 0;
 }
+.wap-nc-modal-body {
+    padding: 14px 16px 14px;
+    display: flex; flex-direction: column; gap: 12px;
+    overflow: hidden;
+}
 .wap-nc-label {
-    font-size: 1.05rem; color: var(--color-cuaternario);
+    font-size: 1.05rem; color: var(--color-primario);
     font-weight: 600; margin-bottom: 4px;
 }
 .wap-nc-sessions {
@@ -2821,14 +2831,14 @@ function _injectStyles() {
 .wap-nc-result:hover { background: var(--color-bga-light); }
 .wap-nc-result-name { font-size: 1.1rem; font-weight: 600; color: var(--color-primario); }
 .wap-nc-result-phone { font-size: 1rem; color: var(--color-cuaternario); }
-.wap-nc-empty { font-size: 1rem; color: var(--color-cuaternario); text-align: center; padding: 12px 0; opacity: .7; }
+.wap-nc-empty { font-size: 1rem; color: var(--color-terciario); text-align: center; padding: 12px 0; }
 .wap-nc-close {
-    align-self: flex-end; background: none; border: none;
-    font-size: 1.1rem; color: var(--color-cuaternario);
+    background: none; border: none;
+    font-size: 1.1rem; color: rgba(244,236,223,.7);
     cursor: pointer; padding: 2px 6px; border-radius: 6px;
     transition: background .12s, color .12s;
 }
-.wap-nc-close:hover { background: rgba(40,76,34,.1); color: var(--color-primario); }
+.wap-nc-close:hover { background: rgba(255,255,255,.15); color: var(--color-secundario); }
 `;
 
     document.head.appendChild(s);
@@ -2876,20 +2886,22 @@ function _renderShell(body) {
             <!-- ── Modal: Nueva conversación ── -->
             <div class="wap-nc-backdrop" id="wap-nc-backdrop">
                 <div class="wap-nc-modal">
-                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div class="wap-nc-modal-header">
                         <p class="wap-nc-title">Nueva conversación</p>
                         <button class="wap-nc-close" id="wap-nc-close">✕</button>
                     </div>
-                    <div>
-                        <p class="wap-nc-label">Enviar desde</p>
-                        <div class="wap-nc-sessions" id="wap-nc-sessions"></div>
-                    </div>
-                    <div>
-                        <p class="wap-nc-label">Buscar cliente</p>
-                        <input class="wap-nc-search" id="wap-nc-search" placeholder="Nombre o número..." autocomplete="off">
-                    </div>
-                    <div class="wap-nc-results" id="wap-nc-results">
-                        <p class="wap-nc-empty">Escribe para buscar...</p>
+                    <div class="wap-nc-modal-body">
+                        <div>
+                            <p class="wap-nc-label">Enviar desde</p>
+                            <div class="wap-nc-sessions" id="wap-nc-sessions"></div>
+                        </div>
+                        <div>
+                            <p class="wap-nc-label">Buscar cliente</p>
+                            <input class="wap-nc-search" id="wap-nc-search" placeholder="Nombre o número..." autocomplete="off">
+                        </div>
+                        <div class="wap-nc-results" id="wap-nc-results">
+                            <p class="wap-nc-empty">Escribe para buscar...</p>
+                        </div>
                     </div>
                 </div>
             </div>
