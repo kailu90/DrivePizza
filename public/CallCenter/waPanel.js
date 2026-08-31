@@ -2889,7 +2889,7 @@ function _renderShell(body) {
                     </div>
                     <div class="wap-nc-modal-body">
                         <div>
-                            <p class="wap-nc-label">Enviar desde</p>
+                            <p class="wap-nc-label" id="wap-nc-label-ses">Enviar desde</p>
                             <div class="wap-nc-sessions" id="wap-nc-sessions"></div>
                         </div>
                         <div>
@@ -3344,11 +3344,6 @@ function _renderShell(body) {
         document.querySelectorAll('.wap-msg-dropdown.open').forEach(d => d.classList.remove('open'));
     });
 
-    // Seleccionar destino en modal de reenvío (event delegation en body)
-    document.body.addEventListener('click', e => {
-        const item = e.target.closest('[data-fwd-num]');
-        if (item) { _doForward(item.dataset.fwdNum, item.dataset.fwdPhone); }
-    });
     // wap-qr-modal usa position:fixed;inset:0 pero #wa-panel tiene transform,
     // lo que lo convertiría en containing-block. Lo movemos al <body> para que
     // el overlay cubra todo el viewport correctamente.
@@ -5311,12 +5306,22 @@ function _navTo(view) {
     if (view === 'rr') _renderRRView();
 }
 
-// ── Nueva conversación ─────────────────────────────────────────────────────
+// ── Nueva conversación / Reenvío ────────────────────────────────────────────
 let _ncSesionSeleccionada = null;
-let _ncSearchTimer = null;
+let _ncSearchTimer        = null;
+let _ncCallback           = null; // null = nueva conv | async fn(num, phone) = reenvío
 
-function _openNuevaConvModal() {
+function _openNuevaConvModal(callback = null) {
+    _ncCallback           = callback;
     _ncSesionSeleccionada = null;
+
+    // Título y label dinámicos según modo
+    const esReenvio = !!callback;
+    const titleEl   = document.querySelector('.wap-nc-title');
+    if (titleEl) titleEl.textContent = esReenvio ? 'Reenviar a...' : 'Nueva conversación';
+    const labelSesEl = document.getElementById('wap-nc-label-ses');
+    if (labelSesEl) labelSesEl.textContent = esReenvio ? 'Reenviar desde' : 'Enviar desde';
+
     // Renderizar sesiones conectadas
     const sesEl = document.getElementById('wap-nc-sessions');
     const conectadas = _state.sesiones.filter(s => s.status === 'conectado');
@@ -5350,6 +5355,7 @@ function _openNuevaConvModal() {
 function _closeNuevaConvModal() {
     document.getElementById('wap-nc-backdrop').classList.remove('open');
     clearTimeout(_ncSearchTimer);
+    _ncCallback = null;
 }
 
 async function _buscarClientes(q) {
@@ -5373,10 +5379,16 @@ async function _buscarClientes(q) {
     };
     const _iniciarConNum = (phone) => {
         if (!_ncSesionSeleccionada) { alert('Selecciona una sesión primero'); return; }
-        _state.activeNum = _ncSesionSeleccionada;
+        const normPhone = _normPhone(phone);
+        const num       = _ncSesionSeleccionada;
         _closeNuevaConvModal();
-        _navTo('conv');
-        _openChat(_normPhone(phone));
+        if (_ncCallback) {
+            _ncCallback(num, normPhone);
+        } else {
+            _state.activeNum = num;
+            _navTo('conv');
+            _openChat(normPhone);
+        }
     };
 
     const clientes = (!error && data?.length) ? data : [];
@@ -6205,71 +6217,32 @@ function _openFwdModal(msgId) {
     if (!found) return;
     _fwdMsg = found;
 
-    // Construir y mostrar modal
-    let overlay = document.getElementById('wap-fwd-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id  = 'wap-fwd-overlay';
-        overlay.className = 'wap-fwd-overlay';
-        overlay.innerHTML = `
-            <div class="wap-fwd-modal">
-                <div class="wap-fwd-header">
-                    <span>Reenviar a...</span>
-                    <button class="wap-fwd-close" id="wap-fwd-close">&times;</button>
-                </div>
-                <input class="wap-fwd-search" id="wap-fwd-search" placeholder="Buscar conversación..." autocomplete="off">
-                <div class="wap-fwd-list" id="wap-fwd-list"></div>
-            </div>`;
-        overlay.addEventListener('click', e => { if (e.target === overlay) _closeFwdModal(); });
-        document.getElementById('wap-fwd-close', overlay)?.addEventListener('click', _closeFwdModal);
-        document.body.appendChild(overlay);
-        document.getElementById('wap-fwd-close').addEventListener('click', _closeFwdModal);
-        document.getElementById('wap-fwd-search').addEventListener('input', e => _renderFwdList(e.target.value));
-    }
-    overlay.classList.add('open');
-    document.getElementById('wap-fwd-search').value = '';
-    _renderFwdList('');
+    // Reutilizar el modal de Nueva Conversación en modo reenvío
+    _openNuevaConvModal(async (num, phone) => {
+        await _doForward(num, phone);
+    });
 }
 
 function _closeFwdModal() {
-    document.getElementById('wap-fwd-overlay')?.classList.remove('open');
+    _closeNuevaConvModal();
     _fwdMsg = null;
 }
 
-function _renderFwdList(q) {
-    const list = document.getElementById('wap-fwd-list');
-    if (!list) return;
-    const lq = q.toLowerCase();
-    const items = [];
-    for (const [num, phones] of Object.entries(_state.conv)) {
-        for (const [phone, c] of Object.entries(phones)) {
-            // Excluir la conversación activa
-            if (num === _state.activeNum && phone === _state.activeContact) continue;
-            const label = c.nombre || c.name || _fmtPhone(phone);
-            if (lq && !label.toLowerCase().includes(lq)) continue;
-            const sesLabel = _sessionLabel(num);
-            const color = _getColor(num);
-            const initials = _initials(label);
-            const textColor = _textColorForBg(color);
-            items.push(`<div class="wap-fwd-item" data-fwd-num="${_esc(num)}" data-fwd-phone="${_esc(phone)}">
-                <div class="wap-fwd-avatar" style="background:${color};color:${textColor}">${_esc(initials)}</div>
-                <div>
-                    <div class="wap-fwd-name">${_esc(label)}</div>
-                    <div class="wap-fwd-sub">${_esc(sesLabel)}</div>
-                </div>
-            </div>`);
-        }
-    }
-    list.innerHTML = items.length ? items.join('') : `<p style="padding:16px;color:#9ca3af;font-size:1.2rem;text-align:center">Sin conversaciones</p>`;
-}
 
 async function _doForward(num, phone) {
     if (!_fwdMsg) return;
     const m = _fwdMsg;
-    _closeFwdModal();
+    _fwdMsg = null;
 
-    // Tomar el chat (asigna al asesor actual, lo pone en atención y navega)
-    await _tomarChat(num, phone);
+    // Navegar al chat destino
+    _state.activeNum = num;
+    _navTo('conv');
+    _openChat(phone);
+
+    // Si ya existe la conv → intentar tomarla (no bloqueamos si falla)
+    if (_state.conv[num]?.[phone]) {
+        _tomarChat(num, phone).catch(() => {});
+    }
 
     try {
         if (m.mediaUrl) {
