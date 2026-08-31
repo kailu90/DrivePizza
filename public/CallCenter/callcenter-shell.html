@@ -461,7 +461,7 @@
             };
             // Mostrar botón monitor solo para admin/callcenter-admin
             if (['admin', 'callcenter-admin'].includes(data.rol))
-                document.getElementById('btn-wa-monitor').style.display = '';
+                document.getElementById('btn-wa-monitor').style.display = 'flex';
             // Inicializar WA panel en el drawer persistente
             const { initWaPanel, resetWaView, destroyWaPanel } = await import('./waPanel.js');
             _resetWaView    = resetWaView;
