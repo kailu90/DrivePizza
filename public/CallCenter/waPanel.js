@@ -3164,7 +3164,7 @@ function _renderShell(body) {
             _renderList();
         }
     });
-    document.getElementById('wap-new-conv-btn').addEventListener('click', _openNuevaConvModal);
+    document.getElementById('wap-new-conv-btn').addEventListener('click', () => _openNuevaConvModal());
     document.getElementById('wap-nc-close').addEventListener('click', _closeNuevaConvModal);
     document.getElementById('wap-nc-backdrop').addEventListener('click', e => {
         if (e.target === e.currentTarget) _closeNuevaConvModal();
