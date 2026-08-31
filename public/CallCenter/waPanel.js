@@ -2739,8 +2739,6 @@ function _injectStyles() {
 
 /* ── Nueva conversación ──────────────────────────── */
 .wap-new-btn {
-    margin-top: auto;
-    margin-bottom: 10px;
     width: 34px; height: 34px;
     border-radius: 50%;
     background: var(--color-primario, #284c22);
@@ -2837,6 +2835,8 @@ function _renderShell(body) {
             <nav class="wap-nav" id="wap-nav">
                 <div class="wap-ws-dot wap-ws-dot--reconectando" id="wap-ws-dot" title="Tiempo real: conectando..."></div>
 
+                <button class="wap-new-btn" id="wap-new-conv-btn" title="Nueva conversación">+</button>
+
                 <button class="wap-nav-icon wap-nav-icon--active" data-view="conv" title="Conversaciones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -2856,7 +2856,6 @@ function _renderShell(body) {
                     </svg>
                 </button>` : ''}
 
-                <button class="wap-new-btn" id="wap-new-conv-btn" title="Nueva conversación">+</button>
             </nav>
 
             <!-- ── Modal: Nueva conversación ── -->
