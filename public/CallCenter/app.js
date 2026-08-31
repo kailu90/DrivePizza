@@ -1343,12 +1343,18 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         return;
     }
 
-    const renderBtn = (prod) => `
-        <button class="btn-adicion" data-nombre="${prod.nombre}" data-precio="${prod.opciones[tamanoRaw]}">
+    const esCalzoneGrande = itemPadre.nombre?.toLowerCase().includes('calzone') && tamanoRaw === 'Grande';
+    const multiplicador   = esCalzoneGrande ? 2 : 1;
+
+    const renderBtn = (prod) => {
+        const precio = prod.opciones[tamanoRaw] * multiplicador;
+        return `
+        <button class="btn-adicion" data-nombre="${prod.nombre}" data-precio="${precio}">
             <span class="adicion-nombre">${prod.nombre}</span>
-            <span class="adicion-precio">$${prod.opciones[tamanoRaw].toLocaleString()}</span>
+            <span class="adicion-precio">$${precio.toLocaleString()}</span>
             <span class="adicion-badge" style="display:none;">0</span>
         </button>`;
+    };
 
     gridOpciones.innerHTML = `
         <div class="adicion-section-title">Adiciones</div>
