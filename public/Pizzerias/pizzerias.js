@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .from('usuarios').select('rol, ciudad').eq('id', user.id).single();
         rolUsuario = perfil?.rol ?? null;
         if ((perfil?.ciudad || '').toLowerCase() === 'cartago') {
-            ['btn_pedidos_sedes', 'btn_historial_planta'].forEach(id => {
+            ['btn_pedidos_sedes', 'btn_historial_planta', 'btn_liquidacion', 'btn_reservas'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
