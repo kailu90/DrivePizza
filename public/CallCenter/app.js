@@ -898,6 +898,7 @@ function vaciarCarrito() {
     });
     setTimeout(() => {
         carrito = [];
+        _toppingsCC = new Set();
         localStorage.removeItem('dp_promo65k_obs');
         localStorage.removeItem('dp_promo3x2_obs');
         localStorage.removeItem('dp_promoLasEsp_obs');
