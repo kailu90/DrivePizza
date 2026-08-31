@@ -151,6 +151,13 @@
             transition: background 0.15s;
         }
         #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
+        #btn-wa-monitor {
+            display: none;
+            background: none; border: none; cursor: pointer;
+            color: #94a3b8; padding: 6px; border-radius: 8px;
+            transition: color .2s, background .2s;
+        }
+        #btn-wa-monitor:hover { color: #f1f5f9; background: rgba(255,255,255,0.08); }
         #wa-badge-hdr {
             position: absolute; top: 6px; right: 6px;
             background: #ef4444; color: #fff; font-size: 10px;
@@ -206,6 +213,15 @@
 <div id="wa-panel">
     <div class="panel-header">
         <span class="panel-header__title">WhatsApp</span>
+        <button id="btn-wa-monitor" title="WA Monitor" onclick="window.open('/CallCenter/waMonitor.html','_blank')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <polyline points="8 21 12 17 16 21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <circle cx="12" cy="10" r="2" fill="currentColor" stroke="none"/>
+            </svg>
+        </button>
         <button class="panel-header__icon" id="wa-strip" title="WhatsApp">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
@@ -443,6 +459,9 @@
                 extension:   data.extension   || null,
                 sipPassword: data.sip_password || null
             };
+            // Mostrar botón monitor solo para admin/callcenter-admin
+            if (['admin', 'callcenter-admin'].includes(data.rol))
+                document.getElementById('btn-wa-monitor').style.display = '';
             // Inicializar WA panel en el drawer persistente
             const { initWaPanel, resetWaView, destroyWaPanel } = await import('./waPanel.js');
             _resetWaView    = resetWaView;
