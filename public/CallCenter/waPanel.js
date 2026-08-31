@@ -3796,10 +3796,11 @@ function _tickSvg(status) {
 
 function _onContacto({ numero, phone, name, fuente }) {
     if (!phone || !name) return;
-    const _cSuffix = phone.split('@')[1] || '';
-    if (_cSuffix !== 's.whatsapp.net' && _cSuffix !== 'lid') return;
-    if (!_state.conv[numero]?.[phone]) return;
-    const c = _state.conv[numero][phone];
+    // Extraer clave sin sufijo (@s.whatsapp.net / @lid) para buscar en _state.conv
+    const phoneKey = phone.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '');
+    if (!phoneKey) return;
+    if (!_state.conv[numero]?.[phoneKey]) return;
+    const c = _state.conv[numero][phoneKey];
     if (fuente === 'clientes') {
         c.nombre = name; // fuente de verdad — override siempre
     } else if (!c.nombre) {
@@ -3808,7 +3809,7 @@ function _onContacto({ numero, phone, name, fuente }) {
     _saveConv();
     _renderList();
     // Actualizar header si es la conversacion abierta
-    if (_state.activeContact === phone && _state.activeNum === numero) _updateChatHeader(phone);
+    if (_state.activeContact === phoneKey && _state.activeNum === numero) _updateChatHeader(phoneKey);
 }
 
 function _closeActionsMenu() {
@@ -5188,6 +5189,13 @@ async function _saveClientPanel(nuevo) {
     const hiddenInput = document.getElementById('wap-cp-nombre');
     if (hiddenInput) hiddenInput.value = nuevo;
 
+    // Update optimista — persistir antes del fetch para sobrevivir un reinicio de servicio
+    const prevNombre = c?.nombre || null;
+    if (_state.conv[num]?.[phone]) { _state.conv[num][phone].nombre = nuevo; _saveConv(); }
+    const avatarEl = document.getElementById('wap-cp-avatar');
+    if (avatarEl) avatarEl.textContent = _initials(nuevo);
+    _renderList();
+
     try {
         const r = await fetch(
             `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`,
@@ -5195,15 +5203,16 @@ async function _saveClientPanel(nuevo) {
               body: JSON.stringify({ nombre: nuevo }) }
         );
         if (r.ok) {
-            if (_state.conv[num]?.[phone]) { _state.conv[num][phone].nombre = nuevo; _saveConv(); }
-            const avatarEl = document.getElementById('wap-cp-avatar');
-            if (avatarEl) avatarEl.textContent = _initials(nuevo);
-            _renderList();
             _showToast('Nombre actualizado', 2000);
         } else {
+            // Revertir si el backend rechazó
+            if (_state.conv[num]?.[phone]) { _state.conv[num][phone].nombre = prevNombre; _saveConv(); }
             _showToast('Error al guardar el nombre', 3000);
         }
-    } catch { _showToast('Error de conexión', 3000); }
+    } catch {
+        // Sin conexión — el nombre queda en localStorage para cuando reconecte
+        _showToast('Sin conexión — nombre guardado localmente', 3000);
+    }
     _updateChatHeader(phone);
 }
 
