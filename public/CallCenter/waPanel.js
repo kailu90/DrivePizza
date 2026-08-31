@@ -5381,9 +5381,10 @@ async function _buscarClientes(q) {
         if (!_ncSesionSeleccionada) { alert('Selecciona una sesión primero'); return; }
         const normPhone = _normPhone(phone);
         const num       = _ncSesionSeleccionada;
+        const cb        = _ncCallback; // guardar ANTES de cerrar (closeModal pone _ncCallback=null)
         _closeNuevaConvModal();
-        if (_ncCallback) {
-            _ncCallback(num, normPhone);
+        if (cb) {
+            cb(num, normPhone);
         } else {
             _state.activeNum = num;
             _navTo('conv');
