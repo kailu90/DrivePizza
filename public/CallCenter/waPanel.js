@@ -2736,6 +2736,91 @@ function _injectStyles() {
     transition: background .12s;
 }
 .wap-btn-secondary:hover { background: rgba(0,0,0,.06); }
+
+/* ── Nueva conversación ──────────────────────────── */
+.wap-new-btn {
+    margin-top: auto;
+    margin-bottom: 10px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--color-primario, #284c22);
+    color: #fff;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; line-height: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    transition: background .15s, transform .15s;
+    flex-shrink: 0;
+}
+.wap-new-btn:hover { background: #1a3317; transform: scale(1.08); }
+
+.wap-nc-backdrop {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 100;
+    align-items: center; justify-content: center;
+}
+.wap-nc-backdrop.open { display: flex; }
+
+.wap-nc-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 88%; max-width: 340px;
+    padding: 18px 16px 14px;
+    display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    max-height: 80%;
+}
+.wap-nc-title {
+    font-size: 1.3rem; font-weight: 700; color: #1a3317;
+    margin: 0;
+}
+.wap-nc-label {
+    font-size: 1.05rem; color: #555; margin-bottom: 4px;
+}
+.wap-nc-sessions {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+.wap-nc-ses-pill {
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
+    border: 2px solid transparent;
+    background: #f1f5f9; color: #374151;
+    transition: border-color .15s, background .15s;
+    text-transform: capitalize;
+}
+.wap-nc-ses-pill.selected {
+    border-color: #284c22; background: #dcfce7; color: #14532d;
+}
+.wap-nc-ses-pill:disabled { opacity: .4; cursor: not-allowed; }
+
+.wap-nc-search {
+    width: 100%; padding: 7px 10px;
+    border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: 1.1rem; outline: none;
+    box-sizing: border-box;
+}
+.wap-nc-search:focus { border-color: #284c22; }
+
+.wap-nc-results {
+    overflow-y: auto; max-height: 180px;
+    display: flex; flex-direction: column; gap: 2px;
+}
+.wap-nc-result {
+    padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 1px;
+    transition: background .12s;
+}
+.wap-nc-result:hover { background: #f1f5f9; }
+.wap-nc-result-name { font-size: 1.1rem; font-weight: 600; color: #111; }
+.wap-nc-result-phone { font-size: 1rem; color: #6b7280; }
+.wap-nc-empty { font-size: 1rem; color: #9ca3af; text-align: center; padding: 12px 0; }
+.wap-nc-close {
+    align-self: flex-end; background: none; border: none;
+    font-size: 1.1rem; color: #9ca3af; cursor: pointer; padding: 2px 6px;
+}
+.wap-nc-close:hover { color: #374151; }
 `;
 
     document.head.appendChild(s);
@@ -2770,7 +2855,30 @@ function _renderShell(body) {
                         <path d="M17 6H7a4 4 0 000 8h1v4a2 2 0 004 0v-4h2v4a2 2 0 004 0v-4h1a4 4 0 000-8z"/>
                     </svg>
                 </button>` : ''}
+
+                <button class="wap-new-btn" id="wap-new-conv-btn" title="Nueva conversación">+</button>
             </nav>
+
+            <!-- ── Modal: Nueva conversación ── -->
+            <div class="wap-nc-backdrop" id="wap-nc-backdrop">
+                <div class="wap-nc-modal">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <p class="wap-nc-title">Nueva conversación</p>
+                        <button class="wap-nc-close" id="wap-nc-close">✕</button>
+                    </div>
+                    <div>
+                        <p class="wap-nc-label">Enviar desde</p>
+                        <div class="wap-nc-sessions" id="wap-nc-sessions"></div>
+                    </div>
+                    <div>
+                        <p class="wap-nc-label">Buscar cliente</p>
+                        <input class="wap-nc-search" id="wap-nc-search" placeholder="Nombre o número..." autocomplete="off">
+                    </div>
+                    <div class="wap-nc-results" id="wap-nc-results">
+                        <p class="wap-nc-empty">Escribe para buscar...</p>
+                    </div>
+                </div>
+            </div>
 
             <!-- ── Área de contenido ── -->
             <div class="wap-content" id="wap-content">
@@ -3026,6 +3134,15 @@ function _renderShell(body) {
     document.getElementById('wap-search').addEventListener('input', e => {
         _state.filterText = e.target.value.toLowerCase();
         _renderList();
+    });
+    document.getElementById('wap-new-conv-btn').addEventListener('click', _openNuevaConvModal);
+    document.getElementById('wap-nc-close').addEventListener('click', _closeNuevaConvModal);
+    document.getElementById('wap-nc-backdrop').addEventListener('click', e => {
+        if (e.target === e.currentTarget) _closeNuevaConvModal();
+    });
+    document.getElementById('wap-nc-search').addEventListener('input', e => {
+        clearTimeout(_ncSearchTimer);
+        _ncSearchTimer = setTimeout(() => _buscarClientes(e.target.value), 300);
     });
     document.getElementById('wap-back').addEventListener('click', _closeChat);
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
@@ -5153,6 +5270,84 @@ function _navTo(view) {
     if (view === 'ses') _renderSesionesView();
     if (view === 'conv') _renderList();
     if (view === 'rr') _renderRRView();
+}
+
+// ── Nueva conversación ─────────────────────────────────────────────────────
+let _ncSesionSeleccionada = null;
+let _ncSearchTimer = null;
+
+function _openNuevaConvModal() {
+    _ncSesionSeleccionada = null;
+    // Renderizar sesiones conectadas
+    const sesEl = document.getElementById('wap-nc-sessions');
+    const conectadas = _state.sesiones.filter(s => s.status === 'conectado');
+    if (!conectadas.length) {
+        sesEl.innerHTML = '<span style="font-size:1rem;color:#9ca3af;">Sin sesiones conectadas</span>';
+    } else {
+        sesEl.innerHTML = conectadas.map(s => `
+            <button class="wap-nc-ses-pill" data-num="${s.numero}" title="${s.numero}">
+                ${s.sede || s.numero}
+            </button>
+        `).join('');
+        sesEl.querySelectorAll('.wap-nc-ses-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sesEl.querySelectorAll('.wap-nc-ses-pill').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                _ncSesionSeleccionada = btn.dataset.num;
+            });
+        });
+        // Auto-seleccionar sesión activa o primera
+        const auto = _state.activeNum
+            ? sesEl.querySelector(`[data-num="${_state.activeNum}"]`)
+            : sesEl.querySelector('.wap-nc-ses-pill');
+        if (auto) { auto.click(); }
+    }
+    document.getElementById('wap-nc-search').value = '';
+    document.getElementById('wap-nc-results').innerHTML = '<p class="wap-nc-empty">Escribe para buscar...</p>';
+    document.getElementById('wap-nc-backdrop').classList.add('open');
+    document.getElementById('wap-nc-search').focus();
+}
+
+function _closeNuevaConvModal() {
+    document.getElementById('wap-nc-backdrop').classList.remove('open');
+    clearTimeout(_ncSearchTimer);
+}
+
+async function _buscarClientes(q) {
+    const res = document.getElementById('wap-nc-results');
+    if (!q.trim()) {
+        res.innerHTML = '<p class="wap-nc-empty">Escribe para buscar...</p>';
+        return;
+    }
+    res.innerHTML = '<p class="wap-nc-empty">Buscando...</p>';
+    const { data, error } = await supabase
+        .from('clientes')
+        .select('nombre, telefono, ciudad')
+        .or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`)
+        .limit(20);
+    if (error || !data?.length) {
+        res.innerHTML = '<p class="wap-nc-empty">Sin resultados</p>';
+        return;
+    }
+    res.innerHTML = data.map(c => `
+        <div class="wap-nc-result" data-phone="${c.telefono}">
+            <span class="wap-nc-result-name">${c.nombre || '—'}</span>
+            <span class="wap-nc-result-phone">${c.telefono}${c.ciudad ? ' · ' + c.ciudad : ''}</span>
+        </div>
+    `).join('');
+    res.querySelectorAll('.wap-nc-result').forEach(el => {
+        el.addEventListener('click', () => {
+            const phone = el.dataset.phone;
+            if (!_ncSesionSeleccionada) {
+                alert('Selecciona una sesión primero');
+                return;
+            }
+            _state.activeNum = _ncSesionSeleccionada;
+            _closeNuevaConvModal();
+            _navTo('conv');
+            _openChat(phone);
+        });
+    });
 }
 
 function _showListView() {
