@@ -9,22 +9,20 @@ import { getSedes } from '../Shared/sedesService.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
 const SESSION_COLORS = [
-    '#25D366', // verde WA
-    '#0088cc', // azul
-    '#06b6d4', // cyan
-    '#6366f1', // indigo
-    '#8b5cf6', // violeta
-    '#ec4899', // rosa
-    '#ef4444', // rojo
-    '#f97316', // naranja
-    '#facc15', // amarillo
-    '#84cc16', // lima
-    '#14b8a6', // teal
-    '#64748b', // gris azulado
-    '#9ca3af', // gris claro
-    '#6b7280', // gris medio
-    '#1f2937', // gris oscuro / casi negro
-    '#ffffff', // blanco
+    // Verdes
+    '#15803d', '#16a34a', '#25D366', '#4ade80', '#84cc16',
+    // Azules
+    '#1d4ed8', '#3b82f6', '#0088cc', '#0ea5e9', '#06b6d4',
+    // Púrpuras / Índigo
+    '#4f46e5', '#6366f1', '#7c3aed', '#8b5cf6', '#a855f7',
+    // Rosas / Rojos
+    '#be123c', '#ef4444', '#f43f5e', '#ec4899', '#fb7185',
+    // Naranjas / Ambar / Amarillos
+    '#92400e', '#c2410c', '#f97316', '#fb923c', '#facc15',
+    // Teals / Lima / Neutros cálidos
+    '#0d9488', '#14b8a6', '#2dd4bf', '#a3e635', '#fde68a',
+    // Grises / Oscuros / Blanco
+    '#1f2937', '#334155', '#475569', '#64748b', '#9ca3af', '#ffffff',
 ];
 
 const _notifAudio = new Audio('../Audio/notificacion-wa.mp3');
@@ -451,8 +449,8 @@ function _injectStyles() {
 }
 .wap-ses-edit-textarea:focus { outline: none; border-color: #284c22; }
 .wap-color-swatches {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(6, 24px);
     gap: 6px;
 }
 .wap-color-swatch {
