@@ -4744,7 +4744,7 @@ function _renderList() {
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
         const ciudad  = _ciudadDeSesion(num);
         const badgeCode = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
-        const badgeTxt = sedeLabel ? `${badgeCode}-${sedeLabel.toUpperCase()}` : badgeCode;
+        const badgeTxt = sedeLabel ? `${badgeCode}-${sedeLabel}` : badgeCode;
         const badgeCls = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
         const ciudadBadge = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
 
@@ -4773,7 +4773,7 @@ function _renderList() {
                     ${unread}
                 </div>
                 ${estadoTag ? `<div class="wap-conv-row" style="margin-top:3px;">${estadoTag}</div>` : ''}
-                <div class="wap-conv-row" style="margin-top:3px;">${ciudadBadge}</div>
+                <div class="wap-conv-row" style="margin-top:3px;justify-content:flex-end;">${ciudadBadge}</div>
             </div>
             ${tomarBtn}
         </div>`;
