@@ -116,7 +116,14 @@ const CIUDAD_LABEL = { bucaramanga: 'Bucaramanga', cartago: 'Cartago' };
 function _ciudadDeSesion(numero) {
     const s    = _state.sesiones.find(s => s.numero === numero);
     const sede = (s?.sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return SEDES_CIUDAD[sede] || 'bucaramanga';
+    if (!sede) return 'bucaramanga';
+    // Match exacto
+    if (SEDES_CIUDAD[sede]) return SEDES_CIUDAD[sede];
+    // Match parcial: 'ccnuestro' contiene 'nuestro', 'elprado' contiene 'prado'
+    for (const [key, ciudad] of Object.entries(SEDES_CIUDAD)) {
+        if (sede.includes(key) || key.includes(sede)) return ciudad;
+    }
+    return 'bucaramanga';
 }
 let _ws              = null;
 let _wsEverConnected = false; // true después de la primera conexión exitosa
