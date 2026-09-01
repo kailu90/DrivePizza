@@ -246,7 +246,8 @@ function renderProducts(categoria) {
 
     if (categoria === "Promociones") {
         // ── CARTAGO ─────────────────────────────────────────────────────────
-        if (window.ciudadActual === 'cartago') {
+        const _ciudadPromo = (window.ciudadActual || localStorage.getItem('cc_ciudad') || '').toLowerCase();
+        if (_ciudadPromo === 'cartago') {
             const _hCtg  = new Date();
             const diaCtg = _hCtg.getDay();   // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
             const horaCtg = _hCtg.getHours();
