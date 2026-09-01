@@ -24,7 +24,9 @@ function _renderAcomps(ciudad) {
 }
 
 // Sedes donde aplican las promos especiales (65K, Pepperoni, Lasaña)
-const SEDES_PROMO_ESPECIAL = new Set(['acropolis', 'megamall', 'unico']);
+const SEDES_PROMO_ESPECIAL  = new Set(['acropolis', 'megamall', 'unico']);
+// Sedes donde aplica la promo 2×1 Cartago
+const SEDES_PROMO_2X1_CTG   = new Set(['nuestro']);
 
 function _aplicarFiltroSedes() {
     let sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
@@ -53,6 +55,32 @@ function _limpiarFiltroSedes() {
         btn.disabled = false;
     });
     document.getElementById('sede-restriccion-aviso')?.remove();
+}
+
+function _aplicarFiltro2x1Ctg() {
+    const sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
+    if (sedeActiva && !SEDES_PROMO_2X1_CTG.has(sedeActiva.dataset.sede)) {
+        sedeActiva.classList.remove('active');
+    }
+    document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
+        if (!SEDES_PROMO_2X1_CTG.has(btn.dataset.sede)) btn.disabled = true;
+    });
+    if (!document.getElementById('sede-restriccion-2x1-aviso')) {
+        const toggle = document.querySelector('.sede-toggle');
+        if (toggle) {
+            const aviso = document.createElement('p');
+            aviso.id = 'sede-restriccion-2x1-aviso';
+            aviso.className = 'sede-restriccion-aviso';
+            aviso.textContent = '⚠️ Promo 2×1 aplica solo en CC Nuestro · Solo para recoger.';
+            toggle.insertAdjacentElement('afterend', aviso);
+        }
+    }
+}
+
+function _limpiarFiltro2x1Ctg() {
+    if (carrito.some(i => i.esPromo2x1Ctg)) return;
+    document.getElementById('sede-restriccion-2x1-aviso')?.remove();
+    _limpiarFiltroSedes();
 }
 
 // ── SALA (Jitsi Meet) ─────────────────────────────────────────────────────
@@ -883,6 +911,7 @@ function eliminarItem(id) {
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoId2x1Ctg !== itemTarget.promoId2x1Ctg);
             if (!carrito.some(i => i.esPromo2x1Ctg)) localStorage.removeItem('dp_promo2x1Ctg_obs');
+            _limpiarFiltro2x1Ctg();
             actualizarComanda();
         }, 300);
         return;
@@ -946,6 +975,7 @@ function vaciarCarrito() {
         localStorage.removeItem('dp_promoPepperoni_obs');
         localStorage.removeItem('dp_promoKit_obs');
         _limpiarFiltroSedes();
+        document.getElementById('sede-restriccion-2x1-aviso')?.remove();
         actualizarComanda();
     }, filas.length * 60 + 300);
 }
@@ -2435,6 +2465,7 @@ function _promo2x1CtgAbrirModal() {
             carrito.push({ id: now,     nombre: `${state.prod1.nombre} (${state.tamano})`, precio: state.prod1.precio, qty: 1, esPromo2x1Ctg: true, promoId2x1Ctg: now });
             carrito.push({ id: now + 1, nombre: `${btn.dataset.nombre} (${state.tamano})`, precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now });
             localStorage.setItem('dp_promo2x1Ctg_obs', `PROMO 2X1 - ${state.tamano}`);
+            _aplicarFiltro2x1Ctg();
             actualizarComanda();
         });
     });
