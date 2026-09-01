@@ -252,7 +252,9 @@
         .hist-table td { padding: 10px; border-bottom: 1px solid rgba(40,76,34,0.07); vertical-align: middle; }
         .hist-table tr:hover td { background: rgba(40,76,34,0.03); }
         .num-cell   { font-weight: 600; color: var(--color-terciario); }
-        .sede-tag   { font-size: 10px; background: rgba(40,76,34,0.1); color: var(--color-primario); padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+        .sede-tag       { font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+        .sede-tag--bga  { background: var(--color-bga-light); color: var(--color-bga); }
+        .sede-tag--car  { background: var(--color-ctg-light); color: var(--color-ctg); }
         .time-cell  { color: #999; font-size: 12px; }
         .dur-cell   { font-family: monospace; color: #888; font-size: 12px; }
         .badge-contestada { background: rgba(40,76,34,0.1);   color: var(--color-primario); }
@@ -666,7 +668,7 @@
                 else if (c.estado === 'perdida') badge = '<span class="badge badge-perdida">Perdida</span>';
                 else                            badge = '<span class="badge badge-contestada">Contestada</span>';
                 const sedeTag = c.sede && IVR_SEDE[c.sede]
-                    ? `<span class="sede-tag">${IVR_SEDE[c.sede]}</span>` : '';
+                    ? `<span class="sede-tag sede-tag--${['811','812'].includes(c.sede) ? 'car' : 'bga'}">${IVR_SEDE[c.sede]}</span>` : '';
                 return `<tr>
                     <td class="num-cell">${c.numero_cliente || '—'}${sedeTag}</td>
                     <td>${c.username || c.extension || '—'}</td>

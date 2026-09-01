@@ -26,6 +26,12 @@ const IVR_SEDE = {
     '804': 'BGA-Piedecuesta', '805': 'BGA-Megamall', '806': 'BGA-Único',
     '811': 'CAR-El Prado', '812': 'CAR-CC Nuestro',
 };
+function _sedeBadge(queue) {
+    const label = IVR_SEDE[queue];
+    if (!label) return null;
+    const cls = ['811','812'].includes(queue) ? 'pbx-sede-badge--car' : 'pbx-sede-badge--bga';
+    return `<span class="pbx-sede-badge ${cls}">${label}</span>`;
+}
 
 const STATUS_MAP = {
     registered: { label: 'Disponible',   dot: '#22c55e' },
@@ -216,7 +222,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
         const isRinging = state === 'ringing';
         const dir       = call.direction || 'incoming';
         const dirCls    = dir === 'outgoing' ? 'pbx-arrow--out' : 'pbx-arrow--in';
-        const sedeLabel = call.sede ? (IVR_SEDE[call.sede] || call.sede) : (isRinging ? (dir === 'outgoing' ? 'Saliente' : 'Entrante') : 'En llamada');
+        const sedeLabel = call.sede ? (_sedeBadge(call.sede) || call.sede) : (isRinging ? (dir === 'outgoing' ? 'Saliente' : 'Entrante') : 'En llamada');
 
         live.innerHTML = `
             <div class="pbx-ccard pbx-ccard--${isRinging ? 'ringing' : 'active'}">
@@ -347,7 +353,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
             const dir        = entry.direction || 'incoming';
             const dirCls     = dir === 'outgoing' ? 'pbx-arrow--out' : 'pbx-arrow--in';
             const asesLabel  = entry.username || (dir === 'outgoing' ? 'Saliente' : 'Entrante');
-            const sedeLabel  = entry.sede ? (IVR_SEDE[entry.sede] || null) : null;
+            const sedeLabel  = entry.sede ? _sedeBadge(entry.sede) : null;
             const estado     = entry.estado || (entry.missed ? 'perdida' : 'contestada');
             const isEnCurso  = estado === 'en_curso';
             const elapsed    = isEnCurso ? Math.floor((Date.now() - entry.time) / 1000) : entry.duration;
@@ -358,7 +364,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
                     <span class="pbx-ccard__time pbx-ccard__time--topleft">${fmtTime(entry.time)}</span>
                     ${avatarHtml(entry.number)}
                     <div class="pbx-ccard__body">
-                        <span class="pbx-ccard__name">${entry.number || '—'}${sedeLabel ? `<span style="font-size:10px;background:rgba(40,76,34,0.1);color:var(--color-primario);padding:2px 6px;border-radius:10px;margin-left:6px;font-weight:500;vertical-align:middle;">${sedeLabel}</span>` : ''}</span>
+                        <span class="pbx-ccard__name">${entry.number || '—'}${sedeLabel || ''}</span>
                         <span class="pbx-ccard__sub">
                             <span class="pbx-ccard__arrow ${dirCls}">${arrowSvg(dir)}</span>
                             ${asesLabel}

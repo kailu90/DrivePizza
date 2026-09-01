@@ -2071,6 +2071,9 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.pbx-sede-badge     { font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
+.pbx-sede-badge--bga { background: var(--color-bga-light); color: var(--color-bga); }
+.pbx-sede-badge--car { background: var(--color-ctg-light); color: var(--color-ctg); }
 
 /* Fila: flecha coloreada + sede */
 .pbx-ccard__sub {

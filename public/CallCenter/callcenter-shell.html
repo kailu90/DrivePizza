@@ -64,10 +64,11 @@
         #sip-sede {
             display: none;
             font-size: 11px; font-weight: 600;
-            background: rgba(34,197,94,0.18); color: #22c55e;
             padding: 3px 10px; border-radius: 20px;
             margin-bottom: 10px; width: fit-content;
         }
+        #sip-sede.sip-sede--bga { background: var(--color-bga-light); color: var(--color-bga); }
+        #sip-sede.sip-sede--car { background: var(--color-ctg-light); color: var(--color-ctg); }
         #sip-panel .sip-btns { display: flex; gap: 8px; }
         #sip-panel .sip-btns button {
             flex: 1; padding: 10px 0; border: none; border-radius: 8px;
@@ -555,9 +556,13 @@
     const sedeEl        = document.getElementById('sip-sede');
 
     function _mostrarSede(callerNumber) {
-        const nombre = (_pendingSedeSIP?.numero === callerNumber) ? IVR_SEDE[_pendingSedeSIP.sede] : null;
-        if (nombre) { sedeEl.textContent = nombre; sedeEl.style.display = 'block'; }
-        else        { sedeEl.style.display = 'none'; }
+        const queue  = (_pendingSedeSIP?.numero === callerNumber) ? _pendingSedeSIP.sede : null;
+        const nombre = queue ? IVR_SEDE[queue] : null;
+        if (nombre) {
+            sedeEl.textContent = nombre;
+            sedeEl.className   = ['811','812'].includes(queue) ? 'sip-sede--car' : 'sip-sede--bga';
+            sedeEl.style.display = 'block';
+        } else { sedeEl.style.display = 'none'; }
     }
 
     let _session       = null;
