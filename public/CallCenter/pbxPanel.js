@@ -22,8 +22,9 @@ const SEDE_LABELS = {
 };
 
 const IVR_SEDE = {
-    '801': 'Cabecera', '802': 'Cañaveral', '803': 'Acrópolis',
-    '804': 'Piedecuesta', '805': 'Megamall', '806': 'Único',
+    '801': 'BGA-Cabecera', '802': 'BGA-Cañaveral', '803': 'BGA-Acrópolis',
+    '804': 'BGA-Piedecuesta', '805': 'BGA-Megamall', '806': 'BGA-Único',
+    '811': 'CAR-El Prado', '812': 'CAR-CC Nuestro',
 };
 
 const STATUS_MAP = {
