@@ -128,6 +128,8 @@ function init() {
     localStorage.removeItem('dp_promo65k_obs');
     localStorage.removeItem('dp_promo3x2_obs');
     localStorage.removeItem('dp_promoLasEsp_obs');
+    localStorage.removeItem('dp_promoLasEspCtg_obs');
+    localStorage.removeItem('dp_promo2x1Ctg_obs');
     localStorage.removeItem('dp_promoPepperoni_obs');
     localStorage.removeItem('dp_promoKit_obs');
 
@@ -243,6 +245,32 @@ function renderProducts(categoria) {
     let productos = [];
 
     if (categoria === "Promociones") {
+        // ── CARTAGO ─────────────────────────────────────────────────────────
+        if (window.ciudadActual === 'cartago') {
+            const _hCtg  = new Date();
+            const diaCtg = _hCtg.getDay();   // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
+            const horaCtg = _hCtg.getHours();
+            const esMarJue   = diaCtg === 2 || diaCtg === 4;
+            const esHora2x1  = horaCtg >= 12 && horaCtg < 18;
+            const esActivo2x1 = esMarJue && esHora2x1;
+            const esLunMieVie = diaCtg === 1 || diaCtg === 3 || diaCtg === 5;
+            grid.innerHTML = `
+                <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
+                    <div class="promo-badge">MAR · JUE</div>
+                    <h4>2 × 1</h4>
+                    <p class="product-desc">Compra una pizza y lleva una Clásica del mismo tamaño gratis.</p>
+                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger · 12pm – 6pm' : esMarJue ? 'Disponible 12pm – 6pm' : 'Disponible martes y jueves 12pm – 6pm'}</p>
+                </div>
+                <div class="card card-promo ${esLunMieVie ? '' : 'card-promo--inactiva'}" onclick="${esLunMieVie ? 'abrirPromoLasEspCtg()' : ''}">
+                    <div class="promo-badge">LUN · MIÉ · VIE</div>
+                    <h4>42.9K</h4>
+                    <p class="product-desc">2 Lasañas o 2 Espaguettis<br>+ 1 Gaseosa 250ml</p>
+                    <p class="promo-elegibles">${esLunMieVie ? 'Disponible hoy' : 'Disponible lunes, miércoles y viernes'}</p>
+                </div>
+            `;
+            return;
+        }
+        // ── BUCARAMANGA ─────────────────────────────────────────────────────
         const esMartes = true; // TEMPORAL: habilitado para pruebas — restaurar a: new Date().getDay() === 2
         const _hoyB = new Date();
         const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
@@ -698,23 +726,27 @@ function actualizarComanda() {
         // Tags visuales para ítems de promo
         const promoTagHtml = item.esObsequio3x2
             ? `<span class="obsequio-tag">🎁 OBSEQUIO</span>`
+            : item.esObsequio2x1Ctg
+            ? `<span class="obsequio-tag">🎁 OBSEQUIO</span>`
             : item.esPromo3x2
             ? `<span class="promo-tag">PROMO 3×2</span>`
             : item.esPromo65k
             ? `<span class="promo-tag">COMBO 65K</span>`
             : item.esPromoLasEsp
-            ? `<span class="promo-tag">PROMO 48K</span>`
+            ? `<span class="promo-tag">PROMO ${item.promoVariante === 'ctg' ? '42.9K' : '48K'}</span>`
             : item.esPromoPepperoni
             ? `<span class="promo-tag">PROMO 28K</span>`
             : item.esPromoKit
             ? `<span class="promo-tag">KIT PIZZERITOS</span>`
             : item.esPromoBerrionda
             ? `<span class="promo-tag">PROMO 35K</span>`
+            : item.esPromo2x1Ctg
+            ? `<span class="promo-tag">PROMO 2×1</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
             ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
             : item.nombre;
-        const precioClass = (item.esObsequio3x2 || item.esGaseosa65k || item.esGaseosaLasEsp || item.esExtra28k) ? 'item-precio item-precio--gratis' : 'item-precio';
+        const precioClass = (item.esObsequio3x2 || item.esGaseosa65k || item.esGaseosaLasEsp || item.esExtra28k || item.esObsequio2x1Ctg) ? 'item-precio item-precio--gratis' : 'item-precio';
 
         const rowPrincipal = `
             <div class="item-grupo ${item._obsOpen ? 'item-grupo--obs-open' : ''}">
@@ -725,8 +757,8 @@ function actualizarComanda() {
                     </div>
                     <div class="item-controls">
                         ${botonAdicion}
-                        ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
-                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda) ? '' : `<div class="qty-control">
+                        ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromo2x1Ctg) ? '' : botonObs}
+                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
                             <button class="btn-qty" onclick="incrementarQty(${item.id})">+</button>
@@ -821,9 +853,10 @@ function eliminarItem(id) {
         return;
     }
 
-    // Si pertenece a una promo 48K (Lasaña/Espaguetti), eliminar los 4 productos juntos
+    // Si pertenece a una promo Lasaña/Espaguetti (48K BGA o 42.9K CTG), eliminar el grupo completo
     if (itemTarget?.promoIdLasEsp) {
-        if (!confirm('Este producto es parte de una Promo 48K. ¿Eliminar los productos de la promo?')) return;
+        const promoLabel = itemTarget.promoVariante === 'ctg' ? '42.9K' : '48K';
+        if (!confirm(`Este producto es parte de una Promo ${promoLabel}. ¿Eliminar los productos de la promo?`)) return;
         const promoIds = carrito.filter(i => i.promoIdLasEsp === itemTarget.promoIdLasEsp).map(i => i.id);
         promoIds.forEach(fId => {
             const fila = document.querySelector(`.item-row[data-id="${fId}"]`);
@@ -831,7 +864,24 @@ function eliminarItem(id) {
         });
         setTimeout(() => {
             carrito = carrito.filter(i => i.promoIdLasEsp !== itemTarget.promoIdLasEsp);
-            if (!carrito.some(i => i.esPromoLasEsp)) localStorage.removeItem('dp_promoLasEsp_obs');
+            if (!carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg')) localStorage.removeItem('dp_promoLasEsp_obs');
+            if (!carrito.some(i => i.esPromoLasEsp && i.promoVariante === 'ctg')) localStorage.removeItem('dp_promoLasEspCtg_obs');
+            actualizarComanda();
+        }, 300);
+        return;
+    }
+
+    // Si pertenece a la promo 2×1 Cartago, eliminar el par completo
+    if (itemTarget?.promoId2x1Ctg) {
+        if (!confirm('Este producto es parte de la Promo 2×1. ¿Eliminar los dos productos?')) return;
+        const promoIds = carrito.filter(i => i.promoId2x1Ctg === itemTarget.promoId2x1Ctg).map(i => i.id);
+        promoIds.forEach(fId => {
+            const fila = document.querySelector(`.item-row[data-id="${fId}"]`);
+            if (fila) fila.classList.add('item-removing');
+        });
+        setTimeout(() => {
+            carrito = carrito.filter(i => i.promoId2x1Ctg !== itemTarget.promoId2x1Ctg);
+            if (!carrito.some(i => i.esPromo2x1Ctg)) localStorage.removeItem('dp_promo2x1Ctg_obs');
             actualizarComanda();
         }, 300);
         return;
@@ -890,6 +940,8 @@ function vaciarCarrito() {
         localStorage.removeItem('dp_promo65k_obs');
         localStorage.removeItem('dp_promo3x2_obs');
         localStorage.removeItem('dp_promoLasEsp_obs');
+        localStorage.removeItem('dp_promoLasEspCtg_obs');
+        localStorage.removeItem('dp_promo2x1Ctg_obs');
         localStorage.removeItem('dp_promoPepperoni_obs');
         localStorage.removeItem('dp_promoKit_obs');
         _limpiarFiltroSedes();
@@ -1192,8 +1244,14 @@ async function procesarPedidoFinal() {
     } else if (carrito.some(i => i.esPromo65k)) {
         const label = localStorage.getItem('dp_promo65k_obs') || 'PROMO 65K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoLasEsp && i.promoVariante === 'ctg')) {
+        const label = localStorage.getItem('dp_promoLasEspCtg_obs') || 'PROMO 42.9K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoLasEsp)) {
         const label = localStorage.getItem('dp_promoLasEsp_obs') || 'PROMO 48K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromo2x1Ctg)) {
+        const label = localStorage.getItem('dp_promo2x1Ctg_obs') || 'PROMO 2X1';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoPepperoni)) {
         const label = 'PROMO PEPPERONI 28K';
@@ -1996,22 +2054,35 @@ function _promoLasEspGetProductos(categoria) {
         .map(p => ({ ...p, categoriaPromo: 'Espaguetti' }));
 }
 
+const _PROMO_LAS_ESP_CFGS = {
+    bga: { precio: 48000, label: '48K',   gaseosas: 2, obsKey: 'dp_promoLasEsp_obs',    obsLabel: 'PROMO 48K - '   },
+    ctg: { precio: 42900, label: '42.9K', gaseosas: 1, obsKey: 'dp_promoLasEspCtg_obs', obsLabel: 'PROMO 42.9K - ' },
+};
+
 let _promoLasEspState = null;
 
 window.abrirPromoLasEsp = function () {
-    _promoLasEspState = { step: 0, categoria: null, prod1: null, prod2: null, gaseosa1: null };
+    _promoLasEspState = { step: 0, categoria: null, prod1: null, prod2: null, gaseosa1: null, cfg: _PROMO_LAS_ESP_CFGS.bga };
+    _promoLasEspAbrirModal();
+};
+
+window.abrirPromoLasEspCtg = function () {
+    _promoLasEspState = { step: 0, categoria: null, prod1: null, prod2: null, gaseosa1: null, cfg: _PROMO_LAS_ESP_CFGS.ctg };
     _promoLasEspAbrirModal();
 };
 
 function _promoLasEspAbrirModal() {
     const state        = _promoLasEspState;
+    const cfg          = state.cfg || _PROMO_LAS_ESP_CFGS.bga;
     const modal        = document.getElementById('modal-seleccion');
     const titulo       = document.getElementById('modal-titulo');
     const gridOpciones = document.getElementById('opciones-tamano');
     modal.querySelector('.modal-content').classList.add('modal-sabor2');
 
     const stepBar = () => {
-        const pasos = ['1. Producto 1', '2. Producto 2', '3. Gaseosa 1', '4. Gaseosa 2'];
+        const pasos = cfg.gaseosas > 1
+            ? ['1. Producto 1', '2. Producto 2', '3. Gaseosa 1', '4. Gaseosa 2']
+            : ['1. Producto 1', '2. Producto 2', '3. Gaseosa'];
         return pasos.map((lbl, i) => {
             const n = i + 1;
             const activo = n === state.step;
@@ -2024,7 +2095,7 @@ function _promoLasEspAbrirModal() {
 
     // ── PASO 0: elegir categoría ─────────────────────────────────
     if (state.step === 0) {
-        titulo.innerHTML = `Promo 48K<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">¿Deseas promo de lasaña o de espaguetti?</small>`;
+        titulo.innerHTML = `Promo ${cfg.label}<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">¿Deseas promo de lasaña o de espaguetti?</small>`;
         gridOpciones.className = 'opciones-grid promo-cat-grid';
         gridOpciones.innerHTML = ['Lasañas', 'Espaguetti'].map(cat => `
             <button class="btn-tamano promo-cat-btn" data-cat="${cat}">
@@ -2046,10 +2117,11 @@ function _promoLasEspAbrirModal() {
     const esPasoGaseosa = state.step >= 3;
 
     if (esPasoGaseosa) {
-        const numGas = state.step === 3 ? 1 : 2;
+        const numGas  = state.step === 3 ? 1 : 2;
+        const gasLabel = cfg.gaseosas > 1 ? ` ${numGas}` : '';
         titulo.innerHTML = `
             <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
-            <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el sabor de la gaseosa ${numGas} · <strong>${state.prod1?.nombre} / ${state.prod2?.nombre}</strong></small>`;
+            <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el sabor de la gaseosa${gasLabel} · <strong>${state.prod1?.nombre} / ${state.prod2?.nombre}</strong></small>`;
 
         const sabores = Object.keys(preciosBebidas.gaseosa400ml);
         gridOpciones.className = 'opciones-grid';
@@ -2134,8 +2206,9 @@ function _promoLasEspClickProducto(producto) {
     // Varias variantes → mostrar picker de variante
     const titulo = document.getElementById('modal-titulo');
     const gridOpciones = document.getElementById('opciones-tamano');
+    const _cfgClick = _promoLasEspState?.cfg || _PROMO_LAS_ESP_CFGS.bga;
     titulo.innerHTML = `
-        <div style="font-size:1.15rem;margin-bottom:6px;color:#aaa;">Promo 48K — Producto ${_promoLasEspState.step}</div>
+        <div style="font-size:1.15rem;margin-bottom:6px;color:#aaa;">Promo ${_cfgClick.label} — Producto ${_promoLasEspState.step}</div>
         ${producto.nombre}<br>
         <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige la proteína que desees</small>`;
     gridOpciones.className = 'opciones-grid opciones-pizza';
@@ -2168,21 +2241,30 @@ function _promoLasEspConfirmarProducto(producto, variante, precio) {
 
 window._promoLasEspSelGaseosa = function (sabor) {
     const state = _promoLasEspState;
-    if (state.step === 3) {
+    const cfg   = state.cfg || _PROMO_LAS_ESP_CFGS.bga;
+
+    if (state.step === 3 && cfg.gaseosas > 1) {
+        // BGA: primera gaseosa → ir al paso 4
         state.gaseosa1 = sabor;
         state.step = 4;
         _promoLasEspAbrirModal();
-    } else {
-        // Step 4 — gaseosa 2, agregar todo al carrito
-        cerrarModal();
-        const now = Date.now();
-        carrito.push({ id: now,     nombre: state.prod1.nombre,        precio: 48000, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now });
-        carrito.push({ id: now + 1, nombre: state.prod2.nombre,        precio: 0,     qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now });
-        carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
-        carrito.push({ id: now + 3, nombre: `Gaseosa ${sabor}`,         precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
-        localStorage.setItem('dp_promoLasEsp_obs', `PROMO 48K - ${state.categoria}`);
-        actualizarComanda();
+        return;
     }
+
+    // Paso final — agregar todo al carrito
+    cerrarModal();
+    const now = Date.now();
+    const promoVariante = cfg.gaseosas > 1 ? undefined : 'ctg';
+    carrito.push({ id: now,     nombre: state.prod1.nombre, precio: cfg.precio, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
+    carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: 0,          qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
+    if (cfg.gaseosas > 1) {
+        carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
+        carrito.push({ id: now + 3, nombre: `Gaseosa ${sabor}`,          precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
+    } else {
+        carrito.push({ id: now + 2, nombre: `Gaseosa ${sabor}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now, promoVariante: 'ctg' });
+    }
+    localStorage.setItem(cfg.obsKey, `${cfg.obsLabel}${state.categoria}`);
+    actualizarComanda();
 };
 
 // ── PROMO PEPPERONI 28K ────────────────────────────────────────────────────
@@ -2253,6 +2335,145 @@ window.abrirPromoBerrionda = function () {
     });
     actualizarComanda();
 };
+
+// ── PROMO 2×1 CARTAGO (Mar·Jue · 12pm–6pm · Solo Recoger) ─────────────────
+
+let _promo2x1CtgState = null;
+
+window.abrirPromo2x1Ctg = function () {
+    _promo2x1CtgState = { step: 0, tamano: null, prod1: null };
+    _promo2x1CtgAbrirModal();
+};
+
+function _promo2x1CtgAbrirModal() {
+    const state        = _promo2x1CtgState;
+    const modal        = document.getElementById('modal-seleccion');
+    const titulo       = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+    modal.querySelector('.modal-content').classList.add('modal-sabor2');
+
+    const stepBar = () => {
+        const pasos = ['1. Tamaño', '2. Pizza', '3. Clásica gratis'];
+        return pasos.map((lbl, i) => {
+            const n = i + 1;
+            const activo = n === state.step + 1;
+            const pasado = n <= state.step;
+            const color  = activo ? 'var(--color-primario)' : pasado ? '#555' : '#ccc';
+            const weight = activo ? '900' : 'normal';
+            return `<span style="color:${color};font-weight:${weight};">${lbl}</span>`;
+        }).join(`<span style="color:#ddd;margin:0 5px;">›</span>`);
+    };
+
+    // ── PASO 0: elegir tamaño ────────────────────────────────────────────
+    if (state.step === 0) {
+        titulo.innerHTML = `Promo 2×1<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige el tamaño · Solo para recoger</small>`;
+        gridOpciones.className = 'opciones-grid';
+        gridOpciones.innerHTML = ['Pequeña', 'Mediana', 'Grande', 'Jumbo'].map(t =>
+            `<button class="btn-tamano" data-tamano="${t}">${t}</button>`
+        ).join('');
+        gridOpciones.querySelectorAll('[data-tamano]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.tamano = btn.dataset.tamano;
+                state.step = 1;
+                _promo2x1CtgAbrirModal();
+            });
+        });
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // ── PASO 1: elegir pizza pagada ─────────────────────────────────────
+    if (state.step === 1) {
+        titulo.innerHTML = `
+            <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
+            <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige la pizza que pagas · <strong>${state.tamano}</strong></small>`;
+
+        const todasPizzas = [];
+        ["Pizzas Super Estofadas","Pizzas Estofadas","Pizzas Especiales","Pizzas Clásicas","Pizzas Típicas"].forEach(key => {
+            (menuData[key] || []).forEach(p => {
+                if (p.opciones?.[state.tamano] !== undefined) {
+                    todasPizzas.push({ nombre: p.nombre, precio: p.opciones[state.tamano] });
+                }
+            });
+        });
+
+        gridOpciones.className = 'opciones-grid opciones-sabores';
+        gridOpciones.innerHTML = `
+            <div class="busqueda-sabor2-wrapper">
+                <input type="text" id="buscar-2x1-ctg" placeholder="🔍 Buscar pizza..." oninput="_promo2x1CtgFiltrar(this.value)" autocomplete="off">
+            </div>
+            <div id="2x1ctg-grid" class="sabores2-grid"></div>`;
+        _promo2x1CtgRenderGrid(todasPizzas);
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('buscar-2x1-ctg')?.focus(), 100);
+        return;
+    }
+
+    // ── PASO 2: elegir Clásica gratis ───────────────────────────────────
+    titulo.innerHTML = `
+        <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
+        <small style="font-size:1.3rem;color:#666;font-weight:normal;">Elige la Clásica gratis · <strong>${state.tamano}</strong></small>`;
+
+    const clasicas = (menuData["Pizzas Clásicas"] || [])
+        .filter(p => p.opciones?.[state.tamano] !== undefined);
+
+    gridOpciones.className = 'opciones-grid opciones-sabores';
+    gridOpciones.innerHTML = `<div id="2x1ctg-clasica-grid" class="sabores2-grid"></div>`;
+
+    const gridClasicas = document.getElementById('2x1ctg-clasica-grid');
+    gridClasicas.innerHTML = clasicas.map(p =>
+        `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}">
+            <span class="sabor2-nombre">${p.nombre}</span>
+            <span class="sabor2-precio" style="color:#16a34a;font-weight:700;">GRATIS</span>
+        </button>`
+    ).join('');
+    gridClasicas.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const now = Date.now();
+            cerrarModal();
+            carrito.push({ id: now,     nombre: `${state.prod1.nombre} (${state.tamano})`, precio: state.prod1.precio, qty: 1, esPromo2x1Ctg: true, promoId2x1Ctg: now });
+            carrito.push({ id: now + 1, nombre: `${btn.dataset.nombre} (${state.tamano})`, precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now });
+            localStorage.setItem('dp_promo2x1Ctg_obs', `PROMO 2X1 - ${state.tamano}`);
+            actualizarComanda();
+        });
+    });
+    modal.style.display = 'flex';
+}
+
+window._promo2x1CtgFiltrar = function (q) {
+    if (!_promo2x1CtgState || _promo2x1CtgState.step !== 1) return;
+    const todas = [];
+    ["Pizzas Super Estofadas","Pizzas Estofadas","Pizzas Especiales","Pizzas Clásicas","Pizzas Típicas"].forEach(key => {
+        (menuData[key] || []).forEach(p => {
+            if (p.opciones?.[_promo2x1CtgState.tamano] !== undefined) {
+                todas.push({ nombre: p.nombre, precio: p.opciones[_promo2x1CtgState.tamano] });
+            }
+        });
+    });
+    _promo2x1CtgRenderGrid(q ? todas.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase())) : todas);
+};
+
+function _promo2x1CtgRenderGrid(pizzas) {
+    const grid = document.getElementById('2x1ctg-grid');
+    if (!grid) return;
+    if (pizzas.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No se encontraron pizzas.</p>';
+        return;
+    }
+    grid.innerHTML = pizzas.map(p =>
+        `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}" data-precio="${p.precio}">
+            <span class="sabor2-nombre">${p.nombre}</span>
+            <span class="sabor2-precio">$${p.precio.toLocaleString()}</span>
+        </button>`
+    ).join('');
+    grid.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            _promo2x1CtgState.prod1 = { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio) };
+            _promo2x1CtgState.step  = 2;
+            _promo2x1CtgAbrirModal();
+        });
+    });
+}
 
 // Iniciar
 init();
