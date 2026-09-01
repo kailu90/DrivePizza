@@ -653,10 +653,10 @@ function _injectStyles() {
 .wap-ciudad-badge {
     display: inline-flex;
     align-items: center;
-    font-size: .68rem;
+    font-size: .66rem;
     font-weight: 700;
-    letter-spacing: .06em;
-    padding: 2px 6px;
+    letter-spacing: .05em;
+    padding: 2px 7px;
     border-radius: 20px;
     flex-shrink: 0;
     background: rgba(0,0,0,.07);
@@ -4743,7 +4743,8 @@ function _renderList() {
         const hasName = !!(data.nombre || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
         const ciudad  = _ciudadDeSesion(num);
-        const badgeTxt = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
+        const badgeCode = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
+        const badgeTxt = sedeLabel ? `${badgeCode}-${sedeLabel.toUpperCase()}` : badgeCode;
         const badgeCls = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
         const ciudadBadge = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
 
@@ -4765,7 +4766,6 @@ function _renderList() {
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
                     <span class="wap-conv-name">${_esc(display)}</span>
-                    ${ciudadBadge}
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
                 <div class="wap-conv-row">
@@ -4773,6 +4773,7 @@ function _renderList() {
                     ${unread}
                 </div>
                 ${estadoTag ? `<div class="wap-conv-row" style="margin-top:3px;">${estadoTag}</div>` : ''}
+                <div class="wap-conv-row" style="margin-top:3px;">${ciudadBadge}</div>
             </div>
             ${tomarBtn}
         </div>`;
