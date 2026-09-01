@@ -670,7 +670,7 @@ function _injectStyles() {
     color: #6b7280;
 }
 .wap-ciudad-badge--bga { background: #dcfce7; color: #16a34a; }
-.wap-ciudad-badge--ctg { background: #fef3c7; color: #b45309; }
+.wap-ciudad-badge--ctg { background: #ffedd5; color: #92400e; }
 .wap-sessions-icon {
     display: flex;
     align-items: center;
