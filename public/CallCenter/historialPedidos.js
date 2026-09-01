@@ -1012,8 +1012,11 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
-        // Ciudad ya sincronizada por el shell — solo montar el toggle
-        initCiudadToggle('ciudad-toggle');
+        // Para pizzería: fijar ciudad según su sede y bloquear el toggle
+        if (rol === 'pizzeria') {
+            localStorage.setItem('cc_ciudad', _ciudadDeSede(sede));
+        }
+        initCiudadToggle('ciudad-toggle', { locked: rol === 'pizzeria' });
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
 
         // frame-visible: re-aplicar filtros al entrar desde pedidos

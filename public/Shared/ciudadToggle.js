@@ -30,7 +30,7 @@ const CIUDADES = [
  * @param {string|HTMLElement} container — ID del elemento o el elemento directamente
  * @returns {string} ciudad actualmente seleccionada
  */
-export function initCiudadToggle(container, { onBeforeChange } = {}) {
+export function initCiudadToggle(container, { onBeforeChange, locked = false } = {}) {
     const el = typeof container === 'string'
         ? document.getElementById(container)
         : container;
@@ -39,11 +39,15 @@ export function initCiudadToggle(container, { onBeforeChange } = {}) {
     const actual = localStorage.getItem(LS_KEY) || DEFAULT;
     window.ciudadActual = actual;
 
-    el.innerHTML = CIUDADES.map(c => `
-        <button class="ciudad-btn${c.key === actual ? ' ciudad-btn--active' : ''}" data-ciudad="${c.key}">
-            ${_SVG_PIN} ${c.label}
-        </button>
-    `).join('');
+    el.innerHTML = CIUDADES
+        .filter(c => !locked || c.key === actual)
+        .map(c => `
+            <button class="ciudad-btn${c.key === actual ? ' ciudad-btn--active' : ''}" data-ciudad="${c.key}">
+                ${_SVG_PIN} ${c.label}
+            </button>
+        `).join('');
+
+    if (locked) return actual;
 
     el.addEventListener('click', e => {
         const btn = e.target.closest('.ciudad-btn');
