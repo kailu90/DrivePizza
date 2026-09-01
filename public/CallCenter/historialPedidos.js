@@ -1016,9 +1016,12 @@ async function obtenerUsuarioCC() {
         }
 
         await poblarSelectsSedes();
-        // Para pizzería: fijar ciudad según su sede y bloquear el toggle
+        // Fijar ciudad al cargar: pizzería por su sede, resto por perfil de usuario
         if (rol === 'pizzeria') {
             localStorage.setItem('cc_ciudad', _ciudadDeSede(sede));
+        } else {
+            localStorage.setItem('cc_ciudad', usuario.ciudad);
+            window.ciudadActual = usuario.ciudad;
         }
         initCiudadToggle('ciudad-toggle', { locked: rol === 'pizzeria' });
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
