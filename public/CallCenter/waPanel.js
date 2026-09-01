@@ -653,17 +653,17 @@ function _injectStyles() {
 .wap-ciudad-badge {
     display: inline-flex;
     align-items: center;
-    font-size: .66rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    letter-spacing: .05em;
-    padding: 2px 7px;
+    letter-spacing: .04em;
+    padding: 2px 8px;
     border-radius: 20px;
     flex-shrink: 0;
     background: rgba(0,0,0,.07);
     color: #6b7280;
 }
-.wap-ciudad-badge--bga { background: var(--color-bga-light); color: var(--color-bga); }
-.wap-ciudad-badge--ctg { background: var(--color-ctg-light); color: var(--color-ctg); }
+.wap-ciudad-badge--bga { background: #dcfce7; color: #16a34a; }
+.wap-ciudad-badge--ctg { background: #fef3c7; color: #b45309; }
 .wap-sessions-icon {
     display: flex;
     align-items: center;
