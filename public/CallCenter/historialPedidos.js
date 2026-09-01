@@ -978,7 +978,7 @@ async function obtenerUsuarioCC() {
         document.getElementById('username').textContent = usuario.username || '';
         if (rol !== 'gastrofusion') {
             initNavButtons('historial', {
-                onBarrios: openBarriosModal,
+                onBarrios: () => openBarriosModal(rol === 'pizzeria' ? sede : undefined),
                 exclude: rol === 'pizzeria' ? ['clientes', 'pedidos'] : [],
             });
         } else {

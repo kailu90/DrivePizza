@@ -152,17 +152,34 @@ async function _init() {
     _verificarRolAdmin();
 }
 
-export async function openBarriosModal() {
+export async function openBarriosModal(sedeFija) {
     await _init();
     const modal = document.getElementById('modal-barrios-shared');
     modal.style.display = 'flex';
     document.getElementById('barrios-buscador').value = '';
-    document.getElementById('barrios-resultados').innerHTML =
-        '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Selecciona una sede para comenzar</p>';
-    _sede = null;
-    _barriosSede = [];
-    document.querySelectorAll('#barrios-sede-toggle .sede-btn')
-        .forEach(b => b.classList.remove('active'));
+
+    const toggle = document.getElementById('barrios-sede-toggle');
+    toggle.style.display = sedeFija ? 'none' : '';
+    toggle.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
+
+    if (sedeFija) {
+        _sede = sedeFija;
+        const contenedor = document.getElementById('barrios-resultados');
+        contenedor.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Cargando...</p>';
+        try {
+            _barriosSede = await cargarBarriosSede(_sede);
+        } catch (_) {
+            contenedor.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:20px;margin:0;">Error al cargar barrios</p>';
+            return;
+        }
+        _filtrar();
+        document.getElementById('barrios-buscador').focus();
+    } else {
+        _sede = null;
+        _barriosSede = [];
+        document.getElementById('barrios-resultados').innerHTML =
+            '<p style="text-align:center;color:#aaa;padding:20px;margin:0;">Selecciona una sede para comenzar</p>';
+    }
 
     if (_esAdmin) {
         const btnAdmin = document.getElementById('btn-admin-barrios');
