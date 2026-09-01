@@ -2834,6 +2834,29 @@ html:has(body.loaded)::before {
 .ciudad-btn--active svg { opacity: 1; }
 .ciudad-btn--active:hover { background-color: rgba(255,255,255,0.28); color: #fff; }
 
+/* ── BOTONES IVR EN HEADER ───────────────────────────────────────── */
+.btn-ivr-ciudad {
+    display: flex;
+    align-items: center;
+    border: none;
+    border-radius: 50px;
+    padding: 6px 13px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    color: #fff;
+    background: #22c55e;
+    transition: background 0.2s, opacity 0.2s;
+    white-space: nowrap;
+}
+.btn-ivr-ciudad:hover { opacity: 0.88; }
+.btn-ivr-ciudad:disabled { opacity: 0.55; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+    .btn-ivr-ciudad { font-size: 0.72rem; padding: 5px 9px; }
+}
+
 /* ── ALERTA CIUDAD (banner bajo buscador) ────────────────────────── */
 .ciudad-alerta {
     display: flex;

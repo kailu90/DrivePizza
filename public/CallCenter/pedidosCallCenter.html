@@ -49,6 +49,12 @@
             </button>
             <div class="header-username" id="username">Hola</div>
             <div class="ciudad-toggle" id="ciudad-toggle"></div>
+            <div id="ivr-btns-header" style="display:none; flex-shrink:0;">
+                <div style="display:flex; gap:6px;">
+                    <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" class="btn-ivr-ciudad">IVR BGA</button>
+                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" class="btn-ivr-ciudad">IVR CTG</button>
+                </div>
+            </div>
         </div>
 
         <div class="header-controls">
@@ -145,12 +151,6 @@
                         <span class="pbx-hdr-ext" id="pbx-agent-ext"></span>
                         <button class="pbx-hdr-badge" id="pbx-hdr-badge" disabled>Desconectado</button>
                     </div>
-                </div>
-            </div>
-            <div id="ivr-connect-bar" style="display:none; padding:8px 12px; border-bottom:1px solid var(--border-color,#e5e7eb);">
-                <div style="display:flex; gap:8px;">
-                    <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" style="flex:1; padding:8px 0; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#22c55e; color:#fff;">IVR BGA</button>
-                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" style="flex:1; padding:8px 0; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#22c55e; color:#fff;">IVR CTG</button>
                 </div>
             </div>
             <!-- Asesores en línea -->
@@ -666,9 +666,9 @@
         // Popover
         document.getElementById('sip-pop-estado').textContent = SIP_LABELS[state] || state;
         document.getElementById('sip-pop-ext').textContent    = extension || '—';
-        // Mostrar barra IVR solo cuando el SIP está registrado
-        const ivrBar = document.getElementById('ivr-connect-bar');
-        if (ivrBar) ivrBar.style.display = (state === 'registered' || state === 'incall') ? 'block' : 'none';
+        // Mostrar botones IVR en header solo cuando el SIP está registrado
+        const ivrBar = document.getElementById('ivr-btns-header');
+        if (ivrBar) ivrBar.style.display = (state === 'registered' || state === 'incall') ? 'flex' : 'none';
         // PBX Panel UI
         pbxPanel?.update(state, { extension, username, callerNumber, remoteUser });
     });

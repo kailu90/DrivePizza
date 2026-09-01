@@ -124,9 +124,6 @@
 #panel-pbx.collapsed:not(.mobile-open) .panel-body {
     display: none;
 }
-#panel-pbx.collapsed:not(.mobile-open) #ivr-connect-bar {
-    display: none !important;
-}
 
 
 /* ── Botones de panel en header (solo mobile) ─────────────────── */
