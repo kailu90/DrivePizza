@@ -979,7 +979,7 @@ async function obtenerUsuarioCC() {
         if (rol !== 'gastrofusion') {
             initNavButtons('historial', {
                 onBarrios: openBarriosModal,
-                exclude: rol === 'pizzeria' ? ['clientes'] : [],
+                exclude: rol === 'pizzeria' ? ['clientes', 'pedidos'] : [],
             });
         } else {
             const logout = document.getElementById('btn-logout');
