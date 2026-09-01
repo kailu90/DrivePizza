@@ -341,7 +341,7 @@ const MENU_EXCLUIR = {
         productos:  ['La Propia', 'La Golosa', 'La Gladiadora', 'Malteada']
     },
     cartago: {
-        categorias: ['Promociones'],
+        categorias: [],
         productos:  []
     }
 };
