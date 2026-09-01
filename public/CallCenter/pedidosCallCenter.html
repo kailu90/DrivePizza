@@ -52,7 +52,7 @@
             <div id="ivr-btns-header" style="display:none; flex-shrink:0;">
                 <div style="display:flex; gap:6px;">
                     <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" class="btn-ivr-ciudad">IVR-BGA<span class="ivr-dot ivr-dot--offline"></span>Offline</button>
-                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" class="btn-ivr-ciudad">IVR-CAR<span class="ivr-dot ivr-dot--offline"></span>Offline</button>
+                    <button id="btn-ivr-car" data-ciudad="cartago" data-ivr-connected="0" class="btn-ivr-ciudad">IVR-CAR<span class="ivr-dot ivr-dot--offline"></span>Offline</button>
                 </div>
             </div>
         </div>
@@ -621,7 +621,7 @@
     let _sipExtension = null;
 
     function _setIvrCityBtn(ciudad, connected) {
-        const id    = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
+        const id    = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-car';
         const label = ciudad === 'bucaramanga' ? 'IVR-BGA' : 'IVR-CAR';
         const btn   = document.getElementById(id);
         if (!btn) return;
@@ -633,7 +633,7 @@
 
     async function _toggleIvr(ciudad) {
         if (!_sipExtension) return;
-        const id = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
+        const id = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-car';
         const btn = document.getElementById(id);
         const isConnected = btn.dataset.ivrConnected === '1';
         const endpoint = isConnected ? '/pbx/queue/disconnect-ivr' : '/pbx/queue/connect-ivr';
@@ -650,7 +650,7 @@
     }
 
     document.getElementById('btn-ivr-bga').addEventListener('click', () => _toggleIvr('bucaramanga'));
-    document.getElementById('btn-ivr-ctg').addEventListener('click', () => _toggleIvr('cartago'));
+    document.getElementById('btn-ivr-car').addEventListener('click', () => _toggleIvr('cartago'));
 
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.type !== 'sip-state') return;
@@ -762,7 +762,7 @@
                 const me = agents.find(a => a.extension === _sipExtension);
                 if (me) {
                     _setIvrCityBtn('bucaramanga', !!me.ivr_connected_bga);
-                    _setIvrCityBtn('cartago', !!me.ivr_connected_ctg);
+                    _setIvrCityBtn('cartago', !!me.ivr_connected_car);
                 }
             }
 
