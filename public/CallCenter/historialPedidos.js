@@ -7,7 +7,8 @@ import { initNavButtons } from "./navCallCenter.js";
 import { openBarriosModal } from "./modalBarrios.js";
 import { PBX_URL, WS_URL } from "../Api/config.js";
 import { getSedes } from "../Shared/sedesService.js";
-import { revelarSplash } from '../Shared/components.js';
+import { revelarSplash, initVersionBanner } from '../Shared/components.js';
+initVersionBanner();
 import { initCiudadToggle, getCiudadActual } from '../Shared/ciudadToggle.js';
 
 let pedidosCargados = [];
