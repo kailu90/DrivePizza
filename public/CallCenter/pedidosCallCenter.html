@@ -525,7 +525,9 @@
             window.asesorActual = asesorActual;
             document.getElementById("username").textContent = `Hola ${asesorActual}`;
 
-            // ── Toggle ciudad (ciudad ya sincronizada por el shell) ───────
+            // ── Toggle ciudad — forzar ciudad del perfil en cada carga ───
+            localStorage.setItem('cc_ciudad', usuario.ciudad);
+            window.ciudadActual = usuario.ciudad;
             initCiudadToggle('ciudad-toggle', {
                 onBeforeChange: () => {
                     if (!window._carritoLen?.()) return true;
