@@ -51,8 +51,8 @@
             <div class="ciudad-toggle" id="ciudad-toggle"></div>
             <div id="ivr-btns-header" style="display:none; flex-shrink:0;">
                 <div style="display:flex; gap:6px;">
-                    <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" class="btn-ivr-ciudad btn-ivr-ciudad--offline">BGA · Offline</button>
-                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" class="btn-ivr-ciudad btn-ivr-ciudad--offline">CTG · Offline</button>
+                    <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" class="btn-ivr-ciudad">IVR-BGA<span class="ivr-dot ivr-dot--offline"></span>Offline</button>
+                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" class="btn-ivr-ciudad">IVR-CAR<span class="ivr-dot ivr-dot--offline"></span>Offline</button>
                 </div>
             </div>
         </div>
@@ -621,16 +621,14 @@
     let _sipExtension = null;
 
     function _setIvrCityBtn(ciudad, connected) {
-        const id = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
-        const label = ciudad === 'bucaramanga' ? 'BGA' : 'CTG';
-        const btn = document.getElementById(id);
+        const id    = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
+        const label = ciudad === 'bucaramanga' ? 'IVR-BGA' : 'IVR-CAR';
+        const btn   = document.getElementById(id);
         if (!btn) return;
         btn.dataset.ivrConnected = connected ? '1' : '0';
-        btn.classList.toggle('btn-ivr-ciudad--online', connected);
-        btn.classList.toggle('btn-ivr-ciudad--offline', !connected);
-        btn.innerHTML = connected
-            ? `<span class="ivr-dot"></span>${label} · Online`
-            : `${label} · Offline`;
+        const dotClass   = connected ? 'ivr-dot--online' : 'ivr-dot--offline';
+        const statusText = connected ? 'Online' : 'Offline';
+        btn.innerHTML = `${label}<span class="ivr-dot ${dotClass}"></span>${statusText}`;
     }
 
     async function _toggleIvr(ciudad) {
