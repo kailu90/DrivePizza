@@ -1045,6 +1045,10 @@ async function obtenerUsuarioCC() {
             const selectSede = document.getElementById("filtro-sede");
             selectSede.value    = sede;
             selectSede.disabled = true;
+            ['panel-pbx', 'btn-open-pbx'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
         }
 
         if (rol === "gastrofusion") {
