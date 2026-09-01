@@ -148,7 +148,10 @@
                 </div>
             </div>
             <div id="ivr-connect-bar" style="display:none; padding:8px 12px; border-bottom:1px solid var(--border-color,#e5e7eb);">
-                <button id="btn-ivr-connect" style="width:100%; padding:8px 0; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:#22c55e; color:#fff;">Conectarse al IVR</button>
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-ivr-bga" data-ciudad="bucaramanga" data-ivr-connected="0" style="flex:1; padding:8px 0; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#22c55e; color:#fff;">IVR BGA</button>
+                    <button id="btn-ivr-ctg" data-ciudad="cartago" data-ivr-connected="0" style="flex:1; padding:8px 0; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#22c55e; color:#fff;">IVR CTG</button>
+                </div>
             </div>
             <!-- Asesores en línea -->
             <div id="panel-agents" style="display:none;">
@@ -614,20 +617,21 @@
     // ── Estado SIP desde el shell padre ──────────────────────────────────────
     const SIP_LABELS = { registered: 'Registrado', incall: 'En llamada', ringing: 'Llamada entrante', offline: 'Desconectado' };
 
-    // ── IVR público (queues 801-806) ─────────────────────────────────────────
+    // ── IVR público por ciudad ────────────────────────────────────────────────
     let _sipExtension = null;
 
-    function _setIvrBtn(connected) {
-        const btn = document.getElementById('btn-ivr-connect');
+    function _setIvrCityBtn(ciudad, connected) {
+        const id = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
+        const btn = document.getElementById(id);
         if (!btn) return;
-        btn.textContent = connected ? 'Desconectarse del IVR' : 'Conectarse al IVR';
         btn.style.background = connected ? '#ef4444' : '#22c55e';
         btn.dataset.ivrConnected = connected ? '1' : '0';
     }
 
-    document.getElementById('btn-ivr-connect').addEventListener('click', async () => {
+    async function _toggleIvr(ciudad) {
         if (!_sipExtension) return;
-        const btn = document.getElementById('btn-ivr-connect');
+        const id = ciudad === 'bucaramanga' ? 'btn-ivr-bga' : 'btn-ivr-ctg';
+        const btn = document.getElementById(id);
         const isConnected = btn.dataset.ivrConnected === '1';
         const endpoint = isConnected ? '/pbx/queue/disconnect-ivr' : '/pbx/queue/connect-ivr';
         btn.disabled = true;
@@ -635,12 +639,15 @@
             await fetch(`${PBX_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ extension: _sipExtension })
+                body: JSON.stringify({ extension: _sipExtension, ciudad })
             });
-            _setIvrBtn(!isConnected);
+            _setIvrCityBtn(ciudad, !isConnected);
         } catch(e) { console.error('[IVR]', e); }
         btn.disabled = false;
-    });
+    }
+
+    document.getElementById('btn-ivr-bga').addEventListener('click', () => _toggleIvr('bucaramanga'));
+    document.getElementById('btn-ivr-ctg').addEventListener('click', () => _toggleIvr('cartago'));
 
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.type !== 'sip-state') return;
@@ -747,10 +754,13 @@
                 .filter(a => a.queue_connected || a.in_call || a.ivr_connected)
                 .sort((a, b) => (a.in_call ? 0 : 1) - (b.in_call ? 0 : 1));
             setAgentsBadge(visibles.length);
-            // Actualizar botón IVR según estado del asesor actual
+            // Actualizar botones IVR según estado del asesor actual
             if (_sipExtension) {
                 const me = agents.find(a => a.extension === _sipExtension);
-                if (me) _setIvrBtn(!!me.ivr_connected);
+                if (me) {
+                    _setIvrCityBtn('bucaramanga', !!me.ivr_connected_bga);
+                    _setIvrCityBtn('cartago', !!me.ivr_connected_ctg);
+                }
             }
 
             // Strip en columna de categorías (desktop)
