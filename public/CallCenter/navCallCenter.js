@@ -65,7 +65,7 @@ const GLOBAL_ORDER = ['barrios', 'historial', 'pedidos', 'clientes'];
  * @param {'pedidos'|'historial'|'clientes'} paginaActual
  * @param {{ onBarrios?: () => void }} [opciones]
  */
-export function initNavButtons(paginaActual, { onBarrios } = {}) {
+export function initNavButtons(paginaActual, { onBarrios, exclude = [] } = {}) {
     const logout = document.getElementById('btn-logout');
     if (!logout) return;
 
@@ -73,7 +73,8 @@ export function initNavButtons(paginaActual, { onBarrios } = {}) {
 
     GLOBAL_ORDER
         .filter(key => key !== paginaActual)
-        .filter(key => !(key === 'barrios' && paginaActual === 'pedidos')) // ya hardcodeado en pedidos
+        .filter(key => !(key === 'barrios' && paginaActual === 'pedidos'))
+        .filter(key => !exclude.includes(key))
         .forEach(key => {
             const page = PAGES[key];
             if (!page) return;

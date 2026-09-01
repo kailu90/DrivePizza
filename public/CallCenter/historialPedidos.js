@@ -976,7 +976,10 @@ async function obtenerUsuarioCC() {
         rolUsuario = rol;
         document.getElementById('username').textContent = usuario.username || '';
         if (rol !== 'gastrofusion') {
-            initNavButtons('historial', { onBarrios: openBarriosModal });
+            initNavButtons('historial', {
+                onBarrios: openBarriosModal,
+                exclude: rol === 'pizzeria' ? ['clientes'] : [],
+            });
         } else {
             const logout = document.getElementById('btn-logout');
             if (logout) {
