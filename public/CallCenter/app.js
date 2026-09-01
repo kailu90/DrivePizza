@@ -58,6 +58,7 @@ function _limpiarFiltroSedes() {
 }
 
 function _aplicarFiltro2x1Ctg() {
+    // Bloquear sedes: solo CC Nuestro
     const sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
     if (sedeActiva && !SEDES_PROMO_2X1_CTG.has(sedeActiva.dataset.sede)) {
         sedeActiva.classList.remove('active');
@@ -65,6 +66,12 @@ function _aplicarFiltro2x1Ctg() {
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         if (!SEDES_PROMO_2X1_CTG.has(btn.dataset.sede)) btn.disabled = true;
     });
+    // Bloquear domicilio: forzar Recoger
+    const btnDomicilio = document.querySelector('.entrega-btn[data-tipo="domicilio"]');
+    const btnRecoger   = document.querySelector('.entrega-btn[data-tipo="recoger"]');
+    if (btnDomicilio) btnDomicilio.disabled = true;
+    if (btnDomicilio?.classList.contains('active')) btnRecoger?.click();
+    // Aviso
     if (!document.getElementById('sede-restriccion-2x1-aviso')) {
         const toggle = document.querySelector('.sede-toggle');
         if (toggle) {
@@ -79,6 +86,8 @@ function _aplicarFiltro2x1Ctg() {
 
 function _limpiarFiltro2x1Ctg() {
     if (carrito.some(i => i.esPromo2x1Ctg)) return;
+    const btnDomicilio = document.querySelector('.entrega-btn[data-tipo="domicilio"]');
+    if (btnDomicilio) btnDomicilio.disabled = false;
     document.getElementById('sede-restriccion-2x1-aviso')?.remove();
     _limpiarFiltroSedes();
 }
@@ -976,6 +985,8 @@ function vaciarCarrito() {
         localStorage.removeItem('dp_promoKit_obs');
         _limpiarFiltroSedes();
         document.getElementById('sede-restriccion-2x1-aviso')?.remove();
+        const _btnDom = document.querySelector('.entrega-btn[data-tipo="domicilio"]');
+        if (_btnDom) _btnDom.disabled = false;
         actualizarComanda();
     }, filas.length * 60 + 300);
 }
