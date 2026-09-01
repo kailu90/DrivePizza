@@ -651,15 +651,15 @@ function _injectStyles() {
 .wap-ciudad-opt--active { color: #c97a00; font-weight: 700; }
 /* Badge BGA/CAR en tarjeta de conversación */
 .wap-ciudad-badge {
-    display: inline-block;
-    font-size: .72rem;
+    display: inline-flex;
+    align-items: center;
+    font-size: .68rem;
     font-weight: 700;
-    letter-spacing: .04em;
-    padding: 1px 6px;
-    border-radius: 10px;
-    margin-left: 4px;
-    vertical-align: middle;
-    background: rgba(0,0,0,.06);
+    letter-spacing: .06em;
+    padding: 2px 6px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    background: rgba(0,0,0,.07);
     color: #6b7280;
 }
 .wap-ciudad-badge--bga { background: var(--color-bga-light); color: var(--color-bga); }
@@ -980,7 +980,7 @@ function _injectStyles() {
 .wap-conv-row {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     gap: 4px;
 }
 .wap-conv-name {
@@ -990,6 +990,8 @@ function _injectStyles() {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-terciario);
+    flex: 1;
+    min-width: 0;
 }
 .wap-conv-ts {
     font-size: 1.05rem;
@@ -4762,7 +4764,8 @@ function _renderList() {
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
-                    <span class="wap-conv-name">${_esc(display)}${ciudadBadge}</span>
+                    <span class="wap-conv-name">${_esc(display)}</span>
+                    ${ciudadBadge}
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
                 <div class="wap-conv-row">
