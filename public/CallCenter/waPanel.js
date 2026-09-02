@@ -136,6 +136,8 @@ const _pendingStatuses = new Map(); // msgId → {numero,status} para ACKs que l
 
 const LS_KEY      = 'wap_conv_v2';
 const LS_KEY_SES  = 'wap_ses_v1';    // caché de sesiones para render instantáneo
+const LS_KEY_ASIG = 'wap_asig_v1';   // caché de asignaciones para render instantáneo
+const ESPERA_TTL  = 72 * 3600;       // segundos — chats 'en espera' sin actividad reciente se ocultan
 const MAX_MSGS    = 200;   // maximos mensajes guardados por conversacion
 
 // ── API pública ────────────────────────────────────────────────────────────
@@ -167,6 +169,12 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
             _state.sesiones.forEach(s => _getColor(s.numero)); // restaurar colores
         }
     } catch { /* ignorar */ }
+    // Restaurar asignaciones del caché — evita que chats 'en atención' aparezcan como 'En espera'
+    // en el render instantáneo antes de que llegue la respuesta del servidor
+    try {
+        const rawAsig = localStorage.getItem(LS_KEY_ASIG);
+        if (rawAsig) _state.asignaciones = JSON.parse(rawAsig);
+    } catch { /* ignorar */ }
     // Cargar mapa sede→ciudad desde Supabase (fire-and-forget; defecto 'bucaramanga')
     getSedes().then(sedes => {
         SEDES_CIUDAD = Object.fromEntries(
@@ -179,12 +187,18 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _renderShell(body);
     _renderList();        // render inmediato con caché de localStorage
     _loadSessions();
-    _loadAsignaciones();
-    _loadConversaciones(); // fuente de verdad — reconstruye conv desde Supabase
+    // Cargar conv y asignaciones en paralelo — renderizar solo cuando AMBAS terminan.
+    // Mismo patrón que la reconexión WS: evita que conv termine primero con asignaciones
+    // vacías y muestre chats 'en atención' como 'En espera' (race condition).
+    Promise.all([_loadAsignaciones(true), _loadConversaciones(true)])
+        .then(() => { _limpiarConvsAntiguas(); _renderList(); _scheduleConteos(); _renderAsesorPills(); _renderCiudadPills(); });
     _loadRespuestasRapidas();
     _loadAsesores();
     _connectWs();
-    setInterval(_loadConversaciones, 60_000); // re-sync cada 60s
+    setInterval(() => {  // re-sync cada 60s — conv y asig juntas para mantener coherencia
+        Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
+            .then(() => { _limpiarConvsAntiguas(); _renderList(); });
+    }, 60_000);
     setInterval(_loadAsesores, 5 * 60_000);   // refrescar lista asesores cada 5 min
 }
 
@@ -3405,6 +3419,23 @@ async function _loadAsesores() {
     } catch { /* sin conexión */ }
 }
 
+// ── Limpieza de convs en espera antiguas ────────────────────────────────────
+// Elimina del estado local los chats en espera cuyo último mensaje tiene más de
+// ESPERA_TTL segundos. Requiere que _state.asignaciones ya esté actualizado.
+// Si el cliente vuelve a escribir, el evento WS lo restaura automáticamente.
+function _limpiarConvsAntiguas() {
+    const threshold = Math.floor(Date.now() / 1000) - ESPERA_TTL;
+    for (const [num, convs] of Object.entries(_state.conv)) {
+        for (const phone of Object.keys(convs)) {
+            const data = convs[phone];
+            const asig = _state.asignaciones[`${num}:${phone}`];
+            if (!asig && (data.lastTs || 0) < threshold) {
+                delete _state.conv[num][phone];
+            }
+        }
+    }
+}
+
 // ── Asignaciones ───────────────────────────────────────────────────────────
 async function _loadAsignaciones(suppressRender = false) {
     try {
@@ -3413,6 +3444,7 @@ async function _loadAsignaciones(suppressRender = false) {
         const data = await r.json(); // [{ numero, contacto, asesor, estado }]
         _state.asignaciones = {};
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
+        try { localStorage.setItem(LS_KEY_ASIG, JSON.stringify(_state.asignaciones)); } catch { /* ignorar */ }
         if (!suppressRender) _renderList();
         _scheduleConteos();
         _renderAsesorPills();
@@ -3617,7 +3649,7 @@ function _connectWs() {
             // Reconexión — cargar ambas en paralelo y renderizar solo cuando ambas terminan
             // (evita race condition donde resueltos aparecen como en_espera)
             Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
-                .then(() => _renderList());
+                .then(() => { _limpiarConvsAntiguas(); _renderList(); });
             // Si hay un chat abierto, recargar sus mensajes desde Supabase
             if (_state.activeContact && _state.activeNum) {
                 _loadMsgsSupabase(_state.activeContact);
