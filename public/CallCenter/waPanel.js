@@ -3447,7 +3447,7 @@ async function _loadAsignaciones(suppressRender = false) {
         const data = await r.json(); // [{ numero, contacto, asesor, estado }]
         _state.asignaciones = {};
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
-        try { localStorage.setItem(LS_KEY_ASIG, JSON.stringify(_state.asignaciones)); } catch { /* ignorar */ }
+        _saveAsig();
         if (!suppressRender) _renderList();
         _scheduleConteos();
         _renderAsesorPills();
@@ -3465,6 +3465,7 @@ async function _tomarChat(num, phone) {
         });
         if (!r.ok) return _showToast('Error al tomar el chat', 3000);
         _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'asignado' };
+        _saveAsig();
         _scheduleConteos();
         _state.activeNum = num;
         _openChat(phone);
@@ -3482,6 +3483,7 @@ async function _resolverChat(num, phone) {
         if (_state.asignaciones[`${num}:${phone}`]) {
             _state.asignaciones[`${num}:${phone}`].estado = 'resuelto';
         }
+        _saveAsig();
         _closeChat();
         _renderList();
         _scheduleConteos();
@@ -3506,6 +3508,7 @@ async function _resolverDesdeEspera(num, phone) {
         });
         if (!r2.ok) return _showToast('Error al resolver', 3000);
         _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'resuelto' };
+        _saveAsig();
         _closeChat();
         _renderList();
         _scheduleConteos();
@@ -3524,6 +3527,7 @@ async function _liberarChat(num, phone) {
         if (_state.asignaciones[`${num}:${phone}`]) {
             _state.asignaciones[`${num}:${phone}`].estado = 'resuelto';
         }
+        _saveAsig();
         _closeChat();
         _renderList();
         _scheduleConteos();
@@ -3908,6 +3912,7 @@ async function _transferirChat(num, phone, asesorNuevo) {
 function _onTransferencia({ numero, contacto, asesor_nuevo }) {
     const key = `${numero}:${contacto}`;
     if (_state.asignaciones[key]) _state.asignaciones[key].asesor = asesor_nuevo;
+    _saveAsig();
     _renderList();
     _scheduleConteos();
     // Si soy yo el que recibe el chat — actualizar header
@@ -3928,6 +3933,7 @@ function _onTransferencia({ numero, contacto, asesor_nuevo }) {
 
 function _onAsignacion({ numero, contacto, asesor }) {
     _state.asignaciones[`${numero}:${contacto}`] = { asesor, estado: 'asignado' };
+    _saveAsig();
     _renderList();
     _scheduleConteos();
     if (_state.activeContact === contacto && _state.activeNum === numero && asesor !== _asesorActual) {
@@ -3938,6 +3944,7 @@ function _onAsignacion({ numero, contacto, asesor }) {
 
 function _onLiberacion({ numero, contacto }) {
     delete _state.asignaciones[`${numero}:${contacto}`];
+    _saveAsig();
     _renderList();
     _scheduleConteos();
 }
@@ -3950,6 +3957,7 @@ function _onEstado({ numero, contacto, estado, asesor }) {
     } else if (asesor) {
         _state.asignaciones[key] = { asesor, estado };
     }
+    _saveAsig();
     _renderList();
     _scheduleConteos();
     // Si el chat activo cambió de estado, refrescar header y barra
@@ -3996,6 +4004,7 @@ function _onMerge({ numero, lidPhone, realPhone }) {
         _state.asignaciones[`${numero}:${realPhone}`] = { ...lidAsig };
     }
     delete _state.asignaciones[`${numero}:${lidPhone}`];
+    _saveAsig();
 
     // Si el chat lid estaba abierto, redirigir al teléfono real
     if (_state.activeContact === lidPhone && _state.activeNum === numero) {
@@ -6226,6 +6235,10 @@ function _purgeEmptyConvs() {
         }
     }
     if (changed) _saveConv();
+}
+
+function _saveAsig() {
+    try { localStorage.setItem(LS_KEY_ASIG, JSON.stringify(_state.asignaciones)); } catch { /* ignorar */ }
 }
 
 function _saveConv() {
