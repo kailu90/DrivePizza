@@ -244,8 +244,9 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     let _resetWaView    = null; // se asigna al importar waPanel.js
     let _destroyWaPanel = null; // se asigna al importar waPanel.js
-    let _historialFrame      = null;  // iframe para historialPedidos
-    let _historialFrameReady = false; // true cuando el iframe ya cargó por primera vez
+    let _historialFrame         = null;  // iframe para historialPedidos
+    let _historialFrameReady    = false; // true cuando el iframe ya cargó por primera vez
+    let _historialPendingParams = null;  // params guardados si el usuario llega antes de que preload termine
 
     function _waOffset() {
         const panel = document.getElementById('wa-panel');
@@ -374,7 +375,7 @@
             _setWaVisible(e.data.show !== false);
         }
         if (e.data?.type === 'nav-switch') {
-            _switchView(e.data.page);
+            _switchView(e.data.page, e.data.params);
             return;
         }
         // nav-loading: ya no muestra el overlay (lo hace pagehide, sin race condition)
@@ -412,12 +413,13 @@
             // el frame ya fue puesto visible — completar la transición ahora
             if (_historialFrame.style.display !== 'none') {
                 hideOverlay();
-                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params: _historialPendingParams || {} }, '*');
                 _historialFrame.contentWindow?.postMessage({
                     type: 'sip-state', state: _sipState,
                     username: window._usuarioCC?.username || '',
                     extension: window._usuarioCC?.extension || ''
                 }, '*');
+                _historialPendingParams = null;
             }
         }, { once: true });
         _historialFrame.src = './historialPedidos.html';
@@ -425,7 +427,7 @@
     }
 
     // ── Gestión de vistas (cc-frame / frame-historial) ───────────────────────
-    function _switchView(target) {
+    function _switchView(target, params = {}) {
         const ccFrame = document.getElementById('cc-frame');
         if (target === 'home') {
             // Regresar al menú principal — ocultar historialFrame y poner callcenter en cc-frame
@@ -441,14 +443,15 @@
             if (_historialFrameReady) {
                 // Precargado y listo — switch instantáneo sin overlay
                 _historialFrame.style.display = 'block';
-                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params }, '*');
                 _historialFrame.contentWindow?.postMessage({
                     type: 'sip-state', state: _sipState,
                     username: window._usuarioCC?.username || '',
                     extension: window._usuarioCC?.extension || ''
                 }, '*');
             } else if (_historialFrame) {
-                // Precarga en progreso — overlay hasta que termine de cargar
+                // Precarga en progreso — guardar params y mostrar overlay hasta que termine
+                _historialPendingParams = params;
                 _overlayShownAt = performance.now();
                 _overlay.classList.add('visible');
                 clearTimeout(_overlayFallback);
@@ -468,7 +471,7 @@
                     _historialFrameReady = true;
                     hideOverlay();
                     _postWaOffset();
-                    _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                    _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params }, '*');
                     _listenForFrameNav(_historialFrame);
                 }, { once: true });
                 _historialFrame.src = './historialPedidos.html';

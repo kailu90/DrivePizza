@@ -17,9 +17,9 @@ let rolUsuario      = null;
 let filtrosActuales = {};
 let pedidoPendienteCancelar = null;
 
-const MODO_RESERVAS   = new URLSearchParams(window.location.search).get('tipo')     === 'reserva';
+let _modoReservas     = new URLSearchParams(window.location.search).get('tipo')     === 'reserva';
 const FILTRO_TELEFONO = new URLSearchParams(window.location.search).get('telefono') || null;
-if (MODO_RESERVAS) document.body.classList.add('modo-reservas');
+if (_modoReservas) document.body.classList.add('modo-reservas');
 
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
 
@@ -394,6 +394,33 @@ function renderResumen(pedidos) {
 
 // ── REALTIME + REFRESCO PERIÓDICO ──────────────────────────────────────
 let _realtimeDebounce = null;
+
+// ── MODO RESERVAS (dinámico) ────────────────────────────────────────────
+// Permite cambiar entre modo normal y modo reservas sin recargar el iframe.
+function _aplicarModoReservas(activo) {
+    _modoReservas = activo;
+    document.body.classList.toggle('modo-reservas', activo);
+    document.title = activo ? 'Reservas - CallCenter' : 'Historial Pedidos';
+
+    // Título en topbar (reversible)
+    const topbar = document.querySelector('.historial__topbar');
+    const h2Existente = topbar?.querySelector('.h2-modo-reservas');
+    if (activo && topbar && !h2Existente) {
+        const h2 = document.createElement('h2');
+        h2.className = 'h2-modo-reservas';
+        h2.textContent = '🗓 Reservas';
+        h2.style.cssText = 'margin:0 0 0 8px; font-size:1.6rem; color:var(--color-primario);';
+        topbar.insertAdjacentElement('afterbegin', h2);
+    } else if (!activo && h2Existente) {
+        h2Existente.remove();
+    }
+
+    // Tarjetas de resumen — ocultar en modo reservas
+    ['resumen-total', 'resumen-whatsapp', 'resumen-ivr'].forEach(id => {
+        const card = document.getElementById(id)?.closest('.resumen-card');
+        if (card) card.style.display = activo ? 'none' : '';
+    });
+}
 
 function iniciarListenerActivos() {
     supabase.channel('historial-callcenter')
@@ -880,7 +907,7 @@ function filtrarColumnas(reiniciarPagina = false) {
     const asesor    = document.getElementById("cf-asesor").value.toLowerCase();
     const estado    = document.getElementById("cf-estado").value.toLowerCase();
 
-    const base = MODO_RESERVAS
+    const base = _modoReservas
         ? pedidosCargados.filter(p => p.tipo === "reserva")
         : pedidosCargados;
 
@@ -1063,8 +1090,24 @@ async function obtenerUsuarioCC() {
                 document.querySelectorAll('.ciudad-btn').forEach(b =>
                     b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
                 );
-                filtrarColumnas(true); // render inmediato con datos existentes
-                cargarPedidos(filtrosActuales, true); // refresh siempre al volver
+
+                // Aplicar modo según params del mensaje (reserva vs normal)
+                const nuevoModo = e.data.params?.tipo === 'reserva';
+                if (nuevoModo !== _modoReservas) {
+                    // Cambiando de modo — resetear UI y rango de fechas
+                    _aplicarModoReservas(nuevoModo);
+                    const hoy = hoyLocal();
+                    const desde = nuevoModo
+                        ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })()
+                        : hoy;
+                    document.getElementById('filtro-desde').value = desde;
+                    document.getElementById('filtro-hasta').value = hoy;
+                    filtrarColumnas(true);
+                    cargarPedidos({ desde, hasta: hoy }, true);
+                } else {
+                    filtrarColumnas(true);
+                    cargarPedidos(filtrosActuales, true);
+                }
             } else if (e.data?.type === 'frame-hidden') {
                 // Iframe oculto: pausar operaciones pesadas para no bloquear el hilo compartido
                 _frameVisible = false;
@@ -1104,27 +1147,15 @@ async function obtenerUsuarioCC() {
             });
         }
 
-        // Ajustes visuales si estamos en modo reservas
-        if (MODO_RESERVAS) {
-            document.title = "Reservas - CallCenter";
-            const topbar = document.querySelector(".historial__topbar");
-            if (topbar) {
-                const titulo = document.createElement("h2");
-                titulo.textContent = "🗓 Reservas";
-                titulo.style.cssText = "margin:0 0 0 8px; font-size:1.6rem; color:var(--color-primario);";
-                topbar.insertAdjacentElement("afterbegin", titulo);
-            }
-            document.getElementById("resumen-total")?.closest(".resumen-card")?.style.setProperty("display", "none");
-            document.getElementById("resumen-whatsapp")?.closest(".resumen-card")?.style.setProperty("display", "none");
-            document.getElementById("resumen-ivr")?.closest(".resumen-card")?.style.setProperty("display", "none");
-        }
+        // Aplicar ajustes visuales del modo activo (reservas o normal)
+        _aplicarModoReservas(_modoReservas);
 
         iniciarListenerActivos();
 
         const hoy = hoyLocal();
         let desde = hoy;
         let hasta = hoy;
-        if (MODO_RESERVAS) {
+        if (_modoReservas) {
             const d = new Date();
             desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
         } else if (FILTRO_TELEFONO) {
