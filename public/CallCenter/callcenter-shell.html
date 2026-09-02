@@ -428,11 +428,15 @@
                     extension: window._usuarioCC?.extension || ''
                 }, '*');
             }
+            ccFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*');
             ccFrame.style.display = 'none';
             _postWaOffset();
         } else {
             // Volver a pedidos
-            if (_historialFrame) _historialFrame.style.display = 'none';
+            if (_historialFrame) {
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*');
+                _historialFrame.style.display = 'none';
+            }
             ccFrame.style.display = 'block';
             ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
             _postWaOffset();

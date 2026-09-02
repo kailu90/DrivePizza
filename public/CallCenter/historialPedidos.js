@@ -161,6 +161,7 @@ async function cargarPedidos(filtros = {}, forzar = false) {
 }
 
 async function cargaCompleta(filtros) {
+    const gen = ++_loadGeneration; // cada llamada tiene su generación
     const tbody = document.getElementById("historial-tbody");
     mostrarEstadoCache(false);
     tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="9" style="text-align:center;padding:30px;">Cargando...</td></tr>`;
@@ -195,12 +196,16 @@ async function cargaCompleta(filtros) {
             }
         } while (page.length === PAGE_SIZE);
 
+        // Si llegó una carga más nueva mientras esperábamos, descartamos esta
+        if (gen !== _loadGeneration) return;
+
         pedidosCargados = allData.map(normalizarPedido);
         guardarCache(filtros, pedidosCargados);
         poblarSelectAsesores();
         filtrarColumnas();
 
     } catch (error) {
+        if (gen !== _loadGeneration) return;
         tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="9" style="text-align:center;color:red;">Error al cargar: ${error.message}</td></tr>`;
     }
 }
@@ -211,6 +216,16 @@ function mostrarEstadoCache(desdeCache) {
     btn.title = desdeCache ? "Datos desde caché. Click para actualizar." : "Datos actualizados.";
     btn.style.opacity = desdeCache ? "0.7" : "1";
 }
+
+// ── VISIBILIDAD DEL IFRAME ─────────────────────────────────────────────
+// El iframe persiste en el DOM oculto (display:none). _frameVisible evita
+// ejecutar operaciones pesadas en el hilo compartido cuando no está visible,
+// lo que bloquearía a pedidosCallCenter.html (mismos origen = mismo hilo JS).
+let _frameVisible = false;
+
+// Generación de carga: la más reciente gana. Cancela renders de llamadas
+// anteriores a cargaCompleta que terminen después de una más nueva.
+let _loadGeneration = 0;
 
 // ── TIMER DE DEMORA ────────────────────────────────────────────────────
 let timerDemoraInterval = null
@@ -378,20 +393,27 @@ function renderResumen(pedidos) {
 }
 
 // ── REALTIME + REFRESCO PERIÓDICO ──────────────────────────────────────
+let _realtimeDebounce = null;
+
 function iniciarListenerActivos() {
     supabase.channel('historial-callcenter')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_callcenter' }, () => {
-            cargarPedidos(filtrosActuales, true);
+            // Guardia de visibilidad: no ejecutar en hilo compartido si el iframe está oculto
+            if (!_frameVisible) return;
+            // Debounce 1s: múltiples cambios simultáneos (ej. impresora imprime 5 pedidos)
+            // producen una sola carga en lugar de 5 concurrentes
+            clearTimeout(_realtimeDebounce);
+            _realtimeDebounce = setTimeout(() => cargarPedidos(filtrosActuales, true), 1000);
         })
         .subscribe();
 
     // Refresco periódico como respaldo (cada 5 min)
     setInterval(() => {
-        if (document.visibilityState === 'visible') cargarPedidos(filtrosActuales, true);
+        if (_frameVisible) cargarPedidos(filtrosActuales, true);
     }, 5 * 60 * 1000);
 
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') cargarPedidos(filtrosActuales, true);
+        if (_frameVisible && document.visibilityState === 'visible') cargarPedidos(filtrosActuales, true);
     });
 }
 
@@ -1026,15 +1048,21 @@ async function obtenerUsuarioCC() {
         initCiudadToggle('ciudad-toggle', { locked: rol === 'pizzeria' });
         document.addEventListener('ciudad:change', () => filtrarColumnas(true));
 
-        // frame-visible: re-aplicar filtros al entrar desde pedidos
+        // frame-visible / frame-hidden: gestión del ciclo de vida del iframe
         window.addEventListener('message', e => {
-            if (e.data?.type !== 'frame-visible') return;
-            const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
-            window.ciudadActual = ciudad;
-            document.querySelectorAll('.ciudad-btn').forEach(b =>
-                b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
-            );
-            filtrarColumnas(true);
+            if (e.data?.type === 'frame-visible') {
+                _frameVisible = true;
+                const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+                window.ciudadActual = ciudad;
+                document.querySelectorAll('.ciudad-btn').forEach(b =>
+                    b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
+                );
+                filtrarColumnas(true);
+            } else if (e.data?.type === 'frame-hidden') {
+                // Iframe oculto: pausar operaciones pesadas para no bloquear el hilo compartido
+                _frameVisible = false;
+                clearTimeout(_realtimeDebounce);
+            }
         });
 
         // storage: ciudad cambiada desde pedidos
@@ -1101,6 +1129,7 @@ async function obtenerUsuarioCC() {
         document.getElementById("filtro-hasta").value = hasta;
         if (sedeUsuario) document.getElementById("filtro-sede").value = sedeUsuario;
 
+        _frameVisible = true; // primera carga — el iframe nace visible
         document.body.classList.add('loaded');
         revelarSplash();
         await cargarPedidos({
