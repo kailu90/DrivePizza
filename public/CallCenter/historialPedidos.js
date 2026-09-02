@@ -1023,7 +1023,13 @@ async function obtenerUsuarioCC() {
                       ? '../Pizzerias/pizzerias.html'
                       : './callcenter.html';
         document.getElementById('btn-home').onclick = () => {
-            window.location.href = homeUrl;
+            if (rol === 'pizzeria' || rol === 'gastrofusion') {
+                window.location.href = homeUrl;
+            } else {
+                // Dentro del shell de CallCenter — notificar al padre en vez de navegar
+                // el iframe directamente (lo que rompería el estado del shell)
+                window.parent.postMessage({ type: 'nav-switch', page: 'home' }, '*');
+            }
         };
         document.getElementById('btn-logout').addEventListener('click', async () => {
             if (confirm('¿Cerrar sesión?')) {

@@ -398,6 +398,16 @@
     // ── Gestión de vistas (cc-frame / frame-historial) ───────────────────────
     function _switchView(target) {
         const ccFrame = document.getElementById('cc-frame');
+        if (target === 'home') {
+            // Regresar al menú principal — ocultar historialFrame y poner callcenter en cc-frame
+            if (_historialFrame) {
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*');
+                _historialFrame.style.display = 'none';
+            }
+            ccFrame.style.display = 'block';
+            ccFrame.src = './callcenter.html';
+            return;
+        }
         if (target === 'historial') {
             if (!_historialFrame) {
                 // Primera vez — lazy load con overlay
