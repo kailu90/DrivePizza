@@ -197,7 +197,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     _connectWs();
     setInterval(() => {  // re-sync cada 60s — conv y asig juntas para mantener coherencia
         Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
-            .then(() => { _limpiarConvsAntiguas(); _renderList(); });
+            .then(() => { _limpiarConvsAntiguas(); _renderList(); _scheduleConteos(); });
     }, 60_000);
     setInterval(_loadAsesores, 5 * 60_000);   // refrescar lista asesores cada 5 min
 }
@@ -3425,15 +3425,18 @@ async function _loadAsesores() {
 // Si el cliente vuelve a escribir, el evento WS lo restaura automáticamente.
 function _limpiarConvsAntiguas() {
     const threshold = Math.floor(Date.now() / 1000) - ESPERA_TTL;
+    let eliminadas = 0;
     for (const [num, convs] of Object.entries(_state.conv)) {
         for (const phone of Object.keys(convs)) {
             const data = convs[phone];
             const asig = _state.asignaciones[`${num}:${phone}`];
             if (!asig && (data.lastTs || 0) < threshold) {
                 delete _state.conv[num][phone];
+                eliminadas++;
             }
         }
     }
+    if (eliminadas) _saveConv(); // persistir caché limpio — evita que reaparezcan en el próximo reload
 }
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
