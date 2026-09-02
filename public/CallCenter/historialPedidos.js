@@ -1057,7 +1057,8 @@ async function obtenerUsuarioCC() {
                 document.querySelectorAll('.ciudad-btn').forEach(b =>
                     b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
                 );
-                filtrarColumnas(true);
+                filtrarColumnas(true); // render inmediato con datos existentes
+                cargarPedidos(filtrosActuales, true); // refresh siempre al volver
             } else if (e.data?.type === 'frame-hidden') {
                 // Iframe oculto: pausar operaciones pesadas para no bloquear el hilo compartido
                 _frameVisible = false;
