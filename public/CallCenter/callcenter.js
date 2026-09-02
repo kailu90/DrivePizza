@@ -19,7 +19,7 @@ function navTo(href) {
 }
 
 document.getElementById('btn_pedidos_sedes').addEventListener('click', () => navTo('./pedidosCallCenter.html'));
-document.getElementById('btn_historial').addEventListener('click', () => navTo('./historialPedidos.html'));
+document.getElementById('btn_historial').addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*'));
 document.getElementById('btn_reporte_asesores').addEventListener('click', () => navTo('./reporteAsesores.html'));
 document.getElementById('btn_reservas').addEventListener('click', () => navTo('./historialPedidos.html?tipo=reserva'));
 document.getElementById('btn_pbx').addEventListener('click', () => navTo('./pbx.html'));
