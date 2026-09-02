@@ -438,7 +438,14 @@
                 _historialFrame.style.display = 'none';
             }
             ccFrame.style.display = 'block';
-            ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+            // Si cc-frame no tiene pedidosCallCenter (p.ej. el usuario llegó al historial
+            // directo desde callcenter.html con navTo), navegar ahí para restablecer estado
+            const _ccPath = (() => { try { return ccFrame.contentWindow?.location?.pathname || ''; } catch { return ''; } })();
+            if (!_ccPath.includes('pedidosCallCenter')) {
+                ccFrame.src = './pedidosCallCenter.html';
+            } else {
+                ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+            }
             _postWaOffset();
         }
     }
