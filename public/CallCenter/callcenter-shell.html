@@ -244,7 +244,8 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     let _resetWaView    = null; // se asigna al importar waPanel.js
     let _destroyWaPanel = null; // se asigna al importar waPanel.js
-    let _historialFrame = null; // iframe lazy para historialPedidos
+    let _historialFrame      = null;  // iframe para historialPedidos
+    let _historialFrameReady = false; // true cuando el iframe ya cargó por primera vez
 
     function _waOffset() {
         const panel = document.getElementById('wa-panel');
@@ -313,7 +314,7 @@
     }
     // ── Overlay de navegación ─────────────────────────────────────────────────
     const _overlay = document.getElementById('nav-overlay');
-    const MIN_OVERLAY_MS = 600;
+    const MIN_OVERLAY_MS = 300;
     let _overlayShownAt = performance.now(); // cubre la primera carga
     let _overlayFallback = null;
     let _overlayHideTimer = null;
@@ -395,6 +396,34 @@
         if (e.data?.type === 'sip-decline') { if (_session) _session.terminate(); hidePanel(); }
     });
 
+    // ── Precarga de historialFrame en background ──────────────────────────────
+    // Se llama ~1.5s después del auth para que el frame de pedidos termine de cargar primero.
+    // Cuando el usuario hace click en "Historial" por primera vez, el iframe ya está listo
+    // y el switch es instantáneo sin overlay.
+    function _preloadHistorialFrame() {
+        if (_historialFrame) return;
+        _historialFrame = document.createElement('iframe');
+        _historialFrame.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:none;';
+        _historialFrame.addEventListener('load', () => {
+            _historialFrameReady = true;
+            _postWaOffset();
+            _listenForFrameNav(_historialFrame);
+            // Si el usuario hizo click en historial mientras aún precargaba,
+            // el frame ya fue puesto visible — completar la transición ahora
+            if (_historialFrame.style.display !== 'none') {
+                hideOverlay();
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                _historialFrame.contentWindow?.postMessage({
+                    type: 'sip-state', state: _sipState,
+                    username: window._usuarioCC?.username || '',
+                    extension: window._usuarioCC?.extension || ''
+                }, '*');
+            }
+        }, { once: true });
+        _historialFrame.src = './historialPedidos.html';
+        document.getElementById('cc-wrap').appendChild(_historialFrame);
+    }
+
     // ── Gestión de vistas (cc-frame / frame-historial) ───────────────────────
     function _switchView(target) {
         const ccFrame = document.getElementById('cc-frame');
@@ -409,10 +438,25 @@
             return;
         }
         if (target === 'historial') {
-            if (!_historialFrame) {
-                // Primera vez — lazy load con overlay
-                clearTimeout(_overlayHideTimer);
-                _overlayHideTimer = null;
+            if (_historialFrameReady) {
+                // Precargado y listo — switch instantáneo sin overlay
+                _historialFrame.style.display = 'block';
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
+                _historialFrame.contentWindow?.postMessage({
+                    type: 'sip-state', state: _sipState,
+                    username: window._usuarioCC?.username || '',
+                    extension: window._usuarioCC?.extension || ''
+                }, '*');
+            } else if (_historialFrame) {
+                // Precarga en progreso — overlay hasta que termine de cargar
+                _overlayShownAt = performance.now();
+                _overlay.classList.add('visible');
+                clearTimeout(_overlayFallback);
+                _overlayFallback = setTimeout(() => hideOverlay(), 3000);
+                _historialFrame.style.display = 'block';
+                // El load handler en _preloadHistorialFrame detecta display != none y completa la transición
+            } else {
+                // Sin precarga (fallback) — crear con overlay
                 _overlayShownAt = performance.now();
                 _overlay.classList.add('visible');
                 clearTimeout(_overlayFallback);
@@ -421,22 +465,14 @@
                 _historialFrame = document.createElement('iframe');
                 _historialFrame.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:block;';
                 _historialFrame.addEventListener('load', () => {
+                    _historialFrameReady = true;
                     hideOverlay();
                     _postWaOffset();
                     _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
                     _listenForFrameNav(_historialFrame);
-                });
+                }, { once: true });
                 _historialFrame.src = './historialPedidos.html';
                 document.getElementById('cc-wrap').appendChild(_historialFrame);
-            } else {
-                // Ya cargado — switch instantáneo
-                _historialFrame.style.display = 'block';
-                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*');
-                _historialFrame.contentWindow?.postMessage({
-                    type: 'sip-state', state: _sipState,
-                    username: window._usuarioCC?.username || '',
-                    extension: window._usuarioCC?.extension || ''
-                }, '*');
             }
             ccFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*');
             ccFrame.style.display = 'none';
@@ -490,6 +526,8 @@
             _destroyWaPanel = destroyWaPanel;
             initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
+            // Precargar historial en background — 1.5s para que pedidos cargue primero
+            setTimeout(_preloadHistorialFrame, 1500);
             return window._usuarioCC;
         } catch (err) {
             console.error('[shell] Error cargando usuario:', err);
