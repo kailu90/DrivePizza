@@ -2803,7 +2803,7 @@ function _promo2x1CtgRenderGrid(pizzas) {
                     _promo2x1CtgFiltrar('');
                 } else {
                     const precioFinal = Math.max(state.sabor1PizzaPrecio, Number(btn.dataset.precio));
-                    state.prod1 = { nombre: `½ ${state.sabor1Pizza} y mitad ${btn.dataset.nombre}`, precio: precioFinal };
+                    state.prod1 = { nombre: `${state.sabor1Pizza} y mitad ${btn.dataset.nombre}`, precio: precioFinal };
                     state.step  = 2;
                     _promo2x1CtgAbrirModal();
                 }
@@ -2844,7 +2844,7 @@ function _promo2x1CtgRenderClasicas(clasicas) {
                     state.sabor1Clasica = btn.dataset.nombre;
                     _promo2x1CtgRenderClasicas(clasicas);
                 } else {
-                    _promo2x1CtgFinalizar(`½ ${state.sabor1Clasica} y mitad ${btn.dataset.nombre}`);
+                    _promo2x1CtgFinalizar(`${state.sabor1Clasica} y mitad ${btn.dataset.nombre}`);
                 }
             } else {
                 _promo2x1CtgFinalizar(btn.dataset.nombre);
