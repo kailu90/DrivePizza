@@ -276,11 +276,11 @@ const menuData = {
         { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "filete de pollo, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
         { nombre: "Hamburguesa Mixta", opciones: { "Filete de pollo": 32000 }, opcionesCiudad: { cartago: { "Filete de pollo": 32000, "Pollo desmechado": 32000 } }, descripcion: "Carne de res 140 gr y filete de pollo/pollo desmechado, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true, comboPrecioFijo: 40000 },
         { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
-        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa.", tieneCombo: true },
+        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada, subOpciones: { "Pollo": ["Filete pechuga", "Pollo desmechado"], "Mixta": ["Mixta con Filete", "Mixta con Pollo desmechado"] }, descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa.", tieneCombo: true },
         // ── Solo Cartago ──────────────────────────────────────────────────────
-        { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, salsa tártara de la casa, tomate, lechuga, mermelada de frutos amarillos, tocineta, queso philadelphia, carne artesanal 100% res y mix de quesos.", tieneCombo: true, soloSedePrado: true },
-        { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true, soloSedePrado: true },
-        { nombre: "La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, tártara de la casa, queso gouda ahumado, queso filadelfia, maduro caldao en melado de whisky Jack Daniel's, suero costeño, 150g de carne Angus, cogollo europeo, pepperoni crunch y salsa ahumada a base de ajonjolí.", tieneCombo: true, soloSedePrado: true },
+        { nombre: "Hamburguesa La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, salsa tártara de la casa, tomate, lechuga, mermelada de frutos amarillos, tocineta, queso philadelphia, carne artesanal 100% res y mix de quesos.", tieneCombo: true, soloSedePrado: true },
+        { nombre: "Hamburguesa La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true, soloSedePrado: true },
+        { nombre: "Hamburguesa La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, tártara de la casa, queso gouda ahumado, queso filadelfia, maduro caldao en melado de whisky Jack Daniel's, suero costeño, 150g de carne Angus, cogollo europeo, pepperoni crunch y salsa ahumada a base de ajonjolí.", tieneCombo: true, soloSedePrado: true },
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [
@@ -338,7 +338,7 @@ const menuData = {
 const MENU_EXCLUIR = {
     bucaramanga: {
         categorias: [],
-        productos:  ['La Propia', 'La Golosa', 'La Gladiadora', 'Malteada']
+        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Malteada']
     },
     cartago: {
         categorias: [],

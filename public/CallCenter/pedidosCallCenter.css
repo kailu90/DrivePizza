@@ -640,6 +640,12 @@ body {
     filter: grayscale(0);
 }
 
+.btn-delete-placeholder {
+    display: inline-block;
+    width: 1.3rem;
+    margin-left: 10px;
+}
+
 /* ── CHECKOUT ─────────────────────────────────────────────────── */
 .checkout-modal {
     max-width: 500px !important;
@@ -798,38 +804,45 @@ body {
     cursor: default;
     display: flex;
     flex-direction: column;
+    padding: 10px;
 }
 .card--fast-combo:hover {
     transform: none;
-    border-color: transparent;
+    border-color: var(--color-terciario);
+}
+.card--fast-combo h4 { margin-bottom: 3px; font-size: 1.3rem; }
+.card--fast-combo .product-desc {
+    font-size: 1.15rem;
+    margin-bottom: 0;
 }
 .fast-combo-actions {
     display: flex;
-    gap: 6px;
-    margin-top: 10px;
+    gap: 5px;
+    margin-top: auto;
+    padding-top: 7px;
 }
 .fast-combo-btn {
     flex: 1;
     border: none;
-    border-radius: 8px;
-    padding: 8px 6px;
+    border-radius: 6px;
+    padding: 5px 6px;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     text-align: center;
-    line-height: 1.5;
+    white-space: nowrap;
+    line-height: 1.3;
     transition: opacity 0.15s, transform 0.15s;
 }
-.fast-combo-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+.fast-combo-btn:hover { opacity: 0.8; transform: translateY(-2px); }
 .fast-combo-btn--sola {
     background: #e8dfd0;
     color: var(--color-terciario);
 }
 .fast-combo-btn--combo {
-    background: var(--color-quinto);
+    background: #4a6741;
     color: #fff;
 }
-.fast-combo-btn strong { display: block; font-size: 1.4rem; }
-.fast-combo-btn small  { font-size: 1.1rem; opacity: 0.85; }
+.fast-combo-btn strong { font-size: 1.2rem; }
 
 .btn-tamano:hover {
     border-color: var(--color-quinto);

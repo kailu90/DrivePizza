@@ -458,22 +458,31 @@ function renderProducts(categoria) {
         const prefijo = modoCalzoneActivo ? "Calzone " : "";
         const nombreCompleto = `${prefijo}${p.nombre}`;
 
-        // Fast-combo: hamburguesas de una sola opción en Cartago → dos botones directos, sin modal
+        // Fast-combo: todas las hamburguesas con combo en Cartago → botones Sola/En Combo
         const opEfectivasRender = p.opcionesCiudad?.[_ciudadMenu] ?? opcionesFinales;
-        if (p.tieneCombo && _ciudadMenu === 'cartago' && Object.keys(opEfectivasRender).length === 1) {
-            const [tam, precioBase] = Object.entries(opEfectivasRender)[0];
-            const precioCombo = p.comboPrecioFijo ?? (precioBase + 5000);
+        if (p.tieneCombo && _ciudadMenu === 'cartago') {
+            const preciosBase = Object.values(opEfectivasRender);
+            const precioMinBase = Math.min(...preciosBase);
+            const precioMaxBase = Math.max(...preciosBase);
+            const solaDisplay = precioMinBase === precioMaxBase
+                ? `$${precioMinBase.toLocaleString()}`
+                : `$${precioMinBase.toLocaleString()}+`;
+            const precioMinCombo = p.comboPrecioFijo ?? (precioMinBase + 5000);
+            const precioMaxCombo = p.comboPrecioFijo ?? (precioMaxBase + 5000);
+            const comboDisplay = precioMinCombo === precioMaxCombo
+                ? `$${precioMinCombo.toLocaleString()}`
+                : `$${precioMinCombo.toLocaleString()}+`;
             const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
             return `
                 <div class="card card--fast-combo" data-nombre="${nombreCompleto}">
                     <h4>${nombreCompleto}</h4>
                     ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[_ciudadMenu] || p.descripcion}</p>` : ''}
                     <div class="fast-combo-actions">
-                        <button class="fast-combo-btn fast-combo-btn--sola" onclick="agregarRapidoSola(${pJson})">
-                            Sola<br><strong>$${precioBase.toLocaleString()}</strong>
+                        <button class="fast-combo-btn fast-combo-btn--sola" onclick='agregarRapidoSola(${pJson})'>
+                            Sola &nbsp;<strong>${solaDisplay}</strong>
                         </button>
-                        <button class="fast-combo-btn fast-combo-btn--combo" onclick="agregarRapidoCombo(${pJson})">
-                            En Combo <small>(Papas)</small><br><strong>$${precioCombo.toLocaleString()}</strong>
+                        <button class="fast-combo-btn fast-combo-btn--combo" onclick='agregarRapidoCombo(${pJson})' title="La hamburguesa va acompañada de papas a la francesa">
+                            Combo &nbsp;<strong>${comboDisplay}</strong>
                         </button>
                     </div>
                 </div>
@@ -517,28 +526,106 @@ function prepararSeleccion(producto, categoria) {
     abrirSeleccion(productoFinal);
 }
 
-// Agrega hamburguesa directo al carrito sin modal (fast-combo, Cartago)
+// Agrega hamburguesa directo al carrito o abre modal de opciones (fast-combo, Cartago)
 window.agregarRapidoSola = function(producto) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
     const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
-    const [tam, precio] = Object.entries(opEfectivas)[0];
-    const meta = {};
-    if (producto.soloSedePrado) meta.soloSedePrado = true;
-    confirmarAgregar(producto.nombre, tam, precio, meta);
+    const entries = Object.entries(opEfectivas);
+    if (entries.length === 1) {
+        const [tam, precio] = entries[0];
+        const meta = {};
+        if (producto.soloSedePrado) meta.soloSedePrado = true;
+        confirmarAgregar(producto.nombre, tam, precio, meta);
+    } else {
+        abrirOpcionesRapidas(producto, false);
+    }
 };
 
 window.agregarRapidoCombo = function(producto) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
     const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
-    const [tam, precioBase] = Object.entries(opEfectivas)[0];
-    const precioCombo = producto.comboPrecioFijo ?? (precioBase + 5000);
-    const meta = {};
-    if (producto.soloSedePrado) meta.soloSedePrado = true;
-    confirmarAgregar(producto.nombre, tam, precioCombo, meta);
-    const parentId = carrito[carrito.length - 1].id;
-    carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
-    actualizarComanda();
+    const entries = Object.entries(opEfectivas);
+    if (entries.length === 1) {
+        const [tam, precioBase] = entries[0];
+        const precioCombo = producto.comboPrecioFijo ?? (precioBase + 5000);
+        const meta = {};
+        if (producto.soloSedePrado) meta.soloSedePrado = true;
+        confirmarAgregar(producto.nombre, tam, precioCombo, meta);
+        const parentId = carrito[carrito.length - 1].id;
+        carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
+        actualizarComanda();
+    } else {
+        abrirOpcionesRapidas(producto, true);
+    }
 };
+
+function abrirOpcionesRapidas(producto, esCombo) {
+    const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+
+    const modal = document.getElementById('modal-seleccion');
+    const titulo = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+
+    titulo.innerText = producto.nombre + (esCombo ? ' — Combo' : '');
+    gridOpciones.className = 'opciones-grid';
+    gridOpciones.innerHTML = Object.entries(opEfectivas).map(([tam, precioBase]) => {
+        const precio = esCombo ? (producto.comboPrecioFijo ?? (precioBase + 5000)) : precioBase;
+        return `
+            <button class="btn-tamano" data-tam="${tam}" data-pre="${precio}">
+                ${tam}<br><strong>$${precio.toLocaleString()}</strong>
+            </button>
+        `;
+    }).join('');
+
+    gridOpciones.querySelectorAll('.btn-tamano').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const subOpts = producto.subOpciones?.[btn.dataset.tam];
+            if (subOpts) {
+                abrirSubOpciones(producto, btn.dataset.tam, Number(btn.dataset.pre), subOpts, esCombo);
+            } else {
+                const meta = {};
+                if (producto.soloSedePrado) meta.soloSedePrado = true;
+                confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), meta);
+                if (esCombo) {
+                    const parentId = carrito[carrito.length - 1].id;
+                    carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
+                    actualizarComanda();
+                }
+                cerrarModal();
+            }
+        });
+    });
+
+    modal.style.display = 'flex';
+}
+
+function abrirSubOpciones(producto, tamPadre, precio, subOpts, esCombo) {
+    const titulo = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+
+    titulo.innerText = `${producto.nombre} — ${tamPadre}${esCombo ? ' (Combo)' : ''}`;
+    gridOpciones.className = 'opciones-grid';
+    gridOpciones.innerHTML = subOpts.map(sub => `
+        <button class="btn-tamano" data-sub="${sub}" data-pre="${precio}">
+            ${sub}<br><strong>$${precio.toLocaleString()}</strong>
+        </button>
+    `).join('');
+
+    gridOpciones.querySelectorAll('.btn-tamano').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const meta = {};
+            if (producto.soloSedePrado) meta.soloSedePrado = true;
+            confirmarAgregar(producto.nombre, btn.dataset.sub, Number(btn.dataset.pre), meta);
+            if (esCombo) {
+                const parentId = carrito[carrito.length - 1].id;
+                carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
+                actualizarComanda();
+            }
+            cerrarModal();
+        });
+    });
+}
 
 // Nueva función para manejar la lógica de tamaños/opciones
 function abrirSeleccion(producto) {
@@ -903,7 +990,7 @@ function actualizarComanda() {
                 <span class="item-nombre adicion-nombre">↳ ${a.nombre}</span>
                 <div class="item-controls">
                     <strong class="item-precio">$${(a.precio * a.qty).toLocaleString()}</strong>
-                    ${a.nombre !== 'En combo con Papas' ? `<button onclick="eliminarItem(${a.id})" class="btn-delete">🗑️</button>` : ''}
+                    ${a.nombre !== 'En combo con Papas' ? `<button onclick="eliminarItem(${a.id})" class="btn-delete">🗑️</button>` : `<span class="btn-delete-placeholder"></span>`}
                 </div>
             </div>`).join('');
 
