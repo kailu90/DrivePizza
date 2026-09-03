@@ -757,6 +757,30 @@ body {
     gap: 5px;
 }
 
+.btn-combo-toggle {
+    grid-column: 1 / -1;
+    background: transparent;
+    border: 2px dashed var(--color-terciario);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+.btn-combo-toggle:hover {
+    border-color: var(--color-quinto);
+    color: var(--color-quinto);
+}
+.btn-combo-toggle--active {
+    background: var(--color-quinto);
+    border-color: var(--color-quinto);
+    border-style: solid;
+    color: #fff;
+}
+
 .btn-tamano:hover {
     border-color: var(--color-quinto);
     transform: translateY(-3px);

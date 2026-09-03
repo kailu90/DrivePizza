@@ -49,7 +49,7 @@ const preciosHamburguesas = {
     hamburguesaMixta: { "Unidad": 32000 },
     hamburguesaDobleCarne: { "Unidad": 35000 },
     hamburguesaEstofada: { "Res": 28000, "Pollo": 28000, "Mixta": 35000, },
-    hamburguesaCartago: { "Unidad": 30000, "Combo": 35000 }
+    hamburguesaCartago: { "Unidad": 30000 }
 };
 const preciosEnsaladas = {
     ensaladaDrive:      { "Unidad": 28000 },
@@ -272,11 +272,11 @@ const menuData = {
     ],
     //**Variedades de Hamburguesas**/
       "Hamburguesas": [
-        { nombre: "hamburguesa Clasica", opciones: preciosHamburguesas.hamburguesaClasica , descripcion: "Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
-        { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "filete de pollo, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
-        { nombre: "Hamburguesa Mixta", opciones: { "Filete de pollo": 32000 }, opcionesCiudad: { cartago: { "Filete de pollo": 32000, "Pollo desmechado": 29000 } }, descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
-        { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
-        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa."},
+        { nombre: "hamburguesa Clasica", opciones: preciosHamburguesas.hamburguesaClasica , descripcion: "Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
+        { nombre: "Hamburguesa Pollo", opciones: preciosHamburguesas.hamburguesaPollo , descripcion: "filete de pollo, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
+        { nombre: "Hamburguesa Mixta", opciones: { "Filete de pollo": 32000 }, opcionesCiudad: { cartago: { "Filete de pollo": 32000, "Pollo desmechado": 29000 } }, descripcion: "Carne de res 140 gr y filete de pollo de 150 gr, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
+        { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
+        { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa.", tieneCombo: true },
         // ── Solo Cartago ──────────────────────────────────────────────────────
         { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, salsa tártara de la casa, tomate, lechuga, mermelada de frutos amarillos, tocineta, queso philadelphia, carne artesanal 100% res y mix de quesos.", tieneCombo: true },
         { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true },

@@ -500,8 +500,8 @@ function abrirSeleccion(producto) {
     const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
     const opciones = Object.keys(opEfectivas);
 
-    // Si solo tiene una opción (ej: "Unidad"), se agrega directo
-    if (opciones.length === 1) {
+    // Si solo tiene una opción y no tiene combo, se agrega directo sin modal
+    if (opciones.length === 1 && !producto.tieneCombo) {
         const tamano = opciones[0];
         const meta = producto.esAdicionable
             ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || tamano }
@@ -552,19 +552,39 @@ function abrirSeleccion(producto) {
     } else {
         // Layout para no-pizzas (con soporte de meta para adicionables)
         gridOpciones.className = 'opciones-grid';
-        gridOpciones.innerHTML = Object.entries(opEfectivas).map(([tam, pre]) => `
+
+        const toggleHtml = producto.tieneCombo
+            ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$5.000)</small></button>`
+            : '';
+
+        gridOpciones.innerHTML = toggleHtml + Object.entries(opEfectivas).map(([tam, pre]) => `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${pre}">
                 ${tam} <br> <strong>$${pre.toLocaleString()}</strong>
             </button>
         `).join('');
+
+        let _comboActivo = false;
+
+        if (producto.tieneCombo) {
+            const toggleBtn = gridOpciones.querySelector('#combo-toggle-btn');
+            toggleBtn.addEventListener('click', () => {
+                _comboActivo = !_comboActivo;
+                toggleBtn.classList.toggle('btn-combo-toggle--active', _comboActivo);
+                gridOpciones.querySelectorAll('.btn-tamano').forEach(btn => {
+                    const precio = _comboActivo ? Number(btn.dataset.pre) + 5000 : Number(btn.dataset.pre);
+                    btn.innerHTML = `${btn.dataset.tam}<br><strong>$${precio.toLocaleString()}</strong>`;
+                });
+            });
+        }
 
         gridOpciones.querySelectorAll('.btn-tamano').forEach(btn => {
             btn.addEventListener('click', () => {
                 const meta = producto.esAdicionable
                     ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || btn.dataset.tam }
                     : {};
-                confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), meta);
-                if (btn.dataset.tam === 'Combo' && producto.tieneCombo) {
+                const precioFinal = _comboActivo ? Number(btn.dataset.pre) + 5000 : Number(btn.dataset.pre);
+                confirmarAgregar(producto.nombre, btn.dataset.tam, precioFinal, meta);
+                if (_comboActivo) {
                     const parentId = carrito[carrito.length - 1].id;
                     carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
                     actualizarComanda();
