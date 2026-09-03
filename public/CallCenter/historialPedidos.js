@@ -1085,6 +1085,7 @@ async function obtenerUsuarioCC() {
         window.addEventListener('message', e => {
             if (e.data?.type === 'frame-visible') {
                 _frameVisible = true;
+                window.parent.postMessage({ type: 'wa-visible', show: true }, '*');
                 const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
                 window.ciudadActual = ciudad;
                 document.querySelectorAll('.ciudad-btn').forEach(b =>
@@ -1307,5 +1308,4 @@ window.addEventListener('message', e => {
 
 if (window.parent !== window) {
     window.parent.postMessage({ type: 'frame-ready' }, '*');
-    window.parent.postMessage({ type: 'wa-visible', show: true }, '*');
 }

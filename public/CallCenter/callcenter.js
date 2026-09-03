@@ -14,6 +14,11 @@ import { supabase } from '../Api/supabaseConfig.js';
     }
 })();
 
+// El home nunca muestra el panel WA
+if (window.parent !== window) {
+    window.parent.postMessage({ type: 'wa-visible', show: false }, '*');
+}
+
 function navTo(href) {
     window.location.href = href;
 }
