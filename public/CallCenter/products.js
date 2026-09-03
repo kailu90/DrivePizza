@@ -342,6 +342,6 @@ const MENU_EXCLUIR = {
     },
     cartago: {
         categorias: [],
-        productos:  []
+        productos:  ['Pan De Ajo', 'Pan Dulces', 'Salsa tártara']
     }
 };
