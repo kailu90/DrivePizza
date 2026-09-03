@@ -247,8 +247,8 @@ async function _guardarModalDetalle() {
     const lngVal = document.getElementById('modal-det-lng').value.trim();
 
     if (!barrio)                      { alert('El nombre del barrio no puede estar vacío.'); return; }
-    if (isNaN(valor) || valor < 4000) { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
-    if (valor > 50000)                { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
+    if (isNaN(valor) || valor < 0) { alert('Valida el valor del domicilio.'); return; }
+    if (valor > 50000)             { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
     const item      = _barrios.find(b => b.id === id);
     const updateObj = {
@@ -375,8 +375,8 @@ async function _guardarNuevo() {
     const valor  = parseInt(document.getElementById('modal-barrio-valor').value, 10);
 
     if (!barrio)                        { alert('El nombre del barrio no puede estar vacío.'); return; }
-    if (isNaN(valor) || valor < 4000)   { alert('Valida el valor del domicilio, tiene un valor muy bajo.'); return; }
-    if (valor > 50000)                 { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
+    if (isNaN(valor) || valor < 0) { alert('Valida el valor del domicilio.'); return; }
+    if (valor > 50000)             { alert('Valida el valor del domicilio, tiene un valor muy alto.'); return; }
 
     const btnGuardar = document.getElementById('btn-guardar-modal-barrio');
     btnGuardar.disabled = true;

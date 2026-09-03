@@ -370,7 +370,9 @@ function renderProducts(categoria) {
         const llavesPizzas = [ "Pizzas Super Estofadas" , "Pizzas Estofadas" , "Pizzas Típicas" , "Pizzas Especiales" ];
         llavesPizzas.forEach(key => {
             if (menuData[key]) {
-                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                const saboresTransformados = menuData[key]
+                    .filter(p => !p.noCalzone)
+                    .map(saborOriginal => ({
                     ...saborOriginal,
                     nombre: `Calzone ${saborOriginal.nombre}`,
                     opciones: preciosCalzones.calzoneEspecial,
@@ -384,7 +386,9 @@ function renderProducts(categoria) {
         const llavesPizzas = [ "Pizzas Clásicas" ];
         llavesPizzas.forEach(key => {
            if (menuData[key]) {
-                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                const saboresTransformados = menuData[key]
+                    .filter(p => !p.noCalzone)
+                    .map(saborOriginal => ({
                     ...saborOriginal,
                     nombre: `Stromboli ${saborOriginal.nombre}`,
                     opciones: preciosStromboli.stromboliClasico,
@@ -398,7 +402,9 @@ function renderProducts(categoria) {
         const llavesPizzas = [ "Pizzas Super Estofadas" , "Pizzas Estofadas" , "Pizzas Típicas" , "Pizzas Especiales" ];
         llavesPizzas.forEach(key => {
             if (menuData[key]) {
-                const saboresTransformados = menuData[key].map(saborOriginal => ({
+                const saboresTransformados = menuData[key]
+                    .filter(p => !p.noCalzone)
+                    .map(saborOriginal => ({
                     ...saborOriginal,
                     nombre: `Stromboli ${saborOriginal.nombre}`,
                     opciones: preciosStromboli.stromboliEspecial,
@@ -442,7 +448,8 @@ function renderProducts(categoria) {
         } else {
             opcionesFinales = p.opciones || {};
         }
-        const listaPrecios = Object.values(opcionesFinales);
+        const opcionesEfectivas = p.opcionesCiudad?.[_ciudadMenu] ?? opcionesFinales;
+        const listaPrecios = Object.values(opcionesEfectivas);
 
         // Si el producto no tiene precios (por un error en products.js), lo saltamos
         if (listaPrecios.length === 0) {

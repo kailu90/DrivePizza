@@ -78,6 +78,7 @@ const preciosAdiciones = {
 const preciosBebidas = {
 
     // Refrescos   
+    gaseosa250ml:       { "Pepsi": 4000, "Colombiana": 4000, "Manzana": 4000, "Piña": 4000, "Kola": 4000, "Uva": 4000, "7 up": 4000, "naranja": 4000 },
     gaseosa400ml:       { "Pepsi": 6000, "Colombiana": 6000, "Manzana": 6000, "Piña": 6000, "Kola": 6000, "Uva": 6000 , "7 up": 6000 , "naranja": 6000 },
     gaseosa1500ml:      { "Pepsi": 9000, "Colombiana": 9000, "Manzana": 9000, "Piña": 9000, "Kola": 9000, "Uva": 9000 , "7 up": 9000 , "naranja": 9000 },
     jugoHit500ml:       { "Tropical": 6000, "Mora": 6000, "Naranja/Piña": 6000, "Mango": 6000 },
@@ -131,13 +132,13 @@ const preciosBordes= {
 const menuData = {
 //*******Variedades entradas***********/
     "Entradas/Adición" : [
-        { nombre: "Pan De Ajo", opciones: preciosEntradas.panDeAjo , descripcion: "7 deliciosos panes de ajo."},
-        { nombre: "Pan Dulces", opciones: preciosEntradas.panDulces , descripcion: "7 deliciosos panes dulces."},
+        { nombre: "Entrada de 7 Panes de Ajo", opciones: preciosEntradas.panDeAjo , descripcion: "7 deliciosos panes de ajo."},
+        { nombre: "Entrada de 7 Panes Dulces", opciones: preciosEntradas.panDulces , descripcion: "7 deliciosos panes dulces."},
         { nombre: "Papas a la francesa", opciones: preciosEntradas.papasFrancesa , descripcion: "Porción de papas a la francesa.", noNuestro: true },
         { nombre: "Salsa tártara", opciones: preciosEntradas.salsaTartara , descripcion: "Sobre de salsa tártara adicional."},
-        { nombre: "Salsa Drive", opciones: preciosEntradas.salsaDrive },
-        { nombre: "Salsa Mi Cuate", opciones: preciosEntradas.salsaMiCuate },
-        { nombre: "Salsa Napolitana", opciones: preciosEntradas.salsaNapolitana },
+        { nombre: "Salsa Drive", opciones: preciosEntradas.salsaDrive, descripcion: "Copa de 1.5 Oz de salsa Drive." },
+        { nombre: "Salsa Mi Cuate", opciones: preciosEntradas.salsaMiCuate, descripcion: "Copa de 1.5 Oz de salsa Mi Cuate." },
+        { nombre: "Salsa Napolitana", opciones: preciosEntradas.salsaNapolitana, descripcion: "Copa de 1.5 Oz de salsa Napolitana." },
         { nombre: "Piña Calada", opciones: preciosEntradas.piñaCalada , descripcion: "Copa de 1.5 Onzas de piña calada."},
     ],
 //*******Variedades Pastas***********/    
@@ -189,7 +190,7 @@ const menuData = {
         { nombre: "Bolognesa", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa y tocineta."},
         { nombre: "Camaron a la criolla", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, cebolla, perejil y camarón."},
         { nombre: "Carbonara", opciones: preciosPizzas.especialSinPorcion , descripcion: "Queso mozzarella, tocineta, pollo, champiñones, rúgula, parmesano y salsa carbonara."},
-        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true },
+        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true, noCalzone: true },
         { nombre: "Topetunas", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, tomate, pepperoni y aceitunas."}  
     ],
     "Pizzas Clásicas": [
@@ -305,6 +306,7 @@ const menuData = {
     //**Variedades de Bebidas***/
      "Refrescos": [
         { nombre: "Jugo Hit 500 ml", opciones: preciosBebidas.jugoHit500ml , descripcion: "Jugo hit 500 ml plástica."},
+        { nombre: "Gaseosa 250 ml", opciones: preciosBebidas.gaseosa250ml, opcionesCiudad: { cartago: { "Pepsi": 4000, "Manzana": 4000, "Uva": 4000, "Canada Dry": 4000, "Colombiana": 4000, "Naranja": 4000 } }, descripcion: "Sabores postobón." },
         { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
         { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Canada Dry": 9000, "Colombiana": 9000, "Naranja": 9000 } }, descripcion: "Sabores postobón."},
         { nombre: "Agua", opciones: preciosBebidas.agua },
@@ -331,7 +333,7 @@ const menuData = {
         { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
         { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
-        { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu },
+        { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
         // ── Solo Cartago ──────────────────────────────────────────────────────
         { nombre: "Malteada", opciones: { "Oreo": 16000, "Café": 16000, "Frutos Rojos": 16000, "Vainilla": 16000 }, noNuestro: true },
@@ -348,6 +350,6 @@ const MENU_EXCLUIR = {
     },
     cartago: {
         categorias: [],
-        productos:  ['Pan De Ajo', 'Pan Dulces', 'Salsa tártara']
+        productos:  ['Entrada de 7 Panes de Ajo', 'Entrada de 7 Panes Dulces', 'Salsa tártara']
     }
 };
