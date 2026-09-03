@@ -500,8 +500,8 @@ function abrirSeleccion(producto) {
     const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
     const opciones = Object.keys(opEfectivas);
 
-    // Si solo tiene una opción y no tiene combo, se agrega directo sin modal
-    if (opciones.length === 1 && !producto.tieneCombo) {
+    // Si solo tiene una opción y no aplica combo en esta ciudad, se agrega directo sin modal
+    if (opciones.length === 1 && !(producto.tieneCombo && ciudad === 'cartago')) {
         const tamano = opciones[0];
         const meta = producto.esAdicionable
             ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || tamano }
@@ -553,7 +553,7 @@ function abrirSeleccion(producto) {
         // Layout para no-pizzas (con soporte de meta para adicionables)
         gridOpciones.className = 'opciones-grid';
 
-        const toggleHtml = producto.tieneCombo
+        const toggleHtml = (producto.tieneCombo && ciudad === 'cartago')
             ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$5.000)</small></button>`
             : '';
 
