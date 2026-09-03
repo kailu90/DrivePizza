@@ -567,6 +567,13 @@
                 if (!visible && btn.classList.contains('active')) {
                     btn.classList.remove('active');
                 }
+                // En Cartago, "nuestro" solo recibe pedidos presenciales — deshabilitar en checkout
+                const deshabilitada = ciudad === 'cartago' && btn.dataset.sede === 'nuestro';
+                btn.disabled = deshabilitada;
+                btn.title = deshabilitada ? 'Esta sede no recibe pedidos por CallCenter' : '';
+                if (deshabilitada && btn.classList.contains('active')) {
+                    btn.classList.remove('active');
+                }
             });
             const btnDatafono = document.querySelector('.pago-btn[data-pago="Datafono"]');
             if (btnDatafono) {
