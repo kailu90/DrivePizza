@@ -21,7 +21,13 @@ function navTo(href) {
 document.getElementById('btn_pedidos_sedes').addEventListener('click', () => navTo('./pedidosCallCenter.html'));
 document.getElementById('btn_historial').addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*'));
 document.getElementById('btn_reporte_asesores').addEventListener('click', () => navTo('./reporteAsesores.html'));
-document.getElementById('btn_reservas').addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial', params: { tipo: 'reserva' } }, '*'));
+const _btnReservas = document.getElementById('btn_reservas');
+_btnReservas.addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial', params: { tipo: 'reserva' } }, '*'));
+
+// Ocultar reservas en Cartago
+if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
+    _btnReservas.style.display = 'none';
+}
 document.getElementById('btn_pbx').addEventListener('click', () => navTo('./pbx.html'));
 document.getElementById('btn_clientes').addEventListener('click', () => navTo('./clientesCall.html'));
 document.getElementById('btn_admin_barrios').addEventListener('click', () => navTo('./adminBarrios.html'));

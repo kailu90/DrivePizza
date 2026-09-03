@@ -256,7 +256,9 @@ function renderCategories() {
     nav.innerHTML = categoriasVisibles.map(c =>
         `<button class="cat-btn" onclick="seleccionarCategoria('${c}')">${c}</button>`
     ).join('');
-    nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalReserva()">📅 Reservas</button>`;
+    if (_ciudad !== 'cartago') {
+        nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalReserva()">📅 Reservas</button>`;
+    }
 }
 
 // Selección categoria para mostrar variedad según categoria.
@@ -457,7 +459,7 @@ function renderProducts(categoria) {
         const nombreCompleto = `${prefijo}${p.nombre}`;
 
         return `
-            <div class="card" data-nombre="${nombreCompleto}" onclick='prepararSeleccion(${JSON.stringify(p)}, ${modoCalzoneActivo})'>
+            <div class="card" data-nombre="${nombreCompleto}" onclick='prepararSeleccion(${JSON.stringify(p).replace(/'/g, "&#39;")}, ${modoCalzoneActivo})'>
                 <h4>${nombreCompleto}</h4>
                 ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[localStorage.getItem('cc_ciudad') || 'bucaramanga'] || p.descripcion}</p>` : ''}
                 <p class="price">${precioMostrar}</p>
