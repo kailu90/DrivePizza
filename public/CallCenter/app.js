@@ -854,7 +854,7 @@ function actualizarComanda() {
                 <span class="item-nombre adicion-nombre">↳ ${a.nombre}</span>
                 <div class="item-controls">
                     <strong class="item-precio">$${(a.precio * a.qty).toLocaleString()}</strong>
-                    <button onclick="eliminarItem(${a.id})" class="btn-delete">🗑️</button>
+                    ${a.nombre !== 'En combo con Papas' ? `<button onclick="eliminarItem(${a.id})" class="btn-delete">🗑️</button>` : ''}
                 </div>
             </div>`).join('');
 
