@@ -564,6 +564,11 @@ function abrirSeleccion(producto) {
                     ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || btn.dataset.tam }
                     : {};
                 confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), meta);
+                if (btn.dataset.tam === 'Combo' && producto.tieneCombo) {
+                    const parentId = carrito[carrito.length - 1].id;
+                    carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
+                    actualizarComanda();
+                }
                 cerrarModal();
             });
         });

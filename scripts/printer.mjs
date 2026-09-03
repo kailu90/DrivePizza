@@ -71,7 +71,7 @@ function generarHTML(pedido) {
                 return `
                 <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11pt; padding-left:12px; color:black; font-weight:700;">
                     <span>+ ${nombreAdicion}</span>
-                    <span>$${formatearPrecio(a.precio * aqty)}</span>
+                    <span>${a.precio > 0 ? `$${formatearPrecio(a.precio * aqty)}` : 'Incluido'}</span>
                 </div>`;
             }).join('')
             : '';

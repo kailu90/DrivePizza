@@ -49,7 +49,7 @@ const preciosHamburguesas = {
     hamburguesaMixta: { "Unidad": 32000 },
     hamburguesaDobleCarne: { "Unidad": 35000 },
     hamburguesaEstofada: { "Res": 28000, "Pollo": 28000, "Mixta": 35000, },
-    hamburguesaCartago: { "Unidad": 29000 }
+    hamburguesaCartago: { "Unidad": 30000, "Combo": 35000 }
 };
 const preciosEnsaladas = {
     ensaladaDrive:      { "Unidad": 28000 },
@@ -278,9 +278,9 @@ const menuData = {
         { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa."},
         { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada , descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa."},
         // ── Solo Cartago ──────────────────────────────────────────────────────
-        { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
-        { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
-        { nombre: "La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: ""},
+        { nombre: "La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "", tieneCombo: true },
+        { nombre: "La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true },
+        { nombre: "La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, tártara de la casa, queso gouda ahumado, queso filadelfia, maduro caldao en melado de whisky Jack Daniel's, suero costeño, 150g de carne Angus, cogollo europeo, pepperoni crunch y salsa ahumada a base de ajonjolí.", tieneCombo: true },
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [
