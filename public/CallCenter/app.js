@@ -867,6 +867,13 @@ function actualizarComanda() {
         let avisoSede = document.getElementById('aviso-sede-nuestro');
         if (tieneSoloPrado) {
             if (!avisoSede) {
+                // Envolver el botón en un div columna si aún no tiene wrapper
+                if (!btnNuestro.closest('.sede-nuestro-wrap')) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'sede-nuestro-wrap';
+                    btnNuestro.parentElement.insertBefore(wrap, btnNuestro);
+                    wrap.appendChild(btnNuestro);
+                }
                 avisoSede = document.createElement('p');
                 avisoSede.id = 'aviso-sede-nuestro';
                 avisoSede.className = 'aviso-sede-nuestro';
@@ -876,6 +883,12 @@ function actualizarComanda() {
             if (btnNuestro.classList.contains('active')) btnNuestro.classList.remove('active');
         } else {
             avisoSede?.remove();
+            // Devolver el botón al contenedor original si tiene wrapper
+            const wrap = btnNuestro.closest('.sede-nuestro-wrap');
+            if (wrap) {
+                wrap.parentElement.insertBefore(btnNuestro, wrap);
+                wrap.remove();
+            }
         }
     }
 

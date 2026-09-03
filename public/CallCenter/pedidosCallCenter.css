@@ -757,13 +757,19 @@ body {
     gap: 5px;
 }
 
+.sede-nuestro-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
 .aviso-sede-nuestro {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #e74c3c;
     font-weight: 600;
     text-align: center;
-    margin: 4px 0 0;
-    width: 100%;
+    margin: 0;
 }
 
 .btn-combo-toggle {
