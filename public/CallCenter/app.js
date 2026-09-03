@@ -867,28 +867,19 @@ function actualizarComanda() {
         let avisoSede = document.getElementById('aviso-sede-nuestro');
         if (tieneSoloPrado) {
             if (!avisoSede) {
-                // Envolver el botón en un div columna si aún no tiene wrapper
-                if (!btnNuestro.closest('.sede-nuestro-wrap')) {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'sede-nuestro-wrap';
-                    btnNuestro.parentElement.insertBefore(wrap, btnNuestro);
-                    wrap.appendChild(btnNuestro);
-                }
-                avisoSede = document.createElement('p');
+                avisoSede = document.createElement('span');
                 avisoSede.id = 'aviso-sede-nuestro';
                 avisoSede.className = 'aviso-sede-nuestro';
-                avisoSede.textContent = 'Hamburguesa no disponible en esta sede';
-                btnNuestro.insertAdjacentElement('afterend', avisoSede);
+                avisoSede.textContent = 'No disponible aquí';
+                btnNuestro.style.position = 'relative';
+                btnNuestro.style.overflow = 'visible';
+                btnNuestro.appendChild(avisoSede);
             }
             if (btnNuestro.classList.contains('active')) btnNuestro.classList.remove('active');
         } else {
             avisoSede?.remove();
-            // Devolver el botón al contenedor original si tiene wrapper
-            const wrap = btnNuestro.closest('.sede-nuestro-wrap');
-            if (wrap) {
-                wrap.parentElement.insertBefore(btnNuestro, wrap);
-                wrap.remove();
-            }
+            btnNuestro.style.position = '';
+            btnNuestro.style.overflow = '';
         }
     }
 
