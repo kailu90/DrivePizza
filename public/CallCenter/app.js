@@ -458,6 +458,28 @@ function renderProducts(categoria) {
         const prefijo = modoCalzoneActivo ? "Calzone " : "";
         const nombreCompleto = `${prefijo}${p.nombre}`;
 
+        // Fast-combo: hamburguesas de una sola opción en Cartago → dos botones directos, sin modal
+        const opEfectivasRender = p.opcionesCiudad?.[_ciudadMenu] ?? opcionesFinales;
+        if (p.tieneCombo && _ciudadMenu === 'cartago' && Object.keys(opEfectivasRender).length === 1) {
+            const [tam, precioBase] = Object.entries(opEfectivasRender)[0];
+            const precioCombo = p.comboPrecioFijo ?? (precioBase + 5000);
+            const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
+            return `
+                <div class="card card--fast-combo" data-nombre="${nombreCompleto}">
+                    <h4>${nombreCompleto}</h4>
+                    ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[_ciudadMenu] || p.descripcion}</p>` : ''}
+                    <div class="fast-combo-actions">
+                        <button class="fast-combo-btn fast-combo-btn--sola" onclick="agregarRapidoSola(${pJson})">
+                            Sola<br><strong>$${precioBase.toLocaleString()}</strong>
+                        </button>
+                        <button class="fast-combo-btn fast-combo-btn--combo" onclick="agregarRapidoCombo(${pJson})">
+                            En Combo <small>(Papas)</small><br><strong>$${precioCombo.toLocaleString()}</strong>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         return `
             <div class="card" data-nombre="${nombreCompleto}" onclick='prepararSeleccion(${JSON.stringify(p).replace(/'/g, "&#39;")}, ${modoCalzoneActivo})'>
                 <h4>${nombreCompleto}</h4>
@@ -494,6 +516,29 @@ function prepararSeleccion(producto, categoria) {
     
     abrirSeleccion(productoFinal);
 }
+
+// Agrega hamburguesa directo al carrito sin modal (fast-combo, Cartago)
+window.agregarRapidoSola = function(producto) {
+    const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const [tam, precio] = Object.entries(opEfectivas)[0];
+    const meta = {};
+    if (producto.soloSedePrado) meta.soloSedePrado = true;
+    confirmarAgregar(producto.nombre, tam, precio, meta);
+};
+
+window.agregarRapidoCombo = function(producto) {
+    const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const [tam, precioBase] = Object.entries(opEfectivas)[0];
+    const precioCombo = producto.comboPrecioFijo ?? (precioBase + 5000);
+    const meta = {};
+    if (producto.soloSedePrado) meta.soloSedePrado = true;
+    confirmarAgregar(producto.nombre, tam, precioCombo, meta);
+    const parentId = carrito[carrito.length - 1].id;
+    carrito.push({ id: Date.now() + 1, nombre: 'En combo con Papas', precio: 0, qty: 1, pizzaId: parentId });
+    actualizarComanda();
+};
 
 // Nueva función para manejar la lógica de tamaños/opciones
 function abrirSeleccion(producto) {

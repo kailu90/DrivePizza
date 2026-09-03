@@ -793,6 +793,44 @@ body {
     color: #fff;
 }
 
+/* ── FAST-COMBO: hamburguesas 1 opción en Cartago ────────────── */
+.card--fast-combo {
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+}
+.card--fast-combo:hover {
+    transform: none;
+    border-color: transparent;
+}
+.fast-combo-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+.fast-combo-btn {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    text-align: center;
+    line-height: 1.5;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.fast-combo-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+.fast-combo-btn--sola {
+    background: #e8dfd0;
+    color: var(--color-terciario);
+}
+.fast-combo-btn--combo {
+    background: var(--color-quinto);
+    color: #fff;
+}
+.fast-combo-btn strong { display: block; font-size: 1.4rem; }
+.fast-combo-btn small  { font-size: 1.1rem; opacity: 0.85; }
+
 .btn-tamano:hover {
     border-color: var(--color-quinto);
     transform: translateY(-3px);
