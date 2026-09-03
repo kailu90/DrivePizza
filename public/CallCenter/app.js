@@ -2301,12 +2301,11 @@ function _promo3x2ConfirmarItem(producto, tamano, precio) {
 
 // ── PROMO LASAÑA/ESPAGUETTI 48K ────────────────────────────────────────────
 
-const PROMO_LAS_ESP_EXCLUIDAS_PASTAS = [
-    "Pasta Carbonara", "Pasta Alfredo", "Pasta Pesto Camaron",
-    "Pasta Matriziana", "Pasta Marinera"
-];
-
 const PROMO_LAS_ESP_EXCLUIDAS_LASAÑAS = ["Lasaña Drive", "Lasaña Vegetariana"];
+
+const PROMO_LAS_ESP_PASTAS_PASO1 = [
+    "Pasta Spaguetti Sencillo", "Pasta Spaguetti Mixto", "Pasta Spaguetti Remix"
+];
 
 function _promoLasEspGetProductos(categoria) {
     if (categoria === 'Lasañas') {
@@ -2314,10 +2313,21 @@ function _promoLasEspGetProductos(categoria) {
             .filter(p => !PROMO_LAS_ESP_EXCLUIDAS_LASAÑAS.includes(p.nombre))
             .map(p => ({ ...p, categoriaPromo: 'Lasañas' }));
     }
-    // Espaguetti: pastas estándar (sencillo/mixto/remix), sin las premium
+    // Espaguetti paso 1: solo sencillo/mixto/remix
     return (menuData["Pastas"] || [])
-        .filter(p => !PROMO_LAS_ESP_EXCLUIDAS_PASTAS.includes(p.nombre))
+        .filter(p => PROMO_LAS_ESP_PASTAS_PASO1.includes(p.nombre))
         .map(p => ({ ...p, categoriaPromo: 'Espaguetti' }));
+}
+
+// Paso 2: lasañas + espaguettis (sin macaroni, fetuccine ni premium)
+function _promoLasEspGetProductosPaso2() {
+    const lasañas = (menuData["Lasañas"] || [])
+        .filter(p => !PROMO_LAS_ESP_EXCLUIDAS_LASAÑAS.includes(p.nombre))
+        .map(p => ({ ...p, categoriaPromo: 'Lasañas' }));
+    const pastas = (menuData["Pastas"] || [])
+        .filter(p => PROMO_LAS_ESP_PASTAS_PASO1.includes(p.nombre))
+        .map(p => ({ ...p, categoriaPromo: 'Espaguetti' }));
+    return [...lasañas, ...pastas];
 }
 
 const _PROMO_LAS_ESP_CFGS = {
@@ -2401,13 +2411,15 @@ function _promoLasEspAbrirModal() {
     // Pasos 1 y 2: grid de productos
     const subtitulo = state.step === 1
         ? `${state.categoria} · Elige el primer producto`
-        : `${state.categoria} · Elige el segundo producto`;
+        : `Elige el segundo producto · Lasañas o Espaguetti`;
 
     titulo.innerHTML = `
         <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar()}</div>
         <small style="font-size:1.3rem;color:#666;font-weight:normal;">${subtitulo}</small>`;
 
-    const productos = _promoLasEspGetProductos(state.categoria);
+    const productos = state.step === 2
+        ? _promoLasEspGetProductosPaso2()
+        : _promoLasEspGetProductos(state.categoria);
     gridOpciones.className = 'opciones-grid opciones-sabores';
     gridOpciones.innerHTML = `
         <div class="busqueda-sabor2-wrapper">
@@ -2425,7 +2437,9 @@ function _promoLasEspAbrirModal() {
 
 window._promoLasEspFiltrar = function (q) {
     if (!_promoLasEspState) return;
-    const todos = _promoLasEspGetProductos(_promoLasEspState.categoria);
+    const todos = _promoLasEspState.step === 2
+        ? _promoLasEspGetProductosPaso2()
+        : _promoLasEspGetProductos(_promoLasEspState.categoria);
     _promoLasEspRenderGrid(q
         ? todos.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()))
         : todos);
@@ -2607,7 +2621,7 @@ window.abrirPromoBerrionda = function () {
 let _promo2x1CtgState = null;
 
 window.abrirPromo2x1Ctg = function () {
-    _promo2x1CtgState = { step: 0, tamano: null, prod1: null };
+    _promo2x1CtgState = { step: 0, tamano: null, prod1: null, mezcla1: false, sabor1Pizza: null, sabor1PizzaPrecio: 0, mezcla2: false, sabor1Clasica: null };
     _promo2x1CtgAbrirModal();
 };
 
@@ -2665,8 +2679,11 @@ function _promo2x1CtgAbrirModal() {
 
         gridOpciones.className = 'opciones-grid opciones-sabores';
         gridOpciones.innerHTML = `
-            <div class="busqueda-sabor2-wrapper">
+            <div class="busqueda-sabor2-wrapper p65k-search-row">
                 <input type="text" id="buscar-2x1-ctg" placeholder="🔍 Buscar pizza..." oninput="_promo2x1CtgFiltrar(this.value)" autocomplete="off">
+                <button id="btn-2x1-mezcla1" class="btn-mitad btn-mitad--p65k${state.mezcla1 ? ' activo' : ''}" onclick="_promo2x1CtgToggleMezcla1()" title="Combinar ½+½">
+                    <span class="btn-mitad-disc"></span>
+                </button>
             </div>
             <div id="2x1ctg-grid" class="sabores2-grid"></div>`;
         _promo2x1CtgRenderGrid(todasPizzas);
@@ -2684,28 +2701,52 @@ function _promo2x1CtgAbrirModal() {
         .filter(p => p.opciones?.[state.tamano] !== undefined);
 
     gridOpciones.className = 'opciones-grid opciones-sabores';
-    gridOpciones.innerHTML = `<div id="2x1ctg-clasica-grid" class="sabores2-grid"></div>`;
-
-    const gridClasicas = document.getElementById('2x1ctg-clasica-grid');
-    gridClasicas.innerHTML = clasicas.map(p =>
-        `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}">
-            <span class="sabor2-nombre">${p.nombre}</span>
-            <span class="sabor2-precio" style="color:#16a34a;font-weight:700;">GRATIS</span>
-        </button>`
-    ).join('');
-    gridClasicas.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const now = Date.now();
-            cerrarModal();
-            carrito.push({ id: now,     nombre: `${state.prod1.nombre} (${state.tamano})`, precio: state.prod1.precio, qty: 1, esPromo2x1Ctg: true, promoId2x1Ctg: now });
-            carrito.push({ id: now + 1, nombre: `${btn.dataset.nombre} (${state.tamano})`, precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now });
-            localStorage.setItem('dp_promo2x1Ctg_obs', `PROMO 2X1 - ${state.tamano}`);
-            _aplicarFiltro2x1Ctg();
-            actualizarComanda();
-        });
-    });
+    gridOpciones.innerHTML = `
+        <div class="busqueda-sabor2-wrapper p65k-search-row">
+            <input type="text" id="buscar-2x1-clasica" placeholder="🔍 Buscar clásica..." oninput="_promo2x1CtgFiltrarClasica(this.value)" autocomplete="off">
+            <button id="btn-2x1-mezcla2" class="btn-mitad btn-mitad--p65k${state.mezcla2 ? ' activo' : ''}" onclick="_promo2x1CtgToggleMezcla2()" title="Combinar ½+½">
+                <span class="btn-mitad-disc"></span>
+            </button>
+        </div>
+        <div id="2x1ctg-clasica-grid" class="sabores2-grid"></div>`;
+    _promo2x1CtgRenderClasicas(clasicas);
     modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('buscar-2x1-clasica')?.focus(), 100);
 }
+
+window._promo2x1CtgToggleMezcla1 = function () {
+    _promo2x1CtgState.mezcla1 = !_promo2x1CtgState.mezcla1;
+    _promo2x1CtgState.sabor1Pizza = null;
+    _promo2x1CtgState.sabor1PizzaPrecio = 0;
+    const inp = document.getElementById('buscar-2x1-ctg');
+    if (inp) inp.value = '';
+    _promo2x1CtgFiltrar('');
+};
+
+window._promo2x1CtgQuitarSabor1Pizza = function () {
+    _promo2x1CtgState.sabor1Pizza = null;
+    _promo2x1CtgState.sabor1PizzaPrecio = 0;
+    const inp = document.getElementById('buscar-2x1-ctg');
+    if (inp) inp.value = '';
+    _promo2x1CtgFiltrar('');
+};
+
+window._promo2x1CtgToggleMezcla2 = function () {
+    _promo2x1CtgState.mezcla2 = !_promo2x1CtgState.mezcla2;
+    _promo2x1CtgState.sabor1Clasica = null;
+    const btn = document.getElementById('btn-2x1-mezcla2');
+    if (btn) btn.classList.toggle('activo', _promo2x1CtgState.mezcla2);
+    const clasicas = (menuData["Pizzas Clásicas"] || [])
+        .filter(p => p.opciones?.[_promo2x1CtgState.tamano] !== undefined);
+    _promo2x1CtgRenderClasicas(clasicas);
+};
+
+window._promo2x1CtgQuitarSabor1Clasica = function () {
+    _promo2x1CtgState.sabor1Clasica = null;
+    const clasicas = (menuData["Pizzas Clásicas"] || [])
+        .filter(p => p.opciones?.[_promo2x1CtgState.tamano] !== undefined);
+    _promo2x1CtgRenderClasicas(clasicas);
+};
 
 window._promo2x1CtgFiltrar = function (q) {
     if (!_promo2x1CtgState || _promo2x1CtgState.step !== 1) return;
@@ -2720,14 +2761,32 @@ window._promo2x1CtgFiltrar = function (q) {
     _promo2x1CtgRenderGrid(q ? todas.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase())) : todas);
 };
 
+window._promo2x1CtgFiltrarClasica = function (q) {
+    const clasicas = (menuData["Pizzas Clásicas"] || [])
+        .filter(p => p.opciones?.[_promo2x1CtgState.tamano] !== undefined);
+    _promo2x1CtgRenderClasicas(q ? clasicas.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase())) : clasicas);
+};
+
 function _promo2x1CtgRenderGrid(pizzas) {
     const grid = document.getElementById('2x1ctg-grid');
     if (!grid) return;
-    if (pizzas.length === 0) {
-        grid.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No se encontraron pizzas.</p>';
+    const state = _promo2x1CtgState;
+
+    let lista = [...pizzas];
+    let bannerHTML = '';
+    if (state.mezcla1 && state.sabor1Pizza) {
+        bannerHTML = `<div class="p65k-sabor1-banner">
+            <span class="p65k-sabor1-texto">½ <strong>${state.sabor1Pizza}</strong> + ½ …</span>
+            <button class="p65k-sabor1-quitar" onclick="_promo2x1CtgQuitarSabor1Pizza()">✕ Cambiar</button>
+        </div>`;
+        lista = lista.filter(p => p.nombre !== state.sabor1Pizza);
+    }
+
+    if (lista.length === 0) {
+        grid.innerHTML = bannerHTML + '<p style="text-align:center;color:#999;padding:20px;">No se encontraron pizzas.</p>';
         return;
     }
-    grid.innerHTML = pizzas.map(p =>
+    grid.innerHTML = bannerHTML + lista.map(p =>
         `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}" data-precio="${p.precio}">
             <span class="sabor2-nombre">${p.nombre}</span>
             <span class="sabor2-precio">$${p.precio.toLocaleString()}</span>
@@ -2735,11 +2794,74 @@ function _promo2x1CtgRenderGrid(pizzas) {
     ).join('');
     grid.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            _promo2x1CtgState.prod1 = { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio) };
-            _promo2x1CtgState.step  = 2;
-            _promo2x1CtgAbrirModal();
+            if (state.mezcla1) {
+                if (!state.sabor1Pizza) {
+                    state.sabor1Pizza = btn.dataset.nombre;
+                    state.sabor1PizzaPrecio = Number(btn.dataset.precio);
+                    const inp = document.getElementById('buscar-2x1-ctg');
+                    if (inp) inp.value = '';
+                    _promo2x1CtgFiltrar('');
+                } else {
+                    const precioFinal = Math.max(state.sabor1PizzaPrecio, Number(btn.dataset.precio));
+                    state.prod1 = { nombre: `½ ${state.sabor1Pizza} y mitad ${btn.dataset.nombre}`, precio: precioFinal };
+                    state.step  = 2;
+                    _promo2x1CtgAbrirModal();
+                }
+            } else {
+                state.prod1 = { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio) };
+                state.step  = 2;
+                _promo2x1CtgAbrirModal();
+            }
         });
     });
+}
+
+function _promo2x1CtgRenderClasicas(clasicas) {
+    const grid = document.getElementById('2x1ctg-clasica-grid');
+    if (!grid) return;
+    const state = _promo2x1CtgState;
+
+    let lista = [...clasicas];
+    let bannerHTML = '';
+    if (state.mezcla2 && state.sabor1Clasica) {
+        bannerHTML = `<div class="p65k-sabor1-banner">
+            <span class="p65k-sabor1-texto">½ <strong>${state.sabor1Clasica}</strong> + ½ …</span>
+            <button class="p65k-sabor1-quitar" onclick="_promo2x1CtgQuitarSabor1Clasica()">✕ Cambiar</button>
+        </div>`;
+        lista = lista.filter(p => p.nombre !== state.sabor1Clasica);
+    }
+
+    grid.innerHTML = bannerHTML + lista.map(p =>
+        `<button class="btn-sabor2 las-esp-sel-btn" data-nombre="${p.nombre}">
+            <span class="sabor2-nombre">${p.nombre}</span>
+            <span class="sabor2-precio" style="color:#16a34a;font-weight:700;">GRATIS</span>
+        </button>`
+    ).join('');
+    grid.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (state.mezcla2) {
+                if (!state.sabor1Clasica) {
+                    state.sabor1Clasica = btn.dataset.nombre;
+                    _promo2x1CtgRenderClasicas(clasicas);
+                } else {
+                    _promo2x1CtgFinalizar(`½ ${state.sabor1Clasica} y mitad ${btn.dataset.nombre}`);
+                }
+            } else {
+                _promo2x1CtgFinalizar(btn.dataset.nombre);
+            }
+        });
+    });
+}
+
+function _promo2x1CtgFinalizar(nombreGratis) {
+    const state = _promo2x1CtgState;
+    const now = Date.now();
+    cerrarModal();
+    carrito.push({ id: now,     nombre: `${state.prod1.nombre} (${state.tamano})`, precio: state.prod1.precio, qty: 1, esPromo2x1Ctg: true, promoId2x1Ctg: now });
+    carrito.push({ id: now + 1, nombre: `${nombreGratis} (${state.tamano})`,        precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now });
+    localStorage.setItem('dp_promo2x1Ctg_obs', `PROMO 2X1 - ${state.tamano}`);
+    _aplicarFiltro2x1Ctg();
+    actualizarComanda();
 }
 
 // Iniciar
