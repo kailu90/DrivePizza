@@ -111,8 +111,11 @@ const preciosEntradas = {
     panDeAjo:    { "Unidad": 3500 },
     panDulces:   { "Unidad": 3500 },
     papasFrancesa:   { "Unidad": 8000 }, 
-    salsaTartara:   { "Unidad": 1000 },  
-    piñaCalada:   { "Unidad": 2000 }  
+    salsaTartara:   { "Unidad": 1000 },
+    piñaCalada:   { "Unidad": 2000 },
+    salsaDrive:     { "Unidad": 4000 },
+    salsaMiCuate:   { "Unidad": 4000 },
+    salsaNapolitana:{ "Unidad": 4000 }
 };
 const preciosBordes= { 
     "Pequeña": 14000, 
@@ -130,8 +133,11 @@ const menuData = {
     "Entradas/Adición" : [
         { nombre: "Pan De Ajo", opciones: preciosEntradas.panDeAjo , descripcion: "7 deliciosos panes de ajo."},
         { nombre: "Pan Dulces", opciones: preciosEntradas.panDulces , descripcion: "7 deliciosos panes dulces."},
-        { nombre: "Papas a la francesa", opciones: preciosEntradas.papasFrancesa , descripcion: "Porción de papas a la francesa."},
+        { nombre: "Papas a la francesa", opciones: preciosEntradas.papasFrancesa , descripcion: "Porción de papas a la francesa.", noNuestro: true },
         { nombre: "Salsa tártara", opciones: preciosEntradas.salsaTartara , descripcion: "Sobre de salsa tártara adicional."},
+        { nombre: "Salsa Drive", opciones: preciosEntradas.salsaDrive },
+        { nombre: "Salsa Mi Cuate", opciones: preciosEntradas.salsaMiCuate },
+        { nombre: "Salsa Napolitana", opciones: preciosEntradas.salsaNapolitana },
         { nombre: "Piña Calada", opciones: preciosEntradas.piñaCalada , descripcion: "Copa de 1.5 Onzas de piña calada."},
     ],
 //*******Variedades Pastas***********/    
@@ -140,7 +146,7 @@ const menuData = {
         { nombre: "Pasta Alfredo", opciones: preciosPastas.alfredo , descripcion: "Salsa alfredo y pollo." },
         { nombre: "Pasta Pesto Camaron", opciones: preciosPastas.pestoCamaron , descripcion: "Salsa pesto, camarones, tomates cherry y queso parmesano."  },
         { nombre: "Pasta Matriziana", opciones: preciosPastas.matriziana, descripcion: "Salsa napolitana, tocineta, tomate en julianas, pimienta roja y queso parmesano." },
-        { nombre: "Pasta Marinera", opciones: preciosPastas.marinera, descripcion: "Pulpo, anillos de calamar y camarones en salsa aurora o salsa blanca y queso parmesano." },
+        { nombre: "Pasta Marinera", opciones: preciosPastas.marinera, descripcion: "Pulpo, anillos de calamar y camarones en salsa aurora o salsa blanca y queso parmesano.", noNuestro: true },
         { nombre: "Pasta Spaguetti Sencillo", opciones: preciosPastas.spaguettiSencillo , descripcion: "1 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado." },
         { nombre: "Pasta Spaguetti Mixto", opciones: preciosPastas.spaguettiMixto , descripcion: "2 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado."  },
         { nombre: "Pasta Spaguetti Remix", opciones: preciosPastas.spaguettiRemix , descripcion: "3 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado."  },
@@ -183,7 +189,7 @@ const menuData = {
         { nombre: "Bolognesa", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa y tocineta."},
         { nombre: "Camaron a la criolla", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, cebolla, perejil y camarón."},
         { nombre: "Carbonara", opciones: preciosPizzas.especialSinPorcion , descripcion: "Queso mozzarella, tocineta, pollo, champiñones, rúgula, parmesano y salsa carbonara."},
-        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca."}, 
+        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true },
         { nombre: "Topetunas", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, tomate, pepperoni y aceitunas."}  
     ],
     "Pizzas Clásicas": [
@@ -206,7 +212,7 @@ const menuData = {
         { nombre: "Suprema de Pollo", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo, pimentón, cebolla y orégano."},
         { nombre: "Pollo Bbq", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo aderezado con salsa BBQ."},
         { nombre: "Pollo Miel - Mostaza", opciones: preciosPizzas.tipica , descripcion: "Pollo y salsa miel mostaza." },
-        { nombre: "Vegetariana", opciones: preciosPizzas.tipica , descripcion: "Cebolla, tomate, pimentón asado, aceitunas, champiñones y orégano."},
+        { nombre: "Vegetariana", opciones: preciosPizzas.tipica , descripcion: "Queso mozarella, pimentón, tomate, cebolla, champiñones y orégano."},
         { nombre: "Ciruelas y Tocineta", opciones: preciosPizzas.tipica , descripcion: "Ciruelas pasas y tocineta."},
         { nombre: "Bocadillo Tocineta", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, tocineta y bocadillo."}   
     ],
@@ -219,10 +225,10 @@ const menuData = {
         { nombre: "Pizzeta del Huerto", opciones: preciosPizzas.premium   , descripcion: "Queso mozzarella, cahmpiñones, jamón, tomate cherry, aderezo césar y rúgula."},
         { nombre: "Pizzeta Florencia", opciones: preciosPizzas.premium  , descripcion: "Pesto, qeuso mozzarella, balsámico, jamón serrano, rúgula y queso filadelfia."},
         { nombre: "Pizzeta Livorno", opciones: preciosPizzas.premium  , descripcion: "Pesto, queso mozzarella, camarones, tomate cherry y queso parmesano." },
-        { nombre: "Pizzeta Venecia", opciones: preciosPizzas.premium   , descripcion: "Pesto, queso mozzarella, tomates confitados y queso filadelfia."},
+        { nombre: "Pizzeta Venecia", opciones: preciosPizzas.premium   , descripcion: "Pesto, queso mozzarella, tomates confitados y queso filadelfia.", noNuestro: true },
         { nombre: "Pizzeta Salami", opciones: preciosPizzas.premium  , descripcion: "Pesto, queso mozzarella, salami madurado y queso filadelfia."},
         { nombre: "Pizzeta Genova", opciones: preciosPizzas.premium   , descripcion: "Pesto, queso mozzarella, queso de búfala, tomate cherry, albahaca y queso parmesano."}, 
-        { nombre: "Pizzeta la Majestuosa", opciones: preciosPizzas.majestuosaPizzeta  , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca."} 
+        { nombre: "Pizzeta la Majestuosa", opciones: preciosPizzas.majestuosaPizzeta  , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true }
     ],
     //*****Variedades de los sabores de las Adiciones********/
      "Adiciones": [
@@ -278,15 +284,15 @@ const menuData = {
         { nombre: "Hamburguesa Doble Carne", opciones: preciosHamburguesas.hamburguesaDobleCarne, descripcion: "Doble Carne de res, queso mozarella, tocineta, melao de piña, vegetales, salsa de la casa.", tieneCombo: true },
         { nombre: "Hamburguesa Estofada", opciones: preciosHamburguesas.hamburguesaEstofada, subOpciones: { "Pollo": ["Filete pechuga", "Pollo desmechado"], "Mixta": ["Mixta con Filete", "Mixta con Pollo desmechado"] }, descripcion: "Pan con masa de pizza, carne de res o pollo, doble porción de queso mozarella, jamon, vegetales, salsa de la casa.", tieneCombo: true },
         // ── Solo Cartago ──────────────────────────────────────────────────────
-        { nombre: "Hamburguesa La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, salsa tártara de la casa, tomate, lechuga, mermelada de frutos amarillos, tocineta, queso philadelphia, carne artesanal 100% res y mix de quesos.", tieneCombo: true, soloSedePrado: true },
-        { nombre: "Hamburguesa La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true, soloSedePrado: true },
-        { nombre: "Hamburguesa La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, tártara de la casa, queso gouda ahumado, queso filadelfia, maduro caldao en melado de whisky Jack Daniel's, suero costeño, 150g de carne Angus, cogollo europeo, pepperoni crunch y salsa ahumada a base de ajonjolí.", tieneCombo: true, soloSedePrado: true },
+        { nombre: "Hamburguesa La Propia", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, salsa tártara de la casa, tomate, lechuga, mermelada de frutos amarillos, tocineta, queso philadelphia, carne artesanal 100% res y mix de quesos.", tieneCombo: true, soloSedePrado: true, noNuestro: true },
+        { nombre: "Hamburguesa La Golosa", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche sellado, tocineta a la parrilla, dip umani, cogollo europeo, tomate confitado en vino tinto con notas de ron sailor, 150g de carne Angus, croqueta de mix de queso, queso ricotta, queso cheddar y mayonesa trufada.", tieneCombo: true, soloSedePrado: true, noNuestro: true },
+        { nombre: "Hamburguesa La Gladiadora", opciones: preciosHamburguesas.hamburguesaCartago , descripcion: "Pan brioche, tártara de la casa, queso gouda ahumado, queso filadelfia, maduro caldao en melado de whisky Jack Daniel's, suero costeño, 150g de carne Angus, cogollo europeo, pepperoni crunch y salsa ahumada a base de ajonjolí.", tieneCombo: true, soloSedePrado: true, noNuestro: true },
     ],    
     //**Variedades de Sanduches***/
     "Sandwiches": [
-        { nombre: "Sandwiche Jamon", opciones: preciosSandwiches.sandwicheJamon, descripcion: "Pan italiano, jamón, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."},
-        { nombre: "Sandwiche Pollo", opciones: preciosSandwiches.sandwichePollo, descripcion: "Pan italiano, pollo, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."},
-        { nombre: "Sandwiche Atun", opciones: preciosSandwiches.sandwicheAtun , descripcion: "Pan italiano, atún, queso fundido, tocineta, lechuga, tomate, cebolla y salsas."}
+        { nombre: "Sandwiche Jamon", opciones: preciosSandwiches.sandwicheJamon, descripcion: "Pan italiano, jamón, queso fundido, tocineta, lechuga, tomate, cebolla y salsas, con papas chips."},
+        { nombre: "Sandwiche Pollo", opciones: preciosSandwiches.sandwichePollo, descripcion: "Pan italiano, pollo, queso fundido, tocineta, lechuga, tomate, cebolla y salsas, con papas chips."},
+        { nombre: "Sandwiche Atun", opciones: preciosSandwiches.sandwicheAtun , descripcion: "Pan italiano, atún, queso fundido, tocineta, lechuga, tomate, cebolla y salsas, con papas chips."}
     ],
     //**Variedades de Ensaladas***/
     "Ensaladas": [
@@ -299,36 +305,36 @@ const menuData = {
     //**Variedades de Bebidas***/
      "Refrescos": [
         { nombre: "Jugo Hit 500 ml", opciones: preciosBebidas.jugoHit500ml , descripcion: "Jugo hit 500 ml plástica."},
-        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml , descripcion: "Sabores postobón."},
-        { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml , descripcion: "Sabores postobón."},
+        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
+        { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Canada Dry": 9000, "Colombiana": 9000, "Naranja": 9000 } }, descripcion: "Sabores postobón."},
         { nombre: "Agua", opciones: preciosBebidas.agua },
-        { nombre: "Bretaña", opciones: preciosBebidas.bretaña }
+        { nombre: "Bretaña", opciones: preciosBebidas.bretaña, noNuestro: true }
     ],       
     "Jugos Naturales": [
-        { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua },
-        { nombre: "Jugo en Leche", opciones: preciosBebidas.jugoEnLeche },
-        { nombre: "Granizada", opciones: preciosBebidas.granizada },
-        { nombre: "Granizada Especial", opciones: preciosBebidas.granizadaEspecial },
+        { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua, opcionesCiudad: { cartago: { "Mango": 9000, "Mora": 9000, "Lulo": 9000, "Maracuyá": 9000, "Guanábana": 9000 } } },
+        { nombre: "Jugo en Leche", opciones: preciosBebidas.jugoEnLeche, opcionesCiudad: { cartago: { "Mango": 10000, "Mora": 10000, "Lulo": 10000, "Maracuyá": 10000, "Guanábana": 10000 } } },
+        { nombre: "Granizada", opciones: preciosBebidas.granizada, noNuestro: true },
+        { nombre: "Granizada Especial", opciones: preciosBebidas.granizadaEspecial, noNuestro: true },
     ],
      "Limonadas": [
-        { nombre: "Limonada", opciones: preciosBebidas.limonada },
+        { nombre: "Limonada", opciones: preciosBebidas.limonada, opcionesCiudad: { cartago: { "Natural": 8000, "Cerezada": 10000, "Coco": 11000, "Hierbabuena": 9000 } } },
     ],
      "Sodas": [
         { nombre: "Sodas", opciones: preciosBebidas.sodas },
     ],
     "Cervezas": [
-        { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional },
-        { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras },
-        { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado }
+        { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional, noNuestro: true },
+        { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras, noNuestro: true },
+        { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado, noNuestro: true }
     ],
      "Otros": [
         { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
-        { nombre: "H2OH", opciones: preciosBebidas.H2OH },
-        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda },
-        { nombre: "Hatsu", opciones: preciosBebidas.Hatsu },
-        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml },
+        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
+        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
+        { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu },
+        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
         // ── Solo Cartago ──────────────────────────────────────────────────────
-        { nombre: "Malteada", opciones: { "Oreo": 16000, "Café": 16000, "Frutos Rojos": 16000, "Vainilla": 16000 } },
+        { nombre: "Malteada", opciones: { "Oreo": 16000, "Café": 16000, "Frutos Rojos": 16000, "Vainilla": 16000 }, noNuestro: true },
     ],
     };
 
