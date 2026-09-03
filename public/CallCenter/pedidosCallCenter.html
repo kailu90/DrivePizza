@@ -454,6 +454,7 @@
         if (!btn) return;
         document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        window._aplicarRestriccionesSede?.(btn.dataset.sede);
         // Poblar datalist de barrios — siempre desde cargarBarriosSede (cache-first, paginado)
         // para evitar el límite de 1000 filas de cargarTodosBarrios()
         let barrios = {};
@@ -565,13 +566,6 @@
                 const visible = btn.dataset.ciudad === ciudad;
                 btn.style.display = visible ? '' : 'none';
                 if (!visible && btn.classList.contains('active')) {
-                    btn.classList.remove('active');
-                }
-                // En Cartago, "nuestro" solo recibe pedidos presenciales — deshabilitar en checkout
-                const deshabilitada = ciudad === 'cartago' && btn.dataset.sede === 'nuestro';
-                btn.disabled = deshabilitada;
-                btn.title = deshabilitada ? 'Esta sede no recibe pedidos por CallCenter' : '';
-                if (deshabilitada && btn.classList.contains('active')) {
                     btn.classList.remove('active');
                 }
             });

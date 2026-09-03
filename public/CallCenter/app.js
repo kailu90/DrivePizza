@@ -506,6 +506,7 @@ function abrirSeleccion(producto) {
         const meta = producto.esAdicionable
             ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || tamano }
             : {};
+        if (producto.soloSedePrado) meta.soloSedePrado = true;
         confirmarAgregar(producto.nombre, tamano, opEfectivas[tamano], meta);
         return;
     }
@@ -582,6 +583,7 @@ function abrirSeleccion(producto) {
                 const meta = producto.esAdicionable
                     ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || btn.dataset.tam }
                     : {};
+                if (producto.soloSedePrado) meta.soloSedePrado = true;
                 const precioFinal = _comboActivo ? Number(btn.dataset.pre) + 5000 : Number(btn.dataset.pre);
                 confirmarAgregar(producto.nombre, btn.dataset.tam, precioFinal, meta);
                 if (_comboActivo) {
@@ -685,6 +687,23 @@ function renderGridSabores2(sabores) {
         });
     });
 }
+
+// Restricciones por sede en Cartago — llamado desde el click de sede en checkout
+window._aplicarRestriccionesSede = (sede) => {
+    if (sede !== 'nuestro') return;
+    // Quitar combos (papas): solo aplican en El Prado
+    const teniaCombo = carrito.some(i => i.nombre === 'En combo con Papas');
+    if (teniaCombo) {
+        carrito = carrito.filter(i => i.nombre !== 'En combo con Papas');
+        actualizarComanda();
+    }
+    // Advertir si hay productos exclusivos de El Prado
+    const soloPrado = carrito.filter(i => i.soloSedePrado);
+    if (soloPrado.length) {
+        const nombres = [...new Set(soloPrado.map(i => i.nombre.replace(/\s*\(.*\)\s*$/, '')))].join(', ');
+        alert(`⚠️ ${nombres} no están disponibles en sede Nuestro. Por favor retíralos del pedido antes de confirmar.`);
+    }
+};
 
 function confirmarAgregar(nombre, tamano, precio, meta = {}) {
     // Si tamano viene vacío (caso mezcla ½+½), el nombre ya incluye el tamaño
