@@ -758,10 +758,14 @@ body {
 }
 
 .sede-nuestro-wrap {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
+}
+.sede-nuestro-wrap > .sede-btn {
+    flex: none;
+    width: auto;
 }
 
 .aviso-sede-nuestro {
