@@ -691,17 +691,9 @@ function renderGridSabores2(sabores) {
 // Restricciones por sede en Cartago — llamado desde el click de sede en checkout
 window._aplicarRestriccionesSede = (sede) => {
     if (sede !== 'nuestro') return;
-    // Quitar combos (papas): solo aplican en El Prado
-    const teniaCombo = carrito.some(i => i.nombre === 'En combo con Papas');
-    if (teniaCombo) {
-        carrito = carrito.filter(i => i.nombre !== 'En combo con Papas');
-        actualizarComanda();
-    }
-    // Advertir si hay productos exclusivos de El Prado
-    const soloPrado = carrito.filter(i => i.soloSedePrado);
-    if (soloPrado.length) {
-        const nombres = [...new Set(soloPrado.map(i => i.nombre.replace(/\s*\(.*\)\s*$/, '')))].join(', ');
-        alert(`⚠️ ${nombres} no están disponibles en sede Nuestro. Por favor retíralos del pedido antes de confirmar.`);
+    // Avisar si hay combos con papas (no se retiran, el asesor los quita manualmente)
+    if (carrito.some(i => i.nombre === 'En combo con Papas')) {
+        window._mostrarAvisoComboNuestro?.();
     }
 };
 
@@ -866,6 +858,27 @@ function actualizarComanda() {
 
     const total = carrito.reduce((sum, item) => sum + item.precio * item.qty, 0);
     totalDisp.innerText = `$${total.toLocaleString()}`;
+
+    // Deshabilitar sede Nuestro si hay productos exclusivos de El Prado en el carrito
+    const btnNuestro = document.querySelector('.sede-btn[data-sede="nuestro"]');
+    if (btnNuestro) {
+        const tieneSoloPrado = carrito.some(i => i.soloSedePrado);
+        btnNuestro.disabled = tieneSoloPrado;
+        let avisoSede = document.getElementById('aviso-sede-nuestro');
+        if (tieneSoloPrado) {
+            if (!avisoSede) {
+                avisoSede = document.createElement('p');
+                avisoSede.id = 'aviso-sede-nuestro';
+                avisoSede.className = 'aviso-sede-nuestro';
+                avisoSede.textContent = 'Hamburguesa no disponible en esta sede';
+                btnNuestro.insertAdjacentElement('afterend', avisoSede);
+            }
+            if (btnNuestro.classList.contains('active')) btnNuestro.classList.remove('active');
+        } else {
+            avisoSede?.remove();
+        }
+    }
+
     actualizarCartBar();
 }
 

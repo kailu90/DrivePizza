@@ -757,6 +757,15 @@ body {
     gap: 5px;
 }
 
+.aviso-sede-nuestro {
+    font-size: 1.2rem;
+    color: #e74c3c;
+    font-weight: 600;
+    text-align: center;
+    margin: 4px 0 0;
+    width: 100%;
+}
+
 .btn-combo-toggle {
     grid-column: 1 / -1;
     background: transparent;
