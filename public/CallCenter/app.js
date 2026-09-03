@@ -556,8 +556,10 @@ function abrirSeleccion(producto) {
         // Layout para no-pizzas (con soporte de meta para adicionables)
         gridOpciones.className = 'opciones-grid';
 
+        const _comboBase = Object.values(opEfectivas)[0] ?? 0;
+        const _comboDelta = producto.comboPrecioFijo ? (producto.comboPrecioFijo - _comboBase) : 5000;
         const toggleHtml = (producto.tieneCombo && ciudad === 'cartago')
-            ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$5.000)</small></button>`
+            ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$${_comboDelta.toLocaleString()})</small></button>`
             : '';
 
         gridOpciones.innerHTML = toggleHtml + Object.entries(opEfectivas).map(([tam, pre]) => `
