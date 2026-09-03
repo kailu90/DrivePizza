@@ -888,17 +888,6 @@ function actualizarComanda() {
         }
     }
 
-    // Bloquear inputs del checkout si hay productos soloSedePrado y no hay sede válida activa
-    const tieneSoloPrado = carrito.some(i => i.soloSedePrado);
-    const sedeValidaActiva = document.querySelector('.sede-btn.active:not([data-sede="nuestro"])');
-    const bloquearForm = tieneSoloPrado && !sedeValidaActiva;
-    const selectoresForm = [
-        '#clienteNombre', '#clienteTelefono', '#clienteDireccion', '#barrioInput',
-        '#observaciones', '#btn-confirmar',
-    ].map(s => document.querySelector(s)).filter(Boolean);
-    document.querySelectorAll('.entrega-btn, .pago-btn, .canal-btn').forEach(b => selectoresForm.push(b));
-    selectoresForm.forEach(el => el.disabled = bloquearForm);
-
     actualizarCartBar();
 }
 
