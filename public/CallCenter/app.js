@@ -890,19 +890,6 @@ function actualizarComanda() {
     document.querySelectorAll('.entrega-btn, .pago-btn, .canal-btn').forEach(b => selectoresForm.push(b));
     selectoresForm.forEach(el => el.disabled = bloquearForm);
 
-    let bannerBloqueo = document.getElementById('banner-bloqueo-sede');
-    if (bloquearForm) {
-        if (!bannerBloqueo) {
-            bannerBloqueo = document.createElement('p');
-            bannerBloqueo.id = 'banner-bloqueo-sede';
-            bannerBloqueo.className = 'banner-bloqueo-sede';
-            bannerBloqueo.textContent = '⚠️ Retira la hamburguesa incompatible o selecciona sede El Prado para continuar.';
-            document.querySelector('.sede-toggle')?.insertAdjacentElement('beforebegin', bannerBloqueo);
-        }
-    } else {
-        bannerBloqueo?.remove();
-    }
-
     actualizarCartBar();
 }
 
