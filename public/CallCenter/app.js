@@ -572,7 +572,10 @@ function abrirSeleccion(producto) {
                 _comboActivo = !_comboActivo;
                 toggleBtn.classList.toggle('btn-combo-toggle--active', _comboActivo);
                 gridOpciones.querySelectorAll('.btn-tamano').forEach(btn => {
-                    const precio = _comboActivo ? Number(btn.dataset.pre) + 5000 : Number(btn.dataset.pre);
+                    const base = Number(btn.dataset.pre);
+                    const precio = _comboActivo
+                        ? (producto.comboPrecioFijo ?? base + 5000)
+                        : base;
                     btn.innerHTML = `${btn.dataset.tam}<br><strong>$${precio.toLocaleString()}</strong>`;
                 });
             });
@@ -584,7 +587,9 @@ function abrirSeleccion(producto) {
                     ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || btn.dataset.tam }
                     : {};
                 if (producto.soloSedePrado) meta.soloSedePrado = true;
-                const precioFinal = _comboActivo ? Number(btn.dataset.pre) + 5000 : Number(btn.dataset.pre);
+                const precioFinal = _comboActivo
+                    ? (producto.comboPrecioFijo ?? Number(btn.dataset.pre) + 5000)
+                    : Number(btn.dataset.pre);
                 confirmarAgregar(producto.nombre, btn.dataset.tam, precioFinal, meta);
                 if (_comboActivo) {
                     const parentId = carrito[carrito.length - 1].id;
