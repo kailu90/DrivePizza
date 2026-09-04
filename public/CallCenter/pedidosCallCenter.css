@@ -389,6 +389,14 @@ body {
     margin-top: 12px;
 }
 
+.cat-btn--taller {
+    background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+    border-color: #e67e22;
+    color: #c0392b;
+    font-weight: 600;
+}
+.cat-btn--taller:hover { border-color: #c0392b; }
+
 /* ── GRILLA HORARIOS RESERVA ──────────────────────────────────── */
 .hora-reserva-grid {
     display: flex;
@@ -1878,6 +1886,7 @@ body {
         font-size: 1.2rem;
     }
     .cat-btn--reserva { margin-top: 0; }
+    .cat-btn--taller  { margin-top: 0; }
 
     /* Buscador: espacio reducido */
     .search-container {

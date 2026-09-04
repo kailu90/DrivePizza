@@ -33,6 +33,15 @@ _btnReservas.addEventListener('click', () => window.parent.postMessage({ type: '
 if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
     _btnReservas.style.display = 'none';
 }
+
+const _btnTaller = document.getElementById('btn_taller_pizzeritos');
+_btnTaller.addEventListener('click', () => {
+    localStorage.setItem('cc_abrir_taller', '1');
+    navTo('./pedidosCallCenter.html');
+});
+if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
+    _btnTaller.style.display = 'none';
+}
 document.getElementById('btn_pbx').addEventListener('click', () => navTo('./pbx.html'));
 document.getElementById('btn_clientes').addEventListener('click', () => navTo('./clientesCall.html'));
 document.getElementById('btn_admin_barrios').addEventListener('click', () => navTo('./adminBarrios.html'));
