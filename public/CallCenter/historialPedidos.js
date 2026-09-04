@@ -311,7 +311,7 @@ function renderTabla(pedidos) {
         const activo     = ESTADOS_ACTIVOS.has(p.estado)
         const esRecoger  = p.domicilio?.tipo === "recoger"
         const dirDisplay = esTaller
-            ? `<span style="background:#e67e22;color:#fff;padding:2px 7px;border-radius:4px;font-size:1.1rem;font-weight:bold;">TALLER</span>`
+            ? `<span style="background:#e67e22;color:#fff;padding:2px 7px;border-radius:4px;font-size:1rem;font-weight:bold;">TALLER PIZZERITOS</span>`
             : esReserva
                 ? `<span style="background:#6c3d8f;color:#fff;padding:2px 7px;border-radius:4px;font-size:1.1rem;font-weight:bold;">RESERVA</span>`
                 : esRecoger
@@ -601,26 +601,24 @@ function abrirDetalle(p) {
         document.getElementById("modal-domicilio").textContent      = "";
         document.getElementById("modal-total-final").textContent    = "";
     } else if (esTaller) {
-        const fechaTallerFmt = p.fechaReserva
-            ? p.fechaReserva.split('-').reverse().join('/')
-            : "—";
         document.getElementById("modal-productos").innerHTML = `
             <li class="reserva-dato">
                 <span class="reserva-dato__label">📅 Fecha del taller</span>
-                <span class="reserva-dato__valor">${fechaTallerFmt}</span>
+                <span class="reserva-dato__valor">12/09/2026</span>
             </li>
             <li class="reserva-dato">
-                <span class="reserva-dato__label">🍕 Kit Pizzeritos</span>
-                <span class="reserva-dato__valor" style="color:#e67e22; font-weight:bold;">$30.000</span>
+                <span class="reserva-dato__label">🕓 Hora</span>
+                <span class="reserva-dato__valor">4:30 PM</span>
             </li>
             <li class="reserva-dato">
                 <span class="reserva-dato__label">📦 Incluye</span>
                 <span class="reserva-dato__valor">Gorro · Delantal · Ingredientes · Hit</span>
             </li>`;
-        document.getElementById("modal-totals-box").style.display  = "none";
-        document.getElementById("modal-total").textContent          = "";
-        document.getElementById("modal-domicilio").textContent      = "";
-        document.getElementById("modal-total-final").textContent    = "";
+        document.getElementById("modal-totals-box").style.display      = "block";
+        document.getElementById("modal-total").textContent             = "$30.000";
+        document.getElementById("modal-domicilio-row").style.display   = "none";
+        document.getElementById("modal-domicilio").textContent         = "";
+        document.getElementById("modal-total-final").textContent       = "$30.000";
     } else {
         const productos = (Array.isArray(p.productos) ? p.productos : [])
             .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));

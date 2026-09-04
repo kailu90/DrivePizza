@@ -1425,14 +1425,12 @@ function abrirModalTaller() {
 async function procesarTallerFinal() {
     const nombre   = document.getElementById('clienteNombre').value.trim();
     const telefono = document.getElementById('clienteTelefono').value.trim();
-    const fecha    = document.getElementById('fechaTaller').value;
     const obs      = document.getElementById('observaciones').value.trim();
     const canal    = document.querySelector('.canal-btn.active')?.dataset.canal || 'whatsapp';
 
     if (!nombre)  return alert('⚠️ El nombre del cliente es obligatorio.');
     const telNorm = normalizarTelefono(telefono);
     if (!telNorm) return alert('⚠️ Por favor validar el número de teléfono.');
-    if (!fecha)   return alert('⚠️ La fecha del taller es obligatoria.');
 
     const datos = {
         tipo: 'taller_pizzeritos',
@@ -1440,7 +1438,8 @@ async function procesarTallerFinal() {
         sede: 'cañaveral',
         nombre,
         telefono: telNorm,
-        fechaReserva: fecha,
+        fechaReserva: '2026-09-12',
+        horaReserva:  '16:30',
         obs,
         impreso: false
     };
@@ -1484,7 +1483,6 @@ function limpiarFormularioCheckout() {
     document.getElementById('fechaReserva').value = '';
     document.getElementById('horaReserva').value = '';
     document.getElementById('cantidadPersonas').value = '';
-    document.getElementById('fechaTaller').value = '';
     document.getElementById('hora-reserva-grid').innerHTML = '';
 
     document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
