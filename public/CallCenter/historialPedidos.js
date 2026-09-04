@@ -937,8 +937,12 @@ function filtrarColumnas(reiniciarPagina = false) {
     const asesor    = document.getElementById("cf-asesor").value.toLowerCase();
     const estado    = document.getElementById("cf-estado").value.toLowerCase();
 
+    const tipoFiltro = document.getElementById("filtro-tipo")?.value || "";
     const base = _modoReservas
         ? pedidosCargados.filter(p => p.tipo === "reserva")
+        : tipoFiltro === "taller_pizzeritos" ? pedidosCargados.filter(p => p.tipo === "taller_pizzeritos")
+        : tipoFiltro === "reserva"            ? pedidosCargados.filter(p => p.tipo === "reserva")
+        : tipoFiltro === "pedido"             ? pedidosCargados.filter(p => !p.tipo || (p.tipo !== "reserva" && p.tipo !== "taller_pizzeritos"))
         : pedidosCargados;
 
     const ciudadActual = getCiudadActual();
@@ -972,6 +976,7 @@ function cerrarPanel() {
 ["cf-npedido","cf-fecha","cf-cliente","cf-direccion","cf-canal","cf-sede","cf-asesor","cf-estado"].forEach(id => {
     document.getElementById(id).addEventListener("input", () => filtrarColumnas(true));
 });
+document.getElementById("filtro-tipo").addEventListener("change", () => filtrarColumnas(true));
 document.getElementById("btn-abrir-panel").addEventListener("click", abrirPanel);
 document.getElementById("btn-cerrar-panel").addEventListener("click", cerrarPanel);
 document.getElementById("filtros-overlay").addEventListener("click", cerrarPanel);
@@ -990,6 +995,7 @@ document.getElementById("btn-limpiar").addEventListener("click", () => {
     document.getElementById("filtro-hasta").value  = hoy;
     document.getElementById("filtro-sede").value   = sedeUsuario || "";
     document.getElementById("filtro-estado").value = "";
+    document.getElementById("filtro-tipo").value   = "";
     cargarPedidos({ desde: hoy, hasta: hoy, ...(sedeUsuario && { sede: sedeUsuario }) });
     cerrarPanel();
 });
