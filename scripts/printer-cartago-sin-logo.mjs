@@ -226,9 +226,7 @@ async function convertirHTMLaPDF(html, rutaPDF) {
 
 async function imprimirPDF(rutaPDF) {
     await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
-    log('Copia 1 impresa correctamente');
-    await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
-    log('Copia 2 impresa correctamente');
+    log('Comanda impresa correctamente');
 }
 
 async function procesarPedido(rawPedido) {
