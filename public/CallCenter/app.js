@@ -2551,8 +2551,10 @@ function _promoLasEspRenderGrid(productos) {
 
     grid.querySelectorAll('.las-esp-sel-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const prod = _promoLasEspGetProductos(_promoLasEspState.categoria)
-                .find(p => p.nombre === btn.dataset.nombre);
+            const pool = _promoLasEspState.step === 2
+                ? _promoLasEspGetProductosPaso2()
+                : _promoLasEspGetProductos(_promoLasEspState.categoria);
+            const prod = pool.find(p => p.nombre === btn.dataset.nombre);
             if (prod) _promoLasEspClickProducto(prod);
         });
     });
