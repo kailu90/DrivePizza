@@ -17,7 +17,8 @@ let rolUsuario      = null;
 let filtrosActuales = {};
 let pedidoPendienteCancelar = null;
 
-let _modoReservas     = new URLSearchParams(window.location.search).get('tipo')     === 'reserva';
+const _urlTipo        = new URLSearchParams(window.location.search).get('tipo') || '';
+let _modoReservas     = _urlTipo === 'reserva';
 const FILTRO_TELEFONO = new URLSearchParams(window.location.search).get('telefono') || null;
 if (_modoReservas) document.body.classList.add('modo-reservas');
 
@@ -1195,6 +1196,10 @@ async function obtenerUsuarioCC() {
         if (_modoReservas) {
             const d = new Date();
             desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+        } else if (_urlTipo === 'taller_pizzeritos') {
+            const d = new Date();
+            desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+            document.getElementById('filtro-tipo').value = 'taller_pizzeritos';
         } else if (FILTRO_TELEFONO) {
             const d = new Date();
             d.setFullYear(d.getFullYear() - 1);

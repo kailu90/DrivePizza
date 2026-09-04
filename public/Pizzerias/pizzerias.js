@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .from('usuarios').select('rol, ciudad').eq('id', user.id).single();
         rolUsuario = perfil?.rol ?? null;
         if ((perfil?.ciudad || '').toLowerCase() === 'cartago') {
-            ['btn_pedidos_sedes', 'btn_historial_planta', 'btn_liquidacion', 'btn_reservas'].forEach(id => {
+            ['btn_pedidos_sedes', 'btn_historial_planta', 'btn_liquidacion', 'btn_reservas', 'btn_taller_pizzeritos'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const esGastrofusion = rolUsuario === 'gastrofusion';
 
     // Cards exclusivas de pizzeria
-    const cardsSoloPizzeria = ['btn_liquidacion', 'btn_reservas'];
+    const cardsSoloPizzeria = ['btn_liquidacion', 'btn_reservas', 'btn_taller_pizzeritos'];
     if (esGastrofusion) {
         cardsSoloPizzeria.forEach(id => {
             const el = document.getElementById(id);
@@ -76,6 +76,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (btnReservas) {
         btnReservas.addEventListener("click", () => {
             window.location.href = '../CallCenter/historialPedidos.html?tipo=reserva';
+        });
+    }
+
+    const btnTaller = document.getElementById("btn_taller_pizzeritos");
+    if (btnTaller) {
+        btnTaller.addEventListener("click", () => {
+            window.location.href = '../CallCenter/historialPedidos.html?tipo=taller_pizzeritos';
         });
     }
 
