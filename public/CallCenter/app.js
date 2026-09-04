@@ -1418,6 +1418,11 @@ function abrirModalTaller() {
         else btn.click();
     });
 
+    // Total fijo: ocultar fila Productos y mostrar solo $30.000
+    document.getElementById('checkout-subtotal-row').style.display = 'none';
+    document.getElementById('checkout-domicilio-row').style.display = 'none';
+    document.getElementById('checkout-total-final').textContent = '$30.000';
+
     _modoTaller = true;
     document.getElementById('modal-checkout').style.display = 'flex';
 }
@@ -1465,6 +1470,8 @@ function _restaurarModoNormal() {
     document.getElementById('acomp-section').style.display = '';
     document.getElementById('personas-section').style.display = 'none';
     document.getElementById('taller-section').style.display = 'none';
+    document.getElementById('checkout-subtotal-row').style.display = '';
+    document.getElementById('checkout-total-final').textContent = '$0';
     document.getElementById('btn-enviar-pedido').style.display = '';
     document.getElementById('btn-crear-reserva').style.display = 'none';
     document.getElementById('btn-crear-taller').style.display = 'none';
