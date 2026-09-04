@@ -318,7 +318,7 @@ function renderTabla(pedidos) {
                     ? `<span style="font-weight:700;">RECOGER</span>`
                     : p.direccion ? p.direccion.substring(0, 25) + (p.direccion.length > 25 ? "…" : "") : "—"
         const totalDisplay = esTaller
-            ? `<span style="color:#e67e22;font-weight:bold;">🍕 $30.000</span>`
+            ? `<span style="color:#e67e22;font-weight:bold;">$30.000</span>`
             : esReserva
                 ? `<span style="color:#6c3d8f;font-weight:bold;">👥 ${p.cantidadPersonas ?? "—"} pers.</span>`
                 : `$${formatPrecio(p.total)}`
