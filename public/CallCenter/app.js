@@ -1217,6 +1217,13 @@ function vaciarCarrito() {
     }, filas.length * 60 + 300);
 }
 function actualizarTotalCheckout() {
+    if (_modoTaller) {
+        document.getElementById('checkout-subtotal-row').style.display = 'none';
+        document.getElementById('checkout-domicilio-row').style.display = 'none';
+        document.getElementById('checkout-total-final').textContent = '$30.000';
+        return;
+    }
+
     const totalProductos = carrito.reduce((sum, item) => sum + item.precio * item.qty, 0);
     const tipo    = document.querySelector('.entrega-btn.active')?.dataset.tipo || '';
     const sede    = document.querySelector('.sede-btn.active')?.dataset.sede    || '';
