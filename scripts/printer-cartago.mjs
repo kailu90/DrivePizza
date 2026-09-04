@@ -67,11 +67,17 @@ function generarHTML(pedido) {
         const adicionesHTML = Array.isArray(item.adiciones) && item.adiciones.length > 0
             ? item.adiciones.map(a => {
                 const aqty = (a.qty || 1);
-                const nombreAdicion = a.nombre.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const nombreAdicion = a.nombre
+                    .replace(/\s*\([^)]*\)\s*$/, '')
+                    .replace(/^(En combo).+/i, '$1')
+                    .trim();
+                const precioSpan = a.precio > 0
+                    ? `<span>$${formatearPrecio(a.precio * aqty)}</span>`
+                    : '';
                 return `
                 <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13pt; padding-left:12px; color:black; font-weight:700;">
                     <span>+ ${nombreAdicion}</span>
-                    <span>${a.precio > 0 ? `$${formatearPrecio(a.precio * aqty)}` : 'Incluido'}</span>
+                    ${precioSpan}
                 </div>`;
             }).join('')
             : '';
