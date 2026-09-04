@@ -412,7 +412,8 @@
         const chipsEl = document.getElementById('dir-chips');
 
         const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
-        if (enModoReserva) {
+        const enModoTaller  = document.getElementById('taller-section')?.style.display  === 'block';
+        if (enModoReserva || enModoTaller) {
             chipsEl.style.display = 'none';
             chipsEl.innerHTML = '';
             return;
