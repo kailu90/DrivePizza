@@ -3731,9 +3731,14 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             let changed = false;
             if (!existing.asesor && asesor) { existing.asesor = asesor; changed = true; }
             if (msgId && !existing.msgId) {
-                existing.msgId  = msgId;
-                existing.status = _pendingStatuses.has(msgId) ? _pendingStatuses.get(msgId).status : 2;
+                existing.msgId = msgId;
+                const pendingAck = _pendingStatuses.get(msgId);
+                existing.status = pendingAck ? pendingAck.status : 1;
                 _pendingStatuses.delete(msgId);
+                // Si el ACK de WA ya llegó antes que el eco, limpiar el reloj ahora
+                if (pendingAck && pendingAck.status >= 2 && existing.pending) {
+                    delete existing.pending; delete existing.tmpId;
+                }
                 changed = true;
             }
             if (mediaUrl && !existing.mediaUrl) { existing.mediaUrl = mediaUrl; existing.tipo = tipoMensaje || existing.tipo; changed = true; }
@@ -3741,7 +3746,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
             return;
         }
     }
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', mediaUrl: mediaUrl || null, msgId: msgId || null, status: out ? 2 : undefined, quotedMsgId: quotedMsgId || null, quotedTexto: quotedTexto || null, quotedFromMe: quotedFromMe ?? null });
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, celular: !!desdeTelefono, tipo: tipoMensaje || 'mensaje', mediaUrl: mediaUrl || null, msgId: msgId || null, status: out ? 1 : undefined, quotedMsgId: quotedMsgId || null, quotedTexto: quotedTexto || null, quotedFromMe: quotedFromMe ?? null });
     c.lastMsg = texto;
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
@@ -3816,11 +3821,14 @@ function _onStatus({ numero, sede, status }) {
 function _onMsgStatus({ numero, msgId, status }) {
     if (!msgId || !numero) return;
     let updated = false;
+    let pendingCleared = false;
     for (const convs of Object.values(_state.conv[numero] || {})) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
         if (m) {
             if ((m.status || 0) >= status) return; // no retroceder (evita 4→3 por reordenamiento WS)
             m.status = status;
+            // Limpiar reloj: el ACK real de WA servers (status≥2) es el momento correcto
+            if (m.pending && status >= 2) { delete m.pending; delete m.tmpId; pendingCleared = true; }
             updated = true;
             break;
         }
@@ -3831,8 +3839,14 @@ function _onMsgStatus({ numero, msgId, status }) {
         return;
     }
     _saveConv();
-    // Actualizar solo el tick del bubble específico — evita re-render completo y pérdida de scroll
     if (_state.activeNum === numero) {
+        if (pendingCleared) {
+            // El mensaje pasó de ⏳ a confirmado: re-render completo para quitar el
+            // span ⏳, mostrar el timestamp y mostrar el tick correctamente
+            _renderMsgs();
+            return;
+        }
+        // Actualizar solo el tick del bubble específico — evita re-render completo y pérdida de scroll
         const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
         const tickEl = bubble?.querySelector('.wap-msg-ticks');
         if (tickEl) {
@@ -5743,7 +5757,18 @@ async function _sendMessage() {
         _cancelReply();
         const m = c.msgs.find(x => x.tmpId === tmpId);
         if (r.ok) {
-            if (m) { delete m.pending; delete m.tmpId; }
+            // Guardar msgId real para correlacionar con el ACK de WA — el reloj (pending) permanece
+            // hasta que llegue wa:msg_status con status≥2 (_onMsgStatus lo limpiará)
+            const body = await r.json().catch(() => ({}));
+            if (m && body.msgId) {
+                m.msgId = body.msgId;
+                // Race condition: si el ACK de WA llegó antes que la respuesta HTTP
+                const ack = _pendingStatuses.get(body.msgId);
+                if (ack && ack.status >= 2) {
+                    delete m.pending; delete m.tmpId; m.status = ack.status;
+                    _pendingStatuses.delete(body.msgId);
+                }
+            }
         } else {
             if (m) { m.failed = true; delete m.pending; }
             const err = await r.json().catch(() => ({}));
@@ -5780,9 +5805,19 @@ async function _retrySend(tmpId) {
             signal:  AbortSignal.timeout(10000),
         });
         if (r.ok) {
-            delete m.pending;
-            delete m.tmpId;
-            delete m.failed;
+            // Igual que _enviar: guardar msgId y mantener reloj hasta ACK real de WA
+            const body = await r.json().catch(() => ({}));
+            if (body.msgId) {
+                m.msgId = body.msgId;
+                delete m.failed;
+                const ack = _pendingStatuses.get(body.msgId);
+                if (ack && ack.status >= 2) {
+                    delete m.pending; delete m.tmpId; m.status = ack.status;
+                    _pendingStatuses.delete(body.msgId);
+                }
+            } else {
+                delete m.pending; delete m.tmpId; delete m.failed;
+            }
         } else {
             m.failed = true;
             delete m.pending;
