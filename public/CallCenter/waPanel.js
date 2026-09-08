@@ -6454,14 +6454,18 @@ async function _doForward(num, phone) {
     const m = _fwdMsg;
     _fwdMsg = null;
 
-    // Validar que el chat destino no esté asignado a otro asesor
+    // Validar si el chat destino está asignado a otro asesor
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    if (!isAdmin) {
-        const asig = _getAsig(num, phone);
-        if (asig?.estado === 'asignado' && asig.asesor !== _asesorActual) {
+    const asig    = _getAsig(num, phone);
+    const asignadoAOtro = asig?.estado === 'asignado' && asig.asesor !== _asesorActual;
+    if (asignadoAOtro) {
+        if (!isAdmin) {
+            // callcenter: bloquear — no puede tomar chats de otros
             _showToast(`Este chat está siendo atendido por ${asig.asesor}`, 5000);
             return;
         }
+        // admin/callcenter-admin: aviso informativo pero sigue adelante
+        _showToast(`ℹ️ Tomando chat de ${asig.asesor}`, 3000);
     }
 
     // Construir JID válido: usar sufijo guardado en conv, o @s.whatsapp.net por defecto
@@ -6474,6 +6478,10 @@ async function _doForward(num, phone) {
     _openChat(phone);
 
     try {
+        // 1. Tomar el chat primero — la asignación queda establecida antes del envío
+        await _tomarChat(num, phone);
+
+        // 2. Enviar el mensaje/archivo
         if (m.mediaUrl) {
             // Media: descargar desde Storage y reenviar como multipart
             const resp = await fetch(m.mediaUrl);
@@ -6500,9 +6508,6 @@ async function _doForward(num, phone) {
                 body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual || '' }),
             });
         }
-        // Tomar el chat DESPUÉS de enviar: garantiza que la conv ya existe en Supabase
-        // y funciona tanto para convs nuevas como existentes (sin el if guard anterior)
-        _tomarChat(num, phone).catch(() => {});
     } catch (err) {
         console.error('[fwd]', err);
         _showToast('Error al reenviar', 3000);
