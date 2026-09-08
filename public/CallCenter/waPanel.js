@@ -57,10 +57,11 @@ let _pendingColors = {};   // { [numero]: colorHex } — selección temporal ant
 let _pendingFile      = null;   // File a enviar como adjunto
 let _rrPendingFile    = null;   // File seleccionado en el form de RR
 let _pendingMediaFetch = null;  // Promise del fetch del adjunto de RR (para esperar antes de enviar)
-let _mediaRecorder = null;  // MediaRecorder activo (voz)
-let _recChunks     = [];
-let _recInterval   = null;
-let _recSeconds    = 0;
+let _mediaRecorder  = null;  // MediaRecorder activo (voz)
+let _recChunks      = [];
+let _recInterval    = null;
+let _recSeconds     = 0;
+let _recMimeType    = 'audio/webm'; // formato real grabado (puede ser ogg en Firefox)
 
 const LS_KEY_META = 'wap_meta_v1';
 
@@ -3282,6 +3283,15 @@ function _renderShell(body) {
     document.getElementById('wap-send').addEventListener('click', _sendMessage);
     document.getElementById('wap-attach-btn').addEventListener('click', () => document.getElementById('wap-file-input').click());
     document.getElementById('wap-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) _setPendingFile(f); });
+    // Pegar imagen desde portapapeles (Ctrl+V con captura de pantalla)
+    document.getElementById('wap-input').addEventListener('paste', e => {
+        const items = [...(e.clipboardData?.items || [])];
+        const imgItem = items.find(item => item.type.startsWith('image/'));
+        if (!imgItem) return; // texto normal → dejar que el browser lo pegue
+        e.preventDefault();
+        const file = imgItem.getAsFile();
+        if (file) _setPendingFile(file);
+    });
     document.getElementById('wap-media-preview-cancel').addEventListener('click', _clearPendingFile);
     document.getElementById('wap-voice-btn').addEventListener('click', async () => {
         if (_mediaRecorder?.state === 'recording') { await _stopRecording(true); }
@@ -3724,9 +3734,23 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
         if (c.msgs.some(m => m.tipo === 'sistema' && m.text === texto)) return;
     }
 
-    // Deduplicar: si es saliente y ya existe en state (optimista), solo actualizar asesor si falta
+    // Deduplicar mensajes salientes
     if (out) {
-        const existing = [...c.msgs].reverse().find(m => m.out && m.text === texto);
+        // 1. Dedup por msgId: si ya está en memoria (confirmado o pendiente), actualizar y salir.
+        //    Cubre reenvíos (_doForward) y reconexiones donde el eco llega dos veces.
+        if (msgId) {
+            const byId = c.msgs.find(m => m.msgId === msgId);
+            if (byId) {
+                if (mediaUrl && !byId.mediaUrl) { byId.mediaUrl = mediaUrl; byId.tipo = tipoMensaje || byId.tipo; }
+                _saveConv();
+                if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs();
+                return;
+            }
+        }
+        // 2. Dedup por texto: SOLO sobre mensajes optimistas (pending=true).
+        //    Sin este guard, el eco de un reenvío o de un msg enviado desde el celular
+        //    (ambos sin optimista) coincidía con otro msg anterior de texto null/igual → se perdía.
+        const existing = texto ? [...c.msgs].reverse().find(m => m.out && m.pending && m.text === texto) : null;
         if (existing) {
             let changed = false;
             if (!existing.asesor && asesor) { existing.asesor = asesor; changed = true; }
@@ -5911,8 +5935,9 @@ async function _sendMedia() {
                     : tipo === 'imagen' ? 'Imagen' : 'Video';
 
     const ts2        = Math.floor(Date.now() / 1000);
+    const tmpId2     = ++_tmpMsgId;
     const previewUrl = (tipo === 'imagen' || tipo === 'voz') ? URL.createObjectURL(file) : null;
-    c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tipo, mediaUrl: previewUrl });
+    c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tmpId: tmpId2, tipo, mediaUrl: previewUrl });
     c.lastMsg = textoDesc; c.lastTs = ts2;
     _saveConv(); _renderMsgs();
 
@@ -5928,17 +5953,17 @@ async function _sendMedia() {
             body:   fd,
             signal: AbortSignal.timeout(30000),
         });
-        const last = c.msgs[c.msgs.length - 1];
+        const mediaMsg = c.msgs.find(x => x.tmpId === tmpId2);
         if (r.ok) {
-            if (last?.pending) { delete last.pending; }
+            if (mediaMsg) { delete mediaMsg.pending; delete mediaMsg.tmpId; }
         } else {
-            if (last?.pending) { last.failed = true; delete last.pending; }
+            if (mediaMsg) { mediaMsg.failed = true; delete mediaMsg.pending; }
             const err = await r.json().catch(() => ({}));
             _showToast('Error al enviar archivo: ' + (err.error || 'intenta de nuevo'), 4000);
         }
     } catch {
-        const last = c.msgs[c.msgs.length - 1];
-        if (last?.pending) { last.failed = true; delete last.pending; }
+        const mediaMsg = c.msgs.find(x => x.tmpId === tmpId2);
+        if (mediaMsg) { mediaMsg.failed = true; delete mediaMsg.pending; }
         _showToast('Error de conexión al enviar archivo', 4000);
     }
     _saveConv();
@@ -5958,8 +5983,13 @@ function _updateSendVoiceBtn() {
 async function _startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        _recChunks     = [];
-        _mediaRecorder = new MediaRecorder(stream);
+        _recChunks  = [];
+        // Forzar formato conocido: webm+opus (Chrome/Edge) → ogg+opus (Firefox) → sin preferencia
+        const preferredMime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+                            : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')  ? 'audio/ogg;codecs=opus'
+                            : '';
+        _recMimeType   = preferredMime || 'audio/webm';
+        _mediaRecorder = new MediaRecorder(stream, preferredMime ? { mimeType: preferredMime } : {});
         _mediaRecorder.addEventListener('dataavailable', e => { if (e.data.size > 0) _recChunks.push(e.data); });
         _mediaRecorder.start();
         _recSeconds = 0;
@@ -5986,8 +6016,9 @@ async function _stopRecording(send = true) {
             stream.getTracks().forEach(t => t.stop());
             _updateVoiceUI(false);
             if (send && _recChunks.length > 0) {
-                const blob = new Blob(_recChunks, { type: 'audio/webm' });
-                _pendingFile = new File([blob], 'nota-de-voz.webm', { type: 'audio/webm' });
+                const ext  = _recMimeType.includes('ogg') ? 'ogg' : 'webm';
+                const blob = new Blob(_recChunks, { type: _recMimeType });
+                _pendingFile = new File([blob], `nota-de-voz.${ext}`, { type: _recMimeType });
                 await _sendMedia();
             }
             _mediaRecorder = null;
