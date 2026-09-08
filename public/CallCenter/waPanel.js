@@ -2286,9 +2286,14 @@ function _injectStyles() {
     grid-template-columns: repeat(8, 1fr);
     gap: 2px;
     padding: 6px;
-    max-height: 260px;
-    overflow-y: auto;
+    max-height: 200px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
 }
+.wap-emoji-grid::-webkit-scrollbar { width: 5px; }
+.wap-emoji-grid::-webkit-scrollbar-track { background: transparent; }
+.wap-emoji-grid::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
 .wap-emoji-item {
     font-size: 1.65rem;
     cursor: pointer;
