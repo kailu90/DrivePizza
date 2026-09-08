@@ -2607,6 +2607,11 @@ function _injectStyles() {
     vertical-align: middle;
     flex-shrink: 0;
 }
+/* Reloj gris: pendiente (status 1, esperando ACK de WA) */
+.wap-msg-ticks--clock { opacity: .75; }
+/* Reloj naranja: enviado pero WA servers no confirmaron en 90s */
+.wap-msg-ticks--noack { animation: wap-noack-pulse 2s ease-in-out infinite; }
+@keyframes wap-noack-pulse { 0%,100%{opacity:.75} 50%{opacity:1} }
 
 /* ── Mensajes pendientes / fallidos ─────────────── */
 .wap-msg--pending { opacity: 0.55; }
@@ -3874,10 +3879,11 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
                 existing.msgId = msgId;
                 const pendingAck = _pendingStatuses.get(msgId);
                 existing.status = pendingAck ? pendingAck.status : 1;
+                if (pendingAck?.sinAck) existing.sinAck = true;
                 _pendingStatuses.delete(msgId);
                 // Si el ACK de WA ya llegó antes que el eco, limpiar el reloj ahora
                 if (pendingAck && pendingAck.status >= 2 && existing.pending) {
-                    delete existing.pending; delete existing.tmpId;
+                    delete existing.pending; delete existing.tmpId; delete existing.sinAck;
                 }
                 changed = true;
             }
@@ -3958,15 +3964,21 @@ function _onStatus({ numero, sede, status }) {
     }
 }
 
-function _onMsgStatus({ numero, msgId, status }) {
+function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     if (!msgId || !numero) return;
     let updated = false;
     let pendingCleared = false;
     for (const convs of Object.values(_state.conv[numero] || {})) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
         if (m) {
-            if ((m.status || 0) >= status) return; // no retroceder (evita 4→3 por reordenamiento WS)
+            // No retroceder status real (evita 4→3 por reordenamiento WS), pero sinAck sí aplica
+            if (!sinAck && (m.status || 0) >= status) return;
             m.status = status;
+            if (sinAck) {
+                m.sinAck = true; // reloj naranja: enviado pero WA no confirmó en 90s
+            } else if (status >= 2) {
+                delete m.sinAck; // ACK real recibido: limpiar indicador "sin confirmar"
+            }
             // Limpiar reloj: el ACK real de WA servers (status≥2) es el momento correcto
             if (m.pending && status >= 2) { delete m.pending; delete m.tmpId; pendingCleared = true; }
             updated = true;
@@ -3975,41 +3987,52 @@ function _onMsgStatus({ numero, msgId, status }) {
     }
     if (!updated) {
         // Condición de carrera: ACK llegó antes que el echo asignara el msgId — guardar para aplicar después
-        _pendingStatuses.set(msgId, { numero, status });
+        _pendingStatuses.set(msgId, { numero, status, sinAck });
         return;
     }
     _saveConv();
     if (_state.activeNum === numero) {
         if (pendingCleared) {
-            // El mensaje pasó de ⏳ a confirmado: re-render completo para quitar el
-            // span ⏳, mostrar el timestamp y mostrar el tick correctamente
+            // El mensaje pasó de ⏳ a confirmado: re-render completo para quitar el span ⏳
             _renderMsgs();
             return;
         }
-        // Actualizar solo el tick del bubble específico — evita re-render completo y pérdida de scroll
+        // Actualizar solo el tick del bubble — evita re-render completo y pérdida de scroll
         const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
-        const tickEl = bubble?.querySelector('.wap-msg-ticks');
+        const tickEl = bubble?.querySelector('.wap-msg-ticks, .wap-msg-ticks--clock');
+        const newTick = _tickSvg(status, sinAck);
         if (tickEl) {
-            tickEl.outerHTML = _tickSvg(status) || '';
-        } else if (bubble && !bubble.querySelector('.wap-msg-ticks') && _tickSvg(status)) {
-            // El tick aún no existía (status pasó de undefined a >=2)
+            tickEl.outerHTML = newTick || '';
+        } else if (bubble && newTick) {
             const tsSpan = bubble.querySelector('.wap-msg-ts');
-            if (tsSpan) tsSpan.insertAdjacentHTML('afterend', _tickSvg(status));
+            if (tsSpan) tsSpan.insertAdjacentHTML('afterend', newTick);
+            else _renderMsgs();
         } else {
-            _renderMsgs(); // fallback si el bubble no está en DOM
+            _renderMsgs(); // fallback
         }
     }
 }
 
-function _tickSvg(status) {
-    if (!status || status < 2) return '';
+function _tickSvg(status, sinAck = false) {
+    // sinAck: WA servers no confirmaron en 90s — no es error, mostrar reloj naranja con tooltip
+    if (sinAck || status === 1) {
+        const color  = sinAck ? '#f59e0b' : '#9ca3af';
+        const title  = sinAck ? 'Enviado · entrega no confirmada' : 'Enviando…';
+        return `<span class="wap-msg-ticks wap-msg-ticks--clock${sinAck ? ' wap-msg-ticks--noack' : ''}" title="${title}">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="${color}" stroke-width="1.8"/>
+                <path d="M8 4.5V8L10.5 10" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>`;
+    }
     const color = status >= 4 ? '#53bdeb' : '#8696a0';
     if (status === 2) {
-        return `<span class="wap-msg-ticks"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+        return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
             <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></span>`;
     }
-    return `<span class="wap-msg-ticks"><svg width="18" height="10" viewBox="0 0 18 10" fill="none">
+    const label = status >= 4 ? 'Leído' : 'Entregado';
+    return `<span class="wap-msg-ticks" title="${label}"><svg width="18" height="10" viewBox="0 0 18 10" fill="none">
         <path d="M1 5L4.5 8.5L13 1"   stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M5 5L8.5 8.5L17 1"   stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </svg></span>`;
@@ -5083,6 +5106,7 @@ async function _loadMsgsSupabase(phone) {
                 tipo:         m.tipo || 'mensaje',
                 mediaUrl:     m.media_url      || null,
                 status:       Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                sinAck:       !!m.sin_ack && (prev?.status ?? 0) < 2,
                 reactions:    m.reactions      || {},
                 quotedMsgId:  m.quoted_msg_id  || null,
                 quotedTexto:  m.quoted_texto   || null,
@@ -5734,7 +5758,7 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? _tickSvg(m.status) : '');
+            : (m.out && !m.celular ? _tickSvg(m.status, m.sinAck) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
         const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
