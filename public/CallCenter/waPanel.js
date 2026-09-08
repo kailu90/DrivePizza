@@ -6010,7 +6010,14 @@ async function _sendMedia() {
         });
         const mediaMsg = c.msgs.find(x => x.tmpId === tmpId2);
         if (r.ok) {
-            if (mediaMsg) { delete mediaMsg.pending; delete mediaMsg.tmpId; }
+            const body = await r.json().catch(() => ({}));
+            if (mediaMsg) {
+                // Guardar msgId para que el dedup por msgId en _onMensaje encuentre
+                // el optimista cuando llegue el eco WS (evita imagen duplicada)
+                if (body.msgId) mediaMsg.msgId = body.msgId;
+                delete mediaMsg.pending;
+                delete mediaMsg.tmpId;
+            }
         } else {
             if (mediaMsg) { mediaMsg.failed = true; delete mediaMsg.pending; }
             const err = await r.json().catch(() => ({}));
