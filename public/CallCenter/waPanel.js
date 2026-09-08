@@ -2041,6 +2041,30 @@ function _injectStyles() {
     background: #ede9fe;
     border-left: 3px solid #7c3aed;
 }
+.wap-msg--nota {
+    align-self: stretch;
+    background: #fef9c3;
+    border-left: 3px solid #eab308;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #713f12;
+    font-size: 1.2rem;
+    margin: 2px 8px;
+}
+.wap-msg--nota strong { font-size: 1.05rem; display: block; margin-bottom: 2px; color: #92400e; }
+/* Formulario de nota al transferir */
+.wap-nota-form { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.wap-nota-form-titulo { font-size: 1.2rem; color: #374151; }
+.wap-nota-textarea {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid #d1d5db; border-radius: 6px;
+    padding: 6px 8px; font-size: 1.2rem; resize: none;
+    font-family: inherit; outline: none;
+}
+.wap-nota-textarea:focus { border-color: #eab308; }
+.wap-nota-btns { display: flex; gap: 6px; justify-content: flex-end; }
+.wap-nota-btn-cancel { background: transparent; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 10px; font-size: 1.15rem; cursor: pointer; color: #6b7280; }
+.wap-nota-btn-confirm { background: var(--color-primario, #16a34a); border: none; border-radius: 6px; padding: 4px 12px; font-size: 1.15rem; cursor: pointer; color: #fff; }
 .wap-msg--sistema {
     align-self: center;
     background: transparent;
@@ -3241,7 +3265,10 @@ function _renderShell(body) {
             ? opciones.map(a => `<button class="wap-asesor-item" data-username="${a.username}">${a.username}</button>`).join('')
             : `<button class="wap-asesor-item wap-asesor-item--loading">Sin asesores disponibles</button>`;
         list.querySelectorAll('.wap-asesor-item:not(.wap-asesor-item--loading)').forEach(btn => {
-            btn.addEventListener('click', () => _transferirChat(_state.activeNum, _state.activeContact, btn.dataset.username));
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                _mostrarFormNota(list, btn.dataset.username, _state.activeNum, _state.activeContact);
+            });
         });
     });
     // Cerrar dropdown al hacer clic fuera
@@ -3729,9 +3756,9 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     // Actualizar nombre WA solo si el asesor no asigno uno manual
     if (pushName && !out && !c.nombre) c.name = pushName;
 
-    // Deduplicar mensajes de sistema (optimista ya insertado)
-    if (tipoMensaje === 'sistema') {
-        if (c.msgs.some(m => m.tipo === 'sistema' && m.text === texto)) return;
+    // Deduplicar mensajes de sistema y notas (optimista ya insertado)
+    if (tipoMensaje === 'sistema' || tipoMensaje === 'nota') {
+        if (c.msgs.some(m => m.tipo === tipoMensaje && m.text === texto)) return;
     }
 
     // Deduplicar mensajes salientes
@@ -3924,21 +3951,44 @@ function _closeActionsMenu() {
     if (list) { list.style.display = 'none'; list.innerHTML = ''; }
 }
 
-async function _transferirChat(num, phone, asesorNuevo) {
+function _mostrarFormNota(container, asesorNuevo, num, phone) {
+    container.innerHTML = `
+        <div class="wap-nota-form">
+            <div class="wap-nota-form-titulo">Transferir a <strong>${_esc(asesorNuevo)}</strong></div>
+            <textarea class="wap-nota-textarea" rows="3" placeholder="Nota de gestión (opcional)..."></textarea>
+            <div class="wap-nota-btns">
+                <button class="wap-nota-btn-cancel">Cancelar</button>
+                <button class="wap-nota-btn-confirm">Transferir</button>
+            </div>
+        </div>`;
+    const ta      = container.querySelector('.wap-nota-textarea');
+    const btnCan  = container.querySelector('.wap-nota-btn-cancel');
+    const btnConf = container.querySelector('.wap-nota-btn-confirm');
+    ta.focus();
+    btnCan.addEventListener('click',  e => { e.stopPropagation(); _closeActionsMenu(); });
+    btnConf.addEventListener('click', e => {
+        e.stopPropagation();
+        _transferirChat(num, phone, asesorNuevo, ta.value.trim() || null);
+    });
+}
+
+async function _transferirChat(num, phone, asesorNuevo, nota = null) {
     _closeActionsMenu();
-    // Optimista: mostrar mensaje de sistema inmediatamente sin esperar WS
+    // Optimista: mensaje de sistema de transferencia
     const textoSistema = `${_asesorActual || 'Asesor'} transfirió la conversación a ${asesorNuevo}`;
     if (!_state.conv[num]) _state.conv[num] = {};
     if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
-    const c = _state.conv[num][phone];
-    c.msgs.push({ text: textoSistema, ts: Math.floor(Date.now() / 1000), tipo: 'sistema' });
+    const c  = _state.conv[num][phone];
+    const ts = Math.floor(Date.now() / 1000);
+    c.msgs.push({ text: textoSistema, ts, tipo: 'sistema' });
+    if (nota) c.msgs.push({ text: nota, ts: ts + 1, tipo: 'nota', asesor: _asesorActual });
     _saveConv();
     if (_state.activeContact === phone && _state.activeNum === num) _renderMsgs();
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ asesor_nuevo: asesorNuevo, asesor_actual: _asesorActual }),
+            body:    JSON.stringify({ asesor_nuevo: asesorNuevo, asesor_actual: _asesorActual, nota }),
         });
         if (!r.ok) { _showToast('Error al transferir', 3000); return; }
         _showToast(`Chat transferido a ${asesorNuevo}`);
@@ -5583,6 +5633,11 @@ function _renderMsgs() {
         if (m.tipo === 'sistema') {
             return `<div class="wap-msg wap-msg--sistema">
                 ${_esc(m.text)}${m.ts ? ' · ' + _fmtTsHora(m.ts) : ''}
+            </div>`;
+        }
+        if (m.tipo === 'nota') {
+            return `<div class="wap-msg wap-msg--nota">
+                <strong>📝 Nota${m.asesor ? ' de ' + _esc(m.asesor) : ''}</strong>${_esc(m.text)}
             </div>`;
         }
         const statusCls = m.pending ? ' wap-msg--pending' : m.failed ? ' wap-msg--failed' : '';
