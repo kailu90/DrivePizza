@@ -6463,11 +6463,6 @@ async function _doForward(num, phone) {
     _navTo('conv');
     _openChat(phone);
 
-    // Si ya existe la conv → intentar tomarla (no bloqueamos si falla)
-    if (_state.conv[num]?.[phone]) {
-        _tomarChat(num, phone).catch(() => {});
-    }
-
     try {
         if (m.mediaUrl) {
             // Media: descargar desde Storage y reenviar como multipart
@@ -6495,6 +6490,9 @@ async function _doForward(num, phone) {
                 body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual || '' }),
             });
         }
+        // Tomar el chat DESPUÉS de enviar: garantiza que la conv ya existe en Supabase
+        // y funciona tanto para convs nuevas como existentes (sin el if guard anterior)
+        _tomarChat(num, phone).catch(() => {});
     } catch (err) {
         console.error('[fwd]', err);
         _showToast('Error al reenviar', 3000);
