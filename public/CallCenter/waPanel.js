@@ -2134,10 +2134,12 @@ function _injectStyles() {
     color: #fff;
     border: none;
     border-radius: 6px;
-    padding: 4px 14px;
+    padding: 6px 14px;
     font-size: 1.1rem;
     cursor: pointer;
     font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .wap-abrir-btn:hover { background: #15803d; }
 .wap-msg-celular-label {
@@ -3098,6 +3100,7 @@ function _renderShell(body) {
                                     <div class="wap-asesores-list" id="wap-asesores-list" style="display:none;"></div>
                                 </div>
                             </div>
+                            <button class="wap-abrir-btn" id="wap-abrir-btn" style="display:none;">Abrir conversaci&#xF3;n</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
                         <div class="wap-offline-bar" id="wap-offline-bar">
@@ -3111,8 +3114,7 @@ function _renderShell(body) {
                             </div>
                         </div>
                         <div class="wap-resuelto-bar" id="wap-resuelto-bar">
-                            <span>✅ Chat resuelto — solo lectura</span>
-                            <button class="wap-abrir-btn" id="wap-abrir-btn">Abrir conversación</button>
+                            <span>&#x2705; Chat resuelto &mdash; solo lectura</span>
                         </div>
                         <div class="wap-reply-bar" id="wap-reply-bar">
                             <div class="wap-reply-preview">
@@ -5836,6 +5838,8 @@ function _updateOfflineBar() {
 
     bar.classList.toggle('visible', offline && !bloqueado);
     if (resBar)    resBar.classList.toggle('visible', resuelto);
+    const abrirBtn = document.getElementById('wap-abrir-btn');
+    if (abrirBtn)  abrirBtn.style.display = resuelto ? '' : 'none';
     if (esperaBar) {
         esperaBar.classList.toggle('visible', enEspera);
         // Cuando offline: ocultar Tomar (requiere sesión), dejar visible Resolver
