@@ -2609,9 +2609,14 @@ function _injectStyles() {
 }
 /* Reloj gris: pendiente (status 1, esperando ACK de WA) */
 .wap-msg-ticks--clock { opacity: .75; }
-/* Reloj naranja: enviado pero WA servers no confirmaron en 90s */
-.wap-msg-ticks--noack { animation: wap-noack-pulse 2s ease-in-out infinite; }
-@keyframes wap-noack-pulse { 0%,100%{opacity:.75} 50%{opacity:1} }
+/* Confirmación pendiente: enviado, WA aún no confirma — sutil, no alarmante */
+.wap-msg-ticks--noack { animation: wap-noack-pulse 4s ease-in-out infinite; }
+@keyframes wap-noack-pulse { 0%,100%{opacity:.65} 50%{opacity:.9} }
+/* Etiqueta "Confirmación pendiente" junto al reloj */
+.wap-msg-pending-label {
+    font-size: 1.0rem; color: #9ca3af; margin-left: 2px;
+    font-style: italic; vertical-align: middle;
+}
 
 /* ── Mensajes pendientes / fallidos ─────────────── */
 .wap-msg--pending { opacity: 0.55; }
@@ -3767,6 +3772,40 @@ async function _loadContactos() {
     } catch { /* sin conexion */ }
 }
 
+// Reconcilia sinAck en chats que no están abiertos — evita stale ⏳ en reconexión
+// Solo consulta chats que tienen al menos un mensaje sinAck en memoria
+async function _reconcileSinAckInBackground() {
+    const active = _state.activeContact;
+    for (const [num, convs] of Object.entries(_state.conv || {})) {
+        for (const [phone, c] of Object.entries(convs || {})) {
+            if (phone === active) continue; // el activo ya se reconcilia por separado
+            if (!c.msgs?.some(m => m.sinAck)) continue; // sin sinAck → nada que hacer
+            try {
+                const r = await fetch(`${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}?limit=50`);
+                if (!r.ok) continue;
+                const msgs = await r.json();
+                if (!Array.isArray(msgs)) continue;
+                // Actualizar status y sinAck de mensajes salientes en memoria
+                let changed = false;
+                for (const dbMsg of msgs) {
+                    if (!dbMsg.msg_id || !dbMsg.saliente) continue;
+                    const mem = c.msgs.find(m => m.msgId === dbMsg.msg_id);
+                    if (!mem) continue;
+                    const newStatus = Math.max(dbMsg.status || 0, mem.status || 0);
+                    const newSinAck = !!dbMsg.sin_ack && newStatus < 2;
+                    if (!!mem.sinAck !== newSinAck || mem.status !== newStatus) {
+                        mem.status = newStatus;
+                        if (newSinAck) mem.sinAck = true;
+                        else delete mem.sinAck;
+                        changed = true;
+                    }
+                }
+                if (changed) _saveConv();
+            } catch { /* sin conexion — ignorar */ }
+        }
+    }
+}
+
 // ── WebSocket ──────────────────────────────────────────────────────────────
 function _setWsStatus(status) {
     const dot = document.getElementById('wap-ws-dot');
@@ -3789,9 +3828,13 @@ function _connectWs() {
             Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
                 .then(() => { _limpiarConvsAntiguas(); _renderList(); });
             // Si hay un chat abierto, recargar sus mensajes desde Supabase
+            // _loadMsgsSupabase reconcilia sin_ack desde DB — limpia sinAck stale sin recargar página
             if (_state.activeContact && _state.activeNum) {
                 _loadMsgsSupabase(_state.activeContact);
             }
+            // Reconciliar sinAck en todos los chats cargados que no sean el activo
+            // (el activo ya se reconcilia con _loadMsgsSupabase arriba)
+            _reconcileSinAckInBackground();
         }
         _wsEverConnected = true;
     };
@@ -3968,17 +4011,20 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     if (!msgId || !numero) return;
     let updated = false;
     let pendingCleared = false;
+    let sinAckChanged  = false;
     for (const convs of Object.values(_state.conv[numero] || {})) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
         if (m) {
             // No retroceder status real (evita 4→3 por reordenamiento WS), pero sinAck sí aplica
             if (!sinAck && (m.status || 0) >= status) return;
+            const wasSinAck = !!m.sinAck;
             m.status = status;
             if (sinAck) {
-                m.sinAck = true; // reloj naranja: enviado pero WA no confirmó en 90s
+                m.sinAck = true; // confirmación pendiente: WA no confirmó en 90s
             } else if (status >= 2) {
-                delete m.sinAck; // ACK real recibido: limpiar indicador "sin confirmar"
+                delete m.sinAck; // ACK real recibido: limpiar indicador
             }
+            sinAckChanged = wasSinAck !== !!m.sinAck;
             // Limpiar reloj: el ACK real de WA servers (status≥2) es el momento correcto
             if (m.pending && status >= 2) { delete m.pending; delete m.tmpId; pendingCleared = true; }
             updated = true;
@@ -3992,8 +4038,8 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     }
     _saveConv();
     if (_state.activeNum === numero) {
-        if (pendingCleared) {
-            // El mensaje pasó de ⏳ a confirmado: re-render completo para quitar el span ⏳
+        if (pendingCleared || sinAckChanged) {
+            // Re-render completo cuando: mensaje confirmado (quita ⏳) o sinAck cambia (agrega/quita label)
             _renderMsgs();
             return;
         }
@@ -4014,10 +4060,10 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
 }
 
 function _tickSvg(status, sinAck = false) {
-    // sinAck: WA servers no confirmaron en 90s — no es error, mostrar reloj naranja con tooltip
+    // sinAck: WA servers no confirmaron en 90s — NO es error, es ACK tardío
     if (sinAck || status === 1) {
-        const color  = sinAck ? '#f59e0b' : '#9ca3af';
-        const title  = sinAck ? 'Enviado · entrega no confirmada' : 'Enviando…';
+        const color = '#9ca3af'; // siempre gris — no alarmante
+        const title = sinAck ? 'WhatsApp aún no confirma entrega. No reenvíes todavía.' : 'Enviando…';
         return `<span class="wap-msg-ticks wap-msg-ticks--clock${sinAck ? ' wap-msg-ticks--noack' : ''}" title="${title}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6.5" stroke="${color}" stroke-width="1.8"/>
@@ -5758,10 +5804,11 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? _tickSvg(m.status, m.sinAck) : '');
+            : (m.out && !m.celular ? (_tickSvg(m.status, m.sinAck) + (m.sinAck ? '<span class="wap-msg-pending-label">Confirmación pendiente</span>' : '')) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
-        const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
+        // sinAck: no mostrar menú de opciones — evita reenvíos accidentales mientras WA confirma
+        const menuBtn = m.msgId && !m.pending && !m.failed && !m.sinAck && !isEditing
             ? m.out
                 ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
                    <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
