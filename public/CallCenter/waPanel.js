@@ -6454,6 +6454,16 @@ async function _doForward(num, phone) {
     const m = _fwdMsg;
     _fwdMsg = null;
 
+    // Validar que el chat destino no esté asignado a otro asesor
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    if (!isAdmin) {
+        const asig = _getAsig(num, phone);
+        if (asig?.estado === 'asignado' && asig.asesor !== _asesorActual) {
+            _showToast(`Este chat está siendo atendido por ${asig.asesor}`, 5000);
+            return;
+        }
+    }
+
     // Construir JID válido: usar sufijo guardado en conv, o @s.whatsapp.net por defecto
     const jidSuffix    = _state.conv[num]?.[phone]?.jidSuffix || '@s.whatsapp.net';
     const destinatario = phone + jidSuffix;
