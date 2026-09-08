@@ -1,10 +1,11 @@
 # EverestCentral — Instrucciones de Proyecto
 
 ## Stack
-- Firebase Hosting, Firestore, Authentication
-- JS modular (ES modules), sin frameworks frontend
-- Rama activa: `feature/pruebas`
-- Proyecto Firebase: `everest-central` (everest-central.web.app)
+- **Frontend**: JS modular (ES modules), sin frameworks — deploy: rsync → Hetzner/Caddy → `app.everest-central.com`
+- **Backend**: Node.js + Fastify + Redis en Hetzner (`api.everest-central.com`)
+- **Base de datos**: Supabase self-hosted en Hetzner (`supabase.everest-central.com`)
+- **Firebase**: SOLO aviso de migración en `everest-central.web.app` — no aloja frontend ni datos
+- Rama activa: `main` (push dispara deploy automático vía GitHub Actions)
 
 ## Estructura de carpetas (`public/`)
 ```
