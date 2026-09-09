@@ -1129,15 +1129,26 @@ async function obtenerUsuarioCC() {
                     b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === ciudad)
                 );
 
-                // Aplicar modo según params del mensaje (reserva vs normal)
-                const nuevoModo = e.data.params?.tipo === 'reserva';
+                // Aplicar modo según params del mensaje (reserva vs taller vs normal)
+                const paramTipo = e.data.params?.tipo || '';
+                const nuevoModo = paramTipo === 'reserva';
                 if (nuevoModo !== _modoReservas) {
-                    // Cambiando de modo — resetear UI y rango de fechas
+                    // Cambiando entre modo reservas y modo normal
                     _aplicarModoReservas(nuevoModo);
                     const hoy = hoyLocal();
                     const desde = nuevoModo
                         ? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })()
                         : hoy;
+                    document.getElementById('filtro-desde').value = desde;
+                    document.getElementById('filtro-hasta').value = hoy;
+                    filtrarColumnas(true);
+                    cargarPedidos({ desde, hasta: hoy }, true);
+                } else if (paramTipo === 'taller_pizzeritos') {
+                    // Filtro directo a Taller Pizzeritos desde inicio de mes
+                    const hoy = hoyLocal();
+                    const d = new Date();
+                    const desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+                    document.getElementById('filtro-tipo').value = 'taller_pizzeritos';
                     document.getElementById('filtro-desde').value = desde;
                     document.getElementById('filtro-hasta').value = hoy;
                     filtrarColumnas(true);

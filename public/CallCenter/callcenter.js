@@ -35,10 +35,7 @@ if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
 }
 
 const _btnTaller = document.getElementById('btn_taller_pizzeritos');
-_btnTaller.addEventListener('click', () => {
-    localStorage.setItem('cc_abrir_taller', '1');
-    navTo('./pedidosCallCenter.html');
-});
+_btnTaller.addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial', params: { tipo: 'taller_pizzeritos' } }, '*'));
 if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
     _btnTaller.style.display = 'none';
 }
