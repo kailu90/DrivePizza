@@ -133,7 +133,15 @@ let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
 let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
-const _pendingStatuses = new Map(); // msgId → {numero,status} para ACKs que llegan antes del echo
+const _pendingStatuses = new Map(); // msgId → {numero,status,sinAck,_ts} para ACKs que llegan antes del echo
+// Limpia entradas huérfanas si el mapa crece (evita leak en race conditions que nunca resuelven)
+function _cleanPendingStatuses() {
+    if (_pendingStatuses.size < 10) return;
+    const cutoff = Date.now() - 30000; // >30s sin echo = huérfana
+    for (const [k, v] of _pendingStatuses) {
+        if ((v._ts || 0) < cutoff) _pendingStatuses.delete(k);
+    }
+}
 
 const LS_KEY      = 'wap_conv_v2';
 const LS_KEY_SES  = 'wap_ses_v1';    // caché de sesiones para render instantáneo
@@ -4018,10 +4026,10 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
             if (!sinAck && (m.status || 0) >= status) return;
             const wasSinAck = !!m.sinAck;
             m.status = status;
-            if (sinAck) {
-                m.sinAck = true; // confirmación pendiente: WA no confirmó en 90s
+            if (sinAck && (m.status || 0) < 2) {
+                m.sinAck = true; // delivery_unknown: WA no confirmó en 90s (solo si no hay ACK real)
             } else if (status >= 2) {
-                delete m.sinAck; // ACK real recibido: limpiar indicador
+                delete m.sinAck; // ACK real recibido: limpiar delivery_unknown si existía
             }
             sinAckChanged = wasSinAck !== !!m.sinAck;
             // Limpiar reloj: el ACK real de WA servers (status≥2) es el momento correcto
@@ -4032,7 +4040,8 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     }
     if (!updated) {
         // Condición de carrera: ACK llegó antes que el echo asignara el msgId — guardar para aplicar después
-        _pendingStatuses.set(msgId, { numero, status, sinAck });
+        _cleanPendingStatuses();
+        _pendingStatuses.set(msgId, { numero, status, sinAck, _ts: Date.now() });
         return;
     }
     _saveConv();
