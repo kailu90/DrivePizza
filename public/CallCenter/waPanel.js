@@ -3924,10 +3924,9 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
                 existing.status = pendingAck ? pendingAck.status : 1;
                 if (pendingAck?.sinAck) existing.sinAck = true;
                 _pendingStatuses.delete(msgId);
-                // Si el ACK de WA ya llegó antes que el eco, limpiar el reloj ahora
-                if (pendingAck && pendingAck.status >= 2 && existing.pending) {
-                    delete existing.pending; delete existing.tmpId; delete existing.sinAck;
-                }
+                // Echo de Baileys confirma que el backend procesó el mensaje:
+                // pasar de ⏳ a ✓ gris (status=1) incondicionalmente
+                if (existing.pending) { delete existing.pending; delete existing.tmpId; }
                 changed = true;
             }
             if (mediaUrl && !existing.mediaUrl) { existing.mediaUrl = mediaUrl; existing.tipo = tipoMensaje || existing.tipo; changed = true; }
@@ -4060,19 +4059,24 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
 }
 
 function _tickSvg(status, sinAck = false) {
-    // sinAck: WA servers no confirmaron en 90s — NO es error, es ACK tardío
-    if (sinAck || status === 1) {
-        const color = '#9ca3af'; // siempre gris — no alarmante
-        const title = sinAck ? 'WhatsApp aún no confirma entrega. No reenvíes todavía.' : 'Enviando…';
-        return `<span class="wap-msg-ticks wap-msg-ticks--clock${sinAck ? ' wap-msg-ticks--noack' : ''}" title="${title}">
+    // sinAck: backend envió pero WA no confirmó en 90s — reloj, no alarmante
+    if (sinAck) {
+        return `<span class="wap-msg-ticks wap-msg-ticks--clock wap-msg-ticks--noack" title="WhatsApp aún no confirma entrega. No reenvíes todavía.">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6.5" stroke="${color}" stroke-width="1.8"/>
-                <path d="M8 4.5V8L10.5 10" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="8" cy="8" r="6.5" stroke="#9ca3af" stroke-width="1.8"/>
+                <path d="M8 4.5V8L10.5 10" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </span>`;
     }
     const color = status >= 4 ? '#53bdeb' : '#8696a0';
+    if (status === 1) {
+        // Backend confirmó envío, WA aún no respondió — ✓ gris (sin reloj)
+        return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+            <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>`;
+    }
     if (status === 2) {
+        // WA servers confirmaron recepción — ✓ gris
         return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
             <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></span>`;
@@ -5998,16 +6002,17 @@ async function _sendMessage() {
         _cancelReply();
         const m = c.msgs.find(x => x.tmpId === tmpId);
         if (r.ok) {
-            // Guardar msgId real para correlacionar con el ACK de WA — el reloj (pending) permanece
-            // hasta que llegue wa:msg_status con status≥2 (_onMsgStatus lo limpiará)
             const body = await r.json().catch(() => ({}));
             if (m && body.msgId) {
                 m.msgId = body.msgId;
-                // Race condition: si el ACK de WA llegó antes que la respuesta HTTP
                 const ack = _pendingStatuses.get(body.msgId);
-                if (ack && ack.status >= 2) {
-                    delete m.pending; delete m.tmpId; m.status = ack.status;
-                    _pendingStatuses.delete(body.msgId);
+                if (ack) _pendingStatuses.delete(body.msgId);
+                // Backend confirmó envío: pasar de ⏳ a ✓ gris (status=1) de inmediato.
+                // El ACK de WA (status≥2) llegará luego por WS y actualizará el tick.
+                if (m.pending) {
+                    delete m.pending; delete m.tmpId;
+                    m.status = ack ? ack.status : 1;
+                    if (ack?.sinAck) m.sinAck = true;
                 }
             }
         } else {
@@ -6046,15 +6051,16 @@ async function _retrySend(tmpId) {
             signal:  AbortSignal.timeout(10000),
         });
         if (r.ok) {
-            // Igual que _enviar: guardar msgId y mantener reloj hasta ACK real de WA
             const body = await r.json().catch(() => ({}));
             if (body.msgId) {
                 m.msgId = body.msgId;
                 delete m.failed;
                 const ack = _pendingStatuses.get(body.msgId);
-                if (ack && ack.status >= 2) {
-                    delete m.pending; delete m.tmpId; m.status = ack.status;
-                    _pendingStatuses.delete(body.msgId);
+                if (ack) _pendingStatuses.delete(body.msgId);
+                if (m.pending) {
+                    delete m.pending; delete m.tmpId;
+                    m.status = ack ? ack.status : 1;
+                    if (ack?.sinAck) m.sinAck = true;
                 }
             } else {
                 delete m.pending; delete m.tmpId; delete m.failed;
