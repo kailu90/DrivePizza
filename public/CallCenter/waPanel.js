@@ -2620,9 +2620,16 @@ function _injectStyles() {
 /* Confirmación pendiente: enviado, WA aún no confirma — sutil, no alarmante */
 .wap-msg-ticks--noack { animation: wap-noack-pulse 4s ease-in-out infinite; }
 @keyframes wap-noack-pulse { 0%,100%{opacity:.65} 50%{opacity:.9} }
-/* Etiqueta "Confirmación pendiente" junto al reloj */
+/* Entrega no confirmada tras 15 min — ? ámbar, pulso más lento */
+.wap-msg-ticks--unknown { animation: wap-unknown-pulse 6s ease-in-out infinite; }
+@keyframes wap-unknown-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
+/* Etiquetas de estado junto al icono */
 .wap-msg-pending-label {
     font-size: 1.0rem; color: #9ca3af; margin-left: 2px;
+    font-style: italic; vertical-align: middle;
+}
+.wap-msg-unknown-label {
+    font-size: 1.0rem; color: #d97706; margin-left: 2px;
     font-style: italic; vertical-align: middle;
 }
 
@@ -3787,13 +3794,13 @@ async function _reconcileSinAckInBackground() {
     for (const [num, convs] of Object.entries(_state.conv || {})) {
         for (const [phone, c] of Object.entries(convs || {})) {
             if (phone === active) continue; // el activo ya se reconcilia por separado
-            if (!c.msgs?.some(m => m.sinAck)) continue; // sin sinAck → nada que hacer
+            if (!c.msgs?.some(m => m.sinAck || m.deliveryUnknown)) continue; // sin estado pendiente → nada que hacer
             try {
                 const r = await fetch(`${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}?limit=50`);
                 if (!r.ok) continue;
                 const msgs = await r.json();
                 if (!Array.isArray(msgs)) continue;
-                // Actualizar status y sinAck de mensajes salientes en memoria
+                // Actualizar status, sinAck y deliveryUnknown de mensajes salientes en memoria
                 let changed = false;
                 for (const dbMsg of msgs) {
                     if (!dbMsg.msg_id || !dbMsg.saliente) continue;
@@ -3801,10 +3808,13 @@ async function _reconcileSinAckInBackground() {
                     if (!mem) continue;
                     const newStatus = Math.max(dbMsg.status || 0, mem.status || 0);
                     const newSinAck = !!dbMsg.sin_ack && newStatus < 2;
-                    if (!!mem.sinAck !== newSinAck || mem.status !== newStatus) {
+                    const newDelivUnknown = !!dbMsg.delivery_unknown && newStatus < 3;
+                    if (!!mem.sinAck !== newSinAck || mem.status !== newStatus || !!mem.deliveryUnknown !== newDelivUnknown) {
                         mem.status = newStatus;
                         if (newSinAck) mem.sinAck = true;
                         else delete mem.sinAck;
+                        if (newDelivUnknown) mem.deliveryUnknown = true;
+                        else delete mem.deliveryUnknown;
                         changed = true;
                     }
                 }
@@ -3931,6 +3941,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
                 const pendingAck = _pendingStatuses.get(msgId);
                 existing.status = pendingAck ? pendingAck.status : 1;
                 if (pendingAck?.sinAck) existing.sinAck = true;
+                if (pendingAck?.deliveryUnknown) existing.deliveryUnknown = true;
                 _pendingStatuses.delete(msgId);
                 // Echo de Baileys confirma que el backend procesó el mensaje:
                 // pasar de ⏳ a ✓ gris (status=1) incondicionalmente
@@ -4014,24 +4025,32 @@ function _onStatus({ numero, sede, status }) {
     }
 }
 
-function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
+function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown = false }) {
     if (!msgId || !numero) return;
     let updated = false;
     let pendingCleared = false;
     let sinAckChanged  = false;
+    let delivUnknownChanged = false;
     for (const convs of Object.values(_state.conv[numero] || {})) {
         const m = convs.msgs?.find(x => x.msgId === msgId);
         if (m) {
-            // No retroceder status real (evita 4→3 por reordenamiento WS), pero sinAck sí aplica
-            if (!sinAck && (m.status || 0) >= status) return;
+            // No retroceder status real (evita 4→3 por reordenamiento WS), pero sinAck y deliveryUnknown sí aplican
+            if (!sinAck && !deliveryUnknown && (m.status || 0) >= status) return;
             const wasSinAck = !!m.sinAck;
-            m.status = status;
+            const wasDelivUnknown = !!m.deliveryUnknown;
+            if (!sinAck && !deliveryUnknown) m.status = status;
             if (sinAck && (m.status || 0) < 2) {
-                m.sinAck = true; // delivery_unknown: WA no confirmó en 90s (solo si no hay ACK real)
-            } else if (status >= 2) {
-                delete m.sinAck; // ACK real recibido: limpiar delivery_unknown si existía
+                m.sinAck = true;
+            } else if (!sinAck && status >= 2) {
+                delete m.sinAck;
             }
-            sinAckChanged = wasSinAck !== !!m.sinAck;
+            if (deliveryUnknown) {
+                m.deliveryUnknown = true;
+            } else if (status >= 3) {
+                delete m.deliveryUnknown; // receipt real: ya llegó al dispositivo
+            }
+            sinAckChanged       = wasSinAck      !== !!m.sinAck;
+            delivUnknownChanged = wasDelivUnknown !== !!m.deliveryUnknown;
             // Limpiar reloj: el ACK real de WA servers (status≥2) es el momento correcto
             if (m.pending && status >= 2) { delete m.pending; delete m.tmpId; pendingCleared = true; }
             updated = true;
@@ -4041,20 +4060,21 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     if (!updated) {
         // Condición de carrera: ACK llegó antes que el echo asignara el msgId — guardar para aplicar después
         _cleanPendingStatuses();
-        _pendingStatuses.set(msgId, { numero, status, sinAck, _ts: Date.now() });
+        _pendingStatuses.set(msgId, { numero, status, sinAck, deliveryUnknown, _ts: Date.now() });
         return;
     }
     _saveConv();
     if (_state.activeNum === numero) {
-        if (pendingCleared || sinAckChanged) {
-            // Re-render completo cuando: mensaje confirmado (quita ⏳) o sinAck cambia (agrega/quita label)
+        if (pendingCleared || sinAckChanged || delivUnknownChanged) {
+            // Re-render completo cuando: mensaje confirmado, sinAck o deliveryUnknown cambia
             _renderMsgs();
             return;
         }
         // Actualizar solo el tick del bubble — evita re-render completo y pérdida de scroll
         const bubble = document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
-        const tickEl = bubble?.querySelector('.wap-msg-ticks, .wap-msg-ticks--clock');
-        const newTick = _tickSvg(status, sinAck);
+        const tickEl = bubble?.querySelector('.wap-msg-ticks, .wap-msg-ticks--clock, .wap-msg-ticks--unknown');
+        const m = Object.values(_state.conv[numero] || {}).flatMap(c => c.msgs || []).find(x => x.msgId === msgId);
+        const newTick = _tickSvg(status, sinAck, m?.deliveryUnknown);
         if (tickEl) {
             tickEl.outerHTML = newTick || '';
         } else if (bubble && newTick) {
@@ -4067,8 +4087,8 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false }) {
     }
 }
 
-function _tickSvg(status, sinAck = false) {
-    // sinAck: backend envió pero WA no confirmó en 90s — reloj, no alarmante
+function _tickSvg(status, sinAck = false, deliveryUnknown = false) {
+    // sinAck: backend envió pero WA no confirmó en 90s — reloj gris, sutil
     if (sinAck) {
         return `<span class="wap-msg-ticks wap-msg-ticks--clock wap-msg-ticks--noack" title="WhatsApp aún no confirma entrega. No reenvíes todavía.">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -4077,15 +4097,24 @@ function _tickSvg(status, sinAck = false) {
             </svg>
         </span>`;
     }
+    // deliveryUnknown: WA confirmó envío pero sin receipt de dispositivo tras 15 min — ? ámbar
+    if (deliveryUnknown) {
+        return `<span class="wap-msg-ticks wap-msg-ticks--unknown" title="El mensaje llegó a WhatsApp pero no se confirmó entrega al dispositivo. El destinatario puede estar sin conexión.">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="#d97706" stroke-width="1.8"/>
+                <text x="8" y="12.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#d97706" font-family="sans-serif">?</text>
+            </svg>
+        </span>`;
+    }
     const color = status >= 4 ? '#53bdeb' : '#8696a0';
     if (status === 1) {
-        // Backend confirmó envío, WA aún no respondió — ✓ gris (sin reloj)
+        // Backend confirmó envío, WA aún no respondió — ✓ gris
         return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
             <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></span>`;
     }
     if (status === 2) {
-        // WA servers confirmaron recepción — ✓ gris
+        // WA servers confirmaron recepción — ✓ gris (aún no entregado al dispositivo)
         return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
             <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></span>`;
@@ -5164,8 +5193,9 @@ async function _loadMsgsSupabase(phone) {
                 celular:      !!m.desde_telefono,
                 tipo:         m.tipo || 'mensaje',
                 mediaUrl:     m.media_url      || null,
-                status:       Math.max(dbStat || 0, prev?.status || 0) || undefined,
-                sinAck:       !!m.sin_ack && (prev?.status ?? 0) < 2,
+                status:          Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                sinAck:          !!m.sin_ack && (prev?.status ?? 0) < 2,
+                deliveryUnknown: !!m.delivery_unknown && (prev?.status ?? 0) < 3,
                 reactions:    m.reactions      || {},
                 quotedMsgId:  m.quoted_msg_id  || null,
                 quotedTexto:  m.quoted_texto   || null,
@@ -5817,7 +5847,11 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? (_tickSvg(m.status, m.sinAck) + (m.sinAck ? '<span class="wap-msg-pending-label">Confirmación pendiente</span>' : '')) : '');
+            : (m.out && !m.celular ? (
+                _tickSvg(m.status, m.sinAck, m.deliveryUnknown) +
+                (m.sinAck         ? '<span class="wap-msg-pending-label">Confirmación pendiente</span>' :
+                 m.deliveryUnknown ? '<span class="wap-msg-unknown-label">Entrega no confirmada</span>' : '')
+              ) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
         // sinAck: no mostrar menú de opciones — evita reenvíos accidentales mientras WA confirma
@@ -6022,6 +6056,7 @@ async function _sendMessage() {
                     delete m.pending; delete m.tmpId;
                     m.status = ack ? ack.status : 1;
                     if (ack?.sinAck) m.sinAck = true;
+                    if (ack?.deliveryUnknown) m.deliveryUnknown = true;
                 }
             }
         } else {
@@ -6070,6 +6105,7 @@ async function _retrySend(tmpId) {
                     delete m.pending; delete m.tmpId;
                     m.status = ack ? ack.status : 1;
                     if (ack?.sinAck) m.sinAck = true;
+                    if (ack?.deliveryUnknown) m.deliveryUnknown = true;
                 }
             } else {
                 delete m.pending; delete m.tmpId; delete m.failed;
