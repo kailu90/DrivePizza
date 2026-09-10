@@ -1963,6 +1963,23 @@ function _injectStyles() {
     backdrop-filter: blur(3px);
     white-space: nowrap;
 }
+.wap-hist-inicio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 16px 8px;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    pointer-events: none;
+    flex-shrink: 0;
+}
+.wap-hist-inicio::before,
+.wap-hist-inicio::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(156,163,175,0.35);
+}
 .wap-msgs {
     flex: 1;
     overflow-y: auto;
@@ -6027,9 +6044,9 @@ function _renderMsgs() {
         return;
     }
     const _parts = [];
-    // Si ya se cargó todo el historial, mostrar indicador al tope
+    // Si ya se cargó todo el historial, mostrar indicador discreto (no sticky) al tope
     if (c.allLoaded) {
-        _parts.push(`<div class="wap-fecha-sep"><span>Inicio de la conversaci\u00f3n</span></div>`);
+        _parts.push(`<div class="wap-hist-inicio">Inicio de la conversaci\u00f3n</div>`);
     }
     let _lastDay = null;
     for (const m of c.msgs) {
