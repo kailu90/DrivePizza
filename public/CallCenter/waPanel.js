@@ -43,6 +43,7 @@ const _state = {
     conteos:           { en_espera: 0, asignado: 0, resuelto: 0 }, // desde Supabase, compartido
     respuestasRapidas: [], // [{ id, titulo, texto }]
     resueltas: { items: [], offset: 0, loading: false, done: false, busqueda: '' }, // paginación infinita
+    hist:      { phone: null, num: null, items: [], beforeId: null, loading: false, done: false, rango: '30d', desde: '', hasta: '', busqueda: '' },
 };
 
 // ── Helpers de estado ───────────────────────────────────────────────────────
@@ -1343,6 +1344,145 @@ function _injectStyles() {
     transform: translateX(0);
     pointer-events: auto;
 }
+
+/* ── Panel historial del contacto ────────────────────── */
+#wap-hist-panel {
+    position: absolute;
+    inset: 0;
+    background: var(--color-secundario);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+    overflow: hidden;
+}
+#wap-hist-panel.wap-hist--open {
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.wap-hist-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    flex-shrink: 0;
+    background: var(--color-secundario);
+}
+.wap-hist-back {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: var(--color-texto);
+    line-height: 1;
+    padding: 0 4px;
+    opacity: .7;
+}
+.wap-hist-back:hover { opacity: 1; }
+.wap-hist-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wap-hist-chips {
+    display: flex;
+    gap: 5px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.wap-hist-chips::-webkit-scrollbar { display: none; }
+.wap-hist-chip {
+    padding: 3px 11px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,.15);
+    background: transparent;
+    font-size: 1.1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--color-texto);
+    transition: background .13s, color .13s, border-color .13s;
+    flex-shrink: 0;
+}
+.wap-hist-chip:hover { background: rgba(0,0,0,.05); }
+.wap-hist-chip--active {
+    background: var(--color-primario);
+    color: #fff;
+    border-color: var(--color-primario);
+}
+.wap-hist-custom-range {
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.wap-hist-custom-range input[type=date] {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 6px;
+    font-size: 1.1rem;
+    background: var(--color-secundario);
+    color: var(--color-texto);
+    outline: none;
+}
+.wap-hist-custom-range input[type=date]:focus { border-color: var(--color-primario); }
+.wap-hist-search-wrap {
+    padding: 6px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.wap-hist-search-wrap input {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 16px;
+    font-size: 1.15rem;
+    background: rgba(0,0,0,.03);
+    color: var(--color-texto);
+    outline: none;
+    box-sizing: border-box;
+}
+.wap-hist-search-wrap input:focus { border-color: var(--color-primario); }
+.wap-hist-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.wap-hist-load-more {
+    margin: 8px auto 10px;
+    display: block;
+    padding: 5px 16px;
+    background: rgba(0,0,0,.05);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--color-terciario);
+    flex-shrink: 0;
+}
+.wap-hist-load-more:hover { background: rgba(0,0,0,.1); }
+.wap-hist-load-more:disabled { opacity: .5; cursor: default; }
+.wap-hist-empty, .wap-hist-spinner {
+    text-align: center;
+    padding: 36px 16px;
+    color: #999;
+    font-size: 1.2rem;
+}
+
 .wap-cp-header {
     display: flex;
     align-items: center;
@@ -3296,6 +3436,33 @@ function _renderShell(body) {
                     </div>
                 </div>
 
+                <!-- Panel historial del contacto (slide-in sobre wap-chat / client-panel) -->
+                <div id="wap-hist-panel">
+                    <div class="wap-hist-header">
+                        <button class="wap-hist-back" id="wap-hist-back">&#8592;</button>
+                        <span class="wap-hist-title" id="wap-hist-title">Historial</span>
+                    </div>
+                    <div class="wap-hist-chips" id="wap-hist-chips">
+                        <button class="wap-hist-chip" data-rango="7d">7 días</button>
+                        <button class="wap-hist-chip wap-hist-chip--active" data-rango="30d">30 días</button>
+                        <button class="wap-hist-chip" data-rango="90d">90 días</button>
+                        <button class="wap-hist-chip" data-rango="6m">6 meses</button>
+                        <button class="wap-hist-chip" data-rango="1a">1 año</button>
+                        <button class="wap-hist-chip" data-rango="todo">Todo</button>
+                        <button class="wap-hist-chip" data-rango="custom">📅 Fecha</button>
+                    </div>
+                    <div class="wap-hist-custom-range" id="wap-hist-custom-range" style="display:none;">
+                        <input type="date" id="wap-hist-desde" title="Desde">
+                        <input type="date" id="wap-hist-hasta" title="Hasta">
+                    </div>
+                    <div class="wap-hist-search-wrap">
+                        <input type="text" id="wap-hist-search" placeholder="Buscar en historial..." autocomplete="off">
+                    </div>
+                    <div class="wap-hist-msgs" id="wap-hist-msgs">
+                        <p class="wap-hist-empty">Abre una conversación para ver su historial</p>
+                    </div>
+                </div>
+
                 <!-- Vista: Respuestas rápidas -->
                 <div class="wap-view wap-view--hidden" id="wap-view-rr">
                     <div class="wap-rr-header">
@@ -3412,7 +3579,33 @@ function _renderShell(body) {
         if (val && val.length >= 10) { _closeClientPanel(); _vincularLidConNumero(val); }
         else _showToast('Ingresa un número válido (10 dígitos)', 2500);
     });
-    document.getElementById('wap-cp-btn-historial').addEventListener('click', () => _showToast('Próximamente', 2000));
+    document.getElementById('wap-cp-btn-historial').addEventListener('click', () => {
+        _openHistorial(_state.activeContact, _state.activeNum);
+    });
+    document.getElementById('wap-hist-back').addEventListener('click', _closeHistorial);
+    document.querySelectorAll('.wap-hist-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const r = btn.dataset.rango;
+            _state.hist.rango = r;
+            _histUpdateChips();
+            if (r !== 'custom') _histReload();
+        });
+    });
+    document.getElementById('wap-hist-desde').addEventListener('change', e => {
+        _state.hist.desde = e.target.value;
+        if (_state.hist.rango === 'custom' && _state.hist.desde && _state.hist.hasta) _histReload();
+    });
+    document.getElementById('wap-hist-hasta').addEventListener('change', e => {
+        _state.hist.hasta = e.target.value;
+        if (_state.hist.rango === 'custom' && _state.hist.desde && _state.hist.hasta) _histReload();
+    });
+    document.getElementById('wap-hist-search').addEventListener('input', e => {
+        clearTimeout(_histSearchTimer);
+        _histSearchTimer = setTimeout(() => {
+            _state.hist.busqueda = e.target.value.trim();
+            _histReload();
+        }, 450);
+    });
     document.getElementById('wap-cp-btn-pedido').addEventListener('click', () => _showToast('Próximamente', 2000));
     document.getElementById('wap-cp-add-note').addEventListener('click', () => _showToast('Próximamente', 2000));
     document.getElementById('wap-cp-addr-edit').addEventListener('click', () => _showToast('Próximamente', 2000));
@@ -7447,4 +7640,207 @@ function _insertEmoji(emoji) {
     _autoResizeTextarea(input);
     _updateSendVoiceBtn();
     _closeEmojiPicker();
+}
+
+// ── Historial del contacto ──────────────────────────────────────────────────
+let _histSearchTimer = null;
+
+function _histDateRange() {
+    const now = Math.floor(Date.now() / 1000); // segundos Unix
+    const RANGES = {
+        '7d':  now - 7   * 86400,
+        '30d': now - 30  * 86400,
+        '90d': now - 90  * 86400,
+        '6m':  now - 183 * 86400,
+        '1a':  now - 365 * 86400,
+        'todo': 0,
+    };
+    const h = _state.hist;
+    if (h.rango === 'custom') {
+        return {
+            desde: h.desde
+                ? new Date(h.desde + 'T00:00:00').toISOString()
+                : new Date((now - 30 * 86400) * 1000).toISOString(),
+            hasta: h.hasta
+                ? new Date(h.hasta + 'T23:59:59').toISOString()
+                : new Date().toISOString(),
+        };
+    }
+    const desdeTs = RANGES[h.rango] ?? RANGES['30d'];
+    return {
+        desde: desdeTs > 0 ? new Date(desdeTs * 1000).toISOString() : new Date(0).toISOString(),
+        hasta: new Date().toISOString(),
+    };
+}
+
+async function _loadHistPage() {
+    const h = _state.hist;
+    if (h.loading || h.done || !h.phone || !h.num) return;
+    h.loading = true;
+    _renderHistMsgs(); // muestra spinner
+
+    const { desde, hasta } = _histDateRange();
+    const params = new URLSearchParams({ desde, hasta, limit: 50 });
+    if (h.beforeId != null) params.set('before_id', h.beforeId);
+    if (h.busqueda)         params.set('busqueda', h.busqueda);
+
+    try {
+        const res  = await fetch(`${HETZNER_URL}/wa/historial/${encodeURIComponent(h.num)}/${encodeURIComponent(h.phone)}?${params}`);
+        const data = res.ok ? await res.json() : [];
+        const msgs = Array.isArray(data) ? data : [];
+
+        if (msgs.length) {
+            // msgs llegan en orden cronológico ASC; prepend al inicio para scroll-up loading
+            h.beforeId = msgs[0].id; // ID más antiguo = cursor para la siguiente página
+            h.items    = [...msgs, ...h.items];
+        }
+        h.done = msgs.length < 50;
+    } catch { /* sin conexión */ }
+
+    h.loading = false;
+    _renderHistMsgs();
+}
+
+function _renderHistMsgs() {
+    const el = document.getElementById('wap-hist-msgs');
+    if (!el) return;
+    const h = _state.hist;
+
+    if (h.loading && !h.items.length) {
+        el.innerHTML = '<p class="wap-hist-spinner">Cargando...</p>';
+        return;
+    }
+    if (!h.loading && !h.items.length) {
+        el.innerHTML = '<p class="wap-hist-empty">Sin mensajes en este período</p>';
+        return;
+    }
+
+    // Capturar estado de scroll ANTES de re-renderizar
+    const prevScrollHeight = el.scrollHeight;
+    const prevScrollTop    = el.scrollTop;
+    // Es primera carga si el scroll estaba arriba del todo (spinner o vacío)
+    const esPrimeraCarga   = prevScrollTop === 0 && prevScrollHeight < 200;
+
+    let html = '';
+    if (!h.done) {
+        const dis = h.loading ? ' disabled' : '';
+        html += `<button class="wap-hist-load-more" id="wap-hist-load-more-btn"${dis}>${h.loading ? 'Cargando...' : '↑ Cargar mensajes anteriores'}</button>`;
+    }
+
+    let lastDayKey = '';
+    for (const m of h.items) {
+        const ts = typeof m.timestamp === 'number' && m.timestamp < 1e12 ? m.timestamp * 1000 : m.timestamp;
+        const dk = _dayKey(ts);
+        if (dk !== lastDayKey) {
+            html += `<div class="wap-msg wap-msg--sistema" style="font-size:1rem;color:#888;">${_esc(_dateLabelChat(ts))}</div>`;
+            lastDayKey = dk;
+        }
+        html += _histMsgHTML(m, h.phone);
+    }
+
+    if (h.loading) html += '<p class="wap-hist-spinner">Cargando...</p>';
+
+    el.innerHTML = html;
+
+    document.getElementById('wap-hist-load-more-btn')?.addEventListener('click', _loadHistPage);
+
+    if (esPrimeraCarga) {
+        // Primera carga: mostrar los mensajes más recientes (ir al fondo)
+        el.scrollTop = el.scrollHeight;
+    } else {
+        // Carga de página anterior: anclar la vista para que el contenido previo no salte
+        el.scrollTop = el.scrollHeight - prevScrollHeight + prevScrollTop;
+    }
+}
+
+function _histMsgHTML(m, phone) {
+    const out  = !!m.saliente;
+    const tipo = m.tipo || 'mensaje';
+
+    if (tipo === 'sistema') {
+        const ts = typeof m.timestamp === 'number' && m.timestamp < 1e12 ? m.timestamp * 1000 : m.timestamp;
+        return `<div class="wap-msg wap-msg--sistema">${_esc(m.texto || '')}${ts ? ' · ' + _fmtTsHora(ts) : ''}</div>`;
+    }
+
+    const ts = typeof m.timestamp === 'number' && m.timestamp < 1e12 ? m.timestamp * 1000 : m.timestamp;
+    const hora = ts ? _fmtTsHora(ts) : '';
+    const dir  = out ? 'out' : 'in';
+
+    let contenido = '';
+    if (tipo === 'imagen' && m.media_url) {
+        contenido = `<img src="${_esc(m.media_url)}" loading="lazy" style="max-width:100%;border-radius:6px;display:block;margin-bottom:2px;">`;
+        if (m.texto) contenido += `<span class="wap-msg-text">${_esc(m.texto)}</span>`;
+    } else if ((tipo === 'audio' || tipo === 'voz') && m.media_url) {
+        contenido = `<audio controls src="${_esc(m.media_url)}" style="width:100%;max-width:220px;"></audio>`;
+    } else if (tipo === 'video' && m.media_url) {
+        contenido = `<video controls src="${_esc(m.media_url)}" style="max-width:100%;border-radius:6px;"></video>`;
+        if (m.texto) contenido += `<span class="wap-msg-text">${_esc(m.texto)}</span>`;
+    } else if (tipo === 'documento' && m.media_url) {
+        const nombre = _esc(m.texto?.replace('📄 ', '') || 'Documento');
+        contenido = `<a class="wap-msg-doc" href="${_esc(m.media_url)}" target="_blank" rel="noopener" download>📄 ${nombre}</a>`;
+    } else {
+        contenido = `<span class="wap-msg-text">${_esc(m.texto || '')}</span>`;
+    }
+
+    const asesorBadge = out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '';
+    const celBadge    = m.desde_telefono ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : '';
+
+    return `<div class="wap-msg wap-msg--${dir}">
+        <div class="wap-msg-bubble">
+            ${asesorBadge}
+            ${contenido}
+            <span class="wap-msg-meta">${hora}${celBadge}</span>
+        </div>
+    </div>`;
+}
+
+function _openHistorial(phone, num) {
+    if (!phone || !num) return;
+    _closeClientPanel();
+
+    const h = _state.hist;
+    h.phone    = phone;
+    h.num      = num;
+    h.items    = [];
+    h.beforeId = null;
+    h.loading  = false;
+    h.done     = false;
+    h.busqueda = '';
+    // Conservar el rango seleccionado anteriormente
+
+    // Título: nombre del contacto
+    const c       = _state.conv[num]?.[phone];
+    const display = c?.nombre || c?.name || _fmtPhone(phone);
+    const titleEl = document.getElementById('wap-hist-title');
+    if (titleEl) titleEl.textContent = display;
+
+    // Resetear chips y limpiar búsqueda
+    _histUpdateChips();
+    const searchEl = document.getElementById('wap-hist-search');
+    if (searchEl) searchEl.value = '';
+
+    document.getElementById('wap-hist-panel').classList.add('wap-hist--open');
+    _loadHistPage();
+}
+
+function _closeHistorial() {
+    document.getElementById('wap-hist-panel')?.classList.remove('wap-hist--open');
+}
+
+function _histUpdateChips() {
+    const h = _state.hist;
+    document.querySelectorAll('.wap-hist-chip').forEach(btn => {
+        btn.classList.toggle('wap-hist-chip--active', btn.dataset.rango === h.rango);
+    });
+    const customRange = document.getElementById('wap-hist-custom-range');
+    if (customRange) customRange.style.display = h.rango === 'custom' ? 'flex' : 'none';
+}
+
+function _histReload() {
+    const h    = _state.hist;
+    h.items    = [];
+    h.beforeId = null;
+    h.loading  = false;
+    h.done     = false;
+    _loadHistPage();
 }
