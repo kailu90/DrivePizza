@@ -3519,6 +3519,12 @@ function _renderShell(body) {
         _ncSearchTimer = setTimeout(() => _buscarClientes(e.target.value), 300);
     });
     document.getElementById('wap-back').addEventListener('click', _closeChat);
+    // Scroll hacia arriba en el chat → cargar mensajes más antiguos
+    document.getElementById('wap-msgs').addEventListener('scroll', () => {
+        if (document.getElementById('wap-msgs').scrollTop > 80) return;
+        clearTimeout(_msgsScrollTimer);
+        _msgsScrollTimer = setTimeout(_loadMoreMsgs, 200);
+    });
     document.getElementById('wap-liberar-btn').addEventListener('click', () => {
         if (_state.activeNum && _state.activeContact)
             _liberarChat(_state.activeNum, _state.activeContact);
@@ -5402,6 +5408,10 @@ async function _loadMsgsSupabase(phone) {
         const masNuevos      = c.msgs.filter(m => m.ts > lastSupabaseTs);
         c.msgs = [...supabaseMsgs, ...masNuevos];
 
+        // Cursor para carga de historial anterior (msgs viene en ASC; msgs[0] = más antiguo)
+        c.oldestId  = msgs[0]?.id ?? null;
+        c.allLoaded = msgs.length < 50;
+
         // Actualizar nombre desde Supabase si el asesor no asignó uno manual
         if (!c.customName) {
             const nombreSupabase = msgs.find(m => !m.saliente && m.nombre)?.nombre;
@@ -6017,6 +6027,10 @@ function _renderMsgs() {
         return;
     }
     const _parts = [];
+    // Si ya se cargó todo el historial, mostrar indicador al tope
+    if (c.allLoaded) {
+        _parts.push(`<div class="wap-fecha-sep"><span>Inicio de la conversaci\u00f3n</span></div>`);
+    }
     let _lastDay = null;
     for (const m of c.msgs) {
         const dk = m.ts ? _dayKey(m.ts) : null;
@@ -7642,8 +7656,83 @@ function _insertEmoji(emoji) {
     _closeEmojiPicker();
 }
 
+// ── Carga de mensajes anteriores (scroll-up en chat) ───────────────────────
+async function _loadMoreMsgs() {
+    const num   = _state.activeNum;
+    const phone = _state.activeContact;
+    if (!num || !phone) return;
+    const c = _state.conv[num]?.[phone];
+    if (!c || c.loadingMore || c.allLoaded || !c.oldestId) return;
+
+    c.loadingMore = true;
+
+    // Spinner temporal al tope del chat (será reemplazado por _renderMsgs)
+    const msgsEl = document.getElementById('wap-msgs');
+    const loader = document.createElement('div');
+    loader.style.cssText = 'text-align:center;padding:8px;font-size:1.1rem;color:#999;flex-shrink:0;';
+    loader.textContent   = 'Cargando mensajes anteriores...';
+    msgsEl?.prepend(loader);
+
+    // Capturar altura antes de renderizar los mensajes nuevos
+    const prevScrollHeight = msgsEl?.scrollHeight || 0;
+
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}?limit=50&before=${c.oldestId}`
+        );
+        if (!r.ok) throw new Error('fetch error');
+        const rawMsgs = await r.json();
+
+        if (!Array.isArray(rawMsgs) || !rawMsgs.length) {
+            c.allLoaded = true;
+        } else {
+            // Actualizar cursor: rawMsgs viene en ASC → rawMsgs[0] es el más antiguo
+            c.oldestId  = rawMsgs[0].id;
+            c.allLoaded = rawMsgs.length < 50;
+
+            // Convertir al formato interno (igual que _loadMsgsSupabase)
+            const prevMap = new Map((c.msgs || []).filter(m => m.msgId).map(m => [m.msgId, m]));
+            const newMsgs = rawMsgs.map(m => {
+                const prev   = prevMap.get(m.msg_id);
+                const dbStat = m.status || (m.saliente ? 2 : undefined);
+                return {
+                    text:            m.texto,
+                    ts:              m.timestamp,
+                    out:             m.saliente,
+                    msgId:           m.msg_id,
+                    asesor:          m.asesor        || null,
+                    celular:         !!m.desde_telefono,
+                    tipo:            m.tipo          || 'mensaje',
+                    mediaUrl:        m.media_url     || null,
+                    status:          Math.max(dbStat || 0, prev?.status || 0) || undefined,
+                    sinAck:          !!m.sin_ack          && (prev?.status ?? 0) < 2,
+                    deliveryUnknown: !!m.delivery_unknown && (prev?.status ?? 0) < 3,
+                    reactions:       m.reactions     || {},
+                    quotedMsgId:     m.quoted_msg_id || null,
+                    quotedTexto:     m.quoted_texto  || null,
+                    quotedFromMe:    m.quoted_from_me ?? null,
+                    editado:         !!m.editado,
+                };
+            });
+
+            // Prepend: mensajes más viejos van al inicio
+            c.msgs = [...newMsgs, ...c.msgs];
+            _saveConv();
+        }
+    } catch { /* sin conexión — sin cambios */ }
+
+    loader.remove();
+    c.loadingMore = false;
+
+    if (_state.activeContact === phone && _state.activeNum === num) {
+        _renderMsgs(); // scrollTop = scrollHeight (bottom) — lo anclamos inmediatamente abajo
+        if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight - prevScrollHeight;
+    }
+}
+
 // ── Historial del contacto ──────────────────────────────────────────────────
 let _histSearchTimer = null;
+let _msgsScrollTimer = null;
 
 function _histDateRange() {
     const now = Math.floor(Date.now() / 1000); // segundos Unix
