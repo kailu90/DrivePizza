@@ -5929,6 +5929,11 @@ function _showConflictoIdentidad(num, phone, body) {
     const existing = body.existing_contacto ? _fmtPhone(body.existing_contacto) : '?';
     const asesor   = body.existing_asesor   ? ` · ${body.existing_asesor}` : '';
     _showToast(`Contacto ya activo como ${existing}${asesor}`, 4500);
+    // Navegar al chat canónico automáticamente
+    if (body.existing_contacto) {
+        _state.activeNum = num;
+        _openChat(body.existing_contacto);
+    }
 }
 
 function _abrirModalUnificar() {
