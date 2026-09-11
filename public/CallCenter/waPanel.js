@@ -5823,18 +5823,33 @@ async function _saveClientPanel(nuevo) {
 }
 
 // Vincular lid desde el panel (equivalente a _vincularLid pero con el número ya dado)
-async function _vincularLidConNumero(realPhone) {
+async function _vincularLidConNumero(realPhone, force = false) {
     const lid = _state.activeContact;
     const num  = _state.activeNum;
     if (!lid || !num || lid.length <= 12) return;
     try {
-        const r = await fetch(
-            `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(lid)}/vincular`,
+        const url = `${HETZNER_URL}/wa/contactos/${encodeURIComponent(num)}/${encodeURIComponent(lid)}/vincular${force ? '?force=true' : ''}`;
+        const r = await fetch(url,
             { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ realPhone }) }
         );
-        if (r.ok) _showToast(`Vinculado a ${_fmtPhone(realPhone)}`, 2500);
-        else _showToast('Error al vincular — revisa el número', 3000);
+        if (r.ok) {
+            _showToast(`Vinculado a ${_fmtPhone(realPhone)}`, 2500);
+            return;
+        }
+        if (r.status === 409) {
+            const body = await r.json().catch(() => ({}));
+            const existing = body.existing ?? '?';
+            const confirmar = confirm(
+                `⚠️ Conflicto de identidad\n\n` +
+                `El número ${_fmtPhone(realPhone)} ya tiene ${existing} mensajes de otro cliente.\n\n` +
+                `¿Estás seguro de que este LID pertenece a ese número y quieres fusionar?\n\n` +
+                `Presiona Aceptar para confirmar, Cancelar para abortar.`
+            );
+            if (confirmar) await _vincularLidConNumero(realPhone, true);
+            return;
+        }
+        _showToast('Error al vincular — revisa el número', 3000);
     } catch { _showToast('Error de conexión', 3000); }
 }
 
