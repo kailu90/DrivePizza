@@ -318,6 +318,129 @@ export async function whatsappRoutes(fastify, options) {
     return { ok: true }
   })
 
+  // POST /wa/admin/unificar-identidad — fusionar dos JIDs (phone + LID) en un único contact_id
+  fastify.post('/wa/admin/unificar-identidad', async (req, reply) => {
+    const { numero, jid_a, jid_b } = req.body ?? {}
+    if (!numero || !jid_a || !jid_b)
+      return reply.code(400).send({ error: 'numero, jid_a y jid_b son requeridos' })
+    if (jid_a === jid_b)
+      return reply.code(400).send({ error: 'Los dos JIDs deben ser distintos' })
+
+    // 1. Buscar entradas existentes en wa_contact_jids
+    const { data: jidRows, error: jidErr } = await supabase
+      .from('wa_contact_jids')
+      .select('id, jid, jid_type, contact_id')
+      .eq('numero_sesion', numero)
+      .in('jid', [jid_a, jid_b])
+    if (jidErr) return reply.code(500).send({ error: jidErr.message })
+
+    const rowA = jidRows?.find(r => r.jid === jid_a)
+    const rowB = jidRows?.find(r => r.jid === jid_b)
+
+    // 2. Determinar contact_id canónico (winner) y el que se fusiona (loser)
+    let winnerContactId = null
+    let loserContactId  = null
+
+    if (rowA?.contact_id && rowB?.contact_id) {
+      if (rowA.contact_id === rowB.contact_id) {
+        winnerContactId = rowA.contact_id
+        // Ya están unificados — solo limpiar asignaciones duplicadas
+      } else {
+        // Preferir el de tipo phone; si ambos o ninguno es phone, preferir el de id menor (más antiguo)
+        const preferA = rowA.jid_type === 'phone' || (rowB.jid_type !== 'phone' && rowA.contact_id < rowB.contact_id)
+        winnerContactId = preferA ? rowA.contact_id : rowB.contact_id
+        loserContactId  = preferA ? rowB.contact_id : rowA.contact_id
+      }
+    } else if (rowA?.contact_id) {
+      winnerContactId = rowA.contact_id
+    } else if (rowB?.contact_id) {
+      winnerContactId = rowB.contact_id
+    } else {
+      // Ninguno tiene contact — crear uno nuevo
+      const { data: newC, error: newErr } = await supabase
+        .from('wa_contacts')
+        .insert({ numero_sesion: numero })
+        .select('id').single()
+      if (newErr) return reply.code(500).send({ error: newErr.message })
+      winnerContactId = newC.id
+    }
+
+    // 3. Migrar referencias del loser al winner (si hay loser)
+    if (loserContactId) {
+      // a. NULL preferred_identity_id del loser para evitar FK circular
+      await supabase.from('wa_contacts')
+        .update({ preferred_identity_id: null })
+        .eq('id', loserContactId)
+      // b. Redirigir wa_contact_jids del loser al winner
+      await supabase.from('wa_contact_jids')
+        .update({ contact_id: winnerContactId })
+        .eq('contact_id', loserContactId)
+        .eq('numero_sesion', numero)
+      // c. Redirigir mensajes_wa
+      await supabase.from('mensajes_wa')
+        .update({ contact_id: winnerContactId })
+        .eq('contact_id', loserContactId)
+        .eq('numero', numero)
+      // d. Redirigir asignaciones_wa
+      await supabase.from('asignaciones_wa')
+        .update({ contact_id: winnerContactId })
+        .eq('contact_id', loserContactId)
+        .eq('numero', numero)
+      // e. Eliminar wa_contacts loser (ya sin hijos)
+      await supabase.from('wa_contacts').delete().eq('id', loserContactId)
+    }
+
+    // 4. Upsert ambos JIDs en wa_contact_jids apuntando al winner (trust_level confirmed)
+    for (const jid of [jid_a, jid_b]) {
+      const jid_type = /^\d{13,}$/.test(jid) ? 'lid' : 'phone'
+      await supabase.from('wa_contact_jids').upsert(
+        { contact_id: winnerContactId, numero_sesion: numero, jid, jid_type, trust_level: 'confirmed', source: 'manual' },
+        { onConflict: 'numero_sesion,jid' }
+      )
+    }
+
+    // 5. Asegurar contact_id en mensajes de ambos JIDs
+    for (const jid of [jid_a, jid_b]) {
+      await supabase.from('mensajes_wa')
+        .update({ contact_id: winnerContactId })
+        .eq('numero', numero)
+        .eq('contacto', jid)
+        .neq('contact_id', winnerContactId)
+    }
+
+    // 6. Asegurar contact_id en asignaciones de ambos JIDs
+    for (const jid of [jid_a, jid_b]) {
+      await supabase.from('asignaciones_wa')
+        .update({ contact_id: winnerContactId })
+        .eq('numero', numero)
+        .eq('contacto', jid)
+    }
+
+    // 7. Cerrar asignaciones activas duplicadas — mantener la del JID phone, cerrar la del LID
+    const { data: activeAsigs } = await supabase
+      .from('asignaciones_wa')
+      .select('id, contacto, asesor, estado')
+      .eq('numero', numero)
+      .in('contacto', [jid_a, jid_b])
+      .eq('activo', true)
+
+    if (activeAsigs && activeAsigs.length > 1) {
+      const phoneJid  = /^57\d{10}$/.test(jid_a) ? jid_a : jid_b
+      const primary   = activeAsigs.find(a => a.contacto === phoneJid) || activeAsigs[0]
+      const toClose   = activeAsigs.filter(a => a.id !== primary.id)
+      for (const asig of toClose) {
+        await supabase.from('asignaciones_wa')
+          .update({ activo: false, estado: 'resuelto' })
+          .eq('id', asig.id)
+      }
+    }
+
+    // 8. Auditoría
+    console.log(`[WA:IDENTITY_MANUAL_MERGE] ${JSON.stringify({ numero, jid_a, jid_b, contact_id: winnerContactId, merged_from_id: loserContactId ?? null, operator: req.headers['x-asesor'] ?? 'unknown' })}`)
+
+    return { ok: true, contact_id: winnerContactId, merged_from_id: loserContactId ?? null }
+  })
+
   // DELETE /wa/asignaciones/:numero/:contacto — liberar chat
   fastify.delete('/wa/asignaciones/:numero/:contacto', async (req, reply) => {
     const { numero, contacto } = req.params

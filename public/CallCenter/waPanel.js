@@ -1272,6 +1272,31 @@ function _injectStyles() {
     overflow: hidden;
 }
 .wap-actions-menu.open { display: block; }
+/* ── Unificar identidad modal ── */
+.wap-unif-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 9999;
+    align-items: center; justify-content: center;
+}
+.wap-unif-overlay.open { display: flex; }
+.wap-unif-modal {
+    background: #fff; border-radius: 14px;
+    width: 90%; max-width: 400px; padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+.wap-unif-modal h3 { margin: 0 0 14px; font-size: 1.5rem; color: #1f2937; }
+.wap-unif-modal p  { margin: 0 0 6px; font-size: 1.3rem; color: #4b5563; }
+.wap-unif-jid-box  { background: #f3f4f6; border-radius: 8px; padding: 8px 12px; font-family: monospace; font-size: 1.25rem; color: #374151; margin: 0 0 14px; word-break: break-all; }
+.wap-unif-input    { width: 100%; box-sizing: border-box; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 8px 12px; font-size: 1.3rem; margin: 0 0 10px; }
+.wap-unif-input:focus { outline: none; border-color: #25D366; }
+.wap-unif-sug-list { margin: 0 0 14px; display: flex; flex-direction: column; gap: 4px; }
+.wap-unif-sug-btn  { text-align: left; padding: 6px 10px; border-radius: 7px; border: 1px solid #e5e7eb; background: #f9fafb; cursor: pointer; font-size: 1.2rem; color: #374151; }
+.wap-unif-sug-btn:hover { background: #dcfce7; border-color: #86efac; }
+.wap-unif-btns     { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.wap-unif-btn-cancel  { padding: 7px 16px; border-radius: 8px; border: 1.5px solid #d1d5db; background: none; cursor: pointer; font-size: 1.3rem; }
+.wap-unif-btn-confirm { padding: 7px 18px; border-radius: 8px; border: none; background: #25D366; color: #fff; cursor: pointer; font-size: 1.3rem; font-weight: 600; }
+.wap-unif-btn-confirm:disabled { opacity: .5; cursor: not-allowed; }
 .wap-action-item {
     display: flex;
     align-items: center;
@@ -3230,6 +3255,22 @@ function _renderShell(body) {
                 </div>
             </div>
 
+            <!-- ── Modal: Unificar identidad (admin) ── -->
+            <div class="wap-unif-overlay" id="wap-unif-overlay">
+                <div class="wap-unif-modal">
+                    <h3>Unificar identidad</h3>
+                    <p>JID activo:</p>
+                    <div class="wap-unif-jid-box" id="wap-unif-jid-a"></div>
+                    <p>Unificar con:</p>
+                    <input class="wap-unif-input" id="wap-unif-jid-b-input" placeholder="Número o JID del otro chat..." autocomplete="off">
+                    <div class="wap-unif-sug-list" id="wap-unif-sugerencias"></div>
+                    <div class="wap-unif-btns">
+                        <button class="wap-unif-btn-cancel" id="wap-unif-cancel">Cancelar</button>
+                        <button class="wap-unif-btn-confirm" id="wap-unif-confirm">Unificar</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── Área de contenido ── -->
             <div class="wap-content" id="wap-content">
 
@@ -3280,6 +3321,7 @@ function _renderShell(body) {
                                 <div class="wap-actions-menu" id="wap-actions-menu">
                                     <button class="wap-action-item" id="wap-action-transferir">&#8599; Transferir a...</button>
                                     <div class="wap-asesores-list" id="wap-asesores-list" style="display:none;"></div>
+                                    <button class="wap-action-item" id="wap-action-unificar" style="display:none;">&#128279; Unificar identidad</button>
                                 </div>
                             </div>
                             <button class="wap-abrir-btn" id="wap-abrir-btn" style="display:none;">Abrir conversaci&#xF3;n</button>
@@ -3571,6 +3613,18 @@ function _renderShell(body) {
             });
         });
     });
+    document.getElementById('wap-action-unificar').addEventListener('click', e => {
+        e.stopPropagation();
+        _closeActionsMenu();
+        _abrirModalUnificar();
+    });
+    document.getElementById('wap-unif-cancel').addEventListener('click', () => {
+        document.getElementById('wap-unif-overlay').classList.remove('open');
+    });
+    document.getElementById('wap-unif-overlay').addEventListener('click', e => {
+        if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+    });
+    document.getElementById('wap-unif-confirm').addEventListener('click', _unificarIdentidad);
     // Cerrar dropdown al hacer clic fuera
     document.addEventListener('click', e => {
         if (!e.target.closest('#wap-chat-actions-wrap')) _closeActionsMenu();
@@ -3830,6 +3884,11 @@ async function _tomarChat(num, phone) {
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ numero: num, contacto: phone, asesor: _asesorActual }),
         });
+        if (r.status === 409) {
+            const body = await r.json().catch(() => ({}));
+            _showConflictoIdentidad(num, phone, body);
+            return;
+        }
         if (!r.ok) return _showToast('Error al tomar el chat', 3000);
         _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'asignado' };
         _saveAsig();
@@ -3867,6 +3926,11 @@ async function _resolverDesdeEspera(num, phone) {
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ numero: num, contacto: phone, asesor: _asesorActual }),
         });
+        if (r1.status === 409) {
+            const body = await r1.json().catch(() => ({}));
+            _showConflictoIdentidad(num, phone, body);
+            return;
+        }
         if (!r1.ok) return _showToast('Error al resolver', 3000);
         const r2 = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PUT',
@@ -5524,6 +5588,12 @@ function _updateChatHeader(phone) {
     const vincularBtn = document.getElementById('wap-vincular-lid-btn');
     if (vincularBtn) vincularBtn.style.display = 'none';
 
+    // Botón "Unificar identidad": solo admin
+    const unificarBtn = document.getElementById('wap-action-unificar');
+    if (unificarBtn) {
+        unificarBtn.style.display = ['admin', 'callcenter-admin'].includes(_rolUsuario) ? '' : 'none';
+    }
+
     // Badge de color de la conexión en el borde izquierdo del header
     const header = document.querySelector('.wap-chat-header');
     if (header) header.style.borderLeftColor = color;
@@ -5851,6 +5921,96 @@ async function _vincularLidConNumero(realPhone, force = false) {
         }
         _showToast('Error al vincular — revisa el número', 3000);
     } catch { _showToast('Error de conexión', 3000); }
+}
+
+// ── Unificación de identidad phone/LID ────────────────────────────────────
+
+function _showConflictoIdentidad(num, phone, body) {
+    const existing = body.existing_contacto ? _fmtPhone(body.existing_contacto) : '?';
+    const asesor   = body.existing_asesor   ? ` · ${body.existing_asesor}` : '';
+    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    _showToast(`Contacto ya activo como ${existing}${asesor}`, 4500);
+    if (isAdmin) {
+        // Abrir modal prerellenado con el JID existente como jid_b
+        _state.activeNum     = num;
+        _state.activeContact = phone;
+        setTimeout(() => {
+            _abrirModalUnificar();
+            const inputB = document.getElementById('wap-unif-jid-b-input');
+            if (inputB && body.existing_contacto) inputB.value = body.existing_contacto;
+        }, 300);
+    }
+}
+
+function _abrirModalUnificar() {
+    const num   = _state.activeNum;
+    const phone = _state.activeContact;
+    if (!num || !phone) return;
+
+    document.getElementById('wap-unif-jid-a').textContent = phone;
+    const inputB = document.getElementById('wap-unif-jid-b-input');
+    if (inputB && !inputB.value) inputB.value = '';
+
+    // Sugerencias: otras conversaciones de la misma sesión
+    const sugs = document.getElementById('wap-unif-sugerencias');
+    if (sugs) {
+        const otros = Object.keys(_state.conv[num] || {}).filter(j => j !== phone);
+        sugs.innerHTML = otros.length ? otros.slice(0, 8).map(j => {
+            const c     = _state.conv[num][j];
+            const label = c?.nombre || c?.name || _fmtPhone(j);
+            return `<button class="wap-unif-sug-btn" data-jid="${_esc(j)}">${_esc(label)} <span style="font-family:monospace;font-size:1.1rem;color:#9ca3af">${_esc(j)}</span></button>`;
+        }).join('') : '';
+        sugs.querySelectorAll('.wap-unif-sug-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                document.getElementById('wap-unif-jid-b-input').value = b.dataset.jid;
+            });
+        });
+    }
+
+    document.getElementById('wap-unif-overlay').classList.add('open');
+    document.getElementById('wap-unif-jid-b-input')?.focus();
+}
+
+async function _unificarIdentidad() {
+    const num   = _state.activeNum;
+    const jid_a = _state.activeContact;
+    const jid_b = document.getElementById('wap-unif-jid-b-input')?.value.trim();
+    if (!num || !jid_a || !jid_b) return _showToast('Completa todos los campos', 2500);
+    if (jid_a === jid_b) return _showToast('Los JIDs deben ser distintos', 2500);
+
+    const btn = document.getElementById('wap-unif-confirm');
+    if (btn) btn.disabled = true;
+    try {
+        const r = await fetch(`${HETZNER_URL}/wa/admin/unificar-identidad`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero: num, jid_a, jid_b }),
+        });
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) { _showToast(body.error || 'Error al unificar', 3000); return; }
+
+        document.getElementById('wap-unif-overlay').classList.remove('open');
+        _showToast('Identidades unificadas', 2500);
+
+        // Fusionar conversación local del jid_b en jid_a
+        if (_state.conv[num]?.[jid_b]) {
+            const convB = _state.conv[num][jid_b];
+            const convA = _state.conv[num][jid_a] || { msgs: [], unread: 0, lastMsg: '', lastTs: 0, name: null, nombre: null };
+            const all   = [...(convA.msgs || []), ...(convB.msgs || [])];
+            all.sort((a, b) => a.ts - b.ts);
+            const seen = new Set();
+            convA.msgs = all.filter(m => { const k = `${m.ts}:${m.text}`; if (seen.has(k)) return false; seen.add(k); return true; });
+            if ((convB.lastTs || 0) > (convA.lastTs || 0)) { convA.lastMsg = convB.lastMsg; convA.lastTs = convB.lastTs; }
+            _state.conv[num][jid_a] = convA;
+            delete _state.conv[num][jid_b];
+        }
+        // Limpiar asignación del JID secundario
+        delete _state.asignaciones[`${num}:${jid_b}`];
+        _saveAsig();
+        _renderList();
+        _openChat(jid_a);
+    } catch { _showToast('Error de conexión', 3000); }
+    finally { if (btn) btn.disabled = false; }
 }
 
 function _editContactName() {
