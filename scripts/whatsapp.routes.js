@@ -400,12 +400,17 @@ export async function whatsappRoutes(fastify, options) {
     }
 
     // 5. Asegurar contact_id en mensajes de ambos JIDs
+    //    y migrar contacto del JID secundario al canónico (phone) para consolidar historial
+    const _phoneJid = /^57\d{10}$/.test(jid_a) ? jid_a : /^57\d{10}$/.test(jid_b) ? jid_b : null
+    const _lidJid   = [jid_a, jid_b].find(j => /^\d{13,}$/.test(j) && !/^57\d{10}$/.test(j))
     for (const jid of [jid_a, jid_b]) {
+      const updateFields = { contact_id: winnerContactId }
+      // Migrar contacto del LID al phone para que GET /wa/mensajes los sirva bajo el JID canónico
+      if (jid === _lidJid && _phoneJid) updateFields.contacto = _phoneJid
       await supabase.from('mensajes_wa')
-        .update({ contact_id: winnerContactId })
+        .update(updateFields)
         .eq('numero', numero)
         .eq('contacto', jid)
-        .neq('contact_id', winnerContactId)
     }
 
     // 6. Asegurar contact_id en asignaciones de ambos JIDs
@@ -435,17 +440,26 @@ export async function whatsappRoutes(fastify, options) {
       }
     }
 
-    // 8. Sincronizar wa_identidades — fuente de verdad de _resolverLid en el backend
-    // Necesario para que _resolverLid nivel 2 resuelva correctamente sin pasar por wa_contact_jids
-    const _phonePair = [jid_a, jid_b].find(j => /^57\d{10}$/.test(j))
-    const _lidPair   = [jid_a, jid_b].find(j => /^\d{13,}$/.test(j) && !/^57\d{10}$/.test(j))
-    if (_phonePair && _lidPair) {
-      await supabase.from('wa_identidades')
-        .upsert({ lid: _lidPair, telefono: _phonePair, numero_sesion: numero }, { onConflict: 'lid' })
+    // 8. Fijar preferred_identity_id en wa_contacts al JID phone (identidad canónica)
+    if (_phoneJid) {
+      const { data: phoneJidRow } = await supabase.from('wa_contact_jids')
+        .select('id').eq('numero_sesion', numero).eq('jid', _phoneJid).maybeSingle()
+      if (phoneJidRow?.id) {
+        await supabase.from('wa_contacts')
+          .update({ preferred_identity_id: phoneJidRow.id })
+          .eq('id', winnerContactId)
+      }
     }
 
-    // 9. Auditoría
-    console.log(`[WA:IDENTITY_MANUAL_MERGE] ${JSON.stringify({ numero, jid_a, jid_b, contact_id: winnerContactId, merged_from_id: loserContactId ?? null, operator: req.headers['x-asesor'] ?? 'unknown' })}`)
+    // 10. Sincronizar wa_identidades — fuente de verdad de _resolverLid en el backend
+    // Necesario para que _resolverLid nivel 2 resuelva correctamente sin pasar por wa_contact_jids
+    if (_phoneJid && _lidJid) {
+      await supabase.from('wa_identidades')
+        .upsert({ lid: _lidJid, telefono: _phoneJid, numero_sesion: numero }, { onConflict: 'lid' })
+    }
+
+    // 11. Auditoría
+    console.log(`[WA:IDENTITY_MANUAL_MERGE] ${JSON.stringify({ numero, jid_a, jid_b, contact_id: winnerContactId, merged_from_id: loserContactId ?? null, phone_jid: _phoneJid, lid_jid: _lidJid })}`)
 
     return { ok: true, contact_id: winnerContactId, merged_from_id: loserContactId ?? null }
   })

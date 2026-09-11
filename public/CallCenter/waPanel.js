@@ -5928,18 +5928,7 @@ async function _vincularLidConNumero(realPhone, force = false) {
 function _showConflictoIdentidad(num, phone, body) {
     const existing = body.existing_contacto ? _fmtPhone(body.existing_contacto) : '?';
     const asesor   = body.existing_asesor   ? ` · ${body.existing_asesor}` : '';
-    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     _showToast(`Contacto ya activo como ${existing}${asesor}`, 4500);
-    if (isAdmin) {
-        // Abrir modal prerellenado con el JID existente como jid_b
-        _state.activeNum     = num;
-        _state.activeContact = phone;
-        setTimeout(() => {
-            _abrirModalUnificar();
-            const inputB = document.getElementById('wap-unif-jid-b-input');
-            if (inputB && body.existing_contacto) inputB.value = body.existing_contacto;
-        }, 300);
-    }
 }
 
 function _abrirModalUnificar() {
