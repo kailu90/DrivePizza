@@ -435,7 +435,16 @@ export async function whatsappRoutes(fastify, options) {
       }
     }
 
-    // 8. Auditoría
+    // 8. Sincronizar wa_identidades — fuente de verdad de _resolverLid en el backend
+    // Necesario para que _resolverLid nivel 2 resuelva correctamente sin pasar por wa_contact_jids
+    const _phonePair = [jid_a, jid_b].find(j => /^57\d{10}$/.test(j))
+    const _lidPair   = [jid_a, jid_b].find(j => /^\d{13,}$/.test(j) && !/^57\d{10}$/.test(j))
+    if (_phonePair && _lidPair) {
+      await supabase.from('wa_identidades')
+        .upsert({ lid: _lidPair, telefono: _phonePair, numero_sesion: numero }, { onConflict: 'lid' })
+    }
+
+    // 9. Auditoría
     console.log(`[WA:IDENTITY_MANUAL_MERGE] ${JSON.stringify({ numero, jid_a, jid_b, contact_id: winnerContactId, merged_from_id: loserContactId ?? null, operator: req.headers['x-asesor'] ?? 'unknown' })}`)
 
     return { ok: true, contact_id: winnerContactId, merged_from_id: loserContactId ?? null }

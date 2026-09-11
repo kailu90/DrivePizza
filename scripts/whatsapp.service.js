@@ -335,6 +335,31 @@ function _waLog(tag, datos = {}) {
 async function _checkIdentityConflict(numero, sede, lidPhone, realPhone) {
   if (!supabase) return false
   try {
+    // ── Nivel A: mismo contact_id en wa_contact_jids ─────────────────────────
+    // Si ambos JIDs ya comparten contact_id, son el mismo cliente — no es conflicto
+    const [{ data: rowLid }, { data: rowPhone }] = await Promise.all([
+      supabase.from('wa_contact_jids').select('contact_id').eq('numero_sesion', numero).eq('jid', lidPhone).maybeSingle(),
+      supabase.from('wa_contact_jids').select('contact_id').eq('numero_sesion', numero).eq('jid', realPhone).maybeSingle(),
+    ])
+    if (rowLid?.contact_id && rowPhone?.contact_id && rowLid.contact_id === rowPhone.contact_id) {
+      _waLog('IDENTITY_ALREADY_UNIFIED', { numero, lidPhone, realPhone, contact_id: rowLid.contact_id })
+      return false
+    }
+
+    // ── Nivel B: par lid↔phone registrado en wa_identidades ──────────────────
+    // Si el LID ya tiene una entrada explícita apuntando a este mismo phone,
+    // el par es conocido y verificado — no es conflicto aunque el phone tenga mensajes
+    const { data: ident } = await supabase.from('wa_identidades')
+      .select('telefono').eq('lid', lidPhone).maybeSingle()
+    if (ident?.telefono) {
+      const storedPhone = ident.telefono.length === 10 ? '57' + ident.telefono : ident.telefono
+      if (storedPhone === realPhone) {
+        _waLog('IDENTITY_KNOWN', { numero, lidPhone, realPhone })
+        return false // par explícitamente registrado — no es conflicto
+      }
+    }
+
+    // ── Nivel C: verificación de conflicto real ───────────────────────────────
     const { count } = await supabase.from('mensajes_wa')
       .select('id', { count: 'exact', head: true })
       .eq('numero', numero).eq('contacto', realPhone)
@@ -400,7 +425,7 @@ async function _resolverLid(entrada, lid, timeoutMs = 1500) {
   const cached = entrada?.lidToPhone?.get(lid)
   if (cached) return cached
 
-  // 2. wa_identidades — fuente de verdad para mapeo lid↔teléfono
+  // 2. wa_identidades — fuente de verdad principal para mapeo lid↔teléfono
   if (supabase) {
     try {
       const { data: ident } = await supabase.from('wa_identidades')
@@ -414,6 +439,33 @@ async function _resolverLid(entrada, lid, timeoutMs = 1500) {
       }
     } catch(e) {
       console.error('[WA] Error buscando lid en wa_identidades:', e.message)
+    }
+  }
+
+  // 2.5. wa_contact_jids — resultado de unificaciones manuales (phone/LID mismo contact_id)
+  const _numSesion = entrada?.numero_sesion
+  if (supabase && _numSesion) {
+    try {
+      const { data: jidRow } = await supabase.from('wa_contact_jids')
+        .select('contact_id').eq('numero_sesion', _numSesion).eq('jid', lid).maybeSingle()
+      if (jidRow?.contact_id) {
+        const { data: phoneRow } = await supabase.from('wa_contact_jids')
+          .select('jid').eq('numero_sesion', _numSesion)
+          .eq('contact_id', jidRow.contact_id).eq('jid_type', 'phone').maybeSingle()
+        if (phoneRow?.jid) {
+          const phone = phoneRow.jid
+          entrada.lidToPhone.set(lid, phone)
+          if (entrada.phoneToLid) entrada.phoneToLid.set(phone, lid)
+          // Sincronizar wa_identidades para que la próxima vez sea nivel 2
+          supabase.from('wa_identidades')
+            .upsert({ lid, telefono: phone, numero_sesion: _numSesion }, { onConflict: 'lid' })
+            .catch(() => {})
+          console.log('[WA] @lid resuelto desde wa_contact_jids:', lid, '→', phone)
+          return phone
+        }
+      }
+    } catch(e) {
+      console.error('[WA] Error buscando lid en wa_contact_jids:', e.message)
     }
   }
 
@@ -884,7 +936,7 @@ export async function iniciarSesion(numero, sede) {
   }
   if (_rawKeys.clear) _instrumentedKeys.clear = (...args) => _rawKeys.clear(...args)
 
-  sesiones.set(numero, { socket: null, status: 'conectando', qr: null, sede, contactos: new Map(), lidToPhone: new Map(), phoneToLid: new Map(), reconnectAttempts: 0, lockOwner, heartbeatInterval: null, reconcileInterval: null, keyStore: _instrumentedKeys, saveCreds })
+  sesiones.set(numero, { numero_sesion: numero, socket: null, status: 'conectando', qr: null, sede, contactos: new Map(), lidToPhone: new Map(), phoneToLid: new Map(), reconnectAttempts: 0, lockOwner, heartbeatInterval: null, reconcileInterval: null, keyStore: _instrumentedKeys, saveCreds })
 
   const sock = makeWASocket({
     version,
@@ -976,7 +1028,7 @@ export async function iniciarSesion(numero, sede) {
       if (entrada.lockOwner && !entrada.heartbeatInterval) {
         entrada.heartbeatInterval = _startHeartbeat(numero, entrada.lockOwner)
       }
-      // Precargar mapeo lid→phone desde wa_identidades (persiste entre reinicios)
+      // Precargar mapeo lid→phone desde wa_identidades + wa_contact_jids (persiste entre reinicios)
       if (supabase) {
         try {
           const { data: rows } = await supabase
@@ -986,9 +1038,33 @@ export async function iniciarSesion(numero, sede) {
             entrada.lidToPhone.set(r.lid, ph)
             entrada.phoneToLid.set(ph, r.lid)
           }
-          if (rows?.length) console.log(`[WA] ${rows.length} identidad(es) lid↔phone precargadas para ${numero}`)
+          if (rows?.length) console.log(`[WA] ${rows.length} identidad(es) lid↔phone precargadas desde wa_identidades para ${numero}`)
         } catch(e) {
           console.error('[WA] Error precargando wa_identidades:', e.message)
+        }
+        // También cargar desde wa_contact_jids (unificaciones manuales que no están en wa_identidades)
+        try {
+          const { data: jidRows } = await supabase.from('wa_contact_jids')
+            .select('jid, jid_type, contact_id').eq('numero_sesion', numero)
+          if (jidRows?.length) {
+            const byContact = new Map()
+            for (const r of jidRows) {
+              if (!byContact.has(r.contact_id)) byContact.set(r.contact_id, {})
+              if (r.jid_type === 'phone') byContact.get(r.contact_id).phone = r.jid
+              else if (r.jid_type === 'lid') byContact.get(r.contact_id).lid = r.jid
+            }
+            let added = 0
+            for (const [, pair] of byContact) {
+              if (pair.phone && pair.lid && !entrada.lidToPhone.has(pair.lid)) {
+                entrada.lidToPhone.set(pair.lid, pair.phone)
+                entrada.phoneToLid.set(pair.phone, pair.lid)
+                added++
+              }
+            }
+            if (added) console.log(`[WA] ${added} mapeo(s) lid↔phone adicionales precargados desde wa_contact_jids para ${numero}`)
+          }
+        } catch(e) {
+          console.error('[WA] Error precargando wa_contact_jids:', e.message)
         }
       }
       // Reconciliación al reconectar: espera 10s para que Baileys entregue
