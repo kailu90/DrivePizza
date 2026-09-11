@@ -1764,7 +1764,10 @@ async function _enviarRespuestaInicial(numero, contacto, sede, esLidSinResolver 
       console.log('[WA] Auto-respuesta omitida: @lid sin resolver tras delay:', contacto)
       return
     }
-    const jid   = resolvedPhone + '@s.whatsapp.net'
+    // Usar LID si phoneToLid lo tiene — mismo comportamiento que sendMensaje.
+    // Evita "Esperando mensaje" cuando el dispositivo opera con LID pero se envía a @s.whatsapp.net.
+    const knownLid = entrada.phoneToLid?.get(resolvedPhone)
+    const jid      = knownLid ? (knownLid + '@lid') : (resolvedPhone + '@s.whatsapp.net')
     const texto = cfg.respuesta_inicial.trim()
     const sent  = await entrada.socket.sendMessage(jid, { text: texto })
     const ts    = Math.floor(Date.now() / 1000)
