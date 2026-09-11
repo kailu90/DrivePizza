@@ -4084,7 +4084,8 @@ function _connectWs() {
             if (msg.tipo === 'wa:liberacion')   _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')       _onEstado(msg);
             if (msg.tipo === 'wa:transferencia') _onTransferencia(msg);
-            if (msg.tipo === 'wa:merge')         _onMerge(msg);
+            if (msg.tipo === 'wa:merge')            _onMerge(msg);
+            if (msg.tipo === 'wa:identity_conflict') _onIdentityConflict(msg);
             if (msg.tipo === 'wa:config')        _onConfig(msg);
             if (msg.tipo === 'wa:msg_status')    _onMsgStatus(msg);
             if (msg.tipo === 'wa:msg_eliminado') _onMsgEliminado(msg);
@@ -4517,6 +4518,19 @@ function _onMerge({ numero, lidPhone, realPhone }) {
     }
     _saveConv();
     _renderList();
+}
+
+function _onIdentityConflict({ numero, sede, lidPhone, realPhone, existing }) {
+    // El LID lidPhone intentó resolverse al número realPhone, pero ese número
+    // ya tiene conversación propia (existing mensajes). El backend abortó la fusión
+    // y el LID quedó como contacto separado. Se notifica al panel para acción manual.
+    console.warn('[waPanel] IDENTITY_CONFLICT', { numero, lidPhone, realPhone, existing });
+    const lidFmt  = _fmtPhone(lidPhone);
+    const realFmt = _fmtPhone(realPhone);
+    _showToast(
+        `⚠️ Conflicto de identidad: LID ${lidFmt} intentó fusionarse con ${realFmt} (${existing} msgs existentes). Requiere revisión manual.`,
+        8000
+    );
 }
 
 function _onConfig({ numero, color, respuesta_inicial }) {
