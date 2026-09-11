@@ -1774,7 +1774,9 @@ async function _enviarRespuestaInicial(numero, contacto, sede, esLidSinResolver 
     const msgId = sent?.key?.id || null
     if (msgId) _sentMsgIds.add(msgId)
 
-    broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: jid, fromMe: true,
+    // Broadcast usa siempre el número canónico (@s.whatsapp.net), no el LID de envío.
+    // Si se usara jid (@lid), el panel crearía un chat duplicado bajo el LID.
+    broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: resolvedPhone + '@s.whatsapp.net', fromMe: true,
                 pushName: null, texto, timestamp: ts, msgId, asesor: null })
     await supabase.from('mensajes_wa').insert({
       numero, contacto, nombre: null, texto, timestamp: ts,
