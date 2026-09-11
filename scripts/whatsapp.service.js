@@ -1251,6 +1251,7 @@ export async function iniciarSesion(numero, sede) {
     const lid   = _phoneDesdeJid(c.lid)
     if (!phone || !lid) return
     entrada.lidToPhone.set(lid, phone)
+    if (entrada.phoneToLid) entrada.phoneToLid.set(phone, lid)
     // Notificar a mensajes que estaban esperando resolución de este lid
     if (_pendingLidResolutions.has(lid)) {
       for (const resolve of _pendingLidResolutions.get(lid)) resolve(phone)
