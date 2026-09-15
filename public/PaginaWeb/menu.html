@@ -62,31 +62,99 @@
 
     <!-- SELECTOR DE SEDE -->
     <section class="pw-selector-section">
-      <div class="pw-selector-header">
-        <h2 class="pw-selector-title">¿Dónde quieres disfrutar tu Drive Pizza?</h2>
-        <p class="pw-selector-subtitle">Escribe tu barrio o sector y te mostraremos la sede más cercana para atenderte.</p>
+
+      <!-- Paso 1: tipo de entrega -->
+      <div id="home-tipo-wrapper">
+        <div class="pw-selector-header">
+          <h2 class="pw-selector-title">¿Dónde quieres recibir tu Drive Pizza?</h2>
+        </div>
+        <div class="pw-tipo-pills" id="home-tipo-pills">
+          <button class="pw-tipo-pill" data-tipo="domicilio">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M8 17.5h7"/><path d="M15 6h2l3 5.5h-3.5"/><path d="M15 6l-3 5.5H8L6.5 15"/><path d="M10 11.5L9 6H6"/><path d="M14 6h1"/></svg>
+            Domicilio
+          </button>
+          <button class="pw-tipo-pill" data-tipo="recoger">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Recoger
+          </button>
+        </div>
       </div>
-      <div class="pw-direccion-wrapper" id="home-dir-wrapper">
+
+      <!-- Paso 2a: ubicación para domicilio -->
+      <div class="pw-direccion-wrapper" id="home-dir-wrapper" hidden>
+        <div class="pw-selector-header pw-selector-header--nav">
+          <button class="pw-auth-back-btn" id="btn-tipo-back" aria-label="Volver">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h2 class="pw-selector-title">¿Dónde quieres recibir tu Drive Pizza?</h2>
+        </div>
+        <button class="pw-gps-btn-main" id="home-gps-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+          Usar mi ubicación actual
+        </button>
+        <p class="pw-home-dir-divider">o escribe tu barrio</p>
         <div class="pw-direccion-input">
           <svg class="pw-direccion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
           </svg>
-          <input type="text" placeholder="Ej.: Provenza, Real de minas, Soto mayor, centro." class="pw-direccion-field" id="dir-inicio" autocomplete="off">
-          <button class="pw-direccion-gps" id="home-gps-btn" aria-label="Usar mi ubicación">
+          <input type="text" placeholder="Ej: Cabecera, Provenza, Centro..." class="pw-direccion-field" id="dir-inicio" autocomplete="off">
+          <button class="pw-dir-gps-icon" id="home-gps-icon-btn" aria-label="Usar mi ubicación">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
             </svg>
           </button>
         </div>
         <div class="pw-dir-suggestions" id="dir-suggestions" hidden></div>
+        <p class="pw-ciudad-no-gps">¿Tu ciudad no aparece? <button class="pw-auth-link" id="btn-elegir-ciudad">Selecciona tu ciudad</button></p>
       </div>
-      <div id="dir-selected-card" class="pw-dir-selected-card" hidden></div>
-      <h3 class="pw-sedes-title" id="sedes-title">Elige una sede</h3>
-      <div id="sedes-grid" class="pw-sedes-list">
-        <div class="pw-loading">
-          <div class="pw-spinner"></div>
-          <span>Cargando sedes...</span>
-        </div>
+
+      <!-- Paso 2b: selector de ciudad (domicilio sin GPS o recoger multi-ciudad) -->
+      <div id="home-ciudad-wrapper" hidden></div>
+
+      <!-- Resultado domicilio: card de sede unica -->
+      <div id="dir-selected-card" hidden></div>
+
+      <!-- Resultado recoger: lista de sedes -->
+      <div class="pw-sedes-title" id="sedes-title" hidden></div>
+      <div id="sedes-grid" class="pw-sedes-list" hidden></div>
+
+    </section>
+
+    <!-- CATEGORÍAS -->
+    <section class="pw-cats-section" id="home-cats-section">
+      <h2 class="pw-cats-title">¿Qué se te antoja hoy?</h2>
+      <p class="pw-cats-sub">Descubre nuestras especialidades</p>
+      <div class="pw-cats-grid">
+        <button class="pw-cat-item" data-cat="pizzas">
+          <div class="pw-cat-img">
+            <img src="../Imagenes/cats/pizzas.jpg" alt="Pizzas" loading="lazy" onerror="this.style.display='none'">
+            <span class="pw-cat-emoji">🍕</span>
+          </div>
+          <span class="pw-cat-label">Pizzas</span>
+        </button>
+        <button class="pw-cat-item" data-cat="sandwiches">
+          <div class="pw-cat-img">
+            <img src="../Imagenes/cats/sandwiches.jpg" alt="Sandwiches" loading="lazy" onerror="this.style.display='none'">
+            <span class="pw-cat-emoji">🥪</span>
+          </div>
+          <span class="pw-cat-label">Sandwiches</span>
+        </button>
+        <button class="pw-cat-item" data-cat="lasanas">
+          <div class="pw-cat-img">
+            <img src="../Imagenes/cats/lasanas.jpg" alt="Lasañas" loading="lazy" onerror="this.style.display='none'">
+            <span class="pw-cat-emoji">🫕</span>
+          </div>
+          <span class="pw-cat-label">Lasañas</span>
+        </button>
+        <button class="pw-cat-item" data-cat="promos">
+          <div class="pw-cat-img">
+            <video src="../Imagenes/cats/promos.mp4" autoplay muted loop playsinline></video>
+            <span class="pw-cat-emoji">🏷️</span>
+          </div>
+          <span class="pw-cat-label">Promos</span>
+        </button>
       </div>
     </section>
 

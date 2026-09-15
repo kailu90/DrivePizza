@@ -1,23 +1,26 @@
 /* ============================================================
    Drive Pizza — Vista de Inicio (SPA)
+   Flujo: tipo entrega → ubicacion/ciudad → sede asignada
    ============================================================ */
 
-import { cargarSedes, estaAbierta, setSedeActual, getSedeActual, displayNombre } from './sede.js';
+import { cargarSedes, estaAbierta, formatApertura, setSedeActual, getSedeActual, displayNombre } from './sede.js';
 import { vaciarCarrito } from './carrito.js';
 import { cargarTodosBarrios, getBarrioCoordsMap } from '../../CallCenter/barriosService.js';
 
 // ── ESTADO ───────────────────────────────────────────────────
 let sedesData          = [];
+let _tipoEntrega       = null;   // 'domicilio' | 'recoger'
+let _ciudadActual      = null;
 let userLat            = null;
 let userLng            = null;
 let barrioSeleccionado = '';
 let initialized        = false;
 let _onSedeSelected    = null;
 
-// ── ÍNDICE DE BARRIOS (se llena async en initHomeView()) ──────
+// ── ÍNDICE DE BARRIOS ─────────────────────────────────────────
 let barrioIndex     = {};
 let todosLosBarrios = [];
-let barrioCoords    = {}; // { barrio: { lat, lng } } — para Haversine sin GPS
+let barrioCoords    = {};
 
 // ── CONSTANTES ───────────────────────────────────────────────
 const BANNERS = [
@@ -36,6 +39,24 @@ const SEDE_IMGS = {
   'unico':       '../Imagenes/sedes/unico.jpeg',
   'único':       '../Imagenes/sedes/unico.jpeg',
 };
+
+// IDs de todos los paneles del home — para mostrar/ocultar
+const HOME_PANELS = [
+  'home-tipo-wrapper',
+  'home-dir-wrapper',
+  'home-ciudad-wrapper',
+  'dir-selected-card',
+  'sedes-title',
+  'sedes-grid',
+];
+
+// ── PANEL UTIL ───────────────────────────────────────────────
+function _showPanels(...ids) {
+  HOME_PANELS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = !ids.includes(id);
+  });
+}
 
 // ── BANNER ───────────────────────────────────────────────────
 function initBanner() {
@@ -84,9 +105,6 @@ function initBanner() {
   if (BANNERS.length > 1) startAuto();
 }
 
-// Radio GPS máximo (km) cuando el barrio no está en BD
-const GPS_RADIO_KM = 10;
-
 // ── HAVERSINE ────────────────────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
   const R    = 6371;
@@ -98,81 +116,268 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
-// ── RENDER SEDES ─────────────────────────────────────────────
-function renderSedes() {
-  const grid           = document.getElementById('sedes-grid');
-  if (!grid) return;
-  const refLat         = userLat ?? barrioCoords[barrioSeleccionado]?.lat ?? null;
-  const refLng         = userLng ?? barrioCoords[barrioSeleccionado]?.lng ?? null;
-  const tieneUbicacion = refLat !== null && refLng !== null;
+// ── NORMALIZAR CIUDAD ────────────────────────────────────────
+function _normCiudad(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
 
-  const sedes = sedesData.map(s => {
-    const dist      = (tieneUbicacion && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (tieneUbicacion && dist !== null)
-      ? dist > GPS_RADIO_KM
-      : (barrioSeleccionado && barrioIndex[barrioSeleccionado])
-        ? !barrioIndex[barrioSeleccionado].has(s.name || '')
-        : false;
-    return { ...s, _dist: dist, _fueraZona: fueraZona };
+// ── CIUDADES DISPONIBLES ─────────────────────────────────────
+function _getCiudades() {
+  const seen = new Set();
+  return sedesData.map(s => s.ciudad).filter(c => c && !seen.has(c) && seen.add(c));
+}
+
+// ── DETECTAR CIUDAD DESDE LAT/LNG (Nominatim) ───────────────
+async function _detectarCiudad(lat, lng) {
+  try {
+    const url  = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+    const data = await res.json();
+    const addr = data.address || {};
+    const raw  = addr.city || addr.town || addr.municipality
+               || addr.county || addr.state_district || '';
+    if (!raw) return null;
+    const ciudades = _getCiudades();
+    const norm     = _normCiudad(raw);
+    return ciudades.find(c => _normCiudad(c) === norm)
+        || ciudades.find(c => norm.includes(_normCiudad(c)) || _normCiudad(c).includes(norm))
+        || null;
+  } catch {
+    return null;
+  }
+}
+
+// ── SEDE OPTIMA PARA COORDENADAS ─────────────────────────────
+// Prioridad: abierta + dentro de radio_km > abierta mas cercana > cualquiera
+// Si lat/lng son null (seleccion manual): retorna primera sede abierta de la ciudad
+function _sedeParaCoordenadas(lat, lng, ciudad) {
+  const candidatas = ciudad ? sedesData.filter(s => s.ciudad === ciudad) : sedesData;
+  if (!candidatas.length) return null;
+
+  if (lat == null || lng == null) {
+    return candidatas.find(estaAbierta) || candidatas[0];
+  }
+
+  const conDist = candidatas.map(s => ({
+    ...s,
+    _dist: (s.lat && s.lng) ? haversine(lat, lng, s.lat, s.lng) : Infinity,
+  }));
+  const radio = s => s.radio_km || 10;
+
+  const ok = conDist.filter(s => estaAbierta(s) && s._dist <= radio(s));
+  if (ok.length) return ok.sort((a, b) => a._dist - b._dist)[0];
+
+  const abiertas = conDist.filter(estaAbierta);
+  if (abiertas.length) {
+    const mejor = abiertas.sort((a, b) => a._dist - b._dist)[0];
+    return { ...mejor, _fueraZona: true };
+  }
+
+  const closest = conDist.sort((a, b) => a._dist - b._dist)[0];
+  return closest ? { ...closest, _fueraZona: true } : null;
+}
+
+// ── RENDER: PASO 1 — TIPO ────────────────────────────────────
+function _renderTipoSelector() {
+  _tipoEntrega = null;
+  _showPanels('home-tipo-wrapper');
+}
+
+// ── RENDER: PASO 2a — INPUT DOMICILIO ────────────────────────
+function _renderDomicilioInput() {
+  _showPanels('home-dir-wrapper');
+  setTimeout(() => document.getElementById('dir-inicio')?.focus(), 50);
+}
+
+// ── RENDER: SELECTOR DE CIUDAD ───────────────────────────────
+function _renderCiudadSelector(onCiudad) {
+  const ciudades = _getCiudades();
+  const wrap = document.getElementById('home-ciudad-wrapper');
+  wrap.innerHTML = `
+    <div class="pw-selector-header pw-selector-header--nav">
+      <button class="pw-auth-back-btn" id="btn-ciudad-back" aria-label="Volver">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 class="pw-selector-title">Selecciona tu ciudad</h2>
+    </div>
+    <div class="pw-ciudad-pills">
+      ${ciudades.map(c => `<button class="pw-ciudad-pill" data-ciudad="${c}">${c}</button>`).join('')}
+    </div>`;
+  _showPanels('home-ciudad-wrapper');
+  wrap.querySelectorAll('.pw-ciudad-pill').forEach(btn => {
+    btn.addEventListener('click', () => onCiudad(btn.dataset.ciudad));
   });
-
-  sedes.sort((a, b) => {
-    const aD = estaAbierta(a) && !a._fueraZona;
-    const bD = estaAbierta(b) && !b._fueraZona;
-    if (aD !== bD) return Number(bD) - Number(aD);
-    if (a._dist !== null && b._dist !== null) return a._dist - b._dist;
-    return 0;
+  wrap.querySelector('#btn-ciudad-back').addEventListener('click', () => {
+    if (_tipoEntrega === 'domicilio') _renderDomicilioInput();
+    else _renderTipoSelector();
   });
+}
 
-  const iCercana = tieneUbicacion
-    ? sedes.findIndex(s => s._dist !== null && s._dist <= GPS_RADIO_KM && !s._fueraZona && estaAbierta(s))
-    : -1;
+// ── RENDER: CARD SEDE DOMICILIO ──────────────────────────────
+function _renderCardDomicilio(sede, { barrio = '', label = '' } = {}) {
+  const card    = document.getElementById('dir-selected-card');
+  const abierta = estaAbierta(sede);
+  const fuera   = !!sede._fueraZona;
+  const nombre  = displayNombre(sede);
+  const sedeImg = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
 
-  grid.innerHTML = sedes.map((sede, idx) => {
-    const abierta      = estaAbierta(sede);
-    const fueraZona    = sede._fueraZona;
-    const disponible   = abierta && !fueraZona;
-    const nombre       = displayNombre(sede);
-    const sedeImg      = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
-    const esMasCercana = idx === iCercana;
-    const distLabel    = sede._dist !== null
-      ? (sede._dist < 1 ? `Distancia ${Math.round(sede._dist * 1000)} m` : `Distancia ${sede._dist.toFixed(1)} km`)
-      : '';
+  let badgeHtml;
+  if (!abierta) {
+    badgeHtml = `<span class="pw-home-sede-badge pw-home-sede-badge--cerrada">Cerrado &middot; abre a las ${formatApertura(sede)}</span>`;
+  } else if (fuera) {
+    badgeHtml = `<span class="pw-home-sede-badge pw-home-sede-badge--fuera">Fuera de zona de entrega</span>`;
+  } else {
+    badgeHtml = `<span class="pw-home-sede-badge pw-home-sede-badge--ok">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Entregamos en tu zona</span>`;
+  }
+
+  card.innerHTML = `
+    <div class="pw-home-sede-card">
+      <div class="pw-home-sede-body">
+        <div class="pw-home-sede-info">
+          ${badgeHtml}
+          <p class="pw-home-sede-nombre">${nombre}</p>
+          <div class="pw-home-sede-meta">
+            <span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              ${sede.ciudad || label || ''}
+            </span>
+            <span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              45–60 min
+            </span>
+            <span class="pw-home-sede-meta-estado pw-home-sede-meta-estado--${abierta ? 'ok' : 'cerrada'}">
+              ${abierta ? 'Abierto' : 'Cerrado'}
+            </span>
+          </div>
+          <p class="pw-home-sede-sub">Te atendemos desde la sede más conveniente para tu zona</p>
+        </div>
+        <div class="pw-home-sede-photo">
+          <img src="${sedeImg}" alt="${nombre}">
+        </div>
+      </div>
+      <div class="pw-home-sede-actions">
+        ${abierta && !fuera
+          ? `<button class="pw-home-ver-menu-btn" id="btn-pedir-aqui">Ver men&uacute; &#8594;</button>`
+          : `<button class="pw-home-ver-menu-btn pw-home-ver-menu-btn--disabled" disabled>No disponible ahora</button>`}
+        <button class="pw-home-cambiar-link" id="btn-cambiar-dir">Cambiar ubicación</button>
+      </div>
+    </div>`;
+
+  _showPanels('dir-selected-card');
+
+  localStorage.setItem('dp_direccion', JSON.stringify({
+    tipoEntrega: 'domicilio',
+    lat:         userLat,
+    lng:         userLng,
+    ciudad:      sede.ciudad || _ciudadActual || null,
+    barrio,
+    direccion:   '',
+    sedeId:      sede.id,
+    sedeNombre:  nombre,
+  }));
+
+  if (abierta && !fuera) {
+    card.querySelector('#btn-pedir-aqui').addEventListener('click', () => {
+      const actual = getSedeActual();
+      if (!actual || actual.id !== sede.id) vaciarCarrito();
+      setSedeActual(sede);
+      _onSedeSelected?.(sede);
+    });
+  }
+
+  card.querySelector('#btn-cambiar-dir').addEventListener('click', _resetHome, { once: true });
+}
+
+// ── RENDER: SEDES RECOGER ────────────────────────────────────
+function _renderRecogerSedes(ciudad) {
+  _ciudadActual = ciudad;
+  const grid    = document.getElementById('sedes-grid');
+  const titleEl = document.getElementById('sedes-title');
+
+  console.log('_renderRecogerSedes ciudad=', ciudad, 'sedesData=', sedesData.map(s => s.name + '/' + s.ciudad));
+  const candidatas = ciudad
+    ? (sedesData.filter(s => s.ciudad === ciudad).length
+        ? sedesData.filter(s => s.ciudad === ciudad)
+        : sedesData)
+    : sedesData;
+
+  const sedes = candidatas
+    .map(s => ({
+      ...s,
+      _dist: (userLat != null && s.lat && s.lng)
+        ? haversine(userLat, userLng, s.lat, s.lng)
+        : null,
+    }))
+    .sort((a, b) => {
+      const aOk = estaAbierta(a), bOk = estaAbierta(b);
+      if (aOk !== bOk) return Number(bOk) - Number(aOk);
+      if (a._dist !== null && b._dist !== null) return a._dist - b._dist;
+      return 0;
+    });
+
+  const ciudades = _getCiudades();
+  const backLabel = ciudades.length > 1 ? '&#8592; Cambiar ciudad' : '&#8592; Cambiar tipo';
+
+  if (titleEl) {
+    titleEl.innerHTML = `
+      <span class="pw-sedes-title-text">Sedes en ${ciudad}</span>
+      <button class="pw-auth-link pw-sedes-back-btn" id="btn-sedes-back">${backLabel}</button>`;
+  }
+
+  grid.innerHTML = sedes.map(sede => {
+    const abierta = estaAbierta(sede);
+    const nombre  = displayNombre(sede);
+    const sedeImg = SEDE_IMGS[(sede.name || '').toLowerCase().trim()] || '../Imagenes/sede-placeholder.jpeg';
     return `
-      <div class="pw-sede-card-h${disponible ? '' : ' pw-sede-card-h--cerrada'}"
+      <div class="pw-sede-card-h${abierta ? '' : ' pw-sede-card-h--cerrada'}"
            data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'
-           ${disponible ? `tabindex="0" role="button" aria-label="Pedir en ${nombre}"` : 'aria-disabled="true"'}>
+           ${abierta ? `tabindex="0" role="button" aria-label="Recoger en ${nombre}"` : 'aria-disabled="true"'}>
         <div class="pw-sede-card-h-img"><img src="${sedeImg}" alt="${nombre}"></div>
         <div class="pw-sede-card-h-info">
-          <span class="pw-sede-status pw-sede-status--${!abierta ? 'cerrada' : (fueraZona ? 'fuera' : 'abierta')}">
-            ${!abierta ? 'Cerrado' : (fueraZona ? 'Fuera de zona' : 'Abierto')}
+          <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
+            ${abierta ? 'Abierto' : 'Cerrado'}
           </span>
           <div class="pw-sede-nombre">${nombre}</div>
-          ${distLabel ? `<div class="pw-sede-dist">${distLabel}</div>` : ''}
           <div class="pw-sede-tiempo">&#128336; 45 - 60 min &nbsp;&#11088; 4.8</div>
-          ${esMasCercana ? `<span class="pw-sede-badge-cercana">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            Más cercana</span>` : ''}
         </div>
-        <button class="pw-sede-btn pw-sede-btn--${disponible ? 'abierta' : 'cerrada'}${!disponible ? ' pw-sede-btn--horarios' : ''}">
-          ${disponible ? 'Ver menú →' : 'Ver horarios →'}
+        <button class="pw-sede-btn pw-sede-btn--${abierta ? 'abierta' : 'cerrada'}${!abierta ? ' pw-sede-btn--horarios' : ''}">
+          ${abierta ? 'Recoger aqui &#8594;' : 'Ver horarios &#8594;'}
         </button>
       </div>`;
   }).join('');
 
+  _showPanels('sedes-title', 'sedes-grid');
+
+  document.getElementById('btn-sedes-back')?.addEventListener('click', () => {
+    if (ciudades.length > 1) {
+      _renderCiudadSelector(c => _renderRecogerSedes(c));
+    } else {
+      _resetHome();
+    }
+  });
+
   grid.querySelectorAll('.pw-sede-btn--horarios').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const sede = JSON.parse(btn.closest('[data-sede]').dataset.sede);
-      abrirModalHorarios(sede);
+      abrirModalHorarios(JSON.parse(btn.closest('[data-sede]').dataset.sede));
     });
   });
 
   grid.querySelectorAll('.pw-sede-card-h:not(.pw-sede-card-h--cerrada)').forEach(card => {
     const abrir = () => {
-      const sede   = JSON.parse(card.dataset.sede);
+      const sede  = JSON.parse(card.dataset.sede);
       const actual = getSedeActual();
       if (!actual || actual.id !== sede.id) vaciarCarrito();
+      const dpDir = (() => { try { return JSON.parse(localStorage.getItem('dp_direccion')) || {}; } catch { return {}; } })();
+      localStorage.setItem('dp_direccion', JSON.stringify({
+        ...dpDir,
+        tipoEntrega: 'recoger',
+        ciudad,
+        sedeId:     sede.id,
+        sedeNombre: displayNombre(sede),
+      }));
       setSedeActual(sede);
       _onSedeSelected?.(sede);
     };
@@ -181,163 +386,190 @@ function renderSedes() {
   });
 }
 
-// ── DIRECCIÓN CARD ───────────────────────────────────────────
-function renderDirCard(barrio) {
-  const dirWrapper      = document.getElementById('home-dir-wrapper');
-  const dirSelectedCard = document.getElementById('dir-selected-card');
-  const sedesTitle      = document.getElementById('sedes-title');
-  if (!dirSelectedCard) return;
+// ── FLUJO: DESDE COORDENADAS ─────────────────────────────────
+async function _flujoDesdeCoords(lat, lng, label = '') {
+  userLat = lat;
+  userLng = lng;
 
+  const ciudad = await _detectarCiudad(lat, lng);
+
+  if (ciudad) {
+    _ciudadActual = ciudad;
+    const sede = _sedeParaCoordenadas(lat, lng, ciudad);
+    if (sede) {
+      _renderCardDomicilio(sede, { label });
+    } else {
+      _renderCiudadSelector(c => {
+        _ciudadActual = c;
+        const s = _sedeParaCoordenadas(lat, lng, c);
+        if (s) _renderCardDomicilio(s, { label });
+      });
+    }
+  } else {
+    _renderCiudadSelector(c => {
+      _ciudadActual = c;
+      const s = _sedeParaCoordenadas(lat, lng, c);
+      if (s) _renderCardDomicilio(s, { label });
+    });
+  }
+}
+
+// ── FLUJO: DESDE BARRIO (autocomplete) ──────────────────────
+async function _flujoDesdeBarrio(barrio) {
   barrioSeleccionado = barrio;
+  const coords = barrioCoords[barrio];
 
-  // Sede disponible que cubre este barrio (o la más cercana si hay GPS o coords de barrio)
-  const barCoords = barrioCoords[barrio];
-  const refLat    = userLat ?? barCoords?.lat ?? null;
-  const refLng    = userLng ?? barCoords?.lng ?? null;
-  const sedesCalc = sedesData.map(s => {
-    const dist      = (refLat && s.lat && s.lng) ? haversine(refLat, refLng, s.lat, s.lng) : null;
-    const fueraZona = (refLat !== null && dist !== null)
-      ? dist > GPS_RADIO_KM
-      : (barrioIndex[barrio]
-        ? !barrioIndex[barrio].has(s.name || '')
-        : false);
-    return { ...s, _dist: dist, _fueraZona: fueraZona };
+  if (coords?.lat && coords?.lng) {
+    // Tiene coordenadas → detectar ciudad via Nominatim
+    await _flujoDesdeCoords(coords.lat, coords.lng, barrio);
+    return;
+  }
+
+  // Sin coordenadas → buscar via barrioIndex cual sede cubre este barrio
+  const sedesCubren = barrioIndex[barrio] ? [...barrioIndex[barrio]] : [];
+  if (sedesCubren.length) {
+    const sede = sedesData.find(s => sedesCubren.includes(s.name) && estaAbierta(s))
+              || sedesData.find(s => sedesCubren.includes(s.name));
+    if (sede) {
+      _ciudadActual = sede.ciudad || null;
+      _renderCardDomicilio(sede, { barrio, label: barrio });
+      return;
+    }
+  }
+
+  // Fallback: selector de ciudad
+  _renderCiudadSelector(c => {
+    _ciudadActual = c;
+    const s = _sedeParaCoordenadas(null, null, c);
+    if (s) _renderCardDomicilio(s, { barrio, label: barrio });
   });
-  sedesCalc.sort((a, b) => {
-    const aD = estaAbierta(a) && !a._fueraZona;
-    const bD = estaAbierta(b) && !b._fueraZona;
-    if (aD !== bD) return Number(bD) - Number(aD);
-    if (a._dist !== null && b._dist !== null) return a._dist - b._dist;
-    return 0;
-  });
-  const sedeEntrega = sedesCalc.find(s => estaAbierta(s) && !s._fueraZona) || null;
-  const enZona      = !!sedeEntrega;
-  const nombreSede  = sedeEntrega ? displayNombre(sedeEntrega) : '—';
-
-  dirSelectedCard.innerHTML = `
-    <div class="pw-dir-card-top">
-      <div class="pw-dir-card-col">
-        <span class="pw-dir-card-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          Entrega en
-        </span>
-        <strong class="pw-dir-card-sede">${nombreSede}</strong>
-        <span class="pw-dir-card-addr">${barrio}</span>
-      </div>
-      <div class="pw-dir-card-col pw-dir-card-col--right">
-        <span class="pw-dir-card-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v5"/><circle cx="15.5" cy="17.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M3 11h13"/></svg>
-          Tiempo estimado
-        </span>
-        <strong class="pw-dir-card-tiempo">45 - 60 min</strong>
-      </div>
-      <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar &#8594;</button>
-    </div>
-    <div class="pw-dir-card-bottom">
-      <span class="pw-dir-card-zona pw-dir-card-zona--${enZona ? 'ok' : 'fuera'}">
-        ${enZona
-          ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Entregamos en tu zona`
-          : `&#9888; Fuera de zona de entrega`}
-      </span>
-    </div>`;
-
-  localStorage.setItem('dp_direccion', JSON.stringify({
-    barrio,
-    direccion:  '',
-    lat:        refLat,
-    lng:        refLng,
-    sedeId:     sedeEntrega?.id ?? null,
-    sedeNombre: nombreSede,
-  }));
-
-  renderSedes();
-  if (dirWrapper) dirWrapper.hidden = true;
-  dirSelectedCard.hidden = false;
-  if (sedesTitle) sedesTitle.textContent = 'Sedes cercanas';
-
-  dirSelectedCard.querySelector('#btn-cambiar-dir')?.addEventListener('click', () => {
-    barrioSeleccionado = '';
-    dirSelectedCard.hidden = true;
-    if (dirWrapper) dirWrapper.hidden = false;
-    const dirField = document.getElementById('dir-inicio');
-    if (dirField) dirField.value = '';
-    userLat = null; userLng = null;
-    if (sedesTitle) sedesTitle.textContent = 'Elige una sede';
-    renderSedes();
-  }, { once: true });
 }
 
-// ── RESTAURAR ESTADO ─────────────────────────────────────────
-function restoreState() {
-  const sede  = getSedeActual();
+// ── RESTORE STATE (usuario recurrente) ───────────────────────
+// Recalcula cobertura y disponibilidad en lugar de confiar en dp_sede guardado
+function _restoreState() {
   const dpDir = (() => { try { return JSON.parse(localStorage.getItem('dp_direccion')); } catch { return null; } })();
-  if (!sede) return;
+  if (!dpDir?.tipoEntrega) return false;
 
-  const dirWrapper      = document.getElementById('home-dir-wrapper');
-  const dirSelectedCard = document.getElementById('dir-selected-card');
-  const sedesTitle      = document.getElementById('sedes-title');
-  if (!dirSelectedCard) return;
+  _tipoEntrega  = dpDir.tipoEntrega;
+  _ciudadActual = dpDir.ciudad || null;
+  _setActivePill(_tipoEntrega);
 
-  // Restaurar barrio y coords si existen
-  if (dpDir?.barrio) barrioSeleccionado = dpDir.barrio;
-  if (dpDir?.lat)    { userLat = dpDir.lat; userLng = dpDir.lng; renderSedes(); }
+  if (dpDir.tipoEntrega === 'domicilio') {
+    let sede = null;
 
-  const nombreSede = displayNombre(sede);
-  const addrLine   = dpDir?.barrio ? `<span class="pw-dir-card-addr">${dpDir.barrio}</span>` : '';
+    if (dpDir.lat != null && dpDir.lng != null) {
+      // Recalcular con coordenadas guardadas
+      userLat = dpDir.lat;
+      userLng = dpDir.lng;
+      sede    = _sedeParaCoordenadas(dpDir.lat, dpDir.lng, dpDir.ciudad || null);
+    } else if (dpDir.sedeId) {
+      // Sin coordenadas: usar sedeId como referencia, revalidar estado actual
+      sede = sedesData.find(s => s.id === dpDir.sedeId)
+          || (dpDir.ciudad && (sedesData.find(s => s.ciudad === dpDir.ciudad && estaAbierta(s))
+                            || sedesData.find(s => s.ciudad === dpDir.ciudad)));
+    }
 
-  dirSelectedCard.innerHTML = `
-    <div class="pw-dir-card-top">
-      <div class="pw-dir-card-col">
-        <span class="pw-dir-card-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          Entrega en
-        </span>
-        <strong class="pw-dir-card-sede">${nombreSede}</strong>
-        ${addrLine}
-      </div>
-      <div class="pw-dir-card-col pw-dir-card-col--right">
-        <span class="pw-dir-card-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v5"/><circle cx="15.5" cy="17.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><path d="M3 11h13"/></svg>
-          Tiempo estimado
-        </span>
-        <strong class="pw-dir-card-tiempo">45 - 60 min</strong>
-      </div>
-      <button class="pw-dir-card-cambiar" id="btn-cambiar-dir">Cambiar &#8594;</button>
-    </div>
-    <div class="pw-dir-card-bottom">
-      <span class="pw-dir-card-zona pw-dir-card-zona--ok">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Sede seleccionada
-      </span>
-    </div>`;
+    if (sede) {
+      _renderCardDomicilio(sede, { barrio: dpDir.barrio || '', label: dpDir.barrio || '' });
+      return true;
+    }
+  }
 
-  dirSelectedCard.hidden = false;
-  if (dirWrapper) dirWrapper.hidden = true;
-  if (sedesTitle) sedesTitle.textContent = 'Sedes cercanas';
+  if (dpDir.tipoEntrega === 'recoger' && dpDir.ciudad) {
+    _renderRecogerSedes(dpDir.ciudad);
+    return true;
+  }
 
-  dirSelectedCard.querySelector('#btn-cambiar-dir')?.addEventListener('click', () => {
-    barrioSeleccionado = '';
-    dirSelectedCard.hidden = true;
-    if (dirWrapper) dirWrapper.hidden = false;
-    const dirField = document.getElementById('dir-inicio');
-    if (dirField) dirField.value = '';
-    userLat = null; userLng = null;
-    if (sedesTitle) sedesTitle.textContent = 'Elige una sede';
-    renderSedes();
-  }, { once: true });
+  return false;
 }
 
-// ── AUTOCOMPLETE DE BARRIO (búsqueda local) ───────────────────
-function setupAddressSearch() {
+// ── RESET ────────────────────────────────────────────────────
+function _resetHome() {
+  _tipoEntrega       = null;
+  _ciudadActual      = null;
+  userLat            = null;
+  userLng            = null;
+  barrioSeleccionado = '';
   const dirField = document.getElementById('dir-inicio');
-  const dirSug   = document.getElementById('dir-suggestions');
-  const gpsBtn   = document.getElementById('home-gps-btn');
+  if (dirField) dirField.value = '';
+  document.getElementById('dir-suggestions').innerHTML = '';
+  document.getElementById('dir-suggestions').hidden = true;
+  _renderTipoSelector();
+}
+
+// ── SETUP: TIPO SELECTOR ─────────────────────────────────────
+function _setActivePill(tipo) {
+  document.querySelectorAll('#home-tipo-pills .pw-tipo-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.tipo === tipo);
+  });
+}
+
+function _setupTipoSelector() {
+  document.querySelectorAll('#home-tipo-pills .pw-tipo-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      _tipoEntrega = pill.dataset.tipo;
+      _setActivePill(_tipoEntrega);
+      if (_tipoEntrega === 'domicilio') {
+        _renderDomicilioInput();
+      } else {
+        const ciudades = _getCiudades();
+        if (ciudades.length <= 1) {
+          _renderRecogerSedes(ciudades[0] || null);
+        } else {
+          _renderCiudadSelector(c => _renderRecogerSedes(c));
+        }
+      }
+    });
+  });
+}
+
+// ── SETUP: GPS ───────────────────────────────────────────────
+function _setupGPS() {
+  const gpsBtn     = document.getElementById('home-gps-btn');
+  const gpsIconBtn = document.getElementById('home-gps-icon-btn');
+
+  const handler = () => {
+    if (!navigator.geolocation) {
+      alert('Tu navegador no soporta geolocalización.');
+      return;
+    }
+    if (gpsBtn) gpsBtn.classList.add('pw-gps-btn-main--loading');
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        if (gpsBtn) gpsBtn.classList.remove('pw-gps-btn-main--loading');
+        await _flujoDesdeCoords(coords.latitude, coords.longitude);
+      },
+      () => {
+        if (gpsBtn) gpsBtn.classList.remove('pw-gps-btn-main--loading');
+        _renderCiudadSelector(c => {
+          _ciudadActual = c;
+          const s = _sedeParaCoordenadas(null, null, c);
+          if (s) _renderCardDomicilio(s, {});
+        });
+      },
+      { timeout: 10000 }
+    );
+  };
+
+  gpsBtn?.addEventListener('click', handler);
+  gpsIconBtn?.addEventListener('click', handler);
+}
+
+// ── SETUP: BUSQUEDA BARRIO ───────────────────────────────────
+function _setupAddressSearch() {
+  const dirField  = document.getElementById('dir-inicio');
+  const dirSug    = document.getElementById('dir-suggestions');
+  const btnBack   = document.getElementById('btn-tipo-back');
+  const btnCiudad = document.getElementById('btn-elegir-ciudad');
   if (!dirField) return;
 
-  function hideSug() { if (dirSug) { dirSug.innerHTML = ''; dirSug.hidden = true; } }
+  function hideSug() {
+    if (dirSug) { dirSug.innerHTML = ''; dirSug.hidden = true; }
+  }
 
   function fetchSug(q) {
-    const ql      = q.toLowerCase();
+    const ql = q.toLowerCase();
     const matches = todosLosBarrios
       .filter(b => b.toLowerCase().includes(ql))
       .sort((a, b) => {
@@ -349,17 +581,16 @@ function setupAddressSearch() {
       .slice(0, 8);
 
     if (!matches.length || !dirSug) { hideSug(); return; }
-
     dirSug.innerHTML = matches.map(b =>
       `<button class="pw-dir-sug-item" data-barrio="${b}">${b}</button>`
     ).join('');
     dirSug.hidden = false;
 
     dirSug.querySelectorAll('.pw-dir-sug-item').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         dirField.value = btn.dataset.barrio;
         hideSug();
-        renderDirCard(btn.dataset.barrio);
+        await _flujoDesdeBarrio(btn.dataset.barrio);
       });
     });
   }
@@ -374,39 +605,14 @@ function setupAddressSearch() {
     if (!e.target.closest('#home-dir-wrapper')) hideSug();
   });
 
-  if (!gpsBtn) return;
-  gpsBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) { alert('Tu navegador no soporta geolocalización.'); return; }
-    gpsBtn.classList.add('pw-direccion-gps--loading');
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          userLat = coords.latitude;
-          userLng = coords.longitude;
-          const url  = `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`;
-          const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
-          const data = await res.json();
+  btnBack?.addEventListener('click', _resetHome);
 
-          // Intentar match del barrio GPS contra nuestro índice local
-          const suburb    = data.address?.suburb || data.address?.neighbourhood || data.address?.quarter || '';
-          const barrioGPS = todosLosBarrios.find(b => b.toLowerCase() === suburb.toLowerCase())
-                         || todosLosBarrios.find(b => suburb.toLowerCase().includes(b.toLowerCase()));
-
-          const label = barrioGPS || suburb || data.display_name.split(',').slice(0, 2).join(',').trim();
-          dirField.value = label;
-          renderDirCard(label);
-        } catch {
-          alert('No pudimos obtener tu dirección. Intenta escribiéndola.');
-        } finally {
-          gpsBtn.classList.remove('pw-direccion-gps--loading');
-        }
-      },
-      () => {
-        alert('No se pudo acceder a tu ubicación. Verifica los permisos.');
-        gpsBtn.classList.remove('pw-direccion-gps--loading');
-      },
-      { timeout: 10000 }
-    );
+  btnCiudad?.addEventListener('click', () => {
+    _renderCiudadSelector(c => {
+      _ciudadActual = c;
+      const s = _sedeParaCoordenadas(null, null, c);
+      if (s) _renderCardDomicilio(s, {});
+    });
   });
 }
 
@@ -458,16 +664,23 @@ function abrirModalHorarios(sede) {
 
 // ── INIT ─────────────────────────────────────────────────────
 export async function initHomeView({ onSedeSelected } = {}) {
+  console.log('HOME NUEVO v2 — initHomeView ejecutado');
   _onSedeSelected = onSedeSelected;
 
   if (!initialized) {
     initialized = true;
     initBanner();
-    setupAddressSearch();
+    _setupTipoSelector();
+    _setupGPS();
+    _setupAddressSearch();
+
+    // Deshabilitar tipo pills mientras cargan los datos
+    document.querySelectorAll('#home-tipo-pills .pw-tipo-pill').forEach(p => { p.disabled = true; });
+
     try {
       const [domicilios] = await Promise.all([
         cargarTodosBarrios(),
-        cargarSedes().then(s => { sedesData = s; }),
+        cargarSedes().then(s => { sedesData = s; console.log('sedes cargadas:', s.length, s.map(x => x.name + '/' + x.ciudad)); }),
       ]);
       Object.entries(domicilios).forEach(([sedeName, barrios]) => {
         Object.keys(barrios).forEach(barrio => {
@@ -477,9 +690,14 @@ export async function initHomeView({ onSedeSelected } = {}) {
       });
       todosLosBarrios = Object.keys(barrioIndex).sort((a, b) => a.localeCompare(b, 'es'));
       barrioCoords    = getBarrioCoordsMap();
-    } catch { sedesData = []; }
-    renderSedes();
+    } catch {
+      sedesData = [];
+    }
+
+    document.querySelectorAll('#home-tipo-pills .pw-tipo-pill').forEach(p => { p.disabled = false; });
   }
 
-  restoreState();
+  if (!_restoreState()) {
+    _renderTipoSelector();
+  }
 }

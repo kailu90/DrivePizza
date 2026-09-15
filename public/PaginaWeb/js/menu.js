@@ -259,8 +259,23 @@ const sabor2Grid        = document.getElementById('sabor2-grid');
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
   const sede = getSedeActual();
-  if (!sede) { window.location.href = 'index.html'; return; }
+  if (!sede) {
+    // Primera visita: mostrar home para que el cliente elija sede y tipo de entrega
+    ALL_VIEWS.forEach(v => {
+      const el = document.getElementById(`view-${v}`);
+      if (el) el.style.display = v === 'home' ? '' : 'none';
+    });
+    document.getElementById('main-footer').style.display = 'none';
+    const sedeBar = document.getElementById('sede-bar');
+    if (sedeBar) sedeBar.style.display = 'none';
+    currentView = 'home';
+    initHomeView({ onSedeSelected: s => _initConSede(s) });
+    return;
+  }
+  _initConSede(sede);
+}
 
+function _initConSede(sede) {
   const nombre = displayNombre(sede);
   if (headerSede) headerSede.innerHTML = `
     <div class="pw-sede-bar-box">
@@ -335,6 +350,18 @@ function init() {
   const catParam = new URLSearchParams(location.search).get('cat');
   if (catParam && catParam !== 'null') {
     setTimeout(() => scrollToSection('sec-' + catParam.replace(/\s+/g, '-')), 80);
+  }
+
+  // Si venimos del home (primera selección de sede), mostrar el menú
+  if (currentView === 'home') {
+    ALL_VIEWS.forEach(v => {
+      const el = document.getElementById(`view-${v}`);
+      if (el) el.style.display = v === 'menu' ? '' : 'none';
+    });
+    document.getElementById('main-footer').style.display = '';
+    const sedeBarEl = document.getElementById('sede-bar');
+    if (sedeBarEl) sedeBarEl.style.display = '';
+    currentView = 'menu';
   }
 }
 
@@ -1694,9 +1721,13 @@ init();
     new Promise(r => setTimeout(r, 3000)),
   ]);
 
+  console.log('revealPage: removiendo overlay');
   t.classList.add('pw-page-transition--reveal');
+  // Fallback: si animationend no dispara (tab en fondo, reduced-motion, etc.) eliminar igual
+  const forceRemove = setTimeout(() => t.isConnected && t.remove(), 600);
   t.addEventListener('animationend', function onReveal(e) {
     if (e.target !== t) return;
+    clearTimeout(forceRemove);
     t.removeEventListener('animationend', onReveal);
     t.remove();
   });
