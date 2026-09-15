@@ -57,14 +57,14 @@ function switchView(toView) {
     } else {
       window.scrollTo(0, 0);
       if (toView === 'cuenta') {
-        initCuentaView({
+        await initCuentaView({
           onIrAlMenu:       () => switchView('menu'),
           onMisPedidos:     () => switchView('pedidos'),
           onMisDirecciones: () => switchView('direcciones'),
           onFavoritos:      () => switchView('favoritos'),
         });
       } else if (toView === 'pedidos') {
-        initMisPedidosView({
+        await initMisPedidosView({
           onVolver:   () => switchView(prev),
           onIrAlMenu: () => switchView('menu'),
         });

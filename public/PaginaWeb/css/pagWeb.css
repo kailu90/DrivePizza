@@ -4146,6 +4146,244 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-product-fav-btn--active svg { fill: var(--dp-orange); stroke: var(--dp-orange); }
 .pw-product-fav-btn svg { transition: fill .2s, stroke .2s; }
 
+/* ── BOTÓN OUTLINE ────────────────────────────────────────── */
+.pw-btn-outline {
+  width: 100%;
+  padding: .85rem 1.5rem;
+  background: transparent;
+  color: var(--dp-green);
+  border: 2px solid var(--dp-green);
+  border-radius: var(--dp-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  cursor: pointer;
+  font-family: var(--dp-font-ui);
+  transition: background .18s, color .18s;
+}
+.pw-btn-outline:hover:not(:disabled) { background: var(--dp-green); color: #fff; }
+.pw-btn-outline:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── AUTH — panel sin sesión ─────────────────────────────── */
+.pw-auth-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem;
+  gap: .85rem;
+}
+.pw-auth-panel-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(49, 75, 39, .1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dp-green);
+  margin-bottom: .25rem;
+}
+.pw-auth-panel-desc {
+  font-size: .88rem;
+  color: rgba(45, 45, 45, .65);
+  line-height: 1.55;
+  max-width: 300px;
+  margin-bottom: .5rem;
+}
+
+/* ── AUTH — cabecera formulario ──────────────────────────── */
+.pw-auth-form-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .5rem 0 1.1rem;
+}
+.pw-auth-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .06);
+  color: var(--dp-dark);
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.pw-auth-back-btn:hover { background: rgba(0, 0, 0, .12); }
+
+/* ── AUTH — formulario ───────────────────────────────────── */
+.pw-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+.pw-auth-field { width: 100%; }
+.pw-auth-input {
+  width: 100%;
+  padding: .85rem 1rem;
+  border: 1.5px solid rgba(0, 0, 0, .15);
+  border-radius: var(--dp-radius);
+  font-size: .95rem;
+  font-family: var(--dp-font-ui);
+  background: #fff;
+  color: var(--dp-dark);
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+}
+.pw-auth-input:focus {
+  border-color: var(--dp-orange);
+  box-shadow: 0 0 0 3px rgba(230, 115, 24, .15);
+}
+.pw-auth-input::placeholder { color: rgba(45, 45, 45, .4); }
+
+/* ── AUTH — error y switch ───────────────────────────────── */
+.pw-auth-error {
+  font-size: .83rem;
+  color: #c0392b;
+  background: rgba(192, 57, 43, .08);
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  line-height: 1.4;
+}
+.pw-auth-switch {
+  font-size: .85rem;
+  color: rgba(45, 45, 45, .6);
+  text-align: center;
+  margin-top: .25rem;
+}
+.pw-auth-link {
+  color: var(--dp-orange);
+  font-weight: 700;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--dp-font-ui);
+  font-size: inherit;
+  padding: 0;
+}
+
+/* ── AUTH — verificación de email ───────────────────────── */
+.pw-auth-verify {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem;
+  gap: 1rem;
+}
+.pw-auth-verify-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(49, 75, 39, .1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dp-green);
+}
+
+/* ── CUENTA — badge de teléfono verificado ───────────────── */
+.pw-cuenta-tel-row {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  color: rgba(45,45,45,.6);
+  flex-wrap: wrap;
+}
+.pw-cuenta-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--dp-green);
+  background: rgba(49,75,39,.1);
+  border-radius: 20px;
+  padding: .15rem .45rem;
+}
+.pw-cuenta-verify-btn {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--dp-orange);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--dp-font-ui);
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ── VERIFICACION OTP — contenedor ───────────────────────── */
+.pw-vrf-info {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  background: rgba(49,75,39,.07);
+  border-radius: var(--dp-radius);
+  padding: .9rem 1rem;
+  margin-bottom: 1rem;
+}
+.pw-vrf-info-icon {
+  color: var(--dp-green);
+  flex-shrink: 0;
+  margin-top: .1rem;
+}
+.pw-vrf-codigo-input {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: .5rem;
+}
+
+/* ── MIS PEDIDOS — badge canal + banner verificación ─────── */
+.pw-pedidos-card-badges {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.pw-pedidos-canal-badge {
+  font-size: .65rem;
+  font-weight: 600;
+  color: rgba(45,45,45,.5);
+  background: rgba(45,45,45,.08);
+  border-radius: 10px;
+  padding: .15rem .5rem;
+  white-space: nowrap;
+}
+.pw-pedidos-verify-banner {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(230,115,24,.08);
+  border: 1px solid rgba(230,115,24,.25);
+  border-radius: var(--dp-radius);
+  padding: .65rem .85rem;
+  font-size: .82rem;
+  color: var(--dp-dark);
+  margin-bottom: .85rem;
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+.pw-pedidos-verify-banner svg { color: var(--dp-orange); flex-shrink: 0; }
+.pw-pedidos-verify-link {
+  font-weight: 700;
+  color: var(--dp-orange);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--dp-font-ui);
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
 /* ── MOBILE (max-width: 599px) — debe ir al final para no ser pisado ── */
 @media (max-width: 599px) {
   body.pw-page-index { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }

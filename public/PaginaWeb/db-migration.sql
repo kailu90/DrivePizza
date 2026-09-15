@@ -107,3 +107,64 @@ SELECT name, nombre_display, ciudad, direccion, telefono, linea_ivr,
        horario_apertura, horario_cierre, activa_web
 FROM sedes
 ORDER BY name;
+
+
+-- ============================================================
+-- Auth web — cuentas de clientes (parte 2)
+-- Ejecutar en: https://db.everest-central.com -> SQL Editor
+-- ============================================================
+
+-- 5. Extender tabla clientes con columnas de autenticación web
+ALTER TABLE clientes
+  ADD COLUMN IF NOT EXISTS auth_uid   uuid UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS email      text,
+  ADD COLUMN IF NOT EXISTS fecha_nac  date,
+  ADD COLUMN IF NOT EXISTS verificado boolean NOT NULL DEFAULT false;
+
+CREATE INDEX IF NOT EXISTS idx_clientes_auth_uid ON clientes(auth_uid);
+
+-- 6. Tabla de direcciones por cliente (web)
+CREATE TABLE IF NOT EXISTS direcciones_cliente (
+  id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id     uuid        NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+  alias          text        NOT NULL DEFAULT 'Casa',
+  icono          text        NOT NULL DEFAULT 'casa',
+  direccion      text        NOT NULL,
+  barrio         text        NOT NULL,
+  ciudad         text,
+  telefono       text,
+  predeterminada boolean     NOT NULL DEFAULT false,
+  created_at     timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_dir_cliente ON direcciones_cliente(cliente_id);
+
+-- RLS: solo el cliente dueño accede a sus direcciones
+ALTER TABLE direcciones_cliente ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "web_dir_own" ON direcciones_cliente
+  FOR ALL TO authenticated
+  USING      (cliente_id = (SELECT id FROM clientes WHERE auth_uid = auth.uid()))
+  WITH CHECK (cliente_id = (SELECT id FROM clientes WHERE auth_uid = auth.uid()));
+
+-- 7. Tabla de favoritos por cliente (web)
+CREATE TABLE IF NOT EXISTS favoritos_cliente (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id      uuid        NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+  producto_nombre text        NOT NULL,
+  categoria       text,
+  precio          integer,
+  fecha_agregado  timestamptz DEFAULT now(),
+  UNIQUE(cliente_id, producto_nombre)
+);
+CREATE INDEX IF NOT EXISTS idx_fav_cliente ON favoritos_cliente(cliente_id);
+
+-- RLS: solo el cliente dueño accede a sus favoritos
+ALTER TABLE favoritos_cliente ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "web_fav_own" ON favoritos_cliente
+  FOR ALL TO authenticated
+  USING      (cliente_id = (SELECT id FROM clientes WHERE auth_uid = auth.uid()))
+  WITH CHECK (cliente_id = (SELECT id FROM clientes WHERE auth_uid = auth.uid()));
+
+-- 8. Verificar columnas nuevas en clientes
+SELECT id, nombre, telefono, email, auth_uid, verificado
+FROM clientes
+LIMIT 5;
