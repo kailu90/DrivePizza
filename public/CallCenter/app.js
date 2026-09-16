@@ -259,7 +259,7 @@ function renderCategories() {
     ).join('');
     if (_ciudad !== 'cartago') {
         nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalReserva()">📅 Reservas</button>`;
-        nav.innerHTML += `<button class="cat-btn cat-btn--taller" onclick="abrirModalTaller()">🍕 Reserva Pizzeritos</button>`;
+        nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalTaller()">🍕 Reserva Pizzeritos</button>`;
     }
 }
 
