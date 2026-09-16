@@ -2805,11 +2805,6 @@ function _injectStyles() {
 /* deliveryUnknown: sin receipt de dispositivo tras 15 min — ? ámbar */
 .wap-msg-ticks--unknown { animation: wap-unknown-pulse 6s ease-in-out infinite; }
 @keyframes wap-unknown-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
-/* Label discreto que aparece solo >5 min sin ACK */
-.wap-msg-delayed-label {
-    font-size: 1.0rem; color: #9ca3af; margin-left: 3px;
-    font-style: italic; vertical-align: middle;
-}
 .wap-msg-unknown-label {
     font-size: 1.0rem; color: #d97706; margin-left: 2px;
     font-style: italic; vertical-align: middle;
@@ -4306,14 +4301,6 @@ function _onStatus({ numero, sede, status }) {
     }
 }
 
-// Programa un re-render exactamente al cumplir 5 min sin ACK → muestra "Confirmación demorada"
-function _scheduleSinAckRefresh(sinAckAt) {
-    const remaining = Math.max(0, sinAckAt + 5 * 60 * 1000 - Date.now());
-    setTimeout(() => {
-        if (_state.activeNum && document.querySelector('.wap-msg-ticks--noack')) _renderMsgs();
-    }, remaining + 500);
-}
-
 function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown = false }) {
     if (!msgId || !numero) return;
     let updated = false;
@@ -4329,10 +4316,7 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown =
             const wasDelivUnknown = !!m.deliveryUnknown;
             if (!sinAck && !deliveryUnknown) m.status = status;
             if (sinAck && (m.status || 0) < 2) {
-                if (!m.sinAck) {
-                    m.sinAckAt = Date.now(); // primera activación → capturar timestamp
-                    if (_state.activeNum === numero) _scheduleSinAckRefresh(m.sinAckAt);
-                }
+                if (!m.sinAck) m.sinAckAt = Date.now(); // primera activación → diagnóstico interno
                 m.sinAck = true;
             } else if (!sinAck && status >= 2) {
                 delete m.sinAck;
@@ -4387,7 +4371,7 @@ function _tickSvg(status, sinAck = false, deliveryUnknown = false) {
     // status 1 o 2: ✓ simple gris.
     // sinAck NO reemplaza el check por reloj — solo agrega clase para tooltip y animación sutil.
     if (status <= 2) {
-        const tooltip = sinAck ? 'Esperando confirmación de WhatsApp' : 'Enviado';
+        const tooltip = sinAck ? 'Enviado. Esperando confirmación de entrega.' : 'Enviado';
         const cls = sinAck ? ' wap-msg-ticks--noack' : '';
         return `<span class="wap-msg-ticks${cls}" title="${tooltip}"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
             <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -6261,16 +6245,10 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? (() => {
-                const tick = _tickSvg(m.status, m.sinAck, m.deliveryUnknown);
-                let label = '';
-                if (m.deliveryUnknown) {
-                    label = '<span class="wap-msg-unknown-label">Entrega no confirmada</span>';
-                } else if (m.sinAck && m.sinAckAt && (Date.now() - m.sinAckAt) > 5 * 60 * 1000) {
-                    label = '<span class="wap-msg-delayed-label">Confirmación demorada</span>';
-                }
-                return tick + label;
-              })() : '');
+            : (m.out && !m.celular ? (
+                _tickSvg(m.status, m.sinAck, m.deliveryUnknown) +
+                (m.deliveryUnknown ? '<span class="wap-msg-unknown-label">Entrega no confirmada</span>' : '')
+              ) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
         const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
