@@ -62,6 +62,16 @@ const _MSG_GAP_MS = parseInt(process.env.WA_MSG_GAP_MS ?? '500', 10)
 const _reconnectAttempts  = new Map()   // numero → intentos acumulados (persiste entre reconexiones)
 const _badSessionAttempts = new Map()   // numero → intentos consecutivos de badSession (500)
 
+// ── Session-level degradation tracking ───────────────────────────────────────
+// Detecta "zombie sessions": socket OPEN y heartbeats OK pero sin recibir mensajes.
+// La evaluación combina: historial de badSessions + msgRecv=0 + decrypt failures.
+// NO actúa solo sobre msgRecv=0 — requiere evidencia combinada para evitar falsos positivos.
+const _badSessionHistory  = new Map()  // numero → [{ ts, msgRecv, msgSent }]
+const SESSION_DEGRADED_BAD_MIN   = 2           // mín. badSessions con recv=0 en ventana
+const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 2h
+const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
+const SESSION_DEGRADED_MIN_UP_MS = 8 * 60_000  // uptime mínimo antes de evaluar
+
 // ── Signal per-peer health tracking ──────────────────────────────────────────
 // Detecta fallos de descifrado por contacto (Bad MAC / MessageCounterError)
 // y ejecuta recovery quirúrgico sin tocar auth ni otras sesiones.
@@ -249,6 +259,60 @@ function _circuitBreakerCheck(numero) {
     return true // activado
   }
   return false
+}
+
+// ── Session zombie check ─────────────────────────────────────────────────────
+// Evalúa si una sesión está en estado OPEN pero no recibe mensajes (zombie).
+// Se llama 10 min y 30 min después de cada OPEN.
+// También se integra en el reconcileInterval para detección continua.
+function _checkSessionDegraded(numero, sede) {
+  const entrada = sesiones.get(numero)
+  if (!entrada || entrada.status !== 'conectado') return
+
+  const now    = Date.now()
+  const ctrs   = _msgCounters.get(numero) ?? { sent: 0, recv: 0 }
+  const uptime = _connectedAt.has(numero) ? now - _connectedAt.get(numero) : 0
+
+  // No evaluar sesión recién abierta — dar tiempo a que lleguen mensajes pendientes
+  if (uptime < SESSION_DEGRADED_MIN_UP_MS) return
+  // Si ya recibió mensajes en este ciclo, está saludable
+  if (ctrs.recv > 0) return
+
+  // Historial de badSessions recientes (persiste entre OPENs exitosos)
+  const hist   = _badSessionHistory.get(numero) ?? []
+  const recent = hist.filter(h => now - h.ts < SESSION_DEGRADED_WINDOW_MS)
+
+  // Requiere: ≥N badSessions recientes Y todas con recv=0 (patrón estructural)
+  if (recent.length < SESSION_DEGRADED_BAD_MIN) return
+  if (!recent.every(h => h.recv === 0)) return
+
+  // Decrypt failures acumulados (evidencia adicional)
+  const peers = _signalPeerErrors.get(numero)
+  let totalDecryptFails = 0
+  if (peers) for (const [, p] of peers) totalDecryptFails += p.count
+
+  // Debounce: no emitir más de una vez por ciclo de 20 min
+  if (entrada._degradedEmittedAt && now - entrada._degradedEmittedAt < 20 * 60_000) return
+  entrada._degradedEmittedAt = now
+
+  _waLog('SESSION_DEGRADED', {
+    numero, sede,
+    msgRecv:          ctrs.recv,
+    msgSent:          ctrs.sent,
+    uptimeMs:         uptime,
+    recentBadSessions: recent.length,
+    totalDecryptFails,
+    badHistory:       recent.map(h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv })),
+    action:           'manual_intervention_recommended',
+  })
+  broadcast({
+    tipo:         'wa:session_degraded',
+    numero,       sede,
+    msgRecv:      ctrs.recv,
+    msgSent:      ctrs.sent,
+    badSessions:  recent.length,
+    decryptFails: totalDecryptFails,
+  })
 }
 
 // ── Session lock (Redis) ─────────────────────────────────────────────────────
@@ -1137,6 +1201,12 @@ export async function iniciarSesion(numero, sede) {
       _incidents.delete(numero)
       _connectedAt.set(numero, Date.now())
       _msgCounters.set(numero, { sent: 0, recv: 0 })
+      // Limpiar flag de degraded previo — nueva conexión, evaluación fresca
+      if (entrada._degradedEmittedAt) delete entrada._degradedEmittedAt
+      // Verificación diferida de zombie: 10 min y 30 min post-OPEN
+      // (el patrón observado: badSession cada ~50 min → detectar en el siguiente ciclo)
+      setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS)
+      setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS * 3)
       // ─────────────────────────────────────────────────────────────────────
       _waLog('CONN', { numero, sede, evento: 'conectado' })
       await _upsertSesion(numero, sede, 'conectado')
@@ -1188,10 +1258,11 @@ export async function iniciarSesion(numero, sede) {
       setTimeout(() => _reconciliarSesion(numero, { source: 'reconnect' }).catch(() => {}), 10_000)
       // Intervalo periódico por sesión — se cancela al desconectar
       if (entrada.reconcileInterval) clearInterval(entrada.reconcileInterval)
-      entrada.reconcileInterval = setInterval(
-        () => _reconciliarSesion(numero, { source: 'periodic' }).catch(() => {}),
-        RECONCILE_INTERVAL_MS
-      )
+      entrada.reconcileInterval = setInterval(() => {
+        _reconciliarSesion(numero, { source: 'periodic' }).catch(() => {})
+        // Chequeo de zombie integrado: evalúa degradación en cada ciclo de reconciliación
+        _checkSessionDegraded(numero, sede)
+      }, RECONCILE_INTERVAL_MS)
     }
 
     if (connection === 'close') {
@@ -1233,6 +1304,13 @@ export async function iniciarSesion(numero, sede) {
 
       // ── 1a. badSession (500): reintentar hasta 2 veces antes de exigir QR ──
       if (codigo === 500) {
+        // Registrar en historial de degradación (persiste entre OPENs exitosos)
+        // para que _checkSessionDegraded pueda detectar el patrón zombie estructural.
+        const _bsHist = _badSessionHistory.get(numero) ?? []
+        _bsHist.push({ ts: Date.now(), msgRecv: _ctrs.recv, msgSent: _ctrs.sent })
+        // Retener solo lo que cabe en la ventana extendida (2× para diagnóstico histórico)
+        _badSessionHistory.set(numero, _bsHist.filter(h => Date.now() - h.ts < SESSION_DEGRADED_WINDOW_MS * 2))
+
         const intentosBad = (_badSessionAttempts.get(numero) || 0) + 1
         _badSessionAttempts.set(numero, intentosBad)
         const MAX_BAD_SESSION = 2
@@ -1959,6 +2037,70 @@ export async function cerrarSesion(numero) {
   await _releaseLock(numero, entrada.lockOwner)
   broadcast({ tipo: "wa:status", numero, status: "desconectado" })
   console.log("[WA] Sesion ", numero, "cerrada manualmente")
+}
+
+// ── recrearSocket ──────────────────────────────────────────────────────────────
+// Fuerza recreación del socket SIN borrar archivos de auth — equivalente al
+// path restartRequired (515) pero disparado desde admin.
+// Usar como Paso 1 de recovery de zombie: si el socket estaba vivo pero sordo,
+// este reset limpia buffers Baileys y re-negocia sesión WA desde creds existentes.
+// Registra snapshot antes de actuar para trazabilidad del diagnóstico.
+export async function recrearSocket(numero) {
+  const entrada = sesiones.get(numero)
+  if (!entrada) throw new Error(`Sesión ${numero} no encontrada o no activa`)
+  const { sede, lockOwner } = entrada
+
+  const snapshot = {
+    status:      entrada.status,
+    msgSent:     _msgCounters.get(numero)?.sent ?? 0,
+    msgRecv:     _msgCounters.get(numero)?.recv ?? 0,
+    uptimeMs:    _connectedAt.has(numero) ? Date.now() - _connectedAt.get(numero) : null,
+    badHistory:  (_badSessionHistory.get(numero) ?? []).map(
+                   h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv })
+                 ),
+  }
+
+  _waLog('SOCKET_RECREATE', { numero, sede, trigger: 'manual_admin', snapshot })
+
+  if (entrada.heartbeatInterval) clearInterval(entrada.heartbeatInterval)
+  if (entrada.reconcileInterval) clearInterval(entrada.reconcileInterval)
+  try { entrada.socket?.end() } catch {}
+
+  sesiones.delete(numero)
+  await _releaseLock(numero, lockOwner)
+  setTimeout(() => iniciarSesion(numero, sede), 500)
+
+  return snapshot
+}
+
+// ── getSessionDiagnostico ──────────────────────────────────────────────────────
+// Retorna estado de salud completo de una sesión: contadores, historial badSession,
+// decrypt failures, y evaluación isDegraded para uso desde el panel de admin.
+export function getSessionDiagnostico(numero) {
+  const entrada = sesiones.get(numero)
+  const ctrs    = _msgCounters.get(numero) ?? { sent: 0, recv: 0 }
+  const hist    = _badSessionHistory.get(numero) ?? []
+  const peers   = _signalPeerErrors.get(numero)
+  let totalDecryptFails = 0
+  if (peers) for (const [, p] of peers) totalDecryptFails += p.count
+  const now    = Date.now()
+  const recent = hist.filter(h => now - h.ts < SESSION_DEGRADED_WINDOW_MS)
+  return {
+    numero,
+    status:             entrada?.status ?? 'no_encontrada',
+    sede:               entrada?.sede ?? null,
+    msgSent:            ctrs.sent,
+    msgRecv:            ctrs.recv,
+    uptimeMs:           _connectedAt.has(numero) ? now - _connectedAt.get(numero) : null,
+    badSessionHistory:  hist.map(h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv, sent: h.msgSent })),
+    badSessionsInWindow: recent.length,
+    totalDecryptFails,
+    isDegraded:         entrada?.status === 'conectado' && ctrs.recv === 0 &&
+                        recent.length >= SESSION_DEGRADED_BAD_MIN &&
+                        recent.every(h => h.recv === 0),
+    degradedEmittedAt:  entrada?._degradedEmittedAt
+                          ? new Date(entrada._degradedEmittedAt).toISOString() : null,
+  }
 }
 
 // Migra mensajes/asignaciones de un @lid al número real en Supabase.

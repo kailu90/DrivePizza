@@ -12,6 +12,8 @@ import {
   eliminarMensaje,
   editarMensaje,
   invalidateIdentityCache,
+  recrearSocket,
+  getSessionDiagnostico,
 } from './whatsapp.service.js'
 import { supabase } from '../../config/supabase.js'
 import { normalizarTelefono } from './wa-utils.js'
@@ -564,6 +566,29 @@ export async function whatsappRoutes(fastify, options) {
     console.log(`[WA:IDENTITY_MANUAL_MERGE] ${JSON.stringify({ numero, jid_a, jid_b, contact_id: winnerContactId, merged_from_id: loserContactId ?? null, phone_jid: _phoneJid, lid_jid: _lidJid })}`)
 
     return { ok: true, contact_id: winnerContactId, merged_from_id: loserContactId ?? null }
+  })
+
+  // GET /wa/admin/sesiones/:numero/diagnostico — salud de una sesión (contadores, badHistory, isDegraded)
+  fastify.get('/wa/admin/sesiones/:numero/diagnostico', async (req, reply) => {
+    const { numero } = req.params
+    try {
+      return getSessionDiagnostico(numero)
+    } catch (e) {
+      return reply.code(500).send({ error: e.message })
+    }
+  })
+
+  // POST /wa/admin/sesiones/:numero/recrear-socket — fuerza recreación de socket SIN borrar auth
+  // Paso 1 de recovery de zombie: usa mismas creds, solo recrea la conexión WS + Baileys.
+  // Registra snapshot de estado previo en logs antes de actuar.
+  fastify.post('/wa/admin/sesiones/:numero/recrear-socket', async (req, reply) => {
+    const { numero } = req.params
+    try {
+      const snapshot = await recrearSocket(numero)
+      return { ok: true, numero, action: 'socket_recreado', snapshot }
+    } catch (e) {
+      return reply.code(500).send({ error: e.message })
+    }
   })
 
   // DELETE /wa/asignaciones/:numero/:contacto — liberar chat
