@@ -3993,7 +3993,7 @@ async function _loadConversaciones(suppressRender = false) {
         // Construir nuevo conv solo con lo que Supabase devuelve
         const newConv = {};
         for (const c of convs) {
-            const { numero, contacto, nombre, nombre_cliente, display_name, ultimo_mensaje, ultimo_ts } = c;
+            const { numero, contacto, nombre, nombre_cliente, display_name, display_phone, customer_id, push_name, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
             if (contacto.includes('@')) continue; // grupos, canales, listas
             if (!ultimo_mensaje && !ultimo_ts) continue;
@@ -4001,12 +4001,14 @@ async function _loadConversaciones(suppressRender = false) {
             if (!newConv[numero]) newConv[numero] = {};
             const prev = _state.conv[numero]?.[contacto] || {};
             newConv[numero][contacto] = {
-                msgs:    prev.msgs?.length ? prev.msgs : [],
-                unread:  prev.unread || 0,
-                nombre:  display_name || nombre_cliente || prev.nombre || null, // backend computa clientes BD → pushName
-                name:    nombre       || prev.name      || null,                // pushName raw (fallback legacy)
-                lastMsg: ultimo_mensaje || prev.lastMsg || '',
-                lastTs:  ultimo_ts      || prev.lastTs  || 0,
+                msgs:         prev.msgs?.length ? prev.msgs : [],
+                unread:       prev.unread || 0,
+                nombre:       display_name  || nombre_cliente || prev.nombre || null, // backend: clientes BD → push_name
+                name:         nombre        || prev.name      || null,                // pushName raw (fallback legacy)
+                display_phone: display_phone || prev.display_phone || null,           // teléfono limpio (10 dígitos)
+                customer_id:  customer_id   ?? prev.customer_id   ?? null,           // UUID en clientes (para edición)
+                lastMsg:      ultimo_mensaje || prev.lastMsg || '',
+                lastTs:       ultimo_ts      || prev.lastTs  || 0,
             };
         }
 
@@ -5162,6 +5164,8 @@ async function _loadResueltas() {
             const cv  = _state.conv[c.numero][c.contacto];
             if ((c.display_name || c.nombre_cliente) && !cv.nombre) cv.nombre = c.display_name || c.nombre_cliente;
             if (c.nombre && !cv.name) cv.name = c.nombre;
+            if (c.display_phone  && !cv.display_phone)  cv.display_phone  = c.display_phone;
+            if (c.customer_id    && !cv.customer_id)    cv.customer_id    = c.customer_id;
             const key = `${c.numero}:${c.contacto}`;
             if (!_state.asignaciones[key]) {
                 _state.asignaciones[key] = { asesor: c.asesor || null, estado: 'resuelto' };
@@ -5208,7 +5212,7 @@ function _renderResueltas() {
     const html = items.map(c => {
         const color    = _getColor(c.numero);
         const convData = _state.conv[c.numero]?.[c.contacto];
-        const display  = convData?.nombre || c.display_name || c.nombre_cliente || convData?.name || _fmtPhone(c.contacto);
+        const display  = convData?.nombre || c.display_name || c.nombre_cliente || convData?.name || _fmtPhone(convData?.display_phone || c.display_phone || c.contacto);
         const ts       = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
         const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
 
@@ -5523,7 +5527,8 @@ async function _loadMsgsSupabase(phone) {
 
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
-    const display = c?.nombre || c?.name || _fmtPhone(phone);
+    // Usar display_phone (10 dígitos limpios desde backend) como fallback de teléfono
+    const display = c?.nombre || c?.name || _fmtPhone(c?.display_phone || phone);
     const color   = _getColor(_state.activeNum);
 
     // Avatar: inicial + color de sesión

@@ -13,16 +13,90 @@ import {
   editarMensaje,
 } from './whatsapp.service.js'
 import { supabase } from '../../config/supabase.js'
+import { normalizarTelefono } from './wa-utils.js'
 
-// Normaliza teléfono colombiano a 10 dígitos (sin prefijo país)
-// Acepta: '3XXXXXXXXX', '573XXXXXXXXX', '+573XXXXXXXXX'
-function _normalizarTelefono(raw) {
-  if (!raw) return null
-  let t = String(raw).trim().replace(/\s+/g, '')
-  if (t.startsWith('+')) t = t.slice(1)       // +573... → 573...
-  if (t.length === 12 && t.startsWith('57')) t = t.slice(2) // 573... → 3...
-  if (t.length === 10 && t.startsWith('3')) return t
-  return t // devolver tal cual si no coincide con patrón conocido
+// Enriquece lista de conversaciones con identidad comercial.
+// Prioridad: wa_contacts.customer_id → clientes (fuente de verdad)
+// Fallback:  JOIN por teléfono normalizado (descubrimiento cuando customer_id IS NULL)
+// Retorna cada conv con: nombre_cliente, display_name, display_phone, customer_id, push_name
+async function _enriquecerConversaciones(convs) {
+  if (!convs?.length || !supabase) return convs
+
+  // ── Paso 1: contact_id + push_name vía wa_contact_jids → wa_contacts ──────
+  const jids    = [...new Set(convs.map(c => c.contacto).filter(Boolean))]
+  const numeros = [...new Set(convs.map(c => c.numero).filter(Boolean))]
+
+  const { data: jidRows } = await supabase.from('wa_contact_jids')
+    .select('numero_sesion, jid, contact_id')
+    .in('jid', jids)
+    .in('numero_sesion', numeros)
+
+  // Mapa (numero:jid) → contact_id
+  const jidMap = {}
+  for (const r of (jidRows || [])) jidMap[`${r.numero_sesion}:${r.jid}`] = r.contact_id
+
+  const contactIds = [...new Set(Object.values(jidMap).filter(Boolean))]
+
+  let waContactMap = {}
+  if (contactIds.length) {
+    const { data: waContacts } = await supabase.from('wa_contacts')
+      .select('id, customer_id, push_name')
+      .in('id', contactIds)
+    for (const wc of (waContacts || [])) waContactMap[wc.id] = wc
+  }
+
+  // ── Paso 2: separar convs por presencia de customer_id ────────────────────
+  const customerIds = []
+  const phonesFb    = [] // fallback: discovery por teléfono normalizado
+
+  for (const c of convs) {
+    const contact_id = jidMap[`${c.numero}:${c.contacto}`]
+    const waContact  = contact_id ? waContactMap[contact_id] : null
+    if (waContact?.customer_id) {
+      customerIds.push(waContact.customer_id)
+    } else {
+      const tel = normalizarTelefono(c.contacto)
+      if (tel) phonesFb.push(tel)
+    }
+  }
+
+  // ── Paso 3: consultar clientes (en paralelo, por UUID y por teléfono) ─────
+  const [{ data: clientesPorId }, { data: clientesPorTel }] = await Promise.all([
+    customerIds.length
+      ? supabase.from('clientes').select('id, nombre, telefono').in('id', [...new Set(customerIds)])
+      : Promise.resolve({ data: [] }),
+    phonesFb.length
+      ? supabase.from('clientes').select('id, nombre, telefono').in('telefono', [...new Set(phonesFb)])
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const clienteByIdMap  = Object.fromEntries((clientesPorId  || []).map(c => [c.id,       c]))
+  const clienteByTelMap = Object.fromEntries((clientesPorTel || []).map(c => [c.telefono, c]))
+
+  // ── Paso 4: ensamblar respuesta ───────────────────────────────────────────
+  return convs.map(c => {
+    const contact_id  = jidMap[`${c.numero}:${c.contacto}`]
+    const waContact   = contact_id ? waContactMap[contact_id] : null
+    const customer_id = waContact?.customer_id || null
+    // push_name persistido en wa_contacts (preferido) o del último mensaje (fallback)
+    const push_name   = waContact?.push_name || c.nombre || null
+
+    let cliente = null
+    if (customer_id) {
+      // Fast path: vínculo oficial ya establecido
+      cliente = clienteByIdMap[customer_id] || null
+    } else {
+      // Discovery: JOIN por teléfono normalizado (customer_id se llenará en próximo mensaje)
+      const tel = normalizarTelefono(c.contacto)
+      cliente   = tel ? (clienteByTelMap[tel] || null) : null
+    }
+
+    const nombre_cliente = cliente?.nombre || null
+    const display_name   = nombre_cliente  || push_name || null
+    const display_phone  = cliente?.telefono || normalizarTelefono(c.contacto) || c.contacto
+
+    return { ...c, nombre_cliente, display_name, display_phone, customer_id, push_name }
+  })
 }
 
 export async function whatsappRoutes(fastify, options) {
@@ -71,12 +145,29 @@ export async function whatsappRoutes(fastify, options) {
     if (!nombre?.trim()) return reply.code(400).send({ error: 'nombre requerido' })
     if (!supabase) return reply.code(503).send({ error: 'Supabase no disponible' })
 
-    const telefono = _normalizarTelefono(contacto) ?? contacto
+    const telefono = normalizarTelefono(contacto) ?? contacto
 
+    // 1. Upsert en clientes (fuente de verdad para nombre/teléfono)
     const { error } = await supabase.from('clientes')
       .upsert({ telefono, nombre: nombre.trim(), updated_at: new Date().toISOString() },
                { onConflict: 'telefono' })
     if (error) return reply.code(500).send({ error: error.message })
+
+    // 2. Enlazar wa_contacts.customer_id inmediatamente — no esperar al próximo mensaje
+    const { data: cliente } = await supabase.from('clientes')
+      .select('id').eq('telefono', telefono).maybeSingle()
+    if (cliente?.id) {
+      const { data: jidRow } = await supabase.from('wa_contact_jids')
+        .select('contact_id')
+        .eq('numero_sesion', numero)
+        .eq('jid', contacto) // contacto raw (12 dígitos) — formato en wa_contact_jids
+        .maybeSingle()
+      if (jidRow?.contact_id) {
+        await supabase.from('wa_contacts')
+          .update({ customer_id: cliente.id, updated_at: new Date().toISOString() })
+          .eq('id', jidRow.contact_id)
+      }
+    }
 
     broadcast({ tipo: 'wa:contacto', numero, phone: contacto, name: nombre.trim(), fuente: 'clientes' })
     return { ok: true }
@@ -583,19 +674,7 @@ export async function whatsappRoutes(fastify, options) {
     const { data: convs, error } = await supabase.rpc('wa_conversaciones_activas')
     if (error) return reply.code(500).send({ error: error.message })
     if (!convs?.length) return []
-
-    // Enriquecer con nombres desde tabla clientes (fuente de verdad)
-    const telefonos = [...new Set(convs.map(c => _normalizarTelefono(c.contacto)).filter(Boolean))]
-    const { data: clientes } = await supabase
-      .from('clientes').select('telefono, nombre').in('telefono', telefonos)
-    const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))
-
-    return convs.map(c => {
-      const nombre_cliente = clienteMap[_normalizarTelefono(c.contacto)] || null
-      // display_name: fuente única de verdad para el frontend (clientes BD → pushName WA)
-      const display_name = nombre_cliente || c.nombre || null
-      return { ...c, nombre_cliente, display_name }
-    })
+    return _enriquecerConversaciones(convs)
   })
 
 // GET /wa/conversaciones/resueltas -- lista paginada de chats resueltos  // ?offset=0&limit=20&asesor=nombre  fastify.get("/wa/conversaciones/resueltas", async (req, reply) => {    if (!supabase) return []    const offset = parseInt(req.query.offset) || 0    const limit  = Math.min(parseInt(req.query.limit) || 20, 50)    const asesor = req.query.asesor || null    try {      let q = supabase.from("asignaciones_wa")        .select("numero, contacto, asesor")        .eq("activo", true).eq("estado", "resuelto")      if (asesor) q = q.eq("asesor", asesor)      const { data: asigs, error: e1 } = await q      if (e1) throw e1      if (!asigs?.length) return []      // Ultimo mensaje de cada asignacion via Supabase      const pares = asigs.map(a => ).join(",")      const { data: msgs, error: e2 } = await supabase        .from("mensajes_wa")        .select("numero, contacto, nombre, texto, timestamp")        .filter("(numero,contacto)", "in", )        .order("timestamp", { ascending: false })      if (e2) throw e2      // DISTINCT ON por (numero, contacto) -- el primero es el mas reciente      const seen = new Set()      const lastMsg = {}      for (const m of (msgs || [])) {        const k = m.numero + ":" + m.contacto        if (!seen.has(k)) { seen.add(k); lastMsg[k] = m }      }      // Combinar asigs + lastMsg, ordenar por ultimo_ts DESC, paginar      const result = asigs.map(a => {        const k = a.numero + ":" + a.contacto        const m = lastMsg[k] || {}        return { numero: a.numero, contacto: a.contacto, asesor: a.asesor,                 nombre: m.nombre || null, ultimo_mensaje: m.texto || null, ultimo_ts: m.timestamp || 0 }      }).sort((a, b) => b.ultimo_ts - a.ultimo_ts)        .slice(offset, offset + limit)      // Enriquecer con nombres desde clientes      const toTel = c => (c?.length === 12 && c?.startsWith("57")) ? c.slice(2) : c      const tels  = [...new Set(result.map(c => toTel(c.contacto)).filter(Boolean))]      const { data: clientes } = await supabase.from("clientes").select("telefono, nombre").in("telefono", tels)      const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))      return result.map(c => ({ ...c, nombre_cliente: clienteMap[toTel(c.contacto)] || null }))    } catch (e) {      return reply.code(500).send({ error: e.message })    }  })
@@ -614,15 +693,7 @@ export async function whatsappRoutes(fastify, options) {
       })
       if (error) throw error
       if (!data?.length) return []
-      // Enriquecer con nombres desde clientes
-      const tels  = [...new Set(data.map(c => _normalizarTelefono(c.contacto)).filter(Boolean))]
-      const { data: clientes } = await supabase.from('clientes').select('telefono, nombre').in('telefono', tels)
-      const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))
-      return data.map(c => {
-        const nombre_cliente = clienteMap[_normalizarTelefono(c.contacto)] || null
-        const display_name = nombre_cliente || c.nombre || null
-        return { ...c, nombre_cliente, display_name }
-      })
+      return _enriquecerConversaciones(data)
     } catch (e) {
       return reply.code(500).send({ error: e.message })
     }

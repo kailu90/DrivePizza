@@ -16,6 +16,7 @@ import { randomUUID } from 'crypto'
 import { spawn } from 'child_process'
 import { supabase } from '../../config/supabase.js'
 import { redis } from '../../config/redis.js'
+import { normalizarTelefono } from './wa-utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SESSIONS_DIR = path.join(__dirname, '../../../../sessions')
@@ -414,6 +415,51 @@ function _logConnEvent(eventType, data) {
 }
 
 let _wsClients = null
+
+// ── Identidad comercial ──────────────────────────────────────────────────────
+
+// Vincula wa_contacts.customer_id al cliente de BD cuando hay coincidencia única.
+// Reglas:
+//   0 coincidencias → dejar customer_id = NULL
+//   1 coincidencia  → enlazar
+//  >1 coincidencias → no enlazar, registrar CUSTOMER_LINK_AMBIGUOUS
+// Solo se llama con phone JID confirmado (no LID). Fire-and-forget.
+async function _lazyLinkCustomer(contactId, normalizedPhone) {
+  if (!supabase || !contactId || !normalizedPhone) return
+  try {
+    const { data: wc } = await supabase.from('wa_contacts')
+      .select('customer_id').eq('id', contactId).maybeSingle()
+    if (wc?.customer_id) return // ya enlazado — no tocar
+
+    const { data: matches } = await supabase.from('clientes')
+      .select('id').eq('telefono', normalizedPhone)
+    const count = matches?.length ?? 0
+
+    if (count === 0) return // sin cliente — dejar NULL
+    if (count > 1) {
+      _waLog('CUSTOMER_LINK_AMBIGUOUS', { contact_id: contactId, telefono: normalizedPhone, cantidad: count })
+      return // ambiguo — no elegir arbitrariamente
+    }
+    await supabase.from('wa_contacts')
+      .update({ customer_id: matches[0].id, updated_at: new Date().toISOString() })
+      .eq('id', contactId)
+    _waLog('CUSTOMER_LINKED', { contact_id: contactId, customer_id: matches[0].id, telefono: normalizedPhone })
+  } catch (e) {
+    console.error('[WA] _lazyLinkCustomer error:', e.message)
+  }
+}
+
+// Persiste push_name en wa_contacts. Nunca toca clientes.nombre.
+// Fire-and-forget — no bloquea el flujo de mensajes.
+async function _syncPushName(contactId, pushName) {
+  if (!supabase || !contactId || !pushName) return
+  supabase.from('wa_contacts')
+    .update({ push_name: pushName, updated_at: new Date().toISOString() })
+    .eq('id', contactId)
+    .then(() => {}, e => console.error('[WA] _syncPushName error:', e.message))
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 // Resuelve un @lid a número real con 3 niveles (fuente de verdad: wa_identidades).
 // 1. lidToPhone en memoria  — caché instantáneo por sesión
@@ -1561,6 +1607,12 @@ export async function iniciarSesion(numero, sede) {
 
       // contact_id live resolution — vincula mensajes a wa_contacts (dual-write LID si aplica)
       const _incomingContactId = await _liveResolveContactId(numero, phone).catch(() => null)
+
+      // Identidad comercial — fire-and-forget, solo mensajes entrantes con JID resuelto
+      if (_incomingContactId && !fromMe) {
+        _lazyLinkCustomer(_incomingContactId, normalizarTelefono(phone))
+        if (pushName) _syncPushName(_incomingContactId, pushName)
+      }
 
       const esNuevo = await _guardarMensaje({
         numero,
