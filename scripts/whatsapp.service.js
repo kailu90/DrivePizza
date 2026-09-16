@@ -1695,24 +1695,36 @@ export async function iniciarSesion(numero, sede) {
       // Duplicado (replay de Baileys al reconectar) — no hacer broadcast ni efectos secundarios
       if (!esNuevo) continue
 
-      // Identidad comercial para broadcast — evita salto pushName → clientes.nombre en frontend.
-      // Solo mensajes entrantes reales; cacheado por contact_id (1-2 DB queries solo en primer msg).
-      let _identidad = null
-      if (!fromMe && _incomingContactId) {
-        _identidad = await _resolveIdentidad(_incomingContactId, normalizarTelefono(phone), pushName).catch(() => null)
-      }
-
       if (!enviadoDesdeEverest) {
         // Si era @lid: usar número real (@s.whatsapp.net) si se resolvió, o @lid si no
         const remitenteResuelto = lidPhone
           ? phone + (phone === lidPhone ? '@lid' : '@s.whatsapp.net')
           : remitente
-        broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: remitenteResuelto, fromMe, pushName,
-          display_name:  _identidad?.display_name  ?? null,
-          display_phone: _identidad?.display_phone ?? null,
-          customer_id:   _identidad?.customer_id   ?? null,
-          push_name:     _identidad?.push_name     ?? pushName,
-          texto, timestamp: ts, msgId: msg.key.id, desdeTelefono: desdeTelefono || false, tipoMensaje: tipoMsg, mediaUrl, quotedMsgId, quotedTexto, quotedFromMe })
+        broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: remitenteResuelto, fromMe, pushName, texto, timestamp: ts, msgId: msg.key.id, desdeTelefono: desdeTelefono || false, tipoMensaje: tipoMsg, mediaUrl, quotedMsgId, quotedTexto, quotedFromMe })
+
+        // Identidad comercial en background — no bloquea el broadcast.
+        // Resuelve clientes.nombre y emite wa:contacto solo si difiere del pushName.
+        // Para contactos cacheados (ya vistos): resolución instantánea.
+        // Para contactos nuevos: llega ~100-300ms después del mensaje, sin retrasar la entrega.
+        if (!fromMe) {
+          const _bPhone = phone, _bNum = numero, _bContactId = _incomingContactId
+          ;(async () => {
+            try {
+              const id = await _resolveIdentidad(_bContactId, normalizarTelefono(_bPhone), pushName)
+              if (id.display_name && id.display_name !== pushName) {
+                broadcast({
+                  tipo: 'wa:contacto', numero: _bNum,
+                  phone: _bPhone,               // sin @, igual que la clave en _state.conv
+                  name: id.display_name,
+                  display_name:  id.display_name,
+                  display_phone: id.display_phone,
+                  customer_id:   id.customer_id,
+                  fuente: 'identidad',
+                })
+              }
+            } catch {}
+          })()
+        }
       }
 
       // Mensajes entrantes Y mensajes desde celular reactivan asignacion resuelta
