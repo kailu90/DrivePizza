@@ -247,7 +247,7 @@ function actualizarTimers() {
     document.querySelectorAll('tr[data-id]').forEach(fila => {
         const pedidoId = fila.dataset.id
         const pedido = pedidosCargados.find(p => p.id === pedidoId)
-        if (!pedido || pedido.estado !== 'en preparacion' || pedido.tipo === 'reserva' || pedido.tipo === 'taller_pizzeritos') return
+        if (!pedido || pedido.estado !== 'en preparacion' || pedido.tipo === 'reserva' || pedido.tipo === 'taller_pizzeritos' || pedido.tipo === 'reserva_pizzeritos') return
 
         const minutos = calcularMinutos(pedido.tsRecibido)
         console.log('pedido:', pedido.nPedido, 'minutos:', minutos)
@@ -307,22 +307,27 @@ function renderTabla(pedidos) {
     const pagina = pedidos.slice(inicio, inicio + PAGINA_SIZE);
 
     tbody.innerHTML = pagina.map(p => {
-        const esReserva  = p.tipo === "reserva"
-        const esTaller   = p.tipo === "taller_pizzeritos"
+        const esReserva          = p.tipo === "reserva"
+        const esTaller           = p.tipo === "taller_pizzeritos"
+        const esReservaPizzeritos = p.tipo === "reserva_pizzeritos"
         const activo     = ESTADOS_ACTIVOS.has(p.estado)
         const esRecoger  = p.domicilio?.tipo === "recoger"
         const dirDisplay = esTaller
             ? `<span style="background:#e67e22;color:#fff;padding:2px 7px;border-radius:4px;font-size:1rem;font-weight:bold;">TALLER PIZZERITOS</span>`
-            : esReserva
-                ? `<span style="background:#6c3d8f;color:#fff;padding:2px 7px;border-radius:4px;font-size:1.1rem;font-weight:bold;">RESERVA</span>`
-                : esRecoger
-                    ? `<span style="font-weight:700;">RECOGER</span>`
-                    : p.direccion ? p.direccion.substring(0, 25) + (p.direccion.length > 25 ? "…" : "") : "—"
+            : esReservaPizzeritos
+                ? `<span style="background:#e67e22;color:#fff;padding:2px 7px;border-radius:4px;font-size:1rem;font-weight:bold;">🍕 PIZZERITOS</span>`
+                : esReserva
+                    ? `<span style="background:#6c3d8f;color:#fff;padding:2px 7px;border-radius:4px;font-size:1.1rem;font-weight:bold;">RESERVA</span>`
+                    : esRecoger
+                        ? `<span style="font-weight:700;">RECOGER</span>`
+                        : p.direccion ? p.direccion.substring(0, 25) + (p.direccion.length > 25 ? "…" : "") : "—"
         const totalDisplay = esTaller
             ? `<span style="color:#e67e22;font-weight:bold;">$30.000</span>`
-            : esReserva
-                ? `<span style="color:#6c3d8f;font-weight:bold;">👥 ${p.cantidadPersonas ?? "—"} pers.</span>`
-                : `$${formatPrecio(p.total)}`
+            : esReservaPizzeritos
+                ? `<span style="color:#e67e22;font-weight:bold;">🍕 ${p.cantidadPersonas ?? "—"} kit(s) · $${formatPrecio(p.total)}</span>`
+                : esReserva
+                    ? `<span style="color:#6c3d8f;font-weight:bold;">👥 ${p.cantidadPersonas ?? "—"} pers.</span>`
+                    : `$${formatPrecio(p.total)}`
         const canalLabel = p.canal === "whatsapp" ? "📱 WhatsApp" : p.canal === "ivr" ? "📞 IVR" : p.canal === "gastrofusion" ? "🎪 Gastrofusión" : p.canal === "web" ? "🌐 Web" : p.canal ?? "—"
 
         // Timer de demora solo para pizzería y callcenter, pedidos en preparacion
@@ -334,7 +339,7 @@ function renderTabla(pedidos) {
         const esHoy = fechaPedido.toDateString() === new Date().toDateString();
 
         const puntoCelda = (() => {
-            if (esReserva || esTaller) return ''
+            if (esReserva || esTaller || esReservaPizzeritos) return ''
             if (enPreparacion && !esHoy) {
                 return `<span class="punto-rojo-fijo" title="Pendiente de días anteriores"></span>`
             }
@@ -348,7 +353,7 @@ function renderTabla(pedidos) {
         })()
 
         return `
-        <tr class="inventory-management__row${activo ? " fila-activa" : ""}${(esReserva || esTaller) ? " fila-reserva" : ""}"
+        <tr class="inventory-management__row${activo ? " fila-activa" : ""}${(esReserva || esTaller || esReservaPizzeritos) ? " fila-reserva" : ""}"
             data-id="${p.id}"
             title="${activo ? "Gestionar pedido" : "Ver detalle"}">
             <td class="inventory-management__cell">#${p.nPedido ?? "—"}${puntoCelda}</td>
@@ -392,7 +397,7 @@ function renderPaginacion(total) {
 function renderResumen(pedidos) {
     const el = id => document.getElementById(id);
     if (!el("resumen-total")) return;
-    const esEspecial = p => p.tipo === "reserva" || p.tipo === "taller_pizzeritos";
+    const esEspecial = p => p.tipo === "reserva" || p.tipo === "taller_pizzeritos" || p.tipo === "reserva_pizzeritos";
     el("resumen-total").textContent    = pedidos.filter(p => !esEspecial(p)).length;
     el("resumen-whatsapp").textContent = pedidos.filter(p => p.canal === "whatsapp" && !esEspecial(p)).length;
     el("resumen-ivr").textContent      = pedidos.filter(p => p.canal === "ivr" && !esEspecial(p)).length;
@@ -498,7 +503,7 @@ function renderStepper(p, esActivo) {
         </div>`;
     }
 
-    const stepsActivos = (p.tipo === 'reserva' || p.tipo === 'taller_pizzeritos') ? STEPS.slice(0, 1) : STEPS;
+    const stepsActivos = (p.tipo === 'reserva' || p.tipo === 'taller_pizzeritos' || p.tipo === 'reserva_pizzeritos') ? STEPS.slice(0, 1) : STEPS;
     const currentIdx = estadoAIdx(p.estado);
     let html = '<div class="stepper">';
 
@@ -553,8 +558,9 @@ window.marcarRecibido = async function(pedidoId, impreso) {
 
 // ── MODAL DETALLE ──────────────────────────────────────────────────────
 function abrirDetalle(p) {
-    const esReserva   = p.tipo === "reserva";
-    const esTaller    = p.tipo === "taller_pizzeritos";
+    const esReserva          = p.tipo === "reserva";
+    const esTaller           = p.tipo === "taller_pizzeritos";
+    const esReservaPizzeritos = p.tipo === "reserva_pizzeritos";
     const esActivo    = ESTADOS_ACTIVOS.has(p.estado) && rolUsuario === "pizzeria";
     const esDomicilio = p.domicilio?.tipo !== "recoger";
 
@@ -578,7 +584,7 @@ function abrirDetalle(p) {
             ? `📍 ${p.direccion ?? ""}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ""}`
             : `🏪 Recoge en tienda`;
 
-    document.getElementById("modal-productos-title").textContent = esTaller ? "Kit Taller Pizzeritos" : esReserva ? "Información reserva" : "Productos";
+    document.getElementById("modal-productos-title").textContent = esTaller ? "Kit Taller Pizzeritos" : esReservaPizzeritos ? "Reserva Pizzeritos" : esReserva ? "Información reserva" : "Productos";
 
     if (esReserva) {
         const fechaReservaFmt = p.fechaReserva
@@ -601,6 +607,30 @@ function abrirDetalle(p) {
         document.getElementById("modal-total").textContent          = "";
         document.getElementById("modal-domicilio").textContent      = "";
         document.getElementById("modal-total-final").textContent    = "";
+    } else if (esReservaPizzeritos) {
+        const fechaFmt = p.fechaReserva ? p.fechaReserva.split('-').reverse().join('/') : "—";
+        document.getElementById("modal-productos").innerHTML = `
+            <li class="reserva-dato">
+                <span class="reserva-dato__label">📅 Fecha</span>
+                <span class="reserva-dato__valor">${fechaFmt}</span>
+            </li>
+            <li class="reserva-dato">
+                <span class="reserva-dato__label">🕐 Hora</span>
+                <span class="reserva-dato__valor">${formatHora12(p.horaReserva)}</span>
+            </li>
+            <li class="reserva-dato">
+                <span class="reserva-dato__label">🍕 Kits</span>
+                <span class="reserva-dato__valor">${p.cantidadPersonas ?? "—"} kit(s)</span>
+            </li>
+            <li class="reserva-dato">
+                <span class="reserva-dato__label">📦 Incluye</span>
+                <span class="reserva-dato__valor">Gorro, delantal, instructivo, ingredientes</span>
+            </li>`;
+        document.getElementById("modal-totals-box").style.display      = "block";
+        document.getElementById("modal-total").textContent             = `$${formatPrecio(p.total)}`;
+        document.getElementById("modal-domicilio-row").style.display   = "none";
+        document.getElementById("modal-domicilio").textContent         = "";
+        document.getElementById("modal-total-final").textContent       = `$${formatPrecio(p.total)}`;
     } else if (esTaller) {
         document.getElementById("modal-productos").innerHTML = `
             <li class="reserva-dato">
@@ -654,7 +684,7 @@ function abrirDetalle(p) {
         : "";
 
     let cancelArea = "";
-    if (esActivo && p.estado === "en preparacion" && p.tipo !== 'reserva' && p.tipo !== 'taller_pizzeritos')
+    if (esActivo && p.estado === "en preparacion" && p.tipo !== 'reserva' && p.tipo !== 'taller_pizzeritos' && p.tipo !== 'reserva_pizzeritos')
         cancelArea += `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`;
     if (p.estado === "pendiente" && esAdmin)
         cancelArea += `<button class="btn-marcar-recibido" onclick="marcarRecibido('${p.id}', ${impreso})">✓ Marcar como recibido</button>`;
@@ -941,9 +971,10 @@ function filtrarColumnas(reiniciarPagina = false) {
     const tipoFiltro = document.getElementById("filtro-tipo")?.value || "";
     const base = _modoReservas
         ? pedidosCargados.filter(p => p.tipo === "reserva")
-        : tipoFiltro === "taller_pizzeritos" ? pedidosCargados.filter(p => p.tipo === "taller_pizzeritos")
-        : tipoFiltro === "reserva"            ? pedidosCargados.filter(p => p.tipo === "reserva")
-        : tipoFiltro === "pedido"             ? pedidosCargados.filter(p => !p.tipo || (p.tipo !== "reserva" && p.tipo !== "taller_pizzeritos"))
+        : tipoFiltro === "taller_pizzeritos"   ? pedidosCargados.filter(p => p.tipo === "taller_pizzeritos")
+        : tipoFiltro === "reserva_pizzeritos"  ? pedidosCargados.filter(p => p.tipo === "reserva_pizzeritos")
+        : tipoFiltro === "reserva"             ? pedidosCargados.filter(p => p.tipo === "reserva")
+        : tipoFiltro === "pedido"              ? pedidosCargados.filter(p => !p.tipo || (p.tipo !== "reserva" && p.tipo !== "taller_pizzeritos" && p.tipo !== "reserva_pizzeritos"))
         : pedidosCargados;
 
     const ciudadActual = getCiudadActual();
@@ -1143,12 +1174,12 @@ async function obtenerUsuarioCC() {
                     document.getElementById('filtro-hasta').value = hoy;
                     filtrarColumnas(true);
                     cargarPedidos({ desde, hasta: hoy }, true);
-                } else if (paramTipo === 'taller_pizzeritos') {
-                    // Filtro directo a Taller Pizzeritos desde inicio de mes
+                } else if (paramTipo === 'taller_pizzeritos' || paramTipo === 'reserva_pizzeritos') {
+                    // Filtro directo a Taller/Reserva Pizzeritos desde inicio de mes
                     const hoy = hoyLocal();
                     const d = new Date();
                     const desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-                    document.getElementById('filtro-tipo').value = 'taller_pizzeritos';
+                    document.getElementById('filtro-tipo').value = paramTipo;
                     document.getElementById('filtro-desde').value = desde;
                     document.getElementById('filtro-hasta').value = hoy;
                     filtrarColumnas(true);
