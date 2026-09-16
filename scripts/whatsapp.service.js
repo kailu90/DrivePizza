@@ -643,6 +643,12 @@ async function _liveResolveContactId(numero, jid) {
   }
 }
 
+// Invalida la entrada de caché de identidad para un contact_id específico.
+// Llamar desde routes cuando el agente edita nombre/cliente desde el panel.
+export function invalidateIdentityCache(contactId) {
+  if (contactId) _identityCache.delete(contactId)
+}
+
 export function initWsClients(wsClients) {
   _wsClients = wsClients
 }

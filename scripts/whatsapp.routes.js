@@ -11,6 +11,7 @@ import {
   registrarLidManual,
   eliminarMensaje,
   editarMensaje,
+  invalidateIdentityCache,
 } from './whatsapp.service.js'
 import { supabase } from '../../config/supabase.js'
 import { normalizarTelefono } from './wa-utils.js'
@@ -166,6 +167,7 @@ export async function whatsappRoutes(fastify, options) {
         await supabase.from('wa_contacts')
           .update({ customer_id: cliente.id, updated_at: new Date().toISOString() })
           .eq('id', jidRow.contact_id)
+        invalidateIdentityCache(jidRow.contact_id) // próximo mensaje usa nombre actualizado sin esperar TTL
       }
     }
 
