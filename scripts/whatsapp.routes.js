@@ -14,6 +14,17 @@ import {
 } from './whatsapp.service.js'
 import { supabase } from '../../config/supabase.js'
 
+// Normaliza teléfono colombiano a 10 dígitos (sin prefijo país)
+// Acepta: '3XXXXXXXXX', '573XXXXXXXXX', '+573XXXXXXXXX'
+function _normalizarTelefono(raw) {
+  if (!raw) return null
+  let t = String(raw).trim().replace(/\s+/g, '')
+  if (t.startsWith('+')) t = t.slice(1)       // +573... → 573...
+  if (t.length === 12 && t.startsWith('57')) t = t.slice(2) // 573... → 3...
+  if (t.length === 10 && t.startsWith('3')) return t
+  return t // devolver tal cual si no coincide con patrón conocido
+}
+
 export async function whatsappRoutes(fastify, options) {
   const { wsClients } = options
   initWsClients(wsClients)
@@ -60,9 +71,7 @@ export async function whatsappRoutes(fastify, options) {
     if (!nombre?.trim()) return reply.code(400).send({ error: 'nombre requerido' })
     if (!supabase) return reply.code(503).send({ error: 'Supabase no disponible' })
 
-    const telefono = (contacto.length === 12 && contacto.startsWith('57'))
-      ? contacto.slice(2)
-      : contacto
+    const telefono = _normalizarTelefono(contacto) ?? contacto
 
     const { error } = await supabase.from('clientes')
       .upsert({ telefono, nombre: nombre.trim(), updated_at: new Date().toISOString() },
@@ -576,13 +585,17 @@ export async function whatsappRoutes(fastify, options) {
     if (!convs?.length) return []
 
     // Enriquecer con nombres desde tabla clientes (fuente de verdad)
-    const toTel = c => (c?.length === 12 && c?.startsWith('57')) ? c.slice(2) : c
-    const telefonos = [...new Set(convs.map(c => toTel(c.contacto)).filter(Boolean))]
+    const telefonos = [...new Set(convs.map(c => _normalizarTelefono(c.contacto)).filter(Boolean))]
     const { data: clientes } = await supabase
       .from('clientes').select('telefono, nombre').in('telefono', telefonos)
     const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))
 
-    return convs.map(c => ({ ...c, nombre_cliente: clienteMap[toTel(c.contacto)] || null }))
+    return convs.map(c => {
+      const nombre_cliente = clienteMap[_normalizarTelefono(c.contacto)] || null
+      // display_name: fuente única de verdad para el frontend (clientes BD → pushName WA)
+      const display_name = nombre_cliente || c.nombre || null
+      return { ...c, nombre_cliente, display_name }
+    })
   })
 
 // GET /wa/conversaciones/resueltas -- lista paginada de chats resueltos  // ?offset=0&limit=20&asesor=nombre  fastify.get("/wa/conversaciones/resueltas", async (req, reply) => {    if (!supabase) return []    const offset = parseInt(req.query.offset) || 0    const limit  = Math.min(parseInt(req.query.limit) || 20, 50)    const asesor = req.query.asesor || null    try {      let q = supabase.from("asignaciones_wa")        .select("numero, contacto, asesor")        .eq("activo", true).eq("estado", "resuelto")      if (asesor) q = q.eq("asesor", asesor)      const { data: asigs, error: e1 } = await q      if (e1) throw e1      if (!asigs?.length) return []      // Ultimo mensaje de cada asignacion via Supabase      const pares = asigs.map(a => ).join(",")      const { data: msgs, error: e2 } = await supabase        .from("mensajes_wa")        .select("numero, contacto, nombre, texto, timestamp")        .filter("(numero,contacto)", "in", )        .order("timestamp", { ascending: false })      if (e2) throw e2      // DISTINCT ON por (numero, contacto) -- el primero es el mas reciente      const seen = new Set()      const lastMsg = {}      for (const m of (msgs || [])) {        const k = m.numero + ":" + m.contacto        if (!seen.has(k)) { seen.add(k); lastMsg[k] = m }      }      // Combinar asigs + lastMsg, ordenar por ultimo_ts DESC, paginar      const result = asigs.map(a => {        const k = a.numero + ":" + a.contacto        const m = lastMsg[k] || {}        return { numero: a.numero, contacto: a.contacto, asesor: a.asesor,                 nombre: m.nombre || null, ultimo_mensaje: m.texto || null, ultimo_ts: m.timestamp || 0 }      }).sort((a, b) => b.ultimo_ts - a.ultimo_ts)        .slice(offset, offset + limit)      // Enriquecer con nombres desde clientes      const toTel = c => (c?.length === 12 && c?.startsWith("57")) ? c.slice(2) : c      const tels  = [...new Set(result.map(c => toTel(c.contacto)).filter(Boolean))]      const { data: clientes } = await supabase.from("clientes").select("telefono, nombre").in("telefono", tels)      const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))      return result.map(c => ({ ...c, nombre_cliente: clienteMap[toTel(c.contacto)] || null }))    } catch (e) {      return reply.code(500).send({ error: e.message })    }  })
@@ -602,11 +615,14 @@ export async function whatsappRoutes(fastify, options) {
       if (error) throw error
       if (!data?.length) return []
       // Enriquecer con nombres desde clientes
-      const toTel = c => (c?.length === 12 && c?.startsWith('57')) ? c.slice(2) : c
-      const tels  = [...new Set(data.map(c => toTel(c.contacto)).filter(Boolean))]
+      const tels  = [...new Set(data.map(c => _normalizarTelefono(c.contacto)).filter(Boolean))]
       const { data: clientes } = await supabase.from('clientes').select('telefono, nombre').in('telefono', tels)
       const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))
-      return data.map(c => ({ ...c, nombre_cliente: clienteMap[toTel(c.contacto)] || null }))
+      return data.map(c => {
+        const nombre_cliente = clienteMap[_normalizarTelefono(c.contacto)] || null
+        const display_name = nombre_cliente || c.nombre || null
+        return { ...c, nombre_cliente, display_name }
+      })
     } catch (e) {
       return reply.code(500).send({ error: e.message })
     }

@@ -3993,7 +3993,7 @@ async function _loadConversaciones(suppressRender = false) {
         // Construir nuevo conv solo con lo que Supabase devuelve
         const newConv = {};
         for (const c of convs) {
-            const { numero, contacto, nombre, nombre_cliente, ultimo_mensaje, ultimo_ts } = c;
+            const { numero, contacto, nombre, nombre_cliente, display_name, ultimo_mensaje, ultimo_ts } = c;
             if (!numero || !contacto) continue;
             if (contacto.includes('@')) continue; // grupos, canales, listas
             if (!ultimo_mensaje && !ultimo_ts) continue;
@@ -4003,8 +4003,8 @@ async function _loadConversaciones(suppressRender = false) {
             newConv[numero][contacto] = {
                 msgs:    prev.msgs?.length ? prev.msgs : [],
                 unread:  prev.unread || 0,
-                nombre:  nombre_cliente || prev.nombre || null, // clientes BD (fuente de verdad)
-                name:    nombre         || prev.name   || null, // pushName WA (fallback)
+                nombre:  display_name || nombre_cliente || prev.nombre || null, // backend computa clientes BD → pushName
+                name:    nombre       || prev.name      || null,                // pushName raw (fallback legacy)
                 lastMsg: ultimo_mensaje || prev.lastMsg || '',
                 lastTs:  ultimo_ts      || prev.lastTs  || 0,
             };
@@ -5160,8 +5160,8 @@ async function _loadResueltas() {
             if (!_state.conv[c.numero])             _state.conv[c.numero] = {};
             if (!_state.conv[c.numero][c.contacto]) _state.conv[c.numero][c.contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
             const cv  = _state.conv[c.numero][c.contacto];
-            if (c.nombre_cliente && !cv.nombre) cv.nombre = c.nombre_cliente;
-            if (c.nombre         && !cv.name)   cv.name   = c.nombre;
+            if ((c.display_name || c.nombre_cliente) && !cv.nombre) cv.nombre = c.display_name || c.nombre_cliente;
+            if (c.nombre && !cv.name) cv.name = c.nombre;
             const key = `${c.numero}:${c.contacto}`;
             if (!_state.asignaciones[key]) {
                 _state.asignaciones[key] = { asesor: c.asesor || null, estado: 'resuelto' };
@@ -5208,7 +5208,7 @@ function _renderResueltas() {
     const html = items.map(c => {
         const color    = _getColor(c.numero);
         const convData = _state.conv[c.numero]?.[c.contacto];
-        const display  = c.nombre_cliente || convData?.nombre || convData?.name || c.nombre || _fmtPhone(c.contacto);
+        const display  = convData?.nombre || c.display_name || c.nombre_cliente || convData?.name || _fmtPhone(c.contacto);
         const ts       = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
         const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
 
