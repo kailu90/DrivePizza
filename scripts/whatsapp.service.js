@@ -66,11 +66,32 @@ const _badSessionAttempts = new Map()   // numero → intentos consecutivos de b
 // Detecta "zombie sessions": socket OPEN y heartbeats OK pero sin recibir mensajes.
 // La evaluación combina: historial de badSessions + msgRecv=0 + decrypt failures.
 // NO actúa solo sobre msgRecv=0 — requiere evidencia combinada para evitar falsos positivos.
+// HIPÓTESIS de causa (no confirmada, pendiente de observar recurrencia):
+//   el evento badSession "Stream Errored (ack)" podría disrumpir buffers Signal en memoria;
+//   Baileys reconnecta el WS pero podría no renegociar sesiones Signal → MessageCounterError.
+//   Hipótesis alternativas: WA throttling silencioso, prekey exhaustion, estado inconsistente.
 const _badSessionHistory  = new Map()  // numero → [{ ts, msgRecv, msgSent }]
+
+// ── Recovery pending tracking ─────────────────────────────────────────────────
+// Rastrea recoveries activos (manuales o proactivos) para medir TTF
+// (time to first incoming after recovery). Se limpia al llegar el primer
+// mensaje entrante tras la reconexión.
+const _recoveryPending = new Map()  // numero → { startedAt, snapshot, openAt, isProactive }
 const SESSION_DEGRADED_BAD_MIN   = 2           // mín. badSessions con recv=0 en ventana
 const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 2h
 const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
 const SESSION_DEGRADED_MIN_UP_MS = 8 * 60_000  // uptime mínimo antes de evaluar
+
+// ── Rotación preventiva de socket (piloto Megamall) ───────────────────────────
+// El 500 "Stream Errored (ack)" se observa cada ~50 min en 573023566057.
+// Rotamos preventivamente en ventana 42-46 min con jitter aleatorio, usando el
+// mismo path de recrear-socket (conserva auth + Signal keys, no requiere QR).
+// Piloto exclusivo: ampliar a otras sesiones solo tras observar múltiples ciclos.
+const PROACTIVE_ROTATION_NUMERO       = '573023566057'  // solo Megamall por ahora
+const PROACTIVE_ROTATION_MIN_MS       = 42 * 60_000     // 42 min mínimo desde OPEN
+const PROACTIVE_ROTATION_MAX_MS       = 46 * 60_000     // 46 min máximo desde OPEN
+const PROACTIVE_ROTATION_RETRY_MIN_MS = 30_000          // retry si ocupado: mín 30s
+const PROACTIVE_ROTATION_RETRY_MAX_MS = 60_000          // retry si ocupado: máx 60s
 
 // ── Signal per-peer health tracking ──────────────────────────────────────────
 // Detecta fallos de descifrado por contacto (Bad MAC / MessageCounterError)
@@ -303,6 +324,7 @@ function _checkSessionDegraded(numero, sede) {
     recentBadSessions: recent.length,
     totalDecryptFails,
     badHistory:       recent.map(h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv })),
+    // Nota: causalidad exacta es hipótesis — registrar para observar recurrencia.
     action:           'manual_intervention_recommended',
   })
   broadcast({
@@ -313,6 +335,97 @@ function _checkSessionDegraded(numero, sede) {
     badSessions:  recent.length,
     decryptFails: totalDecryptFails,
   })
+}
+
+// ── Rotación preventiva de socket (piloto Megamall) ───────────────────────────
+function _scheduleProactiveRotation(numero, sede, openAt) {
+  if (numero !== PROACTIVE_ROTATION_NUMERO) return
+  const jitter = Math.floor(Math.random() * (PROACTIVE_ROTATION_MAX_MS - PROACTIVE_ROTATION_MIN_MS))
+  const delay  = PROACTIVE_ROTATION_MIN_MS + jitter
+  _waLog('PROACTIVE_ROTATION_SCHEDULED', {
+    numero, sede,
+    delay_min: (delay / 60_000).toFixed(1),
+    fires_at:  new Date(Date.now() + delay).toISOString(),
+  })
+  setTimeout(() => _attemptProactiveRotation(numero, sede, openAt), delay)
+}
+
+async function _attemptProactiveRotation(numero, sede, openAt) {
+  const entrada = sesiones.get(numero)
+
+  if (_connectedAt.get(numero) !== openAt) {
+    _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'stale_timer' })
+    return
+  }
+  if (!entrada || entrada.status !== 'conectado') {
+    _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede,
+      reason: 'not_connected', status: entrada?.status ?? 'no_session' })
+    return
+  }
+  if (_recoveryPending.has(numero)) {
+    _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'recovery_pending' })
+    return
+  }
+  if (entrada._proactiveRotationPending) {
+    _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'rotation_already_in_progress' })
+    return
+  }
+  const hasBusy = [..._msgQueues.keys()].some(k => k.startsWith(numero + ':'))
+  if (hasBusy) {
+    const retryMs = PROACTIVE_ROTATION_RETRY_MIN_MS +
+      Math.floor(Math.random() * (PROACTIVE_ROTATION_RETRY_MAX_MS - PROACTIVE_ROTATION_RETRY_MIN_MS))
+    _waLog('PROACTIVE_ROTATION_POSTPONED', { numero, sede, reason: 'busy_queues', retry_ms: retryMs })
+    setTimeout(() => _attemptProactiveRotation(numero, sede, openAt), retryMs)
+    return
+  }
+
+  const ctrs     = _msgCounters.get(numero) ?? { sent: 0, recv: 0 }
+  const uptimeMs = _connectedAt.has(numero) ? Date.now() - _connectedAt.get(numero) : null
+  const snapshot = {
+    status:     entrada.status,
+    msgSent:    ctrs.sent,
+    msgRecv:    ctrs.recv,
+    uptimeMs,
+    badHistory: (_badSessionHistory.get(numero) ?? []).map(
+                  h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv })
+                ),
+  }
+  const startedAt = Date.now()
+  entrada._proactiveRotationPending = true
+
+  _waLog('PROACTIVE_ROTATION', {
+    numero, sede,
+    trigger:     'preventive_bad_session_500',
+    started_at:  new Date(startedAt).toISOString(),
+    open_at:     new Date(openAt).toISOString(),
+    uptime_ms:   uptimeMs,
+    msgs_sent:   ctrs.sent,
+    msgs_recv:   ctrs.recv,
+    bad_history: snapshot.badHistory,
+    window:      `${PROACTIVE_ROTATION_MIN_MS/60000}–${PROACTIVE_ROTATION_MAX_MS/60000}min`,
+  })
+  _logConnEvent('WA_PROACTIVE_ROTATION', {
+    numero, sede,
+    msgSent: ctrs.sent,
+    msgRecv: ctrs.recv,
+    metadata: {
+      trigger:    'preventive_bad_session_500',
+      started_at: new Date(startedAt).toISOString(),
+      open_at:    new Date(openAt).toISOString(),
+      uptime_ms:  uptimeMs,
+      window_min: `${PROACTIVE_ROTATION_MIN_MS/60000}–${PROACTIVE_ROTATION_MAX_MS/60000}`,
+      bad_history: snapshot.badHistory,
+    },
+  })
+  _recoveryPending.set(numero, { startedAt, snapshot, openAt, isProactive: true })
+
+  const { lockOwner } = entrada
+  if (entrada.heartbeatInterval) clearInterval(entrada.heartbeatInterval)
+  if (entrada.reconcileInterval) clearInterval(entrada.reconcileInterval)
+  try { entrada.socket?.end() } catch {}
+  sesiones.delete(numero)
+  await _releaseLock(numero, lockOwner)
+  setTimeout(() => iniciarSesion(numero, sede), 500)
 }
 
 // ── Session lock (Redis) ─────────────────────────────────────────────────────
@@ -1207,6 +1320,8 @@ export async function iniciarSesion(numero, sede) {
       // (el patrón observado: badSession cada ~50 min → detectar en el siguiente ciclo)
       setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS)
       setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS * 3)
+      // Rotación preventiva (piloto Megamall): ventana 42-46 min + jitter
+      _scheduleProactiveRotation(numero, sede, _connectedAt.get(numero))
       // ─────────────────────────────────────────────────────────────────────
       _waLog('CONN', { numero, sede, evento: 'conectado' })
       await _upsertSesion(numero, sede, 'conectado')
@@ -1535,6 +1650,27 @@ export async function iniciarSesion(numero, sede) {
         _onSignalRecovered(numero, remitente)
         // Contabilizar mensajes entrantes para estadísticas de conexión
         const _mcr = _msgCounters.get(numero); if (_mcr) _mcr.recv++
+
+        // TTF: primer entrante tras recovery (manual o rotación proactiva)
+        if (_recoveryPending.has(numero)) {
+          const rec   = _recoveryPending.get(numero)
+          _recoveryPending.delete(numero)
+          const ttfMs = Date.now() - rec.startedAt
+          _logConnEvent('WA_RECOVERY_COMPLETE', {
+            numero, sede,
+            msgSent: _msgCounters.get(numero)?.sent ?? 0,
+            msgRecv: _msgCounters.get(numero)?.recv ?? 0,
+            metadata: {
+              time_to_first_incoming_ms: ttfMs,
+              is_proactive:              !!rec.isProactive,
+              open_at:                   rec.openAt ? new Date(rec.openAt).toISOString() : null,
+              snapshot_at_recovery:      rec.snapshot,
+              first_msg_jid:             remitente,
+            },
+          })
+          broadcast({ tipo: 'wa:recovery_complete', numero, sede,
+            ttf_ms: ttfMs, is_proactive: !!rec.isProactive })
+        }
       }
 
       // ── Reacciones ─────────────────────────────────────────────────────
@@ -2061,6 +2197,21 @@ export async function recrearSocket(numero) {
   }
 
   _waLog('SOCKET_RECREATE', { numero, sede, trigger: 'manual_admin', snapshot })
+
+  _recoveryPending.set(numero, {
+    startedAt:   Date.now(),
+    snapshot,
+    openAt:      _connectedAt.get(numero) ?? null,
+    isProactive: false,
+  })
+  _logConnEvent('WA_RECOVERY_INITIATED', {
+    numero, sede,
+    metadata: {
+      trigger:    'manual_admin',
+      snapshot,
+      hypothesis: 'zombie_session_possible_signal_disruption_unconfirmed',
+    },
+  })
 
   if (entrada.heartbeatInterval) clearInterval(entrada.heartbeatInterval)
   if (entrada.reconcileInterval) clearInterval(entrada.reconcileInterval)
