@@ -34,8 +34,8 @@ if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
     _btnReservas.style.display = 'none';
 }
 
-const _btnTaller = document.getElementById('btn_taller_pizzeritos');
-_btnTaller.addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial', params: { tipo: 'taller_pizzeritos' } }, '*'));
+const _btnTaller = document.getElementById('btn_reserva_pizzeritos');
+_btnTaller.addEventListener('click', () => window.parent.postMessage({ type: 'nav-switch', page: 'historial', params: { tipo: 'reserva_pizzeritos' } }, '*'));
 if ((localStorage.getItem('cc_ciudad') || '').toLowerCase() === 'cartago') {
     _btnTaller.style.display = 'none';
 }

@@ -259,7 +259,7 @@ function renderCategories() {
     ).join('');
     if (_ciudad !== 'cartago') {
         nav.innerHTML += `<button class="cat-btn cat-btn--reserva" onclick="abrirModalReserva()">📅 Reservas</button>`;
-        nav.innerHTML += `<button class="cat-btn cat-btn--taller" onclick="abrirModalTaller()">🍕 Taller Pizzeritos</button>`;
+        nav.innerHTML += `<button class="cat-btn cat-btn--taller" onclick="abrirModalTaller()">🍕 Reserva Pizzeritos</button>`;
     }
 }
 
@@ -1220,7 +1220,6 @@ function actualizarTotalCheckout() {
     if (_modoTaller) {
         document.getElementById('checkout-subtotal-row').style.display = 'none';
         document.getElementById('checkout-domicilio-row').style.display = 'none';
-        document.getElementById('checkout-total-final').textContent = '$30.000';
         return;
     }
 
@@ -1326,6 +1325,54 @@ window.toggleHorariosExtra = function() {
     btn.textContent = visible ? '+ Ver otros horarios ▾' : '− Ocultar ▴';
 };
 
+function renderHorariosTaller() {
+    const grid = document.getElementById('hora-taller-grid');
+    const slotsPrimarios = _generarSlots([18, 0],  [21, 0]);
+    const slotsEarly     = _generarSlots([15, 15], [17, 45]);
+    const slotsLate      = _generarSlots([21, 15], [23, 0]);
+
+    function crearBotones(slots, ocultos = false) {
+        return slots.map(s => `
+            <button type="button"
+                class="hora-btn${ocultos ? ' hora-btn--extra' : ''}"
+                data-hora="${s.value}"
+                onclick="seleccionarHoraTaller(this)">
+                ${s.label}
+            </button>`).join('');
+    }
+
+    grid.innerHTML = `
+        ${crearBotones(slotsPrimarios)}
+        <div id="horarios-extra-taller" style="display:none;">
+            ${crearBotones(slotsEarly)}
+            ${crearBotones(slotsLate)}
+        </div>
+        <button type="button" id="btn-ver-mas-horarios-taller" class="hora-btn-vermas"
+            onclick="toggleHorariosExtraTaller()">+ Ver otros horarios ▾</button>
+    `;
+}
+
+window.seleccionarHoraTaller = function(btn) {
+    document.querySelectorAll('#hora-taller-grid .hora-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('horaTaller').value = btn.dataset.hora;
+};
+
+window.toggleHorariosExtraTaller = function() {
+    const extra = document.getElementById('horarios-extra-taller');
+    const btn   = document.getElementById('btn-ver-mas-horarios-taller');
+    const visible = extra.style.display !== 'none';
+    extra.style.display = visible ? 'none' : 'flex';
+    btn.textContent = visible ? '+ Ver otros horarios ▾' : '− Ocultar ▴';
+};
+
+window.actualizarTotalKits = function() {
+    const kits  = parseInt(document.getElementById('cantidadKits').value, 10) || 0;
+    const total = kits * 25000;
+    document.getElementById('checkout-total-final').textContent =
+        total > 0 ? `$${total.toLocaleString('es-CO')}` : '$0';
+};
+
 function abrirModalReserva() {
     limpiarFormularioCheckout();
     renderHorariosReserva();
@@ -1409,8 +1456,9 @@ async function procesarReservaFinal() {
 
 function abrirModalTaller() {
     limpiarFormularioCheckout();
+    renderHorariosTaller();
 
-    document.getElementById('modal-checkout-titulo').textContent = '🍕 TALLER PIZZERITOS';
+    document.getElementById('modal-checkout-titulo').textContent = '🍕 RESERVA PIZZERITOS';
     document.getElementById('entrega-toggle-section').style.display = 'none';
     document.getElementById('pago-section').style.display = 'none';
     document.getElementById('acomp-section').style.display = 'none';
@@ -1419,19 +1467,19 @@ function abrirModalTaller() {
     document.getElementById('btn-enviar-pedido').style.display = 'none';
     document.getElementById('btn-crear-taller').style.display = 'block';
 
+    document.getElementById('checkout-subtotal-row').style.display = 'none';
+    document.getElementById('checkout-domicilio-row').style.display = 'none';
+    document.getElementById('checkout-total-final').textContent = '$0';
+
     // Fijar sede a Cañaveral
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         if (btn.dataset.sede !== 'cañaveral') btn.disabled = true;
         else btn.click();
     });
 
-    // Total fijo: ocultar fila Productos y mostrar solo $30.000
-    document.getElementById('checkout-subtotal-row').style.display = 'none';
-    document.getElementById('checkout-domicilio-row').style.display = 'none';
-    document.getElementById('checkout-total-final').textContent = '$30.000';
-
     _modoTaller = true;
     document.getElementById('modal-checkout').style.display = 'flex';
+    setTimeout(() => document.getElementById('clienteNombre').focus(), 100);
 }
 
 async function procesarTallerFinal() {
@@ -1439,24 +1487,31 @@ async function procesarTallerFinal() {
     const telefono = document.getElementById('clienteTelefono').value.trim();
     const obs      = document.getElementById('observaciones').value.trim();
     const canal    = document.querySelector('.canal-btn.active')?.dataset.canal || 'whatsapp';
+    const fecha    = document.getElementById('fechaTaller').value.trim();
+    const hora     = document.getElementById('horaTaller').value.trim();
+    const kits     = parseInt(document.getElementById('cantidadKits').value, 10);
 
-    if (!nombre)  return alert('⚠️ El nombre del cliente es obligatorio.');
+    if (!nombre)           return alert('⚠️ El nombre del cliente es obligatorio.');
     const telNorm = normalizarTelefono(telefono);
-    if (!telNorm) return alert('⚠️ Por favor validar el número de teléfono.');
+    if (!telNorm)          return alert('⚠️ Por favor validar el número de teléfono.');
+    if (!fecha)            return alert('⚠️ La fecha es obligatoria.');
+    if (!hora)             return alert('⚠️ La hora es obligatoria.');
+    if (!kits || kits < 1) return alert('⚠️ Ingresa la cantidad de kits (mínimo 1).');
 
     const datos = {
-        tipo: 'taller_pizzeritos',
+        tipo: 'reserva_pizzeritos',
         canal,
         sede: 'cañaveral',
         nombre,
         telefono: telNorm,
-        fechaReserva: '2026-09-12',
-        horaReserva:  '16:30',
+        fechaReserva: fecha,
+        horaReserva:  hora,
+        cantidadPersonas: kits,
         obs,
         impreso: false
     };
 
-    window.mostrarOverlay?.('Registrando taller...');
+    window.mostrarOverlay?.('Creando reserva Pizzeritos...');
     try {
         const pedidoId = await window.enviarAFirebase(datos);
         cerrarCheckout();
@@ -1464,9 +1519,9 @@ async function procesarTallerFinal() {
         const asesor = window.asesorActual || 'Asesor';
         window.ocultarOverlay?.(true, { asesor, pedidoId, sede: 'Cañaveral' });
     } catch (error) {
-        console.error('Error al registrar taller:', error);
+        console.error('Error al registrar reserva Pizzeritos:', error);
         window.ocultarOverlay?.(false);
-        alert('Hubo un error al registrar el taller.');
+        alert('Hubo un error al crear la reserva Pizzeritos.');
     }
 }
 
@@ -1498,6 +1553,10 @@ function limpiarFormularioCheckout() {
     document.getElementById('horaReserva').value = '';
     document.getElementById('cantidadPersonas').value = '';
     document.getElementById('hora-reserva-grid').innerHTML = '';
+    document.getElementById('fechaTaller').value = '';
+    document.getElementById('horaTaller').value = '';
+    document.getElementById('cantidadKits').value = '';
+    document.getElementById('hora-taller-grid').innerHTML = '';
 
     document.querySelectorAll('.sede-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.canal-btn').forEach(b => b.classList.remove('active'));

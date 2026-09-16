@@ -235,14 +235,20 @@
                 <input type="number" id="cantidadPersonas" placeholder="Cantidad de personas" min="1" class="full-width" style="margin-top:10px;">
             </div>
 
-            <!-- Taller Pizzeritos — solo visible en modo taller -->
+            <!-- Reserva Pizzeritos — solo visible en modo reserva pizzeritos -->
             <div id="taller-section" class="full-width" style="display:none;">
-                <div style="padding:8px 12px; background:#e8f5e9; border-radius:8px; border:1px solid #a5d6a7; margin-bottom:10px;">
-                    <p style="margin:0; font-size:1.3rem; color:#2e7d32;">📅 <strong>12 de septiembre de 2026</strong> &nbsp;·&nbsp; 🕓 <strong>4:30 PM</strong></p>
-                </div>
-                <div style="padding:10px 12px; background:#fff8e1; border-radius:8px; border:1px solid #ffe082;">
-                    <p style="margin:0; font-size:1.4rem; font-weight:bold; color:#e67e22;">🍕 Kit Pizzeritos — $30.000</p>
-                    <p style="margin:4px 0 0; font-size:1.2rem; color:#888;">Gorro · Delantal · Ingredientes · Jugo Hit<br>Sede Cañaveral · Pago anticipado por transferencia</p>
+                <p class="form-label" style="margin-bottom:6px;">Fecha</p>
+                <input type="date" id="fechaTaller" class="full-width" style="margin-bottom:12px;">
+                <p class="form-label" style="margin-bottom:6px;">Hora</p>
+                <div id="hora-taller-grid" class="hora-reserva-grid"></div>
+                <input type="hidden" id="horaTaller">
+                <div style="margin-top:12px;">
+                    <p class="form-label" style="margin-bottom:6px;">Cantidad de kits</p>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="number" id="cantidadKits" placeholder="Kits Pizzeritos" min="1" class="full-width" oninput="actualizarTotalKits()">
+                        <span style="font-size:1.3rem; color:#e67e22; font-weight:bold; white-space:nowrap;">× $25.000</span>
+                    </div>
+                    <p style="margin-top:6px; font-size:1.2rem; color:#888;">Gorro · Delantal · Ingredientes · Jugo Hit · Sede Cañaveral</p>
                 </div>
             </div>
 
@@ -844,8 +850,9 @@
         const { data: nPedido, error: rpcError } = await supabase.rpc('siguiente_n_pedido_callcenter');
         if (rpcError) throw new Error('Error obteniendo número de pedido: ' + rpcError.message);
 
-        const esReserva = datosPedido.tipo === 'reserva';
-        const esTaller  = datosPedido.tipo === 'taller_pizzeritos';
+        const esReserva           = datosPedido.tipo === 'reserva';
+        const esTaller            = datosPedido.tipo === 'taller_pizzeritos';
+        const esReservaPizzeritos = datosPedido.tipo === 'reserva_pizzeritos';
         const fila = {
             n_pedido:  nPedido,
             nombre:    datosPedido.nombre,
@@ -870,6 +877,12 @@
             fila.fecha_reserva = datosPedido.fechaReserva ?? null;
             fila.hora_reserva  = datosPedido.horaReserva  ?? null;
             fila.total         = 30000;
+        } else if (esReservaPizzeritos) {
+            fila.tipo              = 'reserva_pizzeritos';
+            fila.fecha_reserva     = datosPedido.fechaReserva ?? null;
+            fila.hora_reserva      = datosPedido.horaReserva  ?? null;
+            fila.cantidad_personas = datosPedido.cantidadPersonas ?? null;
+            fila.total             = (datosPedido.cantidadPersonas || 0) * 25000;
         } else {
             fila.direccion = datosPedido.direccion ?? '';
             fila.pago      = datosPedido.pago;
@@ -882,7 +895,7 @@
         if (error) throw new Error('Error creando pedido: ' + error.message);
 
         // Guardar/actualizar cliente en segundo plano
-        if (!esReserva && !esTaller) {
+        if (!esReserva && !esTaller && !esReservaPizzeritos) {
             const sede   = document.querySelector('.sede-btn.active')?.dataset.sede;
             const barrio = document.getElementById('barrioInput')?.value;
             upsertCliente({
