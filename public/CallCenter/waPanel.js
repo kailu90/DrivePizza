@@ -4167,7 +4167,7 @@ function _connectWs() {
 }
 
 // ── WS event handlers ──────────────────────────────────────────────────────
-function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, asesor, desdeTelefono, tipoMensaje, mediaUrl, msgId, quotedMsgId, quotedTexto, quotedFromMe }) {
+function _onMensaje({ numero, remitente, fromMe, pushName, display_name, display_phone, customer_id, push_name, texto, timestamp, asesor, desdeTelefono, tipoMensaje, mediaUrl, msgId, quotedMsgId, quotedTexto, quotedFromMe }) {
     // Solo chats 1:1 — descartar grupos, canales, listas de difusión, etc.
     if (!remitente) return;
     const _rimSuffix = remitente.split('@')[1] || '';
@@ -4186,8 +4186,22 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     const c   = _state.conv[numero][phone];
     c.jidSuffix = jidSuffix;  // actualizar siempre — puede cambiar entre sesiones
     const out = !!fromMe;
-    // Actualizar nombre WA solo si el asesor no asigno uno manual
-    if (pushName && !out && !c.nombre) c.name = pushName;
+
+    if (!out) {
+      // Identidad resuelta por backend — sin salto visual pushName→clientes.nombre
+      if (display_name !== undefined) {
+        // Si ya tenemos customer_id en conv, solo actualizar si el nuevo broadcast también lo tiene
+        // (evita que un cache stale con push_name fallback degrade un nombre ya confirmado)
+        const esAutoritativo = !!customer_id || !c.customer_id;
+        if (esAutoritativo) {
+          c.nombre = display_name || c.nombre;
+          if (display_phone) c.display_phone = display_phone;
+        }
+        if (customer_id && !c.customer_id) c.customer_id = customer_id;
+      }
+      // push_name/pushName: solo metadata y fallback legacy (backends sin display_name)
+      if ((push_name || pushName) && !c.name) c.name = push_name || pushName;
+    }
 
     // Deduplicar mensajes de sistema y notas (optimista ya insertado)
     if (tipoMensaje === 'sistema' || tipoMensaje === 'nota') {

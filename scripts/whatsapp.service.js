@@ -418,6 +418,56 @@ let _wsClients = null
 
 // ── Identidad comercial ──────────────────────────────────────────────────────
 
+// Caché en memoria: contact_id → identidad resuelta. TTL 5 min.
+// Se invalida inmediatamente cuando _lazyLinkCustomer enlaza un customer_id nuevo.
+const _identityCache    = new Map()
+const IDENTITY_CACHE_TTL = 5 * 60 * 1000
+
+// Resuelve identidad comercial para un mensaje entrante:
+//   - Si wa_contacts.customer_id existe → clientes.nombre / clientes.telefono (fast path)
+//   - Si no → JOIN por teléfono normalizado (discovery, evita salto pushName→nombre en 1er mensaje)
+//   - Siempre: push_name como fallback de display_name
+// Resultado cacheado por contact_id. Fire-and-forget-safe: errores devuelven fallback.
+async function _resolveIdentidad(contactId, normalizedPhone, pushName) {
+  if (!supabase || !contactId) {
+    return { display_name: pushName || null, display_phone: normalizedPhone, customer_id: null, push_name: pushName || null }
+  }
+
+  const cached = _identityCache.get(contactId)
+  if (cached && Date.now() - cached.ts < IDENTITY_CACHE_TTL) return cached.data
+
+  try {
+    const { data: wc } = await supabase.from('wa_contacts')
+      .select('customer_id, push_name').eq('id', contactId).maybeSingle()
+
+    const storedPushName = wc?.push_name || pushName || null
+    const customer_id    = wc?.customer_id || null
+
+    let cliente = null
+    if (customer_id) {
+      // Fast path: vínculo oficial ya establecido
+      const { data } = await supabase.from('clientes')
+        .select('nombre, telefono').eq('id', customer_id).maybeSingle()
+      cliente = data
+    } else if (normalizedPhone) {
+      // Discovery: misma lógica que _enriquecerConversaciones — evita el salto en primer mensaje
+      const { data } = await supabase.from('clientes')
+        .select('nombre, telefono').eq('telefono', normalizedPhone).maybeSingle()
+      cliente = data
+    }
+
+    const display_name  = cliente?.nombre  || storedPushName || null
+    const display_phone = cliente?.telefono || normalizedPhone
+
+    const result = { display_name, display_phone, customer_id, push_name: storedPushName }
+    _identityCache.set(contactId, { data: result, ts: Date.now() })
+    return result
+  } catch (e) {
+    console.error('[WA] _resolveIdentidad error:', e.message)
+    return { display_name: pushName || null, display_phone: normalizedPhone, customer_id: null, push_name: pushName || null }
+  }
+}
+
 // Vincula wa_contacts.customer_id al cliente de BD cuando hay coincidencia única.
 // Reglas:
 //   0 coincidencias → dejar customer_id = NULL
@@ -443,6 +493,7 @@ async function _lazyLinkCustomer(contactId, normalizedPhone) {
     await supabase.from('wa_contacts')
       .update({ customer_id: matches[0].id, updated_at: new Date().toISOString() })
       .eq('id', contactId)
+    _identityCache.delete(contactId) // invalidar para que próximo mensaje use customer_id enlazado
     _waLog('CUSTOMER_LINKED', { contact_id: contactId, customer_id: matches[0].id, telefono: normalizedPhone })
   } catch (e) {
     console.error('[WA] _lazyLinkCustomer error:', e.message)
@@ -456,7 +507,11 @@ async function _syncPushName(contactId, pushName) {
   supabase.from('wa_contacts')
     .update({ push_name: pushName, updated_at: new Date().toISOString() })
     .eq('id', contactId)
-    .then(() => {}, e => console.error('[WA] _syncPushName error:', e.message))
+    .then(() => {
+      // Actualizar push_name en caché si la entrada existe (sin resetear el ts)
+      const cached = _identityCache.get(contactId)
+      if (cached) cached.data.push_name = pushName
+    }, e => console.error('[WA] _syncPushName error:', e.message))
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1634,12 +1689,24 @@ export async function iniciarSesion(numero, sede) {
       // Duplicado (replay de Baileys al reconectar) — no hacer broadcast ni efectos secundarios
       if (!esNuevo) continue
 
+      // Identidad comercial para broadcast — evita salto pushName → clientes.nombre en frontend.
+      // Solo mensajes entrantes reales; cacheado por contact_id (1-2 DB queries solo en primer msg).
+      let _identidad = null
+      if (!fromMe && _incomingContactId) {
+        _identidad = await _resolveIdentidad(_incomingContactId, normalizarTelefono(phone), pushName).catch(() => null)
+      }
+
       if (!enviadoDesdeEverest) {
         // Si era @lid: usar número real (@s.whatsapp.net) si se resolvió, o @lid si no
         const remitenteResuelto = lidPhone
           ? phone + (phone === lidPhone ? '@lid' : '@s.whatsapp.net')
           : remitente
-        broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: remitenteResuelto, fromMe, pushName, texto, timestamp: ts, msgId: msg.key.id, desdeTelefono: desdeTelefono || false, tipoMensaje: tipoMsg, mediaUrl, quotedMsgId, quotedTexto, quotedFromMe })
+        broadcast({ tipo: 'wa:mensaje', numero, sede, remitente: remitenteResuelto, fromMe, pushName,
+          display_name:  _identidad?.display_name  ?? null,
+          display_phone: _identidad?.display_phone ?? null,
+          customer_id:   _identidad?.customer_id   ?? null,
+          push_name:     _identidad?.push_name     ?? pushName,
+          texto, timestamp: ts, msgId: msg.key.id, desdeTelefono: desdeTelefono || false, tipoMensaje: tipoMsg, mediaUrl, quotedMsgId, quotedTexto, quotedFromMe })
       }
 
       // Mensajes entrantes Y mensajes desde celular reactivan asignacion resuelta
