@@ -698,6 +698,15 @@ async function applyMsgStatus(msgId, numero, status, {
       dbUpdate.receipt_source    = source
     }
 
+    // Telemetría de latencia ACK/entrega — fire-and-forget, no bloquea ni retrasa este flujo.
+    // record_msg_latency calcula (now_ms - timestamp*1000) en DB y solo escribe si la métrica está NULL.
+    if (!sinAck && !deliveryUnknown && (status === 2 || status === 3)) {
+      supabase.rpc('record_msg_latency', {
+        p_msg_id: msgId, p_numero: numero,
+        p_status: status, p_now_ms: Date.now()
+      }).then(() => {}, () => {})
+    }
+
     let q = supabase.from('mensajes_wa').update(dbUpdate)
       .eq('msg_id', msgId)
       .eq('numero', numero)

@@ -2797,17 +2797,17 @@ function _injectStyles() {
     vertical-align: middle;
     flex-shrink: 0;
 }
-/* Reloj gris: pendiente (status 1, esperando ACK de WA) */
+/* Reloj gris: solo para bubbles sin msgId aún (pending optimista) */
 .wap-msg-ticks--clock { opacity: .75; }
-/* Confirmación pendiente: enviado, WA aún no confirma — sutil, no alarmante */
-.wap-msg-ticks--noack { animation: wap-noack-pulse 4s ease-in-out infinite; }
-@keyframes wap-noack-pulse { 0%,100%{opacity:.65} 50%{opacity:.9} }
-/* Entrega no confirmada tras 15 min — ? ámbar, pulso más lento */
+/* sinAck: ✓ con animación muy sutil — WA aún no respondió, no reemplaza el check */
+.wap-msg-ticks--noack { animation: wap-noack-pulse 5s ease-in-out infinite; }
+@keyframes wap-noack-pulse { 0%,100%{opacity:.70} 50%{opacity:.90} }
+/* deliveryUnknown: sin receipt de dispositivo tras 15 min — ? ámbar */
 .wap-msg-ticks--unknown { animation: wap-unknown-pulse 6s ease-in-out infinite; }
 @keyframes wap-unknown-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
-/* Etiquetas de estado junto al icono */
-.wap-msg-pending-label {
-    font-size: 1.0rem; color: #9ca3af; margin-left: 2px;
+/* Label discreto que aparece solo >5 min sin ACK */
+.wap-msg-delayed-label {
+    font-size: 1.0rem; color: #9ca3af; margin-left: 3px;
     font-style: italic; vertical-align: middle;
 }
 .wap-msg-unknown-label {
@@ -4091,8 +4091,8 @@ async function _reconcileSinAckInBackground() {
                     const newDelivUnknown = !!dbMsg.delivery_unknown && newStatus < 3;
                     if (!!mem.sinAck !== newSinAck || mem.status !== newStatus || !!mem.deliveryUnknown !== newDelivUnknown) {
                         mem.status = newStatus;
-                        if (newSinAck) mem.sinAck = true;
-                        else delete mem.sinAck;
+                        if (newSinAck) { if (!mem.sinAck) mem.sinAckAt = Date.now(); mem.sinAck = true; }
+                        else { delete mem.sinAck; delete mem.sinAckAt; }
                         if (newDelivUnknown) mem.deliveryUnknown = true;
                         else delete mem.deliveryUnknown;
                         changed = true;
@@ -4306,6 +4306,14 @@ function _onStatus({ numero, sede, status }) {
     }
 }
 
+// Programa un re-render exactamente al cumplir 5 min sin ACK → muestra "Confirmación demorada"
+function _scheduleSinAckRefresh(sinAckAt) {
+    const remaining = Math.max(0, sinAckAt + 5 * 60 * 1000 - Date.now());
+    setTimeout(() => {
+        if (_state.activeNum && document.querySelector('.wap-msg-ticks--noack')) _renderMsgs();
+    }, remaining + 500);
+}
+
 function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown = false }) {
     if (!msgId || !numero) return;
     let updated = false;
@@ -4321,9 +4329,14 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown =
             const wasDelivUnknown = !!m.deliveryUnknown;
             if (!sinAck && !deliveryUnknown) m.status = status;
             if (sinAck && (m.status || 0) < 2) {
+                if (!m.sinAck) {
+                    m.sinAckAt = Date.now(); // primera activación → capturar timestamp
+                    if (_state.activeNum === numero) _scheduleSinAckRefresh(m.sinAckAt);
+                }
                 m.sinAck = true;
             } else if (!sinAck && status >= 2) {
                 delete m.sinAck;
+                delete m.sinAckAt;
             }
             if (deliveryUnknown) {
                 m.deliveryUnknown = true;
@@ -4369,37 +4382,29 @@ function _onMsgStatus({ numero, msgId, status, sinAck = false, deliveryUnknown =
 }
 
 function _tickSvg(status, sinAck = false, deliveryUnknown = false) {
-    // sinAck: backend envió pero WA no confirmó en 90s — reloj gris, sutil
-    if (sinAck) {
-        return `<span class="wap-msg-ticks wap-msg-ticks--clock wap-msg-ticks--noack" title="WhatsApp aún no confirma entrega. No reenvíes todavía.">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6.5" stroke="#9ca3af" stroke-width="1.8"/>
-                <path d="M8 4.5V8L10.5 10" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </span>`;
+    const color = status >= 4 ? '#53bdeb' : '#8696a0';
+
+    // status 1 o 2: ✓ simple gris.
+    // sinAck NO reemplaza el check por reloj — solo agrega clase para tooltip y animación sutil.
+    if (status <= 2) {
+        const tooltip = sinAck ? 'Esperando confirmación de WhatsApp' : 'Enviado';
+        const cls = sinAck ? ' wap-msg-ticks--noack' : '';
+        return `<span class="wap-msg-ticks${cls}" title="${tooltip}"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+            <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>`;
     }
-    // deliveryUnknown: WA confirmó envío pero sin receipt de dispositivo tras 15 min — ? ámbar
+
+    // deliveryUnknown: WA confirmó envío (status≥2) pero sin receipt de dispositivo tras 15 min
     if (deliveryUnknown) {
-        return `<span class="wap-msg-ticks wap-msg-ticks--unknown" title="El mensaje llegó a WhatsApp pero no se confirmó entrega al dispositivo. El destinatario puede estar sin conexión.">
+        return `<span class="wap-msg-ticks wap-msg-ticks--unknown" title="El mensaje llegó a WhatsApp pero no se confirmó entrega al dispositivo.">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6.5" stroke="#d97706" stroke-width="1.8"/>
                 <text x="8" y="12.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#d97706" font-family="sans-serif">?</text>
             </svg>
         </span>`;
     }
-    const color = status >= 4 ? '#53bdeb' : '#8696a0';
-    if (status === 1) {
-        // Backend confirmó envío, WA aún no respondió — ✓ gris
-        return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-            <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg></span>`;
-    }
-    if (status === 2) {
-        // WA servers confirmaron recepción — ✓ gris (aún no entregado al dispositivo)
-        return `<span class="wap-msg-ticks" title="Enviado"><svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-            <path d="M1 5L4.5 8.5L13 1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg></span>`;
-    }
+
+    // status 3+: ✓✓ gris (3) o azul (≥4)
     const label = status >= 4 ? 'Leído' : 'Entregado';
     return `<span class="wap-msg-ticks" title="${label}"><svg width="18" height="10" viewBox="0 0 18 10" fill="none">
         <path d="M1 5L4.5 8.5L13 1"   stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -5489,6 +5494,8 @@ async function _loadMsgsSupabase(phone) {
                 mediaUrl:     m.media_url      || null,
                 status:          Math.max(dbStat || 0, prev?.status || 0) || undefined,
                 sinAck:          !!m.sin_ack && (prev?.status ?? 0) < 2,
+                sinAckAt:        (!!m.sin_ack && (prev?.status ?? 0) < 2 && m.timestamp)
+                                     ? (prev?.sinAckAt || m.timestamp * 1000 + 90_000) : undefined,
                 deliveryUnknown: !!m.delivery_unknown && (prev?.status ?? 0) < 3,
                 reactions:    m.reactions      || {},
                 quotedMsgId:  m.quoted_msg_id  || null,
@@ -6254,15 +6261,19 @@ function _renderMsgs() {
             ? `<span class="wap-msg-status">⏳</span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? (
-                _tickSvg(m.status, m.sinAck, m.deliveryUnknown) +
-                (m.sinAck         ? '<span class="wap-msg-pending-label">Confirmación pendiente</span>' :
-                 m.deliveryUnknown ? '<span class="wap-msg-unknown-label">Entrega no confirmada</span>' : '')
-              ) : '');
+            : (m.out && !m.celular ? (() => {
+                const tick = _tickSvg(m.status, m.sinAck, m.deliveryUnknown);
+                let label = '';
+                if (m.deliveryUnknown) {
+                    label = '<span class="wap-msg-unknown-label">Entrega no confirmada</span>';
+                } else if (m.sinAck && m.sinAckAt && (Date.now() - m.sinAckAt) > 5 * 60 * 1000) {
+                    label = '<span class="wap-msg-delayed-label">Confirmación demorada</span>';
+                }
+                return tick + label;
+              })() : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
-        // sinAck: no mostrar menú de opciones — evita reenvíos accidentales mientras WA confirma
-        const menuBtn = m.msgId && !m.pending && !m.failed && !m.sinAck && !isEditing
+        const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
             ? m.out
                 ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
                    <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
@@ -7906,6 +7917,8 @@ async function _loadMoreMsgs() {
                     mediaUrl:        m.media_url     || null,
                     status:          Math.max(dbStat || 0, prev?.status || 0) || undefined,
                     sinAck:          !!m.sin_ack          && (prev?.status ?? 0) < 2,
+                    sinAckAt:        (!!m.sin_ack && (prev?.status ?? 0) < 2 && m.timestamp)
+                                         ? (prev?.sinAckAt || m.timestamp * 1000 + 90_000) : undefined,
                     deliveryUnknown: !!m.delivery_unknown && (prev?.status ?? 0) < 3,
                     reactions:       m.reactions     || {},
                     quotedMsgId:     m.quoted_msg_id || null,
