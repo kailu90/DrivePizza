@@ -1471,10 +1471,9 @@ function abrirModalTaller() {
     document.getElementById('checkout-domicilio-row').style.display = 'none';
     document.getElementById('checkout-total-final').textContent = '$0';
 
-    // Fijar sede a Cañaveral
+    // Restringir sedes a las que aplican reservas Pizzeritos
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
-        if (btn.dataset.sede !== 'cañaveral') btn.disabled = true;
-        else btn.click();
+        if (!SEDES_RESERVA.has(btn.dataset.sede)) btn.disabled = true;
     });
 
     _modoTaller = true;
@@ -1487,6 +1486,7 @@ async function procesarTallerFinal() {
     const telefono = document.getElementById('clienteTelefono').value.trim();
     const obs      = document.getElementById('observaciones').value.trim();
     const canal    = document.querySelector('.canal-btn.active')?.dataset.canal || 'whatsapp';
+    const sede     = document.querySelector('.sede-btn.active')?.dataset.sede   || '';
     const fecha    = document.getElementById('fechaTaller').value.trim();
     const hora     = document.getElementById('horaTaller').value.trim();
     const kits     = parseInt(document.getElementById('cantidadKits').value, 10);
@@ -1494,6 +1494,7 @@ async function procesarTallerFinal() {
     if (!nombre)           return alert('⚠️ El nombre del cliente es obligatorio.');
     const telNorm = normalizarTelefono(telefono);
     if (!telNorm)          return alert('⚠️ Por favor validar el número de teléfono.');
+    if (!sede)             return alert('⚠️ Selecciona una sede.');
     if (!fecha)            return alert('⚠️ La fecha es obligatoria.');
     if (!hora)             return alert('⚠️ La hora es obligatoria.');
     if (!kits || kits < 1) return alert('⚠️ Ingresa la cantidad de kits (mínimo 1).');
@@ -1501,7 +1502,7 @@ async function procesarTallerFinal() {
     const datos = {
         tipo: 'reserva_pizzeritos',
         canal,
-        sede: 'cañaveral',
+        sede,
         nombre,
         telefono: telNorm,
         fechaReserva: fecha,
@@ -1517,7 +1518,8 @@ async function procesarTallerFinal() {
         cerrarCheckout();
         limpiarFormularioCheckout();
         const asesor = window.asesorActual || 'Asesor';
-        window.ocultarOverlay?.(true, { asesor, pedidoId, sede: 'Cañaveral' });
+        const sedeLabel = sede.charAt(0).toUpperCase() + sede.slice(1).toLowerCase();
+        window.ocultarOverlay?.(true, { asesor, pedidoId, sede: sedeLabel });
     } catch (error) {
         console.error('Error al registrar reserva Pizzeritos:', error);
         window.ocultarOverlay?.(false);
