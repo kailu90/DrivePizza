@@ -7,6 +7,7 @@ import {
   extractMessageContent,
   downloadMediaMessage,
   makeCacheableSignalKeyStore,
+  generateMessageIDV2,
 } from '@whiskeysockets/baileys'
 import QRCode from 'qrcode'
 import path from 'path'
@@ -81,6 +82,7 @@ const _badSessionHistory  = new Map()  // numero → [{ ts, msgRecv, msgSent }]
 // Esto evita bloquear rotaciones en períodos sin tráfico (ej. madrugada).
 const _recoveryPending              = new Map()  // numero → { startedAt, snapshot, openAt, isProactive, socketRecoveredAt? }
 const PROACTIVE_ROTATION_PENDING_TTL_MS = 45 * 60_000  // TTL: 45 min — si no llega tráfico, liberar ciclo
+const OUTBOX_MAX_INTENTOS               = 3             // reintentos máximos por item antes de marcar failed
 const SESSION_DEGRADED_BAD_MIN   = 2           // mín. badSessions con recv=0 en ventana
 const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 2h
 const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
@@ -1400,6 +1402,9 @@ export async function iniciarSesion(numero, sede) {
       // Reconciliación al reconectar: espera 10s para que Baileys entregue
       // primero los messages.update pendientes de la reconexión.
       setTimeout(() => _reconciliarSesion(numero, { source: 'reconnect' }).catch(() => {}), 10_000)
+      // Drenar outbox: mensajes que se encolaron mientras la sesión estaba caída.
+      // 5s de espera para que el socket esté estable antes del primer sendMessage.
+      setTimeout(() => _drainOutbox(numero, sede).catch(() => {}), 5_000)
       // Intervalo periódico por sesión — se cancela al desconectar
       if (entrada.reconcileInterval) clearInterval(entrada.reconcileInterval)
       entrada.reconcileInterval = setInterval(() => {
@@ -2316,10 +2321,18 @@ function _migrarLid(numero, entrada, lidPhone, realPhone) {
   })()
 }
 
-export async function enviarMensaje(numero, destinatario, texto, asesor, quotedData) {
+export async function enviarMensaje(numero, destinatario, texto, asesor, quotedData, idempotencyKey) {
   const entrada = sesiones.get(numero)
-  if (!entrada || entrada.status !== 'conectado') {
-    throw new Error(`Sesión ${numero} no disponible (estado: ${entrada?.status ?? 'no existe'})`)
+  if (!entrada) throw new Error(`Sesión ${numero} no existe`)
+  if (entrada.status !== 'conectado') {
+    if (!supabase) throw new Error(`Sesión ${numero} no disponible (estado: ${entrada.status})`)
+    const destRaw = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
+    const { outboxId, mensajeId } = await _outboxEnqueue({
+      numero, contacto: destRaw, tipo: 'texto', texto, asesor,
+      quotedMsgId: quotedData?.msgId || null, quotedTexto: quotedData?.texto || null, quotedFromMe: quotedData?.fromMe ?? null,
+      idempotencyKey: idempotencyKey || null,
+    })
+    return { queued: true, outboxId, mensajeId }
   }
 
   // Normalizar: quitar sufijo @... si viene con él
@@ -2495,21 +2508,14 @@ async function _convertToOgg(buffer, inputExt = 'webm') {
   return result
 }
 
-export async function enviarMedia(numero, destinatario, buffer, mimetype, fileName, caption, asesor) {
+export async function enviarMedia(numero, destinatario, buffer, mimetype, fileName, caption, asesor, idempotencyKey) {
   const entrada = sesiones.get(numero)
-  if (!entrada || entrada.status !== 'conectado')
-    throw new Error('Sesion ' + numero + ' no disponible')
+  if (!entrada) throw new Error('Sesion ' + numero + ' no existe')
 
-  const destRaw  = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
-  const esLid    = entrada.lidToPhone?.has(destRaw) || destRaw.length > 12
-  let destFinal  = destRaw
-  if (esLid) destFinal = await _resolverLid(entrada, destRaw, 3000)
-  const jid      = (esLid && destFinal === destRaw) ? destRaw + '@lid' : destFinal + '@s.whatsapp.net'
-  const _knownLidM = !esLid && entrada.phoneToLid?.get(destRaw)
-  const sendJid  = _knownLidM ? (_knownLidM + '@lid') : jid
-  const phone    = destFinal !== destRaw ? destFinal : destRaw
+  const destRaw = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
+  const base    = mimetype.split(';')[0].trim()
 
-  const base = mimetype.split(';')[0].trim()
+  // ── Preparar buffer/mime final (conversión de audio antes del branch de sesión) ──
   // uploadBuffer/uploadMime: lo que se guarda en Storage (puede diferir del input si se convierte)
   let uploadBuffer = buffer
   let uploadMime   = mimetype
@@ -2537,16 +2543,6 @@ export async function enviarMedia(numero, destinatario, buffer, mimetype, fileNa
     content = { document: buffer, mimetype: base, fileName: fileName || 'archivo' }
   }
 
-  const ts  = Math.floor(Date.now() / 1000)
-  const sent = await _enqueue(`${numero}:${phone}`, () => entrada.socket.sendMessage(sendJid, content))
-  const msgId = sent?.key?.id || null
-  if (msgId) _sentMsgIds.add(msgId)
-  // Igual que en enviarMensaje: guardar msgId→phone por si el eco regresa como @lid
-  if (msgId && !esLid) _pendingMsgToPhone.set(msgId, phone)
-  // Pre-poblar mapping lid→phone (mismo principio que en enviarMensaje)
-  if (!esLid) entrada.socket.fetchStatus(sendJid).catch(() => {})
-
-  // Texto descriptivo para guardar en BD
   const textoDesc = base.startsWith('image/') ? ('Imagen' + (caption ? ': ' + caption : ''))
                   : base.startsWith('video/') ? ('Video' + (caption ? ': ' + caption : ''))
                   : base.startsWith('audio/') ? 'Nota de voz'
@@ -2556,6 +2552,37 @@ export async function enviarMedia(numero, destinatario, buffer, mimetype, fileNa
                  : base.startsWith('video/') ? 'video'
                  : base.startsWith('audio/') ? 'voz'
                  : 'documento'
+
+  // ── Outbox: sesión no disponible — subir a Storage y encolar ─────────────
+  if (entrada.status !== 'conectado') {
+    if (!supabase) throw new Error('Sesion ' + numero + ' no disponible')
+    const fileId = `ob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const { storagePath, storageUrl } = await _subirMediaForOutbox(uploadBuffer, uploadMime, tipoDesc, numero, fileId)
+    const { outboxId, mensajeId } = await _outboxEnqueue({
+      numero, contacto: destRaw, tipo: tipoDesc, texto: textoDesc, asesor,
+      storagePath, storageUrl, mime: uploadMime, filename: fileName || null, filesize: uploadBuffer.length,
+      idempotencyKey: idempotencyKey || null,
+    })
+    return { queued: true, outboxId, mensajeId }
+  }
+
+  // ── Envío inmediato ───────────────────────────────────────────────────────
+  const esLid    = entrada.lidToPhone?.has(destRaw) || destRaw.length > 12
+  let destFinal  = destRaw
+  if (esLid) destFinal = await _resolverLid(entrada, destRaw, 3000)
+  const jid      = (esLid && destFinal === destRaw) ? destRaw + '@lid' : destFinal + '@s.whatsapp.net'
+  const _knownLidM = !esLid && entrada.phoneToLid?.get(destRaw)
+  const sendJid  = _knownLidM ? (_knownLidM + '@lid') : jid
+  const phone    = destFinal !== destRaw ? destFinal : destRaw
+
+  const ts   = Math.floor(Date.now() / 1000)
+  const sent = await _enqueue(`${numero}:${phone}`, () => entrada.socket.sendMessage(sendJid, content))
+  const msgId = sent?.key?.id || null
+  if (msgId) _sentMsgIds.add(msgId)
+  // Igual que en enviarMensaje: guardar msgId→phone por si el eco regresa como @lid
+  if (msgId && !esLid) _pendingMsgToPhone.set(msgId, phone)
+  // Pre-poblar mapping lid→phone (mismo principio que en enviarMensaje)
+  if (!esLid) entrada.socket.fetchStatus(sendJid).catch(() => {})
 
   // Log auditoría de media — permite verificar que WA aceptó el upload (directPath ≠ null)
   // sinDirectPath:true → WA no procesó el archivo → cliente verá "audio no disponible"
@@ -2600,6 +2627,280 @@ async function _subirMediaBuffer(buffer, mimetype, tipo, msgId, numero) {
     const raw = urlData?.publicUrl || null
     return raw ? raw.replace('http://localhost:8000', 'https://supabase.everest-central.com') : null
   } catch(e) { console.error('[WA] Error subiendo media saliente:', e.message); return null }
+}
+
+// ── wa_outbox — cola persistente de mensajes salientes ──────────────────────
+// Sube media a Storage con un ID temporal (sin msgId aún).
+async function _subirMediaForOutbox(buffer, mimetype, tipo, numero, fileId) {
+  try {
+    const base = mimetype.split(';')[0].trim()
+    const ext  = _extFromMime(mimetype, tipo)
+    const folder = tipo === 'video' ? 'videos' : (tipo === 'voz' || tipo === 'audio') ? 'audios'
+                 : tipo === 'imagen' ? 'imagenes' : 'documentos'
+    const storagePath = folder + '/' + numero + '/' + fileId + '.' + ext
+    const { error } = await supabase.storage.from('wa-media').upload(storagePath, buffer, { contentType: base, upsert: true })
+    if (error) { console.error('[WA] outbox media upload error:', error.message); return { storagePath: null, storageUrl: null } }
+    const { data: urlData } = supabase.storage.from('wa-media').getPublicUrl(storagePath)
+    const raw = urlData?.publicUrl || null
+    const url = raw ? raw.replace('http://localhost:8000', 'https://supabase.everest-central.com') : null
+    return { storagePath, storageUrl: url }
+  } catch (e) { console.error('[WA] outbox media upload exception:', e.message); return { storagePath: null, storageUrl: null } }
+}
+
+// Inserta un item en wa_outbox + su fila en mensajes_wa (status=NULL, msg_id=NULL).
+// Retorna { outboxId, mensajeId, ts }.
+// Si idempotencyKey ya existe en DB (petición duplicada tras timeout HTTP), retorna la fila existente.
+async function _outboxEnqueue({ numero, contacto, tipo, texto, asesor,
+  quotedMsgId, quotedTexto, quotedFromMe, storagePath, storageUrl, mime, filename, filesize, idempotencyKey }) {
+  const ts = Math.floor(Date.now() / 1000)
+
+  const payload = {
+    numero, contacto, tipo, texto, asesor,
+    quoted_msg_id:    quotedMsgId    || null,
+    quoted_texto:     quotedTexto    || null,
+    quoted_from_me:   quotedFromMe   ?? null,
+    storage_path:     storagePath    || null,
+    storage_url:      storageUrl     || null,
+    mime:             mime           || null,
+    filename:         filename       || null,
+    filesize:         filesize       || null,
+    idempotency_key:  idempotencyKey || null,
+  }
+
+  const { data: ob, error: obErr } = await supabase.from('wa_outbox')
+    .insert(payload)
+    .select('id, mensaje_id')
+    .single()
+
+  if (obErr) {
+    // 23505 = unique_violation en idempotency_key → petición duplicada
+    if (obErr.code === '23505' && idempotencyKey) {
+      const { data: existing, error: selErr } = await supabase.from('wa_outbox')
+        .select('id, mensaje_id')
+        .eq('idempotency_key', idempotencyKey)
+        .single()
+      if (selErr) throw selErr
+      // Si ya tiene mensaje_id vinculado, la primera request se completó — devolver tal cual
+      if (existing.mensaje_id) return { outboxId: existing.id, mensajeId: existing.mensaje_id, ts }
+      // Rara carrera: outbox creado pero mensajes_wa no aún → continuar con existing.id
+      const outboxId = existing.id
+      const { data: msg2, error: msgErr2 } = await supabase.from('mensajes_wa')
+        .insert({ numero, contacto, texto, timestamp: ts, saliente: true,
+          tipo: tipo === 'texto' ? 'mensaje' : tipo,
+          media_url: storageUrl || null, asesor: asesor || null,
+          quoted_msg_id: quotedMsgId || null, quoted_texto: quotedTexto || null, quoted_from_me: quotedFromMe ?? null,
+          outbox_id: outboxId,
+        }).select('id').single()
+      if (msgErr2) throw msgErr2
+      await supabase.from('wa_outbox').update({ mensaje_id: msg2.id }).eq('id', outboxId)
+      return { outboxId, mensajeId: msg2.id, ts }
+    }
+    throw obErr
+  }
+
+  const outboxId = ob.id
+
+  const tipoMsg = tipo === 'texto' ? 'mensaje' : tipo
+  const { data: msg, error: msgErr } = await supabase.from('mensajes_wa')
+    .insert({ numero, contacto, texto, timestamp: ts, saliente: true,
+      tipo:           tipoMsg,
+      media_url:      storageUrl  || null,
+      asesor:         asesor      || null,
+      quoted_msg_id:  quotedMsgId || null,
+      quoted_texto:   quotedTexto || null,
+      quoted_from_me: quotedFromMe ?? null,
+      outbox_id:      outboxId,
+      // msg_id omitido → NULL   |   status omitido → NULL (outbox pending)
+    })
+    .select('id').single()
+  if (msgErr) throw msgErr
+  const mensajeId = msg.id
+
+  await supabase.from('wa_outbox').update({ mensaje_id: mensajeId }).eq('id', outboxId)
+  return { outboxId, mensajeId, ts }
+}
+
+// Drena la outbox de una sesión al conectarse. Agrupa por contacto (FIFO por contacto,
+// paralelismo entre contactos) usando el mismo _enqueue que los envíos normales.
+async function _drainOutbox(numero, sede) {
+  if (!supabase) return
+  // Restablecer filas 'sending' huérfanas: el backend se reinició en medio de un envío anterior.
+  // Umbral 2 min: suficiente para envíos lentos, garantiza que no queden bloqueadas indefinidamente.
+  const staleTs = new Date(Date.now() - 2 * 60_000).toISOString()
+  await supabase.from('wa_outbox')
+    .update({ outbox_status: 'pending' })
+    .eq('numero', numero)
+    .eq('outbox_status', 'sending')
+    .eq('delivery_uncertain', false)   // no resetear items ya marcados como inciertos
+    .or(`ultimo_intento.is.null,ultimo_intento.lt.${staleTs}`)
+  const { data: rows, error } = await supabase.from('wa_outbox')
+    .select('*')
+    .eq('numero', numero)
+    .in('outbox_status', ['pending', 'sending'])
+    .order('created_at', { ascending: true })
+  if (error || !rows?.length) return
+  _waLog('OUTBOX_DRAIN', { numero, sede, count: rows.length })
+  const byContacto = new Map()
+  for (const row of rows) {
+    if (!byContacto.has(row.contacto)) byContacto.set(row.contacto, [])
+    byContacto.get(row.contacto).push(row)
+  }
+  for (const [contacto, items] of byContacto) {
+    for (const item of items) {
+      _enqueue(`${numero}:${contacto}`, () => _sendOutboxItem(numero, sede, item))
+    }
+  }
+}
+
+// Procesa un item de la outbox: resuelve JID, llama sendMessage, actualiza estado y notifica al frontend.
+//
+// Hybrid A+B crash-idempotency:
+//   - pre_send_msg_id se genera y persiste ANTES de llamar sendMessage().
+//   - Si el backend crashea después de persistir pero antes de que sendMessage retorne,
+//     el item queda en 'sending' con pre_send_msg_id ya definido.
+//   - En el próximo drain ese item se resetea a 'pending' (por _drainOutbox).
+//   - _sendOutboxItem detecta pre_send_msg_id existente → modo recovery:
+//       · Reutiliza el mismo messageId (WA deduplica si llegó dos veces).
+//       · Cualquier error en este intento de recovery → delivery_uncertain=true.
+//       · Con delivery_uncertain=true los reintentos automáticos se detienen.
+//   - El contador OUTBOX_MAX_INTENTOS aplica SOLO a errores ocurridos antes
+//     de que sendMessage fuera potencialmente llamado (pre_send_msg_id no set).
+async function _sendOutboxItem(numero, sede, item) {
+  const entrada = sesiones.get(numero)
+  if (!entrada || entrada.status !== 'conectado') return
+
+  // Guard: ya tiene msgId → jamás reenviar
+  if (item.wa_msg_id) return
+
+  // Guard: delivery_uncertain → detener reintentos automáticos
+  if (item.delivery_uncertain) return
+
+  // Determinar si es recovery: pre_send_msg_id ya existe → sendMessage pudo haberse llamado antes
+  const esRecovery = !!item.pre_send_msg_id
+
+  // Guard de intentos: SOLO aplica cuando no es recovery (errores pre-sendMessage seguros de reintentar)
+  const intentos = (item.intentos || 0) + 1
+  if (!esRecovery && intentos > OUTBOX_MAX_INTENTOS) {
+    await supabase.from('wa_outbox').update({ outbox_status: 'failed', error: 'max_intentos' }).eq('id', item.id)
+    broadcast({ tipo: 'wa:msg_failed', numero, sede, outboxId: item.id, mensajeId: item.mensaje_id })
+    return
+  }
+
+  // Generar o reutilizar pre_send_msg_id
+  let preSendMsgId = item.pre_send_msg_id
+  if (!preSendMsgId) {
+    // Primera vez: generar y persistir pre_send_msg_id ANTES de llamar sendMessage
+    preSendMsgId = generateMessageIDV2(entrada.socket?.user?.id)
+    await supabase.from('wa_outbox')
+      .update({ outbox_status: 'sending', intentos, ultimo_intento: new Date().toISOString(), pre_send_msg_id: preSendMsgId })
+      .eq('id', item.id)
+  } else {
+    // Recovery: reutilizar mismo ID, solo actualizar contadores
+    await supabase.from('wa_outbox')
+      .update({ outbox_status: 'sending', intentos, ultimo_intento: new Date().toISOString() })
+      .eq('id', item.id)
+  }
+
+  try {
+    const destRaw   = item.contacto
+    const esLid     = entrada.lidToPhone?.has(destRaw) || destRaw.length > 12
+    let destFinal   = destRaw
+    if (esLid) {
+      destFinal = await _resolverLid(entrada, destRaw, 3000)
+      if (destFinal !== destRaw) _migrarLid(numero, entrada, destRaw, destFinal)
+    }
+    const phone    = destFinal !== destRaw ? destFinal : destRaw
+    const jid      = esLid && destFinal === destRaw ? destRaw + '@lid' : destFinal + '@s.whatsapp.net'
+    const _knownLid = !esLid && entrada.phoneToLid?.get(destRaw)
+    const sendJid  = _knownLid ? (_knownLid + '@lid') : jid
+
+    let sent
+    if (item.tipo === 'texto') {
+      const textoWA   = item.asesor ? `*${item.asesor}:*\n${item.texto}` : item.texto
+      const quotedObj = item.quoted_msg_id
+        ? { key: { remoteJid: sendJid, id: item.quoted_msg_id, fromMe: !!item.quoted_from_me },
+            message: { conversation: item.quoted_texto || '' } }
+        : undefined
+      sent = await entrada.socket.sendMessage(
+        sendJid,
+        { text: textoWA },
+        { messageId: preSendMsgId, ...(quotedObj ? { quoted: quotedObj } : {}) }
+      )
+    } else {
+      // Sin referencia de Storage → media perdida antes de encolarse: fail inmediato, no reintentar
+      if (!item.storage_url) {
+        await supabase.from('wa_outbox').update({ outbox_status: 'failed', error: 'sin_storage_url' }).eq('id', item.id)
+        broadcast({ tipo: 'wa:msg_failed', numero, sede, outboxId: item.id, mensajeId: item.mensaje_id })
+        return
+      }
+      // Intentar descargar la media de Storage
+      let resp
+      try { resp = await fetch(item.storage_url) }
+      catch (fetchErr) {
+        // Error de red al contactar Storage — no cuenta como intento; reintentar en el próximo drain
+        await supabase.from('wa_outbox')
+          .update({ outbox_status: 'pending', intentos: item.intentos || 0, error: 'storage_net: ' + fetchErr.message })
+          .eq('id', item.id)
+        return
+      }
+      if (!resp.ok) {
+        // Error HTTP de Storage (503, 404 transitorio, etc.) — no cuenta como intento
+        await supabase.from('wa_outbox')
+          .update({ outbox_status: 'pending', intentos: item.intentos || 0, error: 'storage_http_' + resp.status })
+          .eq('id', item.id)
+        return
+      }
+      const buf  = Buffer.from(await resp.arrayBuffer())
+      const base = (item.mime || '').split(';')[0].trim()
+      let content
+      if (base.startsWith('image/'))      content = { image:    buf, mimetype: base, caption: item.texto?.startsWith('Imagen: ') ? item.texto.slice(8) : undefined }
+      else if (base.startsWith('video/')) content = { video:    buf, mimetype: base, caption: item.texto?.startsWith('Video: ')  ? item.texto.slice(7) : undefined }
+      else if (base.startsWith('audio/')) content = { audio:    buf, mimetype: item.mime || base, ptt: true }
+      else                                content = { document: buf, mimetype: base, fileName: item.filename || 'archivo' }
+      sent = await entrada.socket.sendMessage(sendJid, content, { messageId: preSendMsgId })
+    }
+
+    const msgId = sent?.key?.id || null
+    if (!msgId) throw new Error('sendMessage no retornó msgId')
+
+    _sentMsgIds.add(msgId)
+    if (!esLid) _pendingMsgToPhone.set(msgId, phone)
+    // Watchdog 90s (igual que en enviarMensaje)
+    const wdTimer = setTimeout(() => {
+      if (!_pendingAcks.has(msgId)) return
+      _pendingAcks.delete(msgId)
+      applyMsgStatus(msgId, numero, 1, { sinAck: true, source: 'watchdog' })
+    }, 90_000)
+    _pendingAcks.set(msgId, wdTimer)
+    if (!esLid) entrada.socket.fetchStatus(sendJid).catch(() => {})
+
+    // Persistir: outbox sent + mensajes_wa msg_id/status
+    await supabase.from('wa_outbox').update({ outbox_status: 'sent', wa_msg_id: msgId }).eq('id', item.id)
+    if (item.mensaje_id) {
+      await supabase.from('mensajes_wa').update({ msg_id: msgId, status: 1 }).eq('id', item.mensaje_id)
+    }
+
+    broadcast({ tipo: 'wa:outbox_sent', numero, sede, outboxId: item.id, mensajeId: item.mensaje_id, msgId })
+    _waLog('OUTBOX_SENT', { numero, sede, outboxId: item.id, msgId, intentos, tipo: item.tipo, esRecovery })
+
+  } catch (e) {
+    _waLog('OUTBOX_ERROR', { numero, sede, outboxId: item.id, error: e.message, intentos, esRecovery })
+
+    if (esRecovery) {
+      // Recovery fallido: el estado del mensaje es desconocido → marcar incierto y detener
+      await supabase.from('wa_outbox')
+        .update({ outbox_status: 'sending', delivery_uncertain: true, error: e.message })
+        .eq('id', item.id)
+      broadcast({ tipo: 'wa:msg_uncertain', numero, sede, outboxId: item.id, mensajeId: item.mensaje_id })
+    } else {
+      // Error pre-sendMessage: reintento normal con contador
+      const newStatus = intentos >= OUTBOX_MAX_INTENTOS ? 'failed' : 'pending'
+      await supabase.from('wa_outbox').update({ outbox_status: newStatus, error: e.message }).eq('id', item.id)
+      if (newStatus === 'failed') {
+        broadcast({ tipo: 'wa:msg_failed', numero, sede, outboxId: item.id, mensajeId: item.mensaje_id })
+      }
+    }
+  }
 }
 
 // ── Auto-arranque al iniciar el backend ────────────────────────────────────

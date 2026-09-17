@@ -263,7 +263,7 @@ export async function whatsappRoutes(fastify, options) {
 
     let query = supabase
       .from('mensajes_wa')
-      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at')
+      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox(delivery_uncertain)')
       .eq('numero', numero)
       .eq('contacto', contacto)
       .order('id', { ascending: false })
@@ -298,7 +298,7 @@ export async function whatsappRoutes(fastify, options) {
 
     let query = supabase
       .from('mensajes_wa')
-      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at')
+      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox(delivery_uncertain)')
       .eq('numero', numero)
       .eq('contacto', contacto)
       .gte('timestamp', desdeTs)
@@ -751,13 +751,16 @@ export async function whatsappRoutes(fastify, options) {
 
   // POST /wa/mensajes — enviar mensaje de texto
   fastify.post('/wa/mensajes', async (req, reply) => {
-    const { numero, destinatario, texto, asesor, quoted } = req.body ?? {}
+    const { numero, destinatario, texto, asesor, quoted, ikey } = req.body ?? {}
     if (!numero || !destinatario || !texto) {
       return reply.code(400).send({ error: 'numero, destinatario y texto son requeridos' })
     }
     try {
-      const result = await enviarMensaje(numero, destinatario, texto, asesor || null, quoted || null)
-      return { ok: true, msgId: result?.msgId || null }
+      const result = await enviarMensaje(numero, destinatario, texto, asesor || null, quoted || null, ikey || null)
+      if (result?.queued) {
+        return reply.code(202).send({ ok: true, queued: true, msgId: null, outboxId: result.outboxId, messageId: result.mensajeId })
+      }
+      return { ok: true, queued: false, msgId: result?.msgId || null }
     } catch (e) {
       return reply.code(503).send({ error: e.message })
     }
@@ -785,11 +788,14 @@ export async function whatsappRoutes(fastify, options) {
         }
       }
 
-      const { numero, destinatario, asesor, caption } = fields
+      const { numero, destinatario, asesor, caption, ikey } = fields
       if (!numero || !destinatario || !fileBuffer)
         return reply.code(400).send({ error: 'numero, destinatario y archivo son requeridos' })
 
-      const result = await enviarMedia(numero, destinatario, fileBuffer, mimetype, fileName, caption || null, asesor || null)
+      const result = await enviarMedia(numero, destinatario, fileBuffer, mimetype, fileName, caption || null, asesor || null, ikey || null)
+      if (result?.queued) {
+        return reply.code(202).send({ ok: true, queued: true, msgId: null, outboxId: result.outboxId, messageId: result.mensajeId })
+      }
       return result
     } catch (e) {
       return reply.code(503).send({ error: e.message })

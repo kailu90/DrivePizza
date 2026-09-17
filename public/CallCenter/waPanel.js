@@ -4155,6 +4155,9 @@ function _connectWs() {
             if (msg.tipo === 'wa:eliminado')     _onSesionEliminada(msg);
             if (msg.tipo === 'wa:rr_update')     _onRrUpdate();
             if (msg.tipo === 'wa:reaccion')      _onReaccion(msg);
+            if (msg.tipo === 'wa:outbox_sent')   _onOutboxSent(msg);
+            if (msg.tipo === 'wa:msg_failed')     _onMsgFailed(msg);
+            if (msg.tipo === 'wa:msg_uncertain')  _onMsgUncertain(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => {
@@ -4633,6 +4636,60 @@ function _onReaccion({ numero, contacto, targetMsgId, reactor, emoji }) {
     else delete msg.reactions[reactor];
     _saveConv();
     if (_state.activeContact === contacto && _state.activeNum === numero) _renderMsgs();
+}
+
+// ── Outbox — confirmación de envío diferido ────────────────────────────────
+function _onOutboxSent({ numero, outboxId, mensajeId, msgId }) {
+    // Buscar el msg por outboxId en todas las convs de este numero
+    const convs = _state.conv[numero];
+    if (!convs) return;
+    for (const phone of Object.keys(convs)) {
+        const c = convs[phone];
+        const m = c?.msgs?.find(x => x.outboxId === outboxId);
+        if (!m) continue;
+        m.msgId  = msgId;
+        m.status = 1;   // aceptado por Baileys (enviado localmente); ACK real de WA servers (status≥2) llega por wa:msg_status
+        delete m.pending;
+        delete m.outboxId;
+        delete m.outbox;
+        delete m.tmpId;
+        const ack = _pendingStatuses.get(msgId);
+        if (ack) { _pendingStatuses.delete(msgId); m.status = ack.status; }
+        _saveConv();
+        if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs();
+        break;
+    }
+}
+
+function _onMsgUncertain({ numero, outboxId }) {
+    const convs = _state.conv[numero];
+    if (!convs) return;
+    for (const phone of Object.keys(convs)) {
+        const m = (convs[phone]?.msgs || []).find(x => x.outboxId === outboxId);
+        if (!m) continue;
+        m.delivery_uncertain = true;
+        delete m.pending;
+        delete m.outbox;
+        _saveConv();
+        if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs();
+        break;
+    }
+}
+
+function _onMsgFailed({ numero, outboxId }) {
+    const convs = _state.conv[numero];
+    if (!convs) return;
+    for (const phone of Object.keys(convs)) {
+        const c = convs[phone];
+        const m = c?.msgs?.find(x => x.outboxId === outboxId);
+        if (!m) continue;
+        m.failed = true;
+        delete m.pending;
+        delete m.outbox;
+        _saveConv();
+        if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs();
+        break;
+    }
 }
 
 function _onQr({ numero, sede, qr }) {
@@ -5473,6 +5530,42 @@ async function _loadMsgsSupabase(phone) {
         // llega antes de que el UPDATE de Supabase se haya confirmado)
         const prevMsgs = new Map((c.msgs || []).filter(m => m.msgId).map(m => [m.msgId, m]));
         const supabaseMsgs = msgs.map(m => {
+            // Outbox pending/uncertain: saliente sin msgId todavía — correlacionar por outbox_id
+            if (m.saliente && !m.msg_id && m.outbox_id) {
+                const prevOb = (c.msgs || []).find(x => x.outboxId === m.outbox_id);
+                // delivery_uncertain: el backend no pudo confirmar si sendMessage llegó a ejecutarse
+                if (m.wa_outbox?.delivery_uncertain) {
+                    return {
+                        text:              m.texto,
+                        ts:                m.timestamp,
+                        out:               true,
+                        asesor:            m.asesor || null,
+                        tipo:              m.tipo || 'mensaje',
+                        mediaUrl:          m.media_url || null,
+                        outboxId:          m.outbox_id,
+                        delivery_uncertain: true,
+                        reactions:         m.reactions || {},
+                        quotedMsgId:       m.quoted_msg_id  || null,
+                        quotedTexto:       m.quoted_texto   || null,
+                        quotedFromMe:      m.quoted_from_me ?? null,
+                    };
+                }
+                return {
+                    text:         m.texto,
+                    ts:           m.timestamp,
+                    out:          true,
+                    asesor:       m.asesor || null,
+                    tipo:         m.tipo || 'mensaje',
+                    mediaUrl:     m.media_url || null,
+                    pending:      true,
+                    outboxId:     m.outbox_id,
+                    outbox:       prevOb?.outbox || 'pending',
+                    reactions:    m.reactions || {},
+                    quotedMsgId:  m.quoted_msg_id  || null,
+                    quotedTexto:  m.quoted_texto   || null,
+                    quotedFromMe: m.quoted_from_me ?? null,
+                };
+            }
             const prev   = prevMsgs.get(m.msg_id);
             const dbStat = m.status || (m.saliente ? 2 : undefined);
             return {
@@ -5498,8 +5591,12 @@ async function _loadMsgsSupabase(phone) {
         });
 
         // Conservar msgs en memoria más nuevos que el último de Supabase (llegaron vía WS)
-        const lastSupabaseTs = supabaseMsgs[supabaseMsgs.length - 1]?.ts ?? 0;
-        const masNuevos      = c.msgs.filter(m => m.ts > lastSupabaseTs);
+        // Deduplicar por outboxId para evitar duplicados cuando un outbox msg coincide en timestamp
+        const lastSupabaseTs  = supabaseMsgs[supabaseMsgs.length - 1]?.ts ?? 0;
+        const supabaseOutboxIds = new Set(supabaseMsgs.filter(m => m.outboxId).map(m => m.outboxId));
+        const masNuevos = c.msgs.filter(m =>
+            m.ts > lastSupabaseTs && !(m.outboxId && supabaseOutboxIds.has(m.outboxId))
+        );
         c.msgs = [...supabaseMsgs, ...masNuevos];
 
         // Cursor para carga de historial anterior (msgs viene en ASC; msgs[0] = más antiguo)
@@ -6249,9 +6346,11 @@ function _renderMsgs() {
                 <strong>📝 Nota${m.asesor ? ' de ' + _esc(m.asesor) : ''}</strong>${_esc(m.text)}
             </div>`;
         }
-        const statusCls = m.pending ? ' wap-msg--pending' : m.failed ? ' wap-msg--failed' : '';
+        const statusCls = m.pending ? ' wap-msg--pending' : m.failed ? ' wap-msg--failed' : m.delivery_uncertain ? ' wap-msg--pending' : '';
         const statusEl  = m.pending
             ? `<span class="wap-msg-status">⏳</span>`
+            : m.delivery_uncertain
+            ? `<span class="wap-msg-ticks wap-msg-ticks--uncertain" title="No fue posible confirmar el estado de este mensaje."><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#d97706" stroke-width="1.8"/><text x="8" y="12.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#d97706" font-family="sans-serif">?</text></svg></span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
             : (m.out && !m.celular ? (
@@ -6378,12 +6477,13 @@ function _updateOfflineBar() {
     if (inputRow) inputRow.style.display = bloqueado ? 'none' : '';
     if (msgs)     msgs.style.opacity     = bloqueado ? '0.6' : '';
 
-    // Solo offline sin bloqueo: deshabilitar input
+    // Offline sin bloqueo: controles habilitados (outbox encola el mensaje para cuando reconecte)
+    // Los controles solo se deshabilitan cuando el chat está bloqueado (resuelto/en espera)
     if (!bloqueado) {
-        if (input)     input.disabled     = offline;
-        if (sendBtn)   sendBtn.disabled   = offline;
-        if (attachBtn) attachBtn.disabled = offline;
-        if (voiceBtn)  voiceBtn.disabled  = offline;
+        if (input)     input.disabled     = false;
+        if (sendBtn)   sendBtn.disabled   = false;
+        if (attachBtn) attachBtn.disabled = false;
+        if (voiceBtn)  voiceBtn.disabled  = false;
     }
 }
 
@@ -6410,13 +6510,6 @@ async function _sendMessage() {
     const texto = input?.value.trim();
     if (!texto || !_state.activeNum || !_state.activeContact) return;
 
-    // Bloquear envío si la sesión está desconectada
-    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
-    if (sesStatus === 'desconectado' || sesStatus === 'reconectando') {
-        _showToast('Sesión desconectada — reconecta para responder', 3500);
-        return;
-    }
-
     input.value = '';
     _autoResizeTextarea(input);
     _updateSendVoiceBtn();
@@ -6424,13 +6517,14 @@ async function _sendMessage() {
     const phone = _state.activeContact;
     const ts    = Math.floor(Date.now() / 1000);
     const tmpId = ++_tmpMsgId;
+    const ikey  = crypto.randomUUID();  // idempotency key: evita duplicar si el HTTP response se pierde
 
     // Optimistic update con estado "pending"
     if (!_state.conv[num])        _state.conv[num]        = {};
     if (!_state.conv[num][phone]) _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
     const c = _state.conv[num][phone];
     const replySnap = _replyingTo;  // capturar antes de _cancelReply()
-    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId,
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId, ikey,
                   quotedMsgId:  replySnap?.msgId  || null,
                   quotedTexto:  replySnap?.texto  || null,
                   quotedFromMe: replySnap?.fromMe ?? null });
@@ -6444,14 +6538,19 @@ async function _sendMessage() {
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, quoted: replySnap }),
+            body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, quoted: replySnap, ikey }),
             signal:  AbortSignal.timeout(10000),
         });
         _cancelReply();
         const m = c.msgs.find(x => x.tmpId === tmpId);
         if (r.ok) {
             const body = await r.json().catch(() => ({}));
-            if (m && body.msgId) {
+            if (m && body.queued) {
+                // Sesión caída → encolado: mantener ⏳ hasta que llegue wa:outbox_sent
+                m.outboxId = body.outboxId;
+                m.outbox   = 'pending';
+                delete m.tmpId;
+            } else if (m && body.msgId) {
                 m.msgId = body.msgId;
                 const ack = _pendingStatuses.get(body.msgId);
                 if (ack) _pendingStatuses.delete(body.msgId);
@@ -6467,7 +6566,7 @@ async function _sendMessage() {
         } else {
             if (m) { m.failed = true; delete m.pending; }
             const err = await r.json().catch(() => ({}));
-            _showToast(err.error?.includes('no disponible') ? '⚠️ Sesión desconectada' : '⚠️ Error al enviar — toca Reintentar', 4000);
+            _showToast('⚠️ Error al enviar — toca Reintentar', 4000);
         }
     } catch {
         const m = c.msgs.find(x => x.tmpId === tmpId);
@@ -6496,7 +6595,7 @@ async function _retrySend(tmpId) {
         const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual }),
+            body:    JSON.stringify({ numero: num, destinatario, texto: m.text, asesor: _asesorActual, ikey: m.ikey || null }),
             signal:  AbortSignal.timeout(10000),
         });
         if (r.ok) {
@@ -6548,12 +6647,6 @@ function _setPendingFile(file) {
 
 async function _sendMedia() {
     if (!_pendingFile || !_state.activeNum || !_state.activeContact) return;
-    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
-    if (sesStatus === 'desconectado' || sesStatus === 'reconectando') {
-        _showToast('Sesión desconectada — reconecta para enviar', 3500);
-        return;
-    }
-
     const num     = _state.activeNum;
     const phone   = _state.activeContact;
     const file    = _pendingFile;
@@ -6579,7 +6672,8 @@ async function _sendMedia() {
     if (texto && !soportaCaption) {
         const ts1   = Math.floor(Date.now() / 1000);
         const tmpId = ++_tmpMsgId;
-        c.msgs.push({ text: texto, ts: ts1, out: true, asesor: _asesorActual, pending: true, tmpId });
+        const ikey1 = crypto.randomUUID();
+        c.msgs.push({ text: texto, ts: ts1, out: true, asesor: _asesorActual, pending: true, tmpId, ikey: ikey1 });
         c.lastMsg = texto; c.lastTs = ts1;
         _saveConv(); _renderMsgs();
 
@@ -6587,12 +6681,18 @@ async function _sendMedia() {
             const r = await fetch(`${HETZNER_URL}/wa/mensajes`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual }),
+                body:    JSON.stringify({ numero: num, destinatario, texto, asesor: _asesorActual, ikey: ikey1 }),
                 signal:  AbortSignal.timeout(10000),
             });
             const m = c.msgs.find(x => x.tmpId === tmpId);
-            if (r.ok) { if (m) { delete m.pending; delete m.tmpId; } }
-            else      { if (m) { m.failed = true; delete m.pending; } }
+            if (r.ok) {
+                const body = await r.json().catch(() => ({}));
+                if (m) {
+                    if (body.queued) { m.outboxId = body.outboxId; m.outbox = 'pending'; delete m.tmpId; }
+                    else             { delete m.pending; delete m.tmpId; }
+                }
+            }
+            else { if (m) { m.failed = true; delete m.pending; } }
         } catch {
             const m = c.msgs.find(x => x.tmpId === tmpId);
             if (m) { m.failed = true; delete m.pending; }
@@ -6609,8 +6709,9 @@ async function _sendMedia() {
 
     const ts2        = Math.floor(Date.now() / 1000);
     const tmpId2     = ++_tmpMsgId;
+    const ikeyMedia  = crypto.randomUUID();
     const previewUrl = (tipo === 'imagen' || tipo === 'voz') ? URL.createObjectURL(file) : null;
-    c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tmpId: tmpId2, tipo, mediaUrl: previewUrl });
+    c.msgs.push({ text: textoDesc, ts: ts2, out: true, asesor: _asesorActual, pending: true, tmpId: tmpId2, ikey: ikeyMedia, tipo, mediaUrl: previewUrl });
     c.lastMsg = textoDesc; c.lastTs = ts2;
     _saveConv(); _renderMsgs();
 
@@ -6620,6 +6721,7 @@ async function _sendMedia() {
         fd.append('destinatario', destinatario);
         fd.append('asesor', _asesorActual || '');
         if (caption) fd.append('caption', caption);
+        fd.append('ikey', ikeyMedia);
         fd.append('file', file);
         const r = await fetch(`${HETZNER_URL}/wa/mensajes/media`, {
             method: 'POST',
@@ -6630,11 +6732,18 @@ async function _sendMedia() {
         if (r.ok) {
             const body = await r.json().catch(() => ({}));
             if (mediaMsg) {
-                // Guardar msgId para que el dedup por msgId en _onMensaje encuentre
-                // el optimista cuando llegue el eco WS (evita imagen duplicada)
-                if (body.msgId) mediaMsg.msgId = body.msgId;
-                delete mediaMsg.pending;
-                delete mediaMsg.tmpId;
+                if (body.queued) {
+                    // Sesión caída → encolado: mantener ⏳ hasta que llegue wa:outbox_sent
+                    mediaMsg.outboxId = body.outboxId;
+                    mediaMsg.outbox   = 'pending';
+                    delete mediaMsg.tmpId;
+                } else {
+                    // Guardar msgId para que el dedup por msgId en _onMensaje encuentre
+                    // el optimista cuando llegue el eco WS (evita imagen duplicada)
+                    if (body.msgId) mediaMsg.msgId = body.msgId;
+                    delete mediaMsg.pending;
+                    delete mediaMsg.tmpId;
+                }
             }
         } else {
             if (mediaMsg) { mediaMsg.failed = true; delete mediaMsg.pending; }
