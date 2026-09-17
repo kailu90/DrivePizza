@@ -265,7 +265,18 @@ function connectWs() {
         )
       }
 
-      // ── wa:recovery_complete ──
+      // ── wa:recovery_socket_open ── (fase 1: socket abierto)
+      if (msg.tipo === 'wa:recovery_socket_open') {
+        if (s) {
+          s.recovering = false
+          s.degraded   = false
+          renderCards()
+        }
+        const downStr = msg.downtime_ms != null ? `${(msg.downtime_ms / 1000).toFixed(1)}s` : '?'
+        addLog('conectado', sede, `Socket recuperado — downtime=${downStr}${msg.is_proactive ? ' (proactivo)' : ''}`)
+      }
+
+      // ── wa:recovery_complete ── (fase 2: tráfico confirmado)
       if (msg.tipo === 'wa:recovery_complete') {
         if (s) {
           s.recovering = false
@@ -273,7 +284,7 @@ function connectWs() {
           renderCards()
         }
         const ttf = msg.ttf_ms != null ? `${(msg.ttf_ms / 1000).toFixed(1)}s` : '?'
-        addLog('conectado', sede, `Recovery completo — time_to_first_incoming=${ttf}`)
+        addLog('conectado', sede, `Tráfico confirmado post-recovery — TTF=${ttf}${msg.is_proactive ? ' (proactivo)' : ''}`)
       }
     } catch {}
   }

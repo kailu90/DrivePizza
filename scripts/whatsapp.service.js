@@ -73,10 +73,14 @@ const _badSessionAttempts = new Map()   // numero → intentos consecutivos de b
 const _badSessionHistory  = new Map()  // numero → [{ ts, msgRecv, msgSent }]
 
 // ── Recovery pending tracking ─────────────────────────────────────────────────
-// Rastrea recoveries activos (manuales o proactivos) para medir TTF
-// (time to first incoming after recovery). Se limpia al llegar el primer
-// mensaje entrante tras la reconexión.
-const _recoveryPending = new Map()  // numero → { startedAt, snapshot, openAt, isProactive }
+// Rastrea recoveries activos (manuales o proactivos) para medir TTF.
+// Dos fases conceptuales:
+//   socketRecovered  → nuevo OPEN recibido (marcado en connection==='open')
+//   trafficConfirmed → primer mensaje entrante posterior (TTF real)
+// El entry expira automáticamente a los PROACTIVE_ROTATION_PENDING_TTL_MS.
+// Esto evita bloquear rotaciones en períodos sin tráfico (ej. madrugada).
+const _recoveryPending              = new Map()  // numero → { startedAt, snapshot, openAt, isProactive, socketRecoveredAt? }
+const PROACTIVE_ROTATION_PENDING_TTL_MS = 45 * 60_000  // TTL: 45 min — si no llega tráfico, liberar ciclo
 const SESSION_DEGRADED_BAD_MIN   = 2           // mín. badSessions con recv=0 en ventana
 const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 2h
 const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
@@ -363,8 +367,22 @@ async function _attemptProactiveRotation(numero, sede, openAt) {
     return
   }
   if (_recoveryPending.has(numero)) {
-    _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'recovery_pending' })
-    return
+    const rec   = _recoveryPending.get(numero)
+    const ageMs = Date.now() - rec.startedAt
+    if (ageMs < PROACTIVE_ROTATION_PENDING_TTL_MS) {
+      _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'recovery_pending',
+        age_ms: ageMs, ttl_ms: PROACTIVE_ROTATION_PENDING_TTL_MS })
+      return
+    }
+    // TTL expirado — tráfico no llegó en ventana (ej. madrugada), liberar ciclo
+    _waLog('WA_RECOVERY_PENDING_EXPIRED', { numero, sede,
+      age_ms:              ageMs,
+      ttl_ms:              PROACTIVE_ROTATION_PENDING_TTL_MS,
+      is_proactive:        !!rec.isProactive,
+      socket_recovered_at: rec.socketRecoveredAt ? new Date(rec.socketRecoveredAt).toISOString() : null,
+      open_at:             rec.openAt ? new Date(rec.openAt).toISOString() : null,
+    })
+    _recoveryPending.delete(numero)
   }
   if (entrada._proactiveRotationPending) {
     _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'rotation_already_in_progress' })
@@ -1322,6 +1340,17 @@ export async function iniciarSesion(numero, sede) {
       setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS * 3)
       // Rotación preventiva (piloto Megamall): ventana 42-46 min + jitter
       _scheduleProactiveRotation(numero, sede, _connectedAt.get(numero))
+      // socketRecovered: marcar fase 1 del recovery si hay pendiente
+      if (_recoveryPending.has(numero)) {
+        const _rp = _recoveryPending.get(numero)
+        _rp.socketRecoveredAt = Date.now()
+        _waLog('WA_RECOVERY_SOCKET_OPEN', { numero, sede,
+          is_proactive: !!_rp.isProactive,
+          downtime_ms:  _downtime,
+        })
+        broadcast({ tipo: 'wa:recovery_socket_open', numero, sede,
+          is_proactive: !!_rp.isProactive, downtime_ms: _downtime })
+      }
       // ─────────────────────────────────────────────────────────────────────
       _waLog('CONN', { numero, sede, evento: 'conectado' })
       await _upsertSesion(numero, sede, 'conectado')
@@ -1651,18 +1680,19 @@ export async function iniciarSesion(numero, sede) {
         // Contabilizar mensajes entrantes para estadísticas de conexión
         const _mcr = _msgCounters.get(numero); if (_mcr) _mcr.recv++
 
-        // TTF: primer entrante tras recovery (manual o rotación proactiva)
+        // trafficConfirmed: primer entrante tras recovery (fase 2 — TTF real)
         if (_recoveryPending.has(numero)) {
           const rec   = _recoveryPending.get(numero)
           _recoveryPending.delete(numero)
           const ttfMs = Date.now() - rec.startedAt
-          _logConnEvent('WA_RECOVERY_COMPLETE', {
+          _logConnEvent('WA_RECOVERY_TRAFFIC_CONFIRMED', {
             numero, sede,
             msgSent: _msgCounters.get(numero)?.sent ?? 0,
             msgRecv: _msgCounters.get(numero)?.recv ?? 0,
             metadata: {
               time_to_first_incoming_ms: ttfMs,
               is_proactive:              !!rec.isProactive,
+              socket_recovered_at:       rec.socketRecoveredAt ? new Date(rec.socketRecoveredAt).toISOString() : null,
               open_at:                   rec.openAt ? new Date(rec.openAt).toISOString() : null,
               snapshot_at_recovery:      rec.snapshot,
               first_msg_jid:             remitente,
