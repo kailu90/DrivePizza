@@ -263,7 +263,7 @@ export async function whatsappRoutes(fastify, options) {
 
     let query = supabase
       .from('mensajes_wa')
-      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox(delivery_uncertain)')
+      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox!fk_mensajes_wa_outbox_id(delivery_uncertain)')
       .eq('numero', numero)
       .eq('contacto', contacto)
       .order('id', { ascending: false })
@@ -298,7 +298,7 @@ export async function whatsappRoutes(fastify, options) {
 
     let query = supabase
       .from('mensajes_wa')
-      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox(delivery_uncertain)')
+      .select('id, numero, contacto, nombre, texto, timestamp, saliente, msg_id, desde_telefono, tipo, status, sin_ack, media_url, reactions, quoted_msg_id, quoted_texto, quoted_from_me, asesor, editado, created_at, outbox_id, wa_outbox!fk_mensajes_wa_outbox_id(delivery_uncertain)')
       .eq('numero', numero)
       .eq('contacto', contacto)
       .gte('timestamp', desdeTs)
