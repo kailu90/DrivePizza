@@ -5420,8 +5420,6 @@ function _renderList() {
         const asig       = _getAsig(num, phone);
         const esLibre    = estado === 'en_espera';
         const esMio      = _esMio(num, phone);
-        const sesStatus  = _state.sesiones.find(s => s.numero === num)?.status;
-        const isOffline  = sesStatus === 'desconectado' || sesStatus === 'reconectando';
         const unread  = data.unread ? `<span class="wap-badge">${data.unread}</span>` : '';
         const ts      = data.lastTs ? _fmtTs(data.lastTs) : '';
         const display = data.nombre || data.name || _fmtPhone(phone);
@@ -5433,19 +5431,17 @@ function _renderList() {
         const badgeCls = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
         const ciudadBadge = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
 
-        const estadoTag = isOffline
-                ? `<span class="wap-offline-tag">Sesión caída</span>`
-                : esLibre && _state.filtroEstado !== 'en_espera'
-                    ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
-                    : estado === 'resuelto'
-                        ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
-                        : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
+        const estadoTag = esLibre && _state.filtroEstado !== 'en_espera'
+                ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
+                : estado === 'resuelto'
+                    ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
+                    : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
-        const tomarBtn = (esLibre && !isOffline)
+        const tomarBtn = esLibre
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${esLibre && !isOffline ? ' wap-conv-item--libre' : ''}${isOffline ? ' wap-conv-item--offline' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre && !isOffline ? '78px' : '12px'};">
+        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre ? '78px' : '12px'};">
             <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sedeLabel)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
@@ -6455,26 +6451,21 @@ function _updateOfflineBar() {
     const msgs      = document.getElementById('wap-msgs');
     if (!bar) return;
 
-    const sesStatus = _state.sesiones.find(s => s.numero === _state.activeNum)?.status;
-    const offline   = sesStatus === 'desconectado' || sesStatus === 'reconectando';
     const estado    = _getEstado(_state.activeNum, _state.activeContact);
     const resuelto  = estado === 'resuelto';
     const enEspera  = estado === 'en_espera';
     const bloqueado = resuelto || enEspera;
 
-    bar.classList.toggle('visible', offline && !bloqueado);
+    bar.classList.remove('visible');
     if (resBar)    resBar.classList.toggle('visible', resuelto);
     const abrirBtn = document.getElementById('wap-abrir-btn');
     if (abrirBtn)  abrirBtn.style.display = resuelto ? '' : 'none';
     if (esperaBar) {
         esperaBar.classList.toggle('visible', enEspera);
-        // Cuando offline: ocultar Tomar (requiere sesión), dejar visible Resolver
         const tomarBtn    = document.getElementById('wap-tomar-chat-btn');
         const esperaLabel = document.getElementById('wap-espera-label');
-        if (tomarBtn)    tomarBtn.style.display    = offline ? 'none' : '';
-        if (esperaLabel) esperaLabel.textContent   = offline
-            ? '⚠️ Sesión caída — puedes resolver el chat'
-            : '💬 En espera — toma el chat para responder';
+        if (tomarBtn)    tomarBtn.style.display = '';
+        if (esperaLabel) esperaLabel.textContent = '💬 En espera — toma el chat para responder';
     }
 
     // Bloqueado (resuelto o en espera): ocultar input y atenuar mensajes
