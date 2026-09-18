@@ -1717,8 +1717,11 @@ async function procesarPedidoFinal() {
         localStorage.removeItem('dp_promo65k_obs');
         localStorage.removeItem('dp_promo3x2_obs');
         localStorage.removeItem('dp_promoLasEsp_obs');
+        localStorage.removeItem('dp_promoLasEspCtg_obs');
+        localStorage.removeItem('dp_promo2x1Ctg_obs');
         localStorage.removeItem('dp_promoPepperoni_obs');
         localStorage.removeItem('dp_promoKit_obs');
+        _limpiarFiltro2x1Ctg();
         actualizarComanda();
 
         const asesor = window.asesorActual || 'Asesor';
