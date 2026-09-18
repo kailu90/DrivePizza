@@ -4576,7 +4576,7 @@ function _onMerge({ numero, lidPhone, realPhone }) {
     // Si el chat lid estaba abierto, redirigir al teléfono real
     if (_state.activeContact === lidPhone && _state.activeNum === numero) {
         _state.activeContact = realPhone;
-        _renderMsgs();
+        _renderMsgs(true);
     }
     _saveConv();
     _renderList();
@@ -5502,7 +5502,7 @@ function _openChat(phone) {
     document.getElementById('wap-chat').style.display                    = 'flex';
 
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
-    _renderMsgs();
+    _renderMsgs(true);
     _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión
     _renderList(); // actualizar badge en background
     _loadMsgsSupabase(phone);
@@ -5619,7 +5619,7 @@ async function _loadMsgsSupabase(phone) {
         _saveConv();
         // Solo re-renderizar si esta conversación sigue abierta
         if (_state.activeContact === phone && _state.activeNum === num) {
-            _renderMsgs();
+            _renderMsgs(true);
             _updateChatHeader(phone);
         }
         _renderList();
@@ -6314,9 +6314,13 @@ function _showListView() {
     // sessions-wrap: NO restaurar — el usuario lo abre explícitamente con el botón Conexión
 }
 
-function _renderMsgs() {
+function _renderMsgs(forceBottom = false) {
     const el = document.getElementById('wap-msgs');
     if (!el) return;
+
+    // Smart scroll: solo bajar si el usuario ya estaba cerca del fondo (≤80px) o se fuerza
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const shouldScroll = forceBottom || distFromBottom <= 80;
 
     const c = _state.conv[_state.activeNum]?.[_state.activeContact];
     if (!c?.msgs.length) {
@@ -6436,7 +6440,7 @@ function _renderMsgs() {
         })());
     }
     el.innerHTML = _parts.join('');
-    el.scrollTop = el.scrollHeight;
+    if (shouldScroll) el.scrollTop = el.scrollHeight;
 }
 
 function _updateOfflineBar() {
