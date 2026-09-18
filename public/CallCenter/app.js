@@ -1648,27 +1648,31 @@ async function procesarPedidoFinal() {
         impreso: false
     };
 
-    // Anteponer etiqueta de promo si hay una en el carrito
+    // Anteponer etiqueta de promo si hay una en el carrito (fuente: items del carrito, nunca localStorage)
     if (carrito.some(i => i.esPromo3x2)) {
-        const label = localStorage.getItem('dp_promo3x2_obs') || 'PROMO 3X2';
+        const obsequios = carrito.filter(i => i.esObsequio3x2);
+        const label = 'PROMO 3X2 - ' + obsequios.map(o => `Obsequio ${o.nombreObsequio} (${o.tamanoObsequio})`).join(' | ');
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromo65k)) {
-        const label = localStorage.getItem('dp_promo65k_obs') || 'PROMO 65K';
+        const label = 'PROMO 65K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoLasEsp && i.promoVariante === 'ctg')) {
-        const label = localStorage.getItem('dp_promoLasEspCtg_obs') || 'PROMO 42.9K';
+        const item = carrito.find(i => i.esPromoLasEsp && i.promoVariante === 'ctg');
+        const label = item?.promoCategoria ? `PROMO 42.9K - ${item.promoCategoria}` : 'PROMO 42.9K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoLasEsp)) {
-        const label = localStorage.getItem('dp_promoLasEsp_obs') || 'PROMO 48K';
+        const item = carrito.find(i => i.esPromoLasEsp);
+        const label = item?.promoCategoria ? `PROMO 48K - ${item.promoCategoria}` : 'PROMO 48K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromo2x1Ctg)) {
-        const label = localStorage.getItem('dp_promo2x1Ctg_obs') || 'PROMO 2X1';
+        const obsequio = carrito.find(i => i.esObsequio2x1Ctg);
+        const label = obsequio?.tamanoObsequio ? `PROMO 2X1 - ${obsequio.tamanoObsequio}` : 'PROMO 2X1';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoPepperoni)) {
         const label = 'PROMO PEPPERONI 28K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoKit)) {
-        const label = localStorage.getItem('dp_promoKit_obs') || 'KIT PIZZERITOS 25K';
+        const label = 'KIT PIZZERITOS 25K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoBerrionda)) {
         const label = 'PROMO BERRIONDA 35K';
@@ -2436,13 +2440,7 @@ function _promo3x2ConfirmarItem(producto, tamano, precio) {
         const now = Date.now();
         carrito.push({ id: now,     nombre: state.prod1.nombre, precio: state.prod1.precio, qty: 1, esPromo3x2: true, promoId: now, esAdicionable: true, tamanoRaw: state.prod1.tamano });
         carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: state.prod2.precio, qty: 1, esPromo3x2: true, promoId: now, esAdicionable: true, tamanoRaw: state.prod1.tamano });
-        carrito.push({ id: now + 2, nombre: `🎁 OBSEQUIO ${nombreCompleto}`, precio: 0, qty: 1, esPromo3x2: true, esObsequio3x2: true, promoId: now });
-        const obsAnterior = localStorage.getItem('dp_promo3x2_obs') || '';
-        const nuevoObsequio = `Obsequio ${producto.nombre} (${tamano})`;
-        const obsActualizada = obsAnterior 
-            ? `${obsAnterior} | ${nuevoObsequio}`
-            : `PROMO 3X2 - ${nuevoObsequio}`;
-        localStorage.setItem('dp_promo3x2_obs', obsActualizada);
+        carrito.push({ id: now + 2, nombre: `🎁 OBSEQUIO ${nombreCompleto}`, precio: 0, qty: 1, esPromo3x2: true, esObsequio3x2: true, promoId: now, nombreObsequio: producto.nombre, tamanoObsequio: tamano });
         actualizarComanda();
     }
 }
@@ -2685,7 +2683,7 @@ window._promoLasEspSelGaseosa = function (sabor) {
     cerrarModal();
     const now = Date.now();
     const promoVariante = cfg.gaseosas > 1 ? undefined : 'ctg';
-    carrito.push({ id: now,     nombre: state.prod1.nombre, precio: cfg.precio, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
+    carrito.push({ id: now,     nombre: state.prod1.nombre, precio: cfg.precio, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now, promoCategoria: state.categoria, ...(promoVariante && { promoVariante }) });
     carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: 0,          qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
     if (cfg.gaseosas > 1) {
         carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
@@ -3006,7 +3004,7 @@ function _promo2x1CtgFinalizar(nombreGratis) {
     const now = Date.now();
     cerrarModal();
     carrito.push({ id: now,     nombre: `${state.prod1.nombre} (${state.tamano})`, precio: state.prod1.precio, qty: 1, esPromo2x1Ctg: true, promoId2x1Ctg: now });
-    carrito.push({ id: now + 1, nombre: `${nombreGratis} (${state.tamano})`,        precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now });
+    carrito.push({ id: now + 1, nombre: `${nombreGratis} (${state.tamano})`,        precio: 0,                  qty: 1, esPromo2x1Ctg: true, esObsequio2x1Ctg: true, promoId2x1Ctg: now, tamanoObsequio: state.tamano });
     localStorage.setItem('dp_promo2x1Ctg_obs', `PROMO 2X1 - ${state.tamano}`);
     _aplicarFiltro2x1Ctg();
     actualizarComanda();
