@@ -88,12 +88,15 @@ const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 
 const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
 const SESSION_DEGRADED_MIN_UP_MS = 8 * 60_000  // uptime mínimo antes de evaluar
 
-// ── Rotación preventiva de socket (piloto Megamall) ───────────────────────────
-// El 500 "Stream Errored (ack)" se observa cada ~50 min en 573023566057.
+// ── Rotación preventiva de socket (Megamall + Cabecera) ──────────────────────
+// El 500 "Stream Errored (ack)" se observa cada ~50 min en estas sesiones.
 // Rotamos preventivamente en ventana 42-46 min con jitter aleatorio, usando el
 // mismo path de recrear-socket (conserva auth + Signal keys, no requiere QR).
-// Piloto exclusivo: ampliar a otras sesiones solo tras observar múltiples ciclos.
-const PROACTIVE_ROTATION_NUMERO       = '573023566057'  // solo Megamall por ahora
+// Megamall aprobado (13 ciclos limpios). Cabecera: piloto activo desde 2026-09-18.
+const PROACTIVE_ROTATION_NUMEROS = new Set([
+  '573023566057',  // Megamall  — piloto aprobado (13 ciclos)
+  '573208619277',  // Cabecera  — piloto activo desde 2026-09-18
+])
 const PROACTIVE_ROTATION_MIN_MS       = 42 * 60_000     // 42 min mínimo desde OPEN
 const PROACTIVE_ROTATION_MAX_MS       = 46 * 60_000     // 46 min máximo desde OPEN
 const PROACTIVE_ROTATION_RETRY_MIN_MS = 30_000          // retry si ocupado: mín 30s
@@ -269,6 +272,15 @@ function _enqueue(key, fn) {
   })
   return next
 }
+// ── Política 401 loggedOut — clasificación por motivo exacto ─────────────────
+// Evidencia: wa_connection_events Sep 10-20 + logs PM2 Sep 16-20.
+// 0/8 backoffs exitosos tras 401; motivos desconocidos → backoff conservador.
+const TERMINALES_401 = new Set([
+  'conflict',           // "Stream Errored (conflict)"  — 0/2 backoffs exitosos
+  'connection_failure', // "Connection Failure"          — artefacto del conflict backoff
+  'intentional_logout', // "Intentional Logout"          — usuario revocó acceso
+])
+
 // ── Circuit breaker ──────────────────────────────────────────────────────────
 // Si una sesión se desconecta CB_MAX_DISCONNECTS veces en CB_WINDOW_MS, se pausa CB_PAUSE_MS.
 const _recentDisconnects = new Map()   // numero → [timestamp, ...]
@@ -345,7 +357,7 @@ function _checkSessionDegraded(numero, sede) {
 
 // ── Rotación preventiva de socket (piloto Megamall) ───────────────────────────
 function _scheduleProactiveRotation(numero, sede, openAt) {
-  if (numero !== PROACTIVE_ROTATION_NUMERO) return
+  if (!PROACTIVE_ROTATION_NUMEROS.has(numero)) return
   const jitter = Math.floor(Math.random() * (PROACTIVE_ROTATION_MAX_MS - PROACTIVE_ROTATION_MIN_MS))
   const delay  = PROACTIVE_ROTATION_MIN_MS + jitter
   _waLog('PROACTIVE_ROTATION_SCHEDULED', {
@@ -1497,19 +1509,39 @@ export async function iniciarSesion(numero, sede) {
         return
       }
 
-      // ── 1b. Códigos que invalidan la sesión definitivamente: exigir QR nuevo ──
-      // 401 por "conflict" NO invalida creds — solo reconectar sin borrar archivos
-      // 440 (connectionReplaced) tampoco — ya cae al backoff por no estar en requiereQR
-      const esConflict  = codigo === DisconnectReason.loggedOut && motivo.includes('conflict')
-      const requiereQR  = !esConflict && (
-                            codigo === DisconnectReason.loggedOut   // 401 — sesión revocada
-                         || codigo === DisconnectReason.forbidden   // 403 — cuenta bloqueada
-                         )
+      // ── 1b. Clasificación granular 401 / 403 ─────────────────────────────────
+      // Política basada en evidencia Sep 10-20 (ver constante TERMINALES_401):
+      //   401 "conflict"           → terminal: 0/2 backoffs exitosos en producción
+      //   401 "Connection Failure" → terminal: solo aparece como artefacto del conflict backoff
+      //   401 "Intentional Logout" → terminal: usuario revocó acceso intencionalmente
+      //   403 forbidden            → terminal: cuenta bloqueada (sin cambio respecto a antes)
+      //   401 otro motivo          → backoff conservador hasta tener evidencia suficiente
+      // 440 (connectionReplaced) no entra aquí — cae al backoff por diseño
+
+      let _401clasificacion = null
+      if (codigo === DisconnectReason.loggedOut) {
+        const _ml = motivo.toLowerCase()
+        if      (_ml.includes('conflict'))           _401clasificacion = 'conflict'
+        else if (_ml.includes('connection failure')) _401clasificacion = 'connection_failure'
+        else if (_ml.includes('intentional logout')) _401clasificacion = 'intentional_logout'
+        else                                         _401clasificacion = 'unknown'
+      }
+
+      const requiereQR = (
+           codigo === DisconnectReason.forbidden
+        || (codigo === DisconnectReason.loggedOut && TERMINALES_401.has(_401clasificacion))
+      )
 
       if (requiereQR) {
         const sessionPath = path.join(SESSIONS_DIR, numero)
         try { rmSync(sessionPath, { recursive: true, force: true }) } catch {}
-        _waLog('CONN', { numero, evento: 'sesion_invalidada', codigo, razon, accion: 'escanear_qr_nuevo' })
+        _waLog('CONN', {
+          numero, evento: 'sesion_invalidada',
+          codigo, razon,
+          motivo_exacto:  motivo,
+          clasificacion:  _401clasificacion ?? 'forbidden_403',
+          accion:         'escanear_qr_nuevo',
+        })
         _cooldowns.set(numero, Date.now() + 60_000)
         _reconnectAttempts.delete(numero)
         entrada.status = 'desconectado'
@@ -1518,6 +1550,17 @@ export async function iniciarSesion(numero, sede) {
         sesiones.delete(numero)
         await _releaseLock(numero, lockOwner)
         return
+      }
+
+      // 401 con motivo desconocido: log explícito antes de caer al backoff
+      if (codigo === DisconnectReason.loggedOut && _401clasificacion === 'unknown') {
+        _waLog('CONN', {
+          numero, evento: '401_desconocido_backoff',
+          motivo_exacto:  motivo,
+          clasificacion:  'unknown',
+          accion:         'backoff_conservador',
+          nota:           'motivo no clasificado — backoff activo hasta tener evidencia',
+        })
       }
 
       // ── 2. restartRequired (515): recrear socket inmediatamente, creds intactas ──
