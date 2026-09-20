@@ -281,6 +281,27 @@ const TERMINALES_401 = new Set([
   'intentional_logout', // "Intentional Logout"          — usuario revocó acceso
 ])
 
+// ── Zombie Detector v2 — umbrales ────────────────────────────────────────────
+// Detecta sesiones OPEN con delivery/send degradado sin depender de 500+msgRecv=0.
+// Señales scoped por generación de socket (cada connection=open es gen N+1).
+// Fase actual: shadow mode — solo log SESSION_ZOMBIE_V2_WOULD_RECOVER, sin acción.
+//
+// Family A (delivery degradada):
+//   delivUnknownCount ≥ ZOMBIE_V2_DU_COUNT_MIN AND oldestDUAge ≥ ZOMBIE_V2_DU_AGE_MIN_SEC
+// Family B (transporte/send degradado — al menos una señal):
+//   sinAckCount ≥ ZOMBIE_V2_SIN_ACK_MIN  (WA server no ACKó envíos en esta gen)
+//   O  ≥1 428 en generación anterior inmediata (socket previo terminó en connClosed)
+// Disparo: (Family A) AND (Family B)
+const ZOMBIE_V2_DU_COUNT_MIN   = 3           // delivery_unknown mínimos (gen actual)
+const ZOMBIE_V2_DU_AGE_MIN_SEC = 20 * 60     // oldest DU ≥ 20 min en gen actual
+const ZOMBIE_V2_SIN_ACK_MIN    = 2           // sin_ack sin resolver (gen actual)
+const ZOMBIE_V2_COOLDOWN_MS    = 20 * 60_000 // debounce entre evaluaciones
+const ZOMBIE_V2_MIN_UPTIME_MS  = 20 * 60_000 // no evaluar socket recién abierto
+
+const _socketGen     = new Map() // numero → { gen: number, openAt: number }
+const _428GenHist    = new Map() // numero → [{ts, gen}, ...] — retención 2h
+const _zombieSignals = new Map() // numero → { delivUnknownCount, sinAckCount, oldestDUAge, updatedAt }
+
 // ── Circuit breaker ──────────────────────────────────────────────────────────
 // Si una sesión se desconecta CB_MAX_DISCONNECTS veces en CB_WINDOW_MS, se pausa CB_PAUSE_MS.
 const _recentDisconnects = new Map()   // numero → [timestamp, ...]
@@ -352,6 +373,68 @@ function _checkSessionDegraded(numero, sede) {
     msgSent:      ctrs.sent,
     badSessions:  recent.length,
     decryptFails: totalDecryptFails,
+  })
+}
+
+// ── Zombie Detector v2 — shadow mode ─────────────────────────────────────────
+// Corre al final de cada ciclo de _reconciliarSesion.
+// No toca socket ni creds — solo emite SESSION_ZOMBIE_V2_WOULD_RECOVER para
+// validar thresholds y falsos positivos en tráfico real antes de activar recovery.
+function _checkZombieV2(numero, sede) {
+  const entrada = sesiones.get(numero)
+  if (!entrada || entrada.status !== 'conectado') return
+
+  const now = Date.now()
+  const sig  = _zombieSignals.get(numero)
+  if (!sig || now - sig.updatedAt > 5 * 60_000) return  // datos stale o aún no hay
+
+  const uptime = _connectedAt.has(numero) ? now - _connectedAt.get(numero) : 0
+  if (uptime < ZOMBIE_V2_MIN_UPTIME_MS) return  // socket muy reciente
+
+  if (entrada._zombieV2EmittedAt && now - entrada._zombieV2EmittedAt < ZOMBIE_V2_COOLDOWN_MS) return
+
+  // ── Family A: delivery degradada ──────────────────────────────────────────
+  const familyA = sig.delivUnknownCount >= ZOMBIE_V2_DU_COUNT_MIN
+               && sig.oldestDUAge        >= ZOMBIE_V2_DU_AGE_MIN_SEC
+
+  // ── Family B: transporte/send degradado ───────────────────────────────────
+  const currentGen = _socketGen.get(numero)?.gen ?? 0
+  const prev428s   = (_428GenHist.get(numero) ?? []).filter(e => e.gen === currentGen - 1)
+  const hasSinAck  = sig.sinAckCount >= ZOMBIE_V2_SIN_ACK_MIN
+  const familyB    = hasSinAck || prev428s.length >= 1
+
+  if (!familyA || !familyB) return  // umbral no alcanzado
+
+  // ── DEGRADED detectado — shadow mode ─────────────────────────────────────
+  entrada._zombieV2EmittedAt = now
+
+  const detailA = `delivery_unknown(n=${sig.delivUnknownCount},oldest=${Math.round(sig.oldestDUAge / 60)}min)`
+  const detailB = [
+    hasSinAck       && `sin_ack(n=${sig.sinAckCount})`,
+    prev428s.length && `428_gen_prev(n=${prev428s.length},gen=${currentGen - 1})`,
+  ].filter(Boolean).join(',')
+
+  _waLog('SESSION_ZOMBIE_V2_WOULD_RECOVER', {
+    numero, sede,
+    socketGen:        currentGen,
+    uptimeMin:        Math.round(uptime / 60_000),
+    familyA:          detailA,
+    familyB:          detailB,
+    delivUnknown:     sig.delivUnknownCount,
+    sinAck:           sig.sinAckCount,
+    oldestPendingMin: Math.round(sig.oldestDUAge / 60),
+    prev428s:         prev428s.length,
+    action:           'shadow_mode_no_action',
+  })
+
+  broadcast({
+    tipo:       'wa:session_degraded',
+    source:     'zombie_v2',
+    numero, sede,
+    socketGen:  currentGen,
+    familyA:    detailA,
+    familyB:    detailB,
+    shadowMode: true,
   })
 }
 
@@ -1101,7 +1184,11 @@ async function _reconciliarSesion(numero, { source = 'periodic' } = {}) {
     .gte('timestamp', desde)
 
   if (error) { _waLog('RECONCILE_ERR', { numero, source, error: error.message }); return }
-  if (!stale?.length) return
+  if (!stale?.length) {
+    // Sin mensajes stale → limpiar señales zombie (ningún stall activo en esta gen)
+    _zombieSignals.set(numero, { delivUnknownCount: 0, sinAckCount: 0, oldestDUAge: 0, updatedAt: Date.now() })
+    return
+  }
 
   _waLog('RECONCILE_SCAN', { numero, count: stale.length, source })
 
@@ -1159,6 +1246,22 @@ async function _reconciliarSesion(numero, { source = 'periodic' } = {}) {
     // Caso E: ya está correctamente marcado
     _waLog('RECONCILE_SKIPPED', { numero, msgId: msg.msg_id, status: currentStatus, sin_ack: hasSinAck, delivery_unknown: hasDelivUnknown, ageSeconds, source })
   }
+
+  // ── Zombie v2: actualizar señales scoped a generación actual ──────────────
+  // Filtra por timestamp >= openAt del socket actual para no mezclar con gen anterior.
+  const _z2OpenSec  = Math.floor((_connectedAt.get(numero) ?? 0) / 1000)
+  const _z2DuMsgs   = stale.filter(m => m.delivery_unknown && (m.timestamp || 0) >= _z2OpenSec)
+  const _z2SaMsgs   = stale.filter(m => m.sin_ack && (m.status || 0) === 1 && (m.timestamp || 0) >= _z2OpenSec)
+  const _z2OldestDU = _z2DuMsgs.length
+    ? Math.max(..._z2DuMsgs.map(m => Math.floor(Date.now() / 1000) - (m.timestamp || 0)))
+    : 0
+  _zombieSignals.set(numero, {
+    delivUnknownCount: _z2DuMsgs.length,
+    sinAckCount:       _z2SaMsgs.length,
+    oldestDUAge:       _z2OldestDU,
+    updatedAt:         Date.now(),
+  })
+  _checkZombieV2(numero, entrada.sede)
 }
 
 // Exportada para llamar desde index.js al conectar un WS client
@@ -1348,6 +1451,11 @@ export async function iniciarSesion(numero, sede) {
       _msgCounters.set(numero, { sent: 0, recv: 0 })
       // Limpiar flag de degraded previo — nueva conexión, evaluación fresca
       if (entrada._degradedEmittedAt) delete entrada._degradedEmittedAt
+      // Zombie v2: nueva generación de socket — señales operativas en blanco
+      const _prevGen = _socketGen.get(numero)?.gen ?? 0
+      _socketGen.set(numero, { gen: _prevGen + 1, openAt: Date.now() })
+      _zombieSignals.delete(numero)
+      if (entrada._zombieV2EmittedAt) delete entrada._zombieV2EmittedAt
       // Verificación diferida de zombie: 10 min y 30 min post-OPEN
       // (el patrón observado: badSession cada ~50 min → detectar en el siguiente ciclo)
       setTimeout(() => _checkSessionDegraded(numero, sede), SESSION_DEGRADED_CHECK_MS)
@@ -1449,6 +1557,13 @@ export async function iniciarSesion(numero, sede) {
       const _connDurMs = _prevConn ? _closedAt - _prevConn : null
       const _ctrs      = _msgCounters.get(numero) ?? { sent: 0, recv: 0 }
       _incidents.set(numero, { incidentId: _incId, closedAt: _closedAt })
+      // Zombie v2: registrar 428 con nº de generación para Family B del check posterior
+      if (codigo === DisconnectReason.connectionClosed) {
+        const _z2Gen  = _socketGen.get(numero)?.gen ?? 0
+        const _z2h428 = _428GenHist.get(numero) ?? []
+        _z2h428.push({ ts: _closedAt, gen: _z2Gen })
+        _428GenHist.set(numero, _z2h428.filter(e => _closedAt - e.ts < 2 * 60 * 60_000))
+      }
       _logConnEvent('WA_CONN_CLOSED', {
         numero, sede,
         incidentId: _incId,
