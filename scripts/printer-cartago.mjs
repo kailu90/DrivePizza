@@ -67,10 +67,14 @@ function generarHTML(pedido) {
         const adicionesHTML = Array.isArray(item.adiciones) && item.adiciones.length > 0
             ? item.adiciones.map(a => {
                 const aqty = (a.qty || 1);
-                const nombreAdicion = a.nombre
+                const nombreBase   = a.nombre
                     .replace(/\s*\([^)]*\)\s*$/, '')
                     .replace(/^(En combo).+/i, '$1')
                     .trim();
+                const alcanceLabel = (a.alcance && a.alcance !== 'completa')
+                    ? ` — Mitad ${a.saborObjetivo || (a.alcance === 'mitad1' ? '1' : '2')}`
+                    : '';
+                const nombreAdicion = nombreBase + alcanceLabel;
                 const precioSpan = a.precio > 0
                     ? `<span>$${formatearPrecio(a.precio * aqty)}</span>`
                     : '';

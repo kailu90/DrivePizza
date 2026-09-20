@@ -843,7 +843,7 @@ function renderGridSabores2(sabores) {
             const nombreMezcla = `${sabor1.nombre} y mitad ${btn.dataset.nombre} (${tamano})`;
             const esEstofada = !!(sabor1.esEstofada || sabor2?.esEstofada);
             confirmarAgregar(nombreMezcla, '', precioFinal,
-                { esPizza: true, esAdicionable: true, tamanoRaw: tamano, ...(esEstofada && { esEstofada: true }) });
+                { esPizza: true, esAdicionable: true, tamanoRaw: tamano, sabores: [sabor1.nombre, btn.dataset.nombre], ...(esEstofada && { esEstofada: true }) });
             cerrarModal();
             _mezclaState = null;
         });
@@ -1640,7 +1640,11 @@ async function procesarPedidoFinal() {
                 if (item.obs?.trim()) prod.obs = item.obs.trim();
                 const adiciones = carrito
                     .filter(a => a.pizzaId === item.id)
-                    .map(a => ({ nombre: a.nombre, precio: a.precio, qty: a.qty }));
+                    .map(a => {
+                        const ad = { nombre: a.nombre, precio: a.precio, qty: a.qty };
+                        if (a.alcance) { ad.alcance = a.alcance; ad.saborObjetivo = a.saborObjetivo ?? null; }
+                        return ad;
+                    });
                 if (adiciones.length > 0) prod.adiciones = adiciones;
                 return prod;
             }),
@@ -1812,7 +1816,10 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
     const esStromboli     = nombreLower.includes('stromboli');
     const multiplicador   = (esCalzoneGrande || esStromboli) ? 2 : 1;
 
-    const renderBtn = (prod) => {
+    const sabores = itemPadre.sabores || null; // [s1, s2] para pizza ½+½, null para pizza simple
+
+    // ── Bordes: siempre completos — lógica original ───────────────────────────
+    const renderBtnBorde = (prod) => {
         const precio = prod.opciones[tamanoRaw] * multiplicador;
         return `
         <button class="btn-adicion" data-nombre="${prod.nombre}" data-precio="${precio}">
@@ -1822,23 +1829,68 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         </button>`;
     };
 
+    // ── Adiciones: selector Completa / Mitad 1 / Mitad 2 ─────────────────────
+    const renderBtnAlcance = (prod) => {
+        const precioBase  = prod.opciones[tamanoRaw] * multiplicador;
+        const precioMitad = Math.round(precioBase / 2);
+        const etiq1 = sabores ? `Mitad 1 — ${sabores[0]}` : 'Mitad 1';
+        const etiq2 = sabores ? `Mitad 2 — ${sabores[1]}` : 'Mitad 2';
+        const s1    = sabores ? sabores[0] : '';
+        const s2    = sabores ? sabores[1] : '';
+        return `
+        <div class="adicion-alcance-row" data-nombre="${prod.nombre}" data-preciobase="${precioBase}">
+            <span class="adicion-alcance-label">${prod.nombre}</span>
+            <div class="adicion-alcance-btns">
+                <button class="btn-alcance" data-alcance="completa" data-precio="${precioBase}" data-sabor="">Completa <strong>$${precioBase.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
+                <button class="btn-alcance" data-alcance="mitad1"   data-precio="${precioMitad}" data-sabor="${s1}">${etiq1} <strong>$${precioMitad.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
+                <button class="btn-alcance" data-alcance="mitad2"   data-precio="${precioMitad}" data-sabor="${s2}">${etiq2} <strong>$${precioMitad.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
+            </div>
+        </div>`;
+    };
+
     gridOpciones.innerHTML = `
         <div class="adicion-section-title">Adiciones</div>
-        ${adiciones.map(renderBtn).join('')}
-        ${bordes.length > 0 ? `<div class="adicion-section-title">Bordes</div>${bordes.map(renderBtn).join('')}` : ''}
+        ${adiciones.map(renderBtnAlcance).join('')}
+        ${bordes.length > 0 ? `<div class="adicion-section-title">Bordes</div>${bordes.map(renderBtnBorde).join('')}` : ''}
         <button class="btn-listo-adiciones" onclick="cerrarModal()">✓ Listo</button>
     `;
 
+    // Listener bordes (siempre completa)
     gridOpciones.querySelectorAll('.btn-adicion').forEach(btn => {
         btn.addEventListener('click', () => {
             carrito.push({
-                id: Date.now(),
-                nombre: `${btn.dataset.nombre} (${tamanoRaw})`,
-                precio: Number(btn.dataset.precio),
-                qty: 1,
-                pizzaId: itemId
+                id:            Date.now(),
+                nombre:        `${btn.dataset.nombre} (${tamanoRaw})`,
+                precio:        Number(btn.dataset.precio),
+                qty:           1,
+                pizzaId:       itemId,
+                alcance:       'completa',
+                saborObjetivo: null,
+                precioBase:    Number(btn.dataset.precio),
             });
-            // Feedback visual: incrementar badge sin cerrar
+            const badge = btn.querySelector('.adicion-badge');
+            const count = (parseInt(badge.textContent) || 0) + 1;
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+            btn.classList.add('adicion-agregada');
+            actualizarComanda();
+        });
+    });
+
+    // Listener adiciones con selector de alcance
+    gridOpciones.querySelectorAll('.btn-alcance').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const row = btn.closest('.adicion-alcance-row');
+            carrito.push({
+                id:            Date.now(),
+                nombre:        `${row.dataset.nombre} (${tamanoRaw})`,
+                precio:        Number(btn.dataset.precio),
+                qty:           1,
+                pizzaId:       itemId,
+                alcance:       btn.dataset.alcance,
+                saborObjetivo: btn.dataset.sabor || null,
+                precioBase:    Number(row.dataset.preciobase),
+            });
             const badge = btn.querySelector('.adicion-badge');
             const count = (parseInt(badge.textContent) || 0) + 1;
             badge.textContent = count;

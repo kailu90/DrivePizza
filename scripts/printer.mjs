@@ -67,7 +67,11 @@ function generarHTML(pedido) {
         const adicionesHTML = Array.isArray(item.adiciones) && item.adiciones.length > 0
             ? item.adiciones.map(a => {
                 const aqty = (a.qty || 1);
-                const nombreAdicion = a.nombre.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const nombreBase   = a.nombre.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const alcanceLabel = (a.alcance && a.alcance !== 'completa')
+                    ? ` — Mitad ${a.saborObjetivo || (a.alcance === 'mitad1' ? '1' : '2')}`
+                    : '';
+                const nombreAdicion = nombreBase + alcanceLabel;
                 return `
                 <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11pt; padding-left:12px; color:black; font-weight:700;">
                     <span>+ ${nombreAdicion}</span>

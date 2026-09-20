@@ -1430,6 +1430,71 @@ body {
     text-align: center;
 }
 
+/* ── ADICIONES CON SELECTOR DE ALCANCE ───────────────────────────────── */
+.adicion-alcance-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.adicion-alcance-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-dark);
+    min-width: 120px;
+    flex-shrink: 0;
+}
+
+.adicion-alcance-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.btn-alcance {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.15rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-alcance:hover {
+    border-color: var(--color-cuaternario);
+    box-shadow: 0 2px 6px rgba(117,137,42,0.2);
+}
+
+.btn-alcance.adicion-agregada {
+    border-color: var(--color-cuaternario);
+    background: #fff8f0;
+}
+
+.btn-alcance .adicion-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--color-cuaternario);
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+}
+
 .btn-listo-adiciones {
     grid-column: 1 / -1;
     margin-top: 12px;
