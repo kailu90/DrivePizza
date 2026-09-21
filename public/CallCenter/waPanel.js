@@ -4882,7 +4882,7 @@ function _renderSesionesView() {
                         <span class="wap-ses-badge ${badgeClass}">${badgeLabel}</span>
                     </div>
                     <div class="wap-ses-card-actions">
-                        ${showConnect ? `<button class="wap-ig-btn-conectar" disabled>Conectar Instagram</button>` : ''}
+                        ${showConnect ? `<button class="wap-ig-btn-conectar" data-id="${c.id}">Conectar Instagram</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
@@ -4890,6 +4890,30 @@ function _renderSesionesView() {
     }
 
     el.innerHTML = _sesHtml;
+
+    // Listeners Instagram — Conectar (redirige a OAuth en nueva pestaña)
+    el.querySelectorAll('.wap-ig-btn-conectar').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const accountId = btn.dataset.id;
+            btn.disabled = true;
+            btn.textContent = 'Iniciando...';
+            try {
+                const res  = await fetch(`${HETZNER_URL}/ig/oauth/start?accountId=${encodeURIComponent(accountId)}`);
+                const data = await res.json();
+                if (data.ok && data.url) {
+                    window.open(data.url, '_blank', 'noopener,noreferrer');
+                } else {
+                    _showToast(data.error || 'Error al iniciar OAuth', 4000);
+                    btn.disabled = false;
+                    btn.textContent = 'Conectar Instagram';
+                }
+            } catch {
+                _showToast('Error de conexión al iniciar OAuth', 4000);
+                btn.disabled = false;
+                btn.textContent = 'Conectar Instagram';
+            }
+        });
+    });
 
     // Listeners card normal
     el.querySelectorAll('.wap-ses-btn-edit').forEach(btn => {
