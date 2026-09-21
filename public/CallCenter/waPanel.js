@@ -134,6 +134,7 @@ let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
 let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
+let _igCuentas       = null;  // null=no cargado, []=cargado vacío, [{...}]=datos
 const _pendingStatuses = new Map(); // msgId → {numero,status,sinAck,_ts} para ACKs que llegan antes del echo
 // Limpia entradas huérfanas si el mapa crece (evita leak en race conditions que nunca resuelven)
 function _cleanPendingStatuses() {
@@ -439,6 +440,67 @@ function _injectStyles() {
 }
 .wap-ses-btn-con:hover    { background: #25D366; color: #fff; }
 .wap-ses-btn-con:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Separador de canal ─────────────────────────── */
+.wap-ses-channel-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    padding: 10px 4px 4px;
+    margin-top: 4px;
+}
+.wap-ses-channel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0,0,0,.08);
+}
+.wap-ses-channel-add {
+    margin-left: auto;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #9ca3af;
+    background: none;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    padding: 2px 9px;
+    cursor: not-allowed;
+    opacity: .55;
+    letter-spacing: 0;
+    text-transform: none;
+}
+/* ── Card Instagram ─────────────────────────────── */
+.wap-ses-card--ig {
+    border-left-color: #E1306C;
+}
+.wap-ig-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.wap-ses-badge--gray { background: #f3f4f6; color: #6b7280; }
+.wap-ig-btn-conectar {
+    background: none;
+    border: 1.5px solid #E1306C;
+    color: #E1306C;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: not-allowed;
+    flex-shrink: 0;
+    opacity: .65;
+}
 
 /* ── Edit form ───────────────────────────────────── */
 .wap-ses-card--editing { flex-direction: column; align-items: stretch; background: var(--color-secundario); }
@@ -4708,77 +4770,126 @@ function _renderSesionesView() {
 
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
 
+    // ── WhatsApp section ────────────────────────────────────────────────────
+    let _sesHtml = `<div class="wap-ses-channel-label">WhatsApp</div>`;
+
     if (!_state.sesiones.length) {
-        el.innerHTML = `<p class="wap-empty" style="padding:24px;">No hay conexiones activas</p>`;
-        return;
-    }
+        _sesHtml += `<p class="wap-empty" style="padding:8px 4px 4px;">No hay conexiones activas</p>`;
+    } else {
+        _sesHtml += _state.sesiones.map(s => {
+            const color = _getColor(s.numero);
+            const label = _sessionLabel(s.numero);
 
-    el.innerHTML = _state.sesiones.map(s => {
-        const color = _getColor(s.numero);
-        const label = _sessionLabel(s.numero);
-
-        if (s.numero === _editingNum) {
-            // ── Card en modo edición ──
-            const colorActual = _pendingColors[s.numero] || color;
-            const usedColors  = new Set(
-                _state.sesiones.filter(x => x.numero !== s.numero && x.color).map(x => x.color)
-            );
-            const swatches = SESSION_COLORS.map(c => {
-                const isActive   = c === colorActual;
-                const isUsed     = usedColors.has(c) && !isActive;
-                return `<button class="wap-color-swatch${isActive ? ' wap-color-swatch--active' : ''}${isUsed ? ' wap-color-swatch--used' : ''}"
-                    data-color="${c}" style="background:${c};" title="${isUsed ? 'En uso por otra conexión' : c}"${isUsed ? ' disabled' : ''}></button>`;
-            }).join('');
-            const respActual = _esc(s.respuesta_inicial || '');
-            return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
-                <div class="wap-ses-edit-form">
-                    <label class="wap-ses-edit-label">Nombre</label>
-                    <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
-                        type="text" value="${_esc(label)}" placeholder="${_fmtPhone(s.numero)}">
-                    <label class="wap-ses-edit-label">Color identificador</label>
-                    <div class="wap-color-swatches" id="wap-swatches-${s.numero}">${swatches}</div>
-                    <label class="wap-ses-edit-label">Respuesta automática (primer mensaje)</label>
-                    <textarea class="wap-ses-edit-textarea" id="wap-respuesta-${s.numero}"
-                        rows="3" placeholder="Escribe el mensaje de bienvenida...">${respActual}</textarea>
-                    <div class="wap-ses-edit-btns">
-                        <button class="wap-ses-btn-cancel" data-num="${s.numero}">Cancelar</button>
-                        <button class="wap-ses-btn-save" data-num="${s.numero}">Guardar</button>
+            if (s.numero === _editingNum) {
+                // ── Card en modo edición ──
+                const colorActual = _pendingColors[s.numero] || color;
+                const usedColors  = new Set(
+                    _state.sesiones.filter(x => x.numero !== s.numero && x.color).map(x => x.color)
+                );
+                const swatches = SESSION_COLORS.map(c => {
+                    const isActive   = c === colorActual;
+                    const isUsed     = usedColors.has(c) && !isActive;
+                    return `<button class="wap-color-swatch${isActive ? ' wap-color-swatch--active' : ''}${isUsed ? ' wap-color-swatch--used' : ''}"
+                        data-color="${c}" style="background:${c};" title="${isUsed ? 'En uso por otra conexión' : c}"${isUsed ? ' disabled' : ''}></button>`;
+                }).join('');
+                const respActual = _esc(s.respuesta_inicial || '');
+                return `<div class="wap-ses-card wap-ses-card--editing" style="border-left:4px solid ${colorActual};" data-num="${s.numero}">
+                    <div class="wap-ses-edit-form">
+                        <label class="wap-ses-edit-label">Nombre</label>
+                        <input class="wap-ses-edit-input" id="wap-edit-name-${s.numero}"
+                            type="text" value="${_esc(label)}" placeholder="${_fmtPhone(s.numero)}">
+                        <label class="wap-ses-edit-label">Color identificador</label>
+                        <div class="wap-color-swatches" id="wap-swatches-${s.numero}">${swatches}</div>
+                        <label class="wap-ses-edit-label">Respuesta automática (primer mensaje)</label>
+                        <textarea class="wap-ses-edit-textarea" id="wap-respuesta-${s.numero}"
+                            rows="3" placeholder="Escribe el mensaje de bienvenida...">${respActual}</textarea>
+                        <div class="wap-ses-edit-btns">
+                            <button class="wap-ses-btn-cancel" data-num="${s.numero}">Cancelar</button>
+                            <button class="wap-ses-btn-save" data-num="${s.numero}">Guardar</button>
+                        </div>
                     </div>
+                </div>`;
+            }
+
+            // ── Card normal ──
+            const isDesconectado = s.status === 'desconectado';
+            const statusBadge = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
+                              : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
+                              : s.status === 'conectando'   ? '<span class="wap-ses-badge wap-ses-badge--blue">Conectando...</span>'
+                              : s.status === 'reconectando' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Reconectando...</span>'
+                              : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
+            const actionBtn = isAdmin
+                ? (isDesconectado
+                    ? `<button class="wap-ses-btn-con" data-num="${s.numero}" title="Conectar">Conectar</button>`
+                    : `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>`)
+                : '';
+            return `<div class="wap-ses-card" style="border-left:4px solid ${color};">
+                <div class="wap-ses-card-dot" style="background:${color};"></div>
+                <div class="wap-ses-card-info">
+                    <span class="wap-ses-card-name">${_esc(label)}</span>
+                    <span class="wap-ses-card-num">${_fmtPhone(s.numero)}</span>
+                    ${statusBadge}
+                </div>
+                <div class="wap-ses-card-actions">
+                    <button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    ${actionBtn}
+                    ${isAdmin ? `<button class="wap-ses-btn-del" data-num="${s.numero}" title="Eliminar conexión">🗑️</button>` : ''}
                 </div>
             </div>`;
-        }
+        }).join('');
+    }
 
-        // ── Card normal ──
-        const isDesconectado = s.status === 'desconectado';
-        const statusBadge = s.status === 'conectado'    ? '<span class="wap-ses-badge wap-ses-badge--green">Conectado</span>'
-                          : s.status === 'esperando_qr' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Esperando QR</span>'
-                          : s.status === 'conectando'   ? '<span class="wap-ses-badge wap-ses-badge--blue">Conectando...</span>'
-                          : s.status === 'reconectando' ? '<span class="wap-ses-badge wap-ses-badge--yellow">Reconectando...</span>'
-                          : '<span class="wap-ses-badge wap-ses-badge--red">Desconectado</span>';
-        const actionBtn = isAdmin
-            ? (isDesconectado
-                ? `<button class="wap-ses-btn-con" data-num="${s.numero}" title="Conectar">Conectar</button>`
-                : `<button class="wap-ses-btn-des" data-num="${s.numero}" title="Desconectar">Desconectar</button>`)
-            : '';
-        return `<div class="wap-ses-card" style="border-left:4px solid ${color};">
-            <div class="wap-ses-card-dot" style="background:${color};"></div>
-            <div class="wap-ses-card-info">
-                <span class="wap-ses-card-name">${_esc(label)}</span>
-                <span class="wap-ses-card-num">${_fmtPhone(s.numero)}</span>
-                ${statusBadge}
-            </div>
-            <div class="wap-ses-card-actions">
-                <button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                </button>
-                ${actionBtn}
-                ${isAdmin ? `<button class="wap-ses-btn-del" data-num="${s.numero}" title="Eliminar conexión">🗑️</button>` : ''}
-            </div>
+    // ── Instagram section (solo admin) ──────────────────────────────────────
+    if (isAdmin) {
+        _sesHtml += `<div class="wap-ses-channel-label">Instagram
+            <button class="wap-ses-channel-add" disabled>+ Agregar cuenta</button>
         </div>`;
-    }).join('');
+
+        if (_igCuentas === null) {
+            _sesHtml += `<p class="wap-empty" style="padding:8px 4px 4px;">Cargando...</p>`;
+        } else if (!_igCuentas.length) {
+            _sesHtml += `<p class="wap-empty" style="padding:8px 4px 4px;">No hay cuentas Instagram registradas</p>`;
+        } else {
+            _sesHtml += _igCuentas.map(c => {
+                const badgeClass = c.status === 'active'        ? 'wap-ses-badge--green'
+                                 : c.status === 'token_expired' ? 'wap-ses-badge--yellow'
+                                 : c.status === 'pending'       ? 'wap-ses-badge--gray'
+                                 : 'wap-ses-badge--red';
+                const badgeLabel = c.status === 'active'        ? 'Activo'
+                                 : c.status === 'pending'       ? 'Pendiente'
+                                 : c.status === 'disconnected'  ? 'Desconectado'
+                                 : c.status === 'error'         ? 'Error'
+                                 : c.status === 'token_expired' ? 'Token vencido'
+                                 : _esc(c.status);
+                const subline    = `${_esc(c.ciudad || '—')} · ${c.username ? '@' + _esc(c.username) : '@—'}`;
+                const showConnect = ['pending', 'disconnected', 'token_expired'].includes(c.status);
+                return `<div class="wap-ses-card wap-ses-card--ig">
+                    <div class="wap-ig-icon">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none"/>
+                        </svg>
+                    </div>
+                    <div class="wap-ses-card-info">
+                        <span class="wap-ses-card-name">${_esc(c.display_name)}</span>
+                        <span class="wap-ses-card-num">${subline}</span>
+                        <span class="wap-ses-badge ${badgeClass}">${badgeLabel}</span>
+                    </div>
+                    <div class="wap-ses-card-actions">
+                        ${showConnect ? `<button class="wap-ig-btn-conectar" disabled>Conectar Instagram</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    el.innerHTML = _sesHtml;
 
     // Listeners card normal
     el.querySelectorAll('.wap-ses-btn-edit').forEach(btn => {
@@ -6168,13 +6279,28 @@ function _closeChat() {
     _showListView();
 }
 
+// ── Cuentas Instagram ──────────────────────────────────────────────────────
+async function _loadIgCuentas() {
+    if (_igCuentas !== null) return; // ya cargadas en esta sesión
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    if (!isAdmin) return;
+    try {
+        const res  = await fetch(`${HETZNER_URL}/ig/cuentas`);
+        const data = await res.json();
+        _igCuentas = data.ok ? (data.cuentas || []) : [];
+    } catch {
+        _igCuentas = [];
+    }
+    _renderSesionesView();
+}
+
 function _navTo(view) {
     document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
         b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
     document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
     document.getElementById('wap-view-rr').classList.toggle('wap-view--hidden', view !== 'rr');
     document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
-    if (view === 'ses') _renderSesionesView();
+    if (view === 'ses') { _renderSesionesView(); _loadIgCuentas(); }
     if (view === 'conv') _renderList();
     if (view === 'rr') _renderRRView();
 }
