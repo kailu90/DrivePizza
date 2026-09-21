@@ -135,6 +135,7 @@ let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
 let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
 let _igCuentas       = null;  // null=no cargado, []=cargado vacío, [{...}]=datos
+let _igOAuthPollTimer = null; // timer del polling OAuth activo
 const _pendingStatuses = new Map(); // msgId → {numero,status,sinAck,_ts} para ACKs que llegan antes del echo
 // Limpia entradas huérfanas si el mapa crece (evita leak en race conditions que nunca resuelven)
 function _cleanPendingStatuses() {
@@ -4891,27 +4892,26 @@ function _renderSesionesView() {
 
     el.innerHTML = _sesHtml;
 
-    // Listeners Instagram — Conectar (redirige a OAuth en nueva pestaña)
+    // Listeners Instagram — Conectar (popup OAuth + polling)
     el.querySelectorAll('.wap-ig-btn-conectar').forEach(btn => {
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', () => {
             const accountId = btn.dataset.id;
-            btn.disabled = true;
-            btn.textContent = 'Iniciando...';
-            try {
-                const res  = await fetch(`${HETZNER_URL}/ig/oauth/start?accountId=${encodeURIComponent(accountId)}`);
-                const data = await res.json();
-                if (data.ok && data.url) {
-                    window.open(data.url, '_blank', 'noopener,noreferrer');
-                } else {
-                    _showToast(data.error || 'Error al iniciar OAuth', 4000);
-                    btn.disabled = false;
-                    btn.textContent = 'Conectar Instagram';
-                }
-            } catch {
-                _showToast('Error de conexión al iniciar OAuth', 4000);
-                btn.disabled = false;
-                btn.textContent = 'Conectar Instagram';
-            }
+            btn.disabled    = true;
+            btn.textContent = 'Conectando...';
+
+            // Abrir popup inmediatamente (síncrono en el click → no hay popup blocker)
+            // mode=redirect: el backend valida, guarda nonce en Redis y hace 302 → Instagram
+            const W = 600, H = 700;
+            const left = Math.round(window.screenX + (window.outerWidth  - W) / 2);
+            const top  = Math.round(window.screenY + (window.outerHeight - H) / 2);
+            window.open(
+                `${HETZNER_URL}/ig/oauth/start?accountId=${encodeURIComponent(accountId)}&mode=redirect`,
+                'ig_oauth',
+                `width=${W},height=${H},left=${left},top=${top},popup=1,noopener,noreferrer`
+            );
+
+            // Iniciar polling (el popup procesa el OAuth de forma independiente)
+            _startIgOAuthPolling(accountId, btn);
         });
     });
 
@@ -6316,6 +6316,46 @@ async function _loadIgCuentas() {
         _igCuentas = [];
     }
     _renderSesionesView();
+}
+
+// ── Polling OAuth Instagram ────────────────────────────────────────────────
+// El popup procesa el OAuth de forma independiente.
+// Cada 2 s consultamos /ig/cuentas/:id hasta detectar status='active' o timeout.
+const _IG_POLL_INTERVAL = 2_000;   // 2 segundos
+const _IG_POLL_TIMEOUT  = 120_000; // 2 minutos máximo
+
+function _startIgOAuthPolling(accountId, btn) {
+    if (_igOAuthPollTimer) clearTimeout(_igOAuthPollTimer);
+    const started = Date.now();
+
+    const poll = async () => {
+        // Verificar timeout antes de cada intento
+        if (Date.now() - started >= _IG_POLL_TIMEOUT) {
+            if (btn && document.contains(btn)) {
+                btn.disabled    = false;
+                btn.textContent = 'Conectar Instagram';
+            }
+            _showToast('Tiempo agotado. Intenta conectar de nuevo.', 4000);
+            return;
+        }
+
+        try {
+            const res  = await fetch(`${HETZNER_URL}/ig/cuentas/${encodeURIComponent(accountId)}`);
+            const data = await res.json();
+
+            if (data.ok && data.cuenta?.status === 'active') {
+                // OAuth completado — refrescar sección IG
+                _igCuentas = null;
+                await _loadIgCuentas();
+                _showToast('Instagram conectado correctamente', 3000);
+                return; // detener polling
+            }
+        } catch { /* ignorar errores de red durante el polling */ }
+
+        _igOAuthPollTimer = setTimeout(poll, _IG_POLL_INTERVAL);
+    };
+
+    _igOAuthPollTimer = setTimeout(poll, _IG_POLL_INTERVAL);
 }
 
 function _navTo(view) {
