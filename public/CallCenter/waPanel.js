@@ -218,13 +218,13 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     // Cargar conv y asignaciones en paralelo — renderizar solo cuando AMBAS terminan.
     // Mismo patrón que la reconexión WS: evita que conv termine primero con asignaciones
     // vacías y muestre chats 'en atención' como 'En espera' (race condition).
-    Promise.all([_loadAsignaciones(true), _loadConversaciones(true)])
+    Promise.all([_loadAsignaciones(true), _loadConversaciones(true), _loadIgAsignaciones(), _loadIgConversaciones()])
         .then(() => { _limpiarConvsAntiguas(); _renderList(); _scheduleConteos(); _renderAsesorPills(); _renderCiudadPills(); });
     _loadRespuestasRapidas();
     _loadAsesores();
     _connectWs();
     setInterval(() => {  // re-sync cada 60s — conv y asig juntas para mantener coherencia
-        Promise.all([_loadConversaciones(true), _loadAsignaciones(true)])
+        Promise.all([_loadConversaciones(true), _loadAsignaciones(true), _loadIgConversaciones(), _loadIgAsignaciones()])
             .then(() => { _limpiarConvsAntiguas(); _renderList(); _scheduleConteos(); });
     }, 60_000);
     setInterval(_loadAsesores, 5 * 60_000);   // refrescar lista asesores cada 5 min
@@ -3935,11 +3935,28 @@ function _limpiarConvsAntiguas() {
 }
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
-// ── IG Asignaciones (stub — Commit B) ──────────────────────────────────────
+// ── IG Asignaciones ─────────────────────────────────────────────────────────
 // Carga asignaciones Instagram y las mezcla en _state.asignaciones.
+// Solo toca claves ig:* — nunca modifica entradas WA existentes.
 // Modelo de entrada: [{ account_id, igsid, asesor, estado }]
 // Key: _asigKey('instagram', account_id, igsid) → 'ig:{account_id}:{igsid}'
-async function _loadIgAsignaciones() { /* implementar en Commit B */ }
+async function _loadIgAsignaciones() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/ig/asignaciones`);
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!Array.isArray(data)) return;
+        for (const a of data) {
+            const { account_id, igsid, asesor, estado } = a;
+            if (!account_id || !igsid) continue;
+            _state.asignaciones[_asigKey('instagram', account_id, igsid)] = {
+                asesor,
+                estado: estado || 'asignado',
+            };
+        }
+        _saveAsig();
+    } catch { /* sin conexión — no interrumpe init */ }
+}
 
 async function _loadAsignaciones(suppressRender = false) {
     try {
@@ -4141,10 +4158,36 @@ async function _loadConversaciones(suppressRender = false) {
 // ── IG Conversaciones (stub — Commit B) ────────────────────────────────────
 // Carga conversaciones Instagram y las mezcla en _state.conv bajo scope 'ig:{accountId}'.
 // Modelo de entrada esperado: [{ account_id, igsid, nombre, ultimo_mensaje, ultimo_ts }]
+// ── IG Conversaciones ────────────────────────────────────────────────────────
+// Carga conversaciones Instagram (waiting + assigned) y las upserta en _state.conv.
+// Solo toca claves ig:* — nunca modifica entradas WA existentes.
 // Scope key: _scopeKey('instagram', account_id) → 'ig:{account_id}'
-// Asig key:  _asigKey('instagram', account_id, igsid) → 'ig:{account_id}:{igsid}'
-// Conv entry: { canal: 'instagram', msgs: [], unread, nombre, lastMsg, lastTs }
-async function _loadIgConversaciones() { /* implementar en Commit B */ }
+// Conv entry: { canal:'instagram', accountId, msgs, unread, nombre, lastMsg, lastTs }
+async function _loadIgConversaciones() {
+    try {
+        const r = await fetch(`${HETZNER_URL}/ig/conversaciones`);
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!Array.isArray(data) || !data.length) return;
+        for (const conv of data) {
+            const { account_id, igsid, nombre, username, ultimo_mensaje, ultimo_ts } = conv;
+            if (!account_id || !igsid) continue;
+            const scopeKey = _scopeKey('instagram', account_id);
+            if (!_state.conv[scopeKey]) _state.conv[scopeKey] = {};
+            const existing = _state.conv[scopeKey][igsid];
+            _state.conv[scopeKey][igsid] = {
+                canal:     'instagram',
+                accountId: account_id,
+                msgs:      existing?.msgs   || [],
+                unread:    existing?.unread ?? 0,
+                nombre:    nombre || username || null,
+                lastMsg:   ultimo_mensaje || '',
+                lastTs:    ultimo_ts || 0,
+            };
+        }
+        _saveConv();
+    } catch { /* sin conexión — no interrumpe init */ }
+}
 
 // ── Load contacts ──────────────────────────────────────────────────────────
 async function _loadContactos() {
