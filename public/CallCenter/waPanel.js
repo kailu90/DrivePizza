@@ -5753,7 +5753,11 @@ function _openChat(phone) {
     _renderMsgs(true);
     if (!isIg) _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión WA
     _renderList(); // actualizar badge en background
-    if (!isIg) _loadMsgsSupabase(phone);
+    if (isIg) {
+        _loadIgMsgsSupabase(Number(_state.activeNum.replace('ig:', '')), phone);
+    } else {
+        _loadMsgsSupabase(phone);
+    }
 }
 
 async function _loadMsgsSupabase(phone) {
@@ -5874,6 +5878,45 @@ async function _loadMsgsSupabase(phone) {
     } catch { /* sin conexión — se queda con datos locales */ }
 }
 
+// ── Carga historial de mensajes Instagram ──────────────────────────────────
+async function _loadIgMsgsSupabase(accountId, igsid) {
+    const scopeKey = `ig:${accountId}`;
+    if (!_state.conv[scopeKey])        _state.conv[scopeKey]        = {};
+    if (!_state.conv[scopeKey][igsid]) _state.conv[scopeKey][igsid] = { canal: 'instagram', accountId, msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/ig/mensajes/${encodeURIComponent(accountId)}/${encodeURIComponent(igsid)}?limit=50`
+        );
+        if (!r.ok) return;
+        const msgs = await r.json();
+        if (!Array.isArray(msgs)) return;
+
+        const c = _state.conv[scopeKey][igsid];
+        c.msgs = msgs.map(m => ({
+            msgId:  m.ig_message_id || String(m.id),
+            text:   m.texto || '',
+            ts:     m.timestamp,
+            out:    m.direction === 'outbound',
+            asesor: m.asesor || null,
+            tipo:   m.tipo || 'mensaje',
+        }));
+        c.allLoaded = msgs.length < 50;
+
+        if (c.msgs.length) {
+            const ultimo = c.msgs[c.msgs.length - 1];
+            c.lastMsg = ultimo.text;
+            c.lastTs  = ultimo.ts;
+        }
+
+        _saveConv();
+        if (_state.activeContact === igsid && _state.activeNum === scopeKey) {
+            _renderMsgs(true);
+            _updateChatHeader(igsid);
+        }
+        _renderList();
+    } catch { /* sin conexión — se queda con datos locales */ }
+}
+
 function _updateChatHeader(phone) {
     const c       = _state.conv[_state.activeNum]?.[phone];
     // Usar display_phone (10 dígitos limpios desde backend) como fallback de teléfono
@@ -5927,16 +5970,24 @@ function _updateChatHeader(phone) {
 
     // Nombre de la conexión (debajo del estado)
     const conexionEl = document.getElementById('wap-chat-conexion');
-    if (conexionEl) conexionEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="#25D366" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.057 23.48a.75.75 0 00.916.919l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 01-4.953-1.354l-.355-.211-3.683.953.982-3.594-.232-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>${_sessionLabel(_state.activeNum)}`;
+    if (conexionEl) {
+        const isIgHeader = String(_state.activeNum || '').startsWith('ig:');
+        if (isIgHeader) {
+            conexionEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="#bc1888" stroke-width="2"/><circle cx="12" cy="12" r="4.5" stroke="#bc1888" stroke-width="2"/><circle cx="17" cy="7" r="1.5" fill="#bc1888"/></svg>Instagram`;
+        } else {
+            conexionEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="#25D366" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.057 23.48a.75.75 0 00.916.919l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 01-4.953-1.354l-.355-.211-3.683.953.982-3.594-.232-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>${_sessionLabel(_state.activeNum)}`;
+        }
+    }
 
     // Botón vincular: siempre oculto (se maneja desde el panel de datos del cliente)
     const vincularBtn = document.getElementById('wap-vincular-lid-btn');
     if (vincularBtn) vincularBtn.style.display = 'none';
 
-    // Botón "Unificar identidad": solo admin
+    // Botón "Unificar identidad": solo admin y solo WA (no aplica para IG)
     const unificarBtn = document.getElementById('wap-action-unificar');
     if (unificarBtn) {
-        unificarBtn.style.display = ['admin', 'callcenter-admin'].includes(_rolUsuario) ? '' : 'none';
+        const isIgHeaderU = String(_state.activeNum || '').startsWith('ig:');
+        unificarBtn.style.display = (!isIgHeaderU && ['admin', 'callcenter-admin'].includes(_rolUsuario)) ? '' : 'none';
     }
 
     // Badge de color de la conexión en el borde izquierdo del header
@@ -6626,6 +6677,7 @@ function _renderMsgs(forceBottom = false) {
     const shouldScroll = forceBottom || distFromBottom <= 80;
 
     const c = _state.conv[_state.activeNum]?.[_state.activeContact];
+    const isIgChat = String(_state.activeNum || '').startsWith('ig:');
     if (!c?.msgs.length) {
         el.innerHTML = `<p class="wap-empty" style="background:transparent;">Inicio de la conversacion</p>`;
         return;
@@ -6660,13 +6712,13 @@ function _renderMsgs(forceBottom = false) {
             ? `<span class="wap-msg-ticks wap-msg-ticks--uncertain" title="No fue posible confirmar el estado de este mensaje."><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#d97706" stroke-width="1.8"/><text x="8" y="12.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#d97706" font-family="sans-serif">?</text></svg></span>`
             : m.failed
             ? `<span class="wap-msg-status">✗</span><button class="wap-msg-retry" data-tmp="${m.tmpId}">Reintentar</button>`
-            : (m.out && !m.celular ? (
+            : (m.out && !m.celular && !isIgChat ? (
                 _tickSvg(m.status, m.sinAck, m.deliveryUnknown) +
                 (m.deliveryUnknown ? '<span class="wap-msg-unknown-label">Entrega no confirmada</span>' : '')
               ) : '');
         const isEditing = m.out && m.msgId === _editingMsgId;
         const replyAttrs = `data-reply-msgid="${_esc(m.msgId)}" data-reply-out="${m.out ? '1' : '0'}" data-reply-texto="${_esc(m.text)}" data-reply-nombre="${_esc(m.out ? _asesorActual : (m.nombre || _fmtPhone(_state.activeContact)))}"`;
-        const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing
+        const menuBtn = m.msgId && !m.pending && !m.failed && !isEditing && !isIgChat
             ? m.out
                 ? `<button class="wap-msg-menu-btn" data-menu-msgid="${_esc(m.msgId)}" title="Opciones">&#x25BE;</button>
                    <div class="wap-msg-dropdown" id="wap-dd-${_esc(m.msgId)}">
