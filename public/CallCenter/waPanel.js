@@ -4265,7 +4265,7 @@ async function _loadIgConversaciones() {
         const data = await r.json();
         if (!Array.isArray(data) || !data.length) return;
         for (const conv of data) {
-            const { account_id, igsid, nombre, username, ultimo_mensaje, ultimo_ts } = conv;
+            const { account_id, igsid, nombre, username, ultimo_mensaje, ultimo_ts, ciudad } = conv;
             if (!account_id || !igsid) continue;
             const scopeKey = _scopeKey('instagram', account_id);
             if (!_state.conv[scopeKey]) _state.conv[scopeKey] = {};
@@ -4273,6 +4273,7 @@ async function _loadIgConversaciones() {
             _state.conv[scopeKey][igsid] = {
                 canal:     'instagram',
                 accountId: account_id,
+                ciudad:    ciudad || null,
                 msgs:      existing?.msgs   || [],
                 unread:    existing?.unread ?? 0,
                 nombre:    nombre || username || null,
@@ -5844,8 +5845,11 @@ function _renderList() {
                 if (!esMioChat && !otrosMatch) return false;
             }
 
-            // Filtro ciudad — multiselección (IG no pertenece a ninguna ciudad, se omite del filtro)
-            if (_state.filtroCiudad.size > 0 && !num.startsWith('ig:') && !_state.filtroCiudad.has(_ciudadDeSesion(num))) return false;
+            // Filtro ciudad — multiselección; IG usa data.ciudad, WA usa _ciudadDeSesion(num)
+            if (_state.filtroCiudad.size > 0) {
+                const ciudad = num.startsWith('ig:') ? (data.ciudad || '') : _ciudadDeSesion(num);
+                if (!_state.filtroCiudad.has(ciudad)) return false;
+            }
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
@@ -5890,7 +5894,12 @@ function _renderList() {
         const isIgConv = data.canal === 'instagram';
         let ciudadBadge;
         if (isIgConv) {
-            ciudadBadge = `<span class="wap-ciudad-badge wap-ciudad-badge--ig">IG</span>`;
+            const igCiudad = (data.ciudad || '').toLowerCase();
+            const igCls    = igCiudad === 'cartago' ? 'wap-ciudad-badge--ctg'
+                           : igCiudad               ? 'wap-ciudad-badge--bga'
+                           : 'wap-ciudad-badge--ig';
+            const igTxt    = igCiudad ? `IG-${igCiudad.toUpperCase()}` : 'IG';
+            ciudadBadge    = `<span class="wap-ciudad-badge ${igCls}">${igTxt}</span>`;
         } else {
             const ciudad    = _ciudadDeSesion(num);
             const badgeCode = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
@@ -6191,7 +6200,9 @@ function _updateChatHeader(phone) {
     const conexionEl = document.getElementById('wap-chat-conexion');
     if (conexionEl) {
         if (isIgHeader) {
-            conexionEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="#bc1888" stroke-width="2"/><circle cx="12" cy="12" r="4.5" stroke="#bc1888" stroke-width="2"/><circle cx="17" cy="7" r="1.5" fill="#bc1888"/></svg>Instagram`;
+            const igCiudadH  = (_state.conv[_state.activeNum]?.[phone]?.ciudad || '').toLowerCase();
+            const cityLabelH = CIUDAD_LABEL[igCiudadH] || '';
+            conexionEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="#bc1888" stroke-width="2"/><circle cx="12" cy="12" r="4.5" stroke="#bc1888" stroke-width="2"/><circle cx="17" cy="7" r="1.5" fill="#bc1888"/></svg>Instagram${cityLabelH ? ` · ${cityLabelH}` : ''}`;
         } else {
             conexionEl.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="#25D366" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.057 23.48a.75.75 0 00.916.919l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 01-4.953-1.354l-.355-.211-3.683.953.982-3.594-.232-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>${_sessionLabel(_state.activeNum)}`;
         }
