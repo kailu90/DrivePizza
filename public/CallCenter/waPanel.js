@@ -4786,9 +4786,15 @@ function _onEstado({ numero, contacto, estado, asesor }) {
 }
 
 // ── WS handlers Instagram ──────────────────────────────────────────────────
-function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor }) {
+function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor, convStatus }) {
     const num   = 'ig:' + Number(accountId);
     const phone = String(igsid);
+
+    // Si el backend reabrió la conv (convStatus='waiting'), limpiar asignación obsoleta en memoria
+    if (convStatus === 'waiting') {
+        const key = `${num}:${phone}`;
+        if (_state.asignaciones[key]) { delete _state.asignaciones[key]; _saveAsig(); }
+    }
 
     if (!_state.conv[num]) _state.conv[num] = {};
     const isNewConv = !_state.conv[num][phone];
