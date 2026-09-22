@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="index, follow">
+  <title>Política de Privacidad — Everest Central</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde:      #284c22;
+      --verde-claro:#d4e8cc;
+      --crema:      #f4ecdf;
+      --texto:      #2d2d2d;
+      --gris-suave: #f8f8f6;
+      --gris-borde: #e0ddd7;
+      --naranja:    #e67318;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--crema);
+      color: var(--texto);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--verde);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+    header .logo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      opacity: .85;
+      margin-bottom: .75rem;
+    }
+    header h1 {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 700;
+      margin-bottom: .5rem;
+    }
+    header .meta {
+      font-size: .85rem;
+      opacity: .7;
+      margin-top: .5rem;
+    }
+
+    /* ── Layout ── */
+    .wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── TOC ── */
+    nav.toc {
+      background: var(--gris-suave);
+      border: 1px solid var(--gris-borde);
+      border-radius: 10px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2.5rem;
+    }
+    nav.toc h2 {
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--verde);
+      margin-bottom: 1rem;
+    }
+    nav.toc ol {
+      padding-left: 1.2rem;
+      display: grid;
+      gap: .3rem;
+    }
+    nav.toc a {
+      color: var(--texto);
+      text-decoration: none;
+      font-size: .9rem;
+    }
+    nav.toc a:hover { color: var(--verde); text-decoration: underline; }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 2.75rem;
+      scroll-margin-top: 1.5rem;
+    }
+    section h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--verde);
+      border-bottom: 2px solid var(--verde-claro);
+      padding-bottom: .4rem;
+      margin-bottom: 1.1rem;
+    }
+    section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--texto);
+      margin: 1.2rem 0 .5rem;
+    }
+
+    p { margin-bottom: .85rem; }
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: 1.4rem;
+      margin-bottom: .85rem;
+      display: grid;
+      gap: .35rem;
+    }
+    li { font-size: .95rem; }
+
+    strong { font-weight: 600; }
+
+    /* ── Tables ── */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--gris-borde);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+    }
+    thead { background: var(--verde); color: #fff; }
+    thead th {
+      padding: .65rem 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+    tbody tr:nth-child(odd)  { background: var(--gris-suave); }
+    tbody tr:nth-child(even) { background: #fff; }
+    td { padding: .6rem 1rem; vertical-align: top; }
+
+    /* ── Links externos ── */
+    a { color: var(--verde); }
+    a:hover { color: var(--naranja); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--gris-borde);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: .8rem;
+      color: #888;
+      background: var(--gris-suave);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header { padding: 2rem 1rem 1.5rem; }
+      .wrapper { padding: 1.75rem 1rem 3rem; }
+      nav.toc { padding: 1.1rem 1.1rem; }
+      section h2 { font-size: 1.1rem; }
+      thead th, td { padding: .5rem .75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Everest Central</div>
+  <h1>Política de Privacidad</h1>
+  <div class="meta">Version 1.0</div>
+</header>
+
+<div class="wrapper">
+
+  <!-- Tabla de contenido -->
+  <nav class="toc" aria-label="Tabla de contenido">
+    <h2>Contenido</h2>
+    <ol>
+      <li><a href="#s1">Identidad del servicio</a></li>
+      <li><a href="#s2">Ambito de aplicacion</a></li>
+      <li><a href="#s3">Informacion que podemos procesar</a></li>
+      <li><a href="#s4">Finalidad del tratamiento</a></li>
+      <li><a href="#s5">Almacenamiento y seguridad</a></li>
+      <li><a href="#s6">Acceso restringido y proveedores</a></li>
+      <li><a href="#s7">No venta de informacion personal</a></li>
+      <li><a href="#s8">Conservacion de datos</a></li>
+      <li><a href="#s9">Eliminacion de datos</a></li>
+      <li><a href="#s10">Derechos del titular</a></li>
+      <li><a href="#s11">Integraciones con terceros</a></li>
+      <li><a href="#s12">Menores de edad</a></li>
+      <li><a href="#s13">Cambios a esta politica</a></li>
+      <li><a href="#s14">Contacto</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="s1">
+    <h2>1. Identidad del servicio</h2>
+    <p>
+      <strong>Everest Central</strong> es una plataforma de software como servicio (SaaS) orientada a empresas,
+      que provee herramientas tecnologicas para la gestion de atencion al cliente a traves de canales de
+      mensajeria como Instagram y WhatsApp.
+    </p>
+    <p>
+      Para efectos de esta politica, las expresiones "Everest Central", "nosotros", "nuestro" o "la plataforma"
+      hacen referencia al servicio y a quienes lo desarrollan y operan. La informacion de contacto vigente
+      se encuentra en la seccion 14.
+    </p>
+  </section>
+
+  <!-- 2 -->
+  <section id="s2">
+    <h2>2. Ambito de aplicacion</h2>
+    <p>Esta politica aplica a:</p>
+    <ul>
+      <li>Las <strong>Empresas Usuarias</strong> que contratan el servicio de Everest Central e integran sus
+        cuentas de Instagram, WhatsApp u otros canales a la plataforma.</li>
+      <li>Los <strong>asesores y usuarios internos</strong> de cada Empresa Usuaria que acceden a la plataforma
+        para gestionar conversaciones.</li>
+      <li>Los <strong>usuarios finales</strong> (clientes de las Empresas Usuarias) cuyos mensajes son
+        procesados a traves de los canales integrados.</li>
+    </ul>
+    <p>
+      Dependiendo de la relacion contractual y de las finalidades del tratamiento, Everest Central puede
+      actuar como encargado del tratamiento respecto de los datos procesados por cuenta de las Empresas
+      Usuarias, quienes a su vez son responsables del tratamiento frente a sus propios clientes.
+    </p>
+  </section>
+
+  <!-- 3 -->
+  <section id="s3">
+    <h2>3. Informacion que podemos procesar</h2>
+
+    <h3>3.1 Datos provenientes de cuentas de Instagram conectadas</h3>
+    <p>
+      Cuando una Empresa Usuaria conecta su cuenta profesional de Instagram a Everest Central mediante el flujo
+      de autorizacion OAuth de Meta Platforms, la plataforma puede procesar:
+    </p>
+    <ul>
+      <li><strong>Identificador unico de cuenta (IGID / Instagram-Scoped User ID):</strong> identificador
+        numerico estable asignado por Instagram a la cuenta del negocio y a cada usuario que interactua con
+        ella a traves de la integracion.</li>
+      <li><strong>Nombre de usuario de Instagram (username):</strong> el handle publico (@usuario) de la
+        cuenta del negocio y, cuando esta disponible, del usuario final que envia mensajes.</li>
+      <li><strong>Nombre visible de perfil:</strong> el nombre que aparece en el perfil de Instagram,
+        cuando es provisto por la API de Meta.</li>
+      <li><strong>Mensajes directos (DMs) recibidos:</strong> el contenido de texto de los mensajes que
+        los usuarios envian a la cuenta conectada, junto con el identificador unico del mensaje (MID de Meta)
+        y la marca de tiempo.</li>
+      <li><strong>Mensajes directos enviados:</strong> el texto de los mensajes que los asesores redactan
+        como respuesta, junto con metadatos del envio.</li>
+      <li><strong>Token de acceso a la API de Instagram:</strong> el token de larga duracion que autoriza a
+        la plataforma a operar en nombre de la cuenta conectada. Este token se almacena
+        <strong>cifrado</strong> mediante AES-256-GCM y nunca en texto plano.</li>
+    </ul>
+
+    <h3>3.2 Datos provenientes de WhatsApp</h3>
+    <ul>
+      <li>Numero de telefono del contacto (usuario final).</li>
+      <li>Nombre de perfil de WhatsApp, cuando lo comparte el dispositivo.</li>
+      <li>Contenido de texto de los mensajes entrantes y salientes.</li>
+      <li>Archivos multimedia compartidos en la conversacion (imagenes, documentos, audio).</li>
+      <li>Metadatos del mensaje: identificador, timestamp, estado de entrega.</li>
+    </ul>
+
+    <h3>3.3 Datos de asesores y usuarios internos</h3>
+    <ul>
+      <li>Nombre de usuario dentro de la plataforma.</li>
+      <li>Correo electronico de acceso.</li>
+      <li>Registro de actividad: conversaciones atendidas, mensajes enviados, asignaciones y resoluciones.</li>
+    </ul>
+
+    <h3>3.4 Datos tecnicos y logs</h3>
+    <ul>
+      <li>Registros de acceso al sistema (IP, agente de usuario, timestamps de sesion).</li>
+      <li>Logs de eventos de la plataforma: errores y eventos de conexion/desconexion de canales,
+        conservados con fines de diagnostico y seguridad operativa.</li>
+      <li>Identificadores de sesion y tokens de autenticacion internos de la plataforma.</li>
+    </ul>
+  </section>
+
+  <!-- 4 -->
+  <section id="s4">
+    <h2>4. Finalidad del tratamiento</h2>
+    <p>Everest Central procesa la informacion descrita unicamente para los siguientes fines:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Finalidad</th><th>Descripcion</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Recepcion de mensajes</strong></td>
+            <td>Procesar los mensajes entrantes de canales conectados y presentarlos en la bandeja unificada.</td>
+          </tr>
+          <tr>
+            <td><strong>Gestion de conversaciones</strong></td>
+            <td>Organizar, priorizar y registrar el historial de conversaciones por canal y contacto.</td>
+          </tr>
+          <tr>
+            <td><strong>Asignacion a asesores</strong></td>
+            <td>Permitir que las Empresas Usuarias asignen conversaciones a asesores especificos y gestionen transferencias y resoluciones.</td>
+          </tr>
+          <tr>
+            <td><strong>Historial y trazabilidad</strong></td>
+            <td>Conservar el registro de mensajes y acciones para consulta posterior por parte de la Empresa Usuaria.</td>
+          </tr>
+          <tr>
+            <td><strong>Envio de respuestas</strong></td>
+            <td>Transmitir los mensajes redactados por los asesores al canal correspondiente a traves de las APIs autorizadas.</td>
+          </tr>
+          <tr>
+            <td><strong>Seguridad y diagnostico</strong></td>
+            <td>Detectar errores, fallos de conexion y accesos no autorizados, y garantizar la disponibilidad del servicio.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <strong>No utilizamos la informacion de mensajes ni de contactos con fines publicitarios, de
+      perfilamiento comercial, venta de datos ni cualquier uso distinto a los fines operativos descritos.</strong>
+    </p>
+  </section>
+
+  <!-- 5 -->
+  <section id="s5">
+    <h2>5. Almacenamiento y seguridad</h2>
+
+    <h3>5.1 Infraestructura</h3>
+    <p>
+      La informacion es almacenada en servidores propios alojados en la infraestructura de
+      <strong>Hetzner Online GmbH</strong>. La base de datos es operada mediante una instancia
+      autogestionada de <strong>Supabase</strong> sobre dichos servidores.
+    </p>
+
+    <h3>5.2 Medidas de seguridad aplicadas</h3>
+    <ul>
+      <li>Los <strong>tokens de acceso</strong> a las APIs de canales integrados se almacenan cifrados
+        mediante <strong>AES-256-GCM</strong>, nunca en texto plano.</li>
+      <li>El acceso a la plataforma requiere autenticacion de usuario.</li>
+      <li>Las comunicaciones entre clientes y servidores utilizan <strong>HTTPS con TLS</strong>.</li>
+      <li>El acceso a los datos esta restringido al personal operativo de la plataforma y a los usuarios
+        autorizados por cada Empresa Usuaria.</li>
+    </ul>
+    <p>
+      Everest Central no declara poseer certificaciones de seguridad especificas (ISO 27001, SOC 2 u otras)
+      en la version actual del servicio.
+    </p>
+  </section>
+
+  <!-- 6 -->
+  <section id="s6">
+    <h2>6. Acceso restringido y proveedores de infraestructura</h2>
+    <p>El acceso a los datos procesados esta limitado a:</p>
+    <ul>
+      <li>Los <strong>asesores y administradores</strong> de la Empresa Usuaria titular de la cuenta.</li>
+      <li>El <strong>personal tecnico</strong> de Everest Central, unicamente cuando sea necesario para
+        soporte, mantenimiento o resolucion de incidentes, y bajo deber de confidencialidad.</li>
+    </ul>
+    <p>No compartimos informacion de conversaciones ni de contactos con terceros, salvo en los siguientes casos:</p>
+    <ul>
+      <li><strong>Proveedores de infraestructura:</strong> Hetzner Online GmbH, en calidad de proveedor de
+        alojamiento de los servidores. No procesan datos de aplicacion por cuenta propia.</li>
+      <li><strong>Meta Platforms (Instagram / WhatsApp):</strong> Everest Central utiliza las APIs oficiales
+        de Meta para enviar y recibir mensajes. El procesamiento de datos por parte de Meta se rige por las
+        condiciones y politicas propias de Meta Platforms.</li>
+      <li><strong>Requerimiento legal:</strong> cuando exista obligacion legal, orden judicial o requerimiento
+        de autoridad competente.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="s7">
+    <h2>7. No venta de informacion personal</h2>
+    <p>
+      Everest Central <strong>no vende, arrienda ni cede</strong> informacion personal de usuarios finales,
+      asesores ni Empresas Usuarias a terceros con fines comerciales o publicitarios.
+    </p>
+  </section>
+
+  <!-- 8 -->
+  <section id="s8">
+    <h2>8. Conservacion de datos</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Categoria</th><th>Periodo de conservacion</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mensajes e historial de conversaciones</td>
+            <td>Durante la vigencia del contrato de servicio con la Empresa Usuaria y por un periodo
+              razonable posterior, necesario para atender reclamaciones o solicitudes pendientes.</td>
+          </tr>
+          <tr>
+            <td>Logs tecnicos y de acceso</td>
+            <td>Por el tiempo operativamente necesario para los fines de diagnostico y seguridad descritos,
+              o mientras exista un incidente de seguridad activo que requiera su conservacion.</td>
+          </tr>
+          <tr>
+            <td>Tokens de acceso cifrados</td>
+            <td>Mientras la integracion del canal este activa. Se eliminan al desconectar el canal o al
+              terminar el contrato.</td>
+          </tr>
+          <tr>
+            <td>Datos de asesores / usuarios internos</td>
+            <td>Mientras la cuenta del usuario este activa en la plataforma.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Transcurrido el periodo aplicable, la informacion se elimina o se anonimiza de forma que no permita
+      identificar a las personas.
+    </p>
+  </section>
+
+  <!-- 9 -->
+  <section id="s9">
+    <h2>9. Eliminacion de datos</h2>
+
+    <h3>9.1 Solicitudes de eliminacion</h3>
+    <p>
+      Las Empresas Usuarias y los usuarios finales pueden solicitar la eliminacion de sus datos contactando
+      a Everest Central a traves de los medios indicados en la seccion 14. Las solicitudes son atendidas
+      en un plazo razonable, sujeto a verificacion de la identidad del solicitante y a las obligaciones
+      legales de conservacion que pudieran aplicar.
+    </p>
+
+    <h3>9.2 Datos vinculados a cuentas de Instagram</h3>
+    <p>
+      Los datos vinculados a una cuenta de Instagram (identificador, mensajes, historial) pueden ser
+      eliminados a solicitud del titular o de la Empresa Usuaria correspondiente, a traves de los medios
+      de contacto indicados en la seccion 14.
+    </p>
+    <p>
+      Para solicitar la eliminacion de datos especificamente vinculados a tu cuenta de Instagram,
+      indica en tu mensaje: el nombre de usuario de Instagram (@usuario) y la Empresa Usuaria a traves
+      de la cual interactuaste con la plataforma.
+    </p>
+
+    <h3>9.3 URL de eliminacion de datos de Instagram</h3>
+    <p>
+      En cumplimiento de los requisitos de Meta para aplicaciones con integracion de Instagram, la URL
+      de referencia para solicitudes de eliminacion de datos es:
+      <code>https://app.everest-central.com/privacy#s9</code>
+    </p>
+  </section>
+
+  <!-- 10 -->
+  <section id="s10">
+    <h2>10. Derechos del titular de los datos</h2>
+    <p>
+      De acuerdo con la legislacion en materia de proteccion de datos personales aplicable en la
+      jurisdiccion del titular, los titulares pueden tener derecho a:
+    </p>
+    <ul>
+      <li><strong>Conocer:</strong> consultar que informacion personal se encuentra almacenada.</li>
+      <li><strong>Actualizar y corregir:</strong> solicitar la correccion de informacion inexacta o desactualizada.</li>
+      <li><strong>Suprimir:</strong> solicitar la eliminacion de datos cuando no exista deber legal de conservarlos.</li>
+      <li><strong>Revocar la autorizacion:</strong> retirar el consentimiento otorgado para el tratamiento.</li>
+      <li><strong>Presentar quejas:</strong> ante la autoridad de proteccion de datos competente en su jurisdiccion.</li>
+    </ul>
+    <p>Para ejercer cualquiera de estos derechos, comunicate con nosotros a traves de los medios indicados en la seccion 14.</p>
+  </section>
+
+  <!-- 11 -->
+  <section id="s11">
+    <h2>11. Integraciones con terceros (Meta / Instagram / WhatsApp)</h2>
+    <p>
+      La funcionalidad de mensajeria de Everest Central depende de las APIs oficiales de
+      <strong>Meta Platforms Inc.</strong> El uso de estas integraciones esta sujeto a:
+    </p>
+    <ul>
+      <li><a href="https://developers.facebook.com/terms/" target="_blank" rel="noopener">Terminos de Servicio de Meta para Desarrolladores</a></li>
+      <li><a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">Politica de Privacidad de Meta</a></li>
+      <li><a href="https://developers.facebook.com/terms/dfc_platform_terms/" target="_blank" rel="noopener">Acuerdo para Desarrolladores de la Plataforma de Instagram</a></li>
+    </ul>
+    <p>
+      Everest Central no controla el procesamiento de datos que realiza Meta Platforms en su propia
+      infraestructura. El uso que hacen los usuarios finales de Instagram y WhatsApp se rige por las
+      politicas de Meta, no por esta politica.
+    </p>
+  </section>
+
+  <!-- 12 -->
+  <section id="s12">
+    <h2>12. Menores de edad</h2>
+    <p>
+      Everest Central es un servicio dirigido exclusivamente a empresas y profesionales. La plataforma no
+      esta disenada para recopilar informacion de personas menores de edad de forma directa.
+    </p>
+    <p>
+      No obstante, dado que los mensajes procesados provienen de los canales de las Empresas Usuarias,
+      Everest Central no tiene control ni capacidad de verificar la edad de los usuarios finales que
+      se comunican a traves de dichos canales. Las Empresas Usuarias son responsables de implementar
+      las medidas necesarias conforme a la normativa aplicable cuando sus canales puedan ser utilizados
+      por personas menores de edad.
+    </p>
+  </section>
+
+  <!-- 13 -->
+  <section id="s13">
+    <h2>13. Cambios a esta politica</h2>
+    <p>
+      Everest Central puede actualizar esta politica periodicamente. Cuando los cambios sean materiales,
+      procuraremos comunicarlos a las Empresas Usuarias activas a traves de los canales disponibles
+      antes de su entrada en vigencia.
+    </p>
+    <p>
+      El uso continuado del servicio tras la entrada en vigencia de una version actualizada implica la
+      aceptacion de los nuevos terminos. La version vigente estara siempre disponible en
+      <code>https://app.everest-central.com/privacy</code>.
+    </p>
+  </section>
+
+  <!-- 14 -->
+  <section id="s14">
+    <h2>14. Informacion de contacto</h2>
+    <p>
+      Para consultas sobre esta politica, solicitudes de acceso, correccion o eliminacion de datos,
+      o para reportar cualquier incidente relacionado con privacidad, puedes contactarnos a traves
+      de los siguientes medios:
+    </p>
+    <ul>
+      <li><strong>Servicio:</strong> Everest Central</li>
+      <li><strong>Correo electronico:</strong> <a href="mailto:czuluaga2018@gmail.com">czuluaga2018@gmail.com</a></li>
+      <li><strong>Pais de operacion principal:</strong> Colombia</li>
+    </ul>
+    <p>
+      Esta politica esta disponible publicamente en:
+      <code>https://app.everest-central.com/privacy</code>
+    </p>
+  </section>
+
+</div><!-- /wrapper -->
+
+<footer>
+  &copy; Everest Central &mdash; <code>https://app.everest-central.com/privacy</code>
+  &nbsp;|&nbsp; Version 1.0
+</footer>
+
+</body>
+</html>
