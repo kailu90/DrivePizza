@@ -772,6 +772,7 @@ function _injectStyles() {
 }
 .wap-ciudad-badge--bga { background: #dcfce7; color: #16a34a; }
 .wap-ciudad-badge--ctg { background: #ffedd5; color: #92400e; }
+.wap-ciudad-badge--ig  { background: #fce7f3; color: #9d174d; }
 .wap-sessions-icon {
     display: flex;
     align-items: center;
@@ -5363,6 +5364,21 @@ function _computeConteos() {
         }
     }
 
+    // ── IG: contar conversaciones de Instagram (ig:* scope keys)
+    for (const [scopeKey, convs] of Object.entries(_state.conv)) {
+        if (!scopeKey.startsWith('ig:')) continue;
+        for (const igsid of Object.keys(convs)) {
+            const asig = _state.asignaciones[`${scopeKey}:${igsid}`];
+            if (!asig) {
+                en_espera++;
+            } else if (asig.estado === 'asignado') {
+                if (!asesorTarget || asig.asesor === asesorTarget) asignado++;
+            } else if (asig.estado === 'resuelto') {
+                if (!asesorTarget || asig.asesor === asesorTarget) resuelto++;
+            }
+        }
+    }
+
     _state.conteos = { en_espera, asignado, resuelto };
     document.dispatchEvent(new CustomEvent('wa:conteos', { detail: { ..._state.conteos } }));
 }
@@ -5582,12 +5598,20 @@ function _renderList() {
         }
     }
 
+    // ── IG: agregar conversaciones de Instagram (ig:* scope keys — no pertenecen a sesionesActivas)
+    for (const [scopeKey, convs] of Object.entries(_state.conv)) {
+        if (!scopeKey.startsWith('ig:')) continue;
+        for (const [igsid, data] of Object.entries(convs)) {
+            allConvs.push({ num: scopeKey, phone: igsid, data });
+        }
+    }
+
     const q      = _state.filterText;
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const filtered = allConvs
         .filter(({ num, phone, data }) => {
             // Filtrar por texto
-            if (q && !phone.includes(q) && !(data.customName || data.name || '').toLowerCase().includes(q)) return false;
+            if (q && !phone.includes(q) && !(data.customName || data.nombre || data.name || '').toLowerCase().includes(q)) return false;
 
             const estado = _getEstado(num, phone);
             const asig   = _getAsig(num, phone);
@@ -5602,8 +5626,8 @@ function _renderList() {
                 if (!esMioChat && !otrosMatch) return false;
             }
 
-            // Filtro ciudad — multiselección
-            if (_state.filtroCiudad.size > 0 && !_state.filtroCiudad.has(_ciudadDeSesion(num))) return false;
+            // Filtro ciudad — multiselección (IG no pertenece a ninguna ciudad, se omite del filtro)
+            if (_state.filtroCiudad.size > 0 && !num.startsWith('ig:') && !_state.filtroCiudad.has(_ciudadDeSesion(num))) return false;
 
             // Filtro activo por badge
             if (_state.filtroEstado === 'en_espera') return estado === 'en_espera';
@@ -5645,11 +5669,17 @@ function _renderList() {
         const display = data.nombre || data.name || _fmtPhone(phone);
         const hasName = !!(data.nombre || data.name);
         const sub     = hasName ? `<span class="wap-conv-phone">${_fmtPhone(phone)}</span>` : '';
-        const ciudad  = _ciudadDeSesion(num);
-        const badgeCode = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
-        const badgeTxt = sedeLabel ? `${badgeCode}-${sedeLabel}` : badgeCode;
-        const badgeCls = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
-        const ciudadBadge = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
+        const isIgConv = data.canal === 'instagram';
+        let ciudadBadge;
+        if (isIgConv) {
+            ciudadBadge = `<span class="wap-ciudad-badge wap-ciudad-badge--ig">IG</span>`;
+        } else {
+            const ciudad    = _ciudadDeSesion(num);
+            const badgeCode = CIUDAD_BADGE[ciudad] || ciudad.toUpperCase().slice(0, 3);
+            const badgeTxt  = sedeLabel ? `${badgeCode}-${sedeLabel}` : badgeCode;
+            const badgeCls  = ciudad === 'cartago' ? 'wap-ciudad-badge--ctg' : 'wap-ciudad-badge--bga';
+            ciudadBadge     = `<span class="wap-ciudad-badge ${badgeCls}">${badgeTxt}</span>`;
+        }
 
         const estadoTag = esLibre && _state.filtroEstado !== 'en_espera'
                 ? `<span class="wap-estado-tag wap-estado--espera">En espera</span>`
@@ -5657,11 +5687,11 @@ function _renderList() {
                     ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
                     : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
-        const tomarBtn = esLibre
+        const tomarBtn = (!isIgConv && esLibre)
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre ? '78px' : '12px'};">
+        return `<div class="wap-conv-item${(!isIgConv && esLibre) ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${(!isIgConv && esLibre) ? '78px' : '12px'};">
             <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sedeLabel)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
@@ -5717,11 +5747,13 @@ function _openChat(phone) {
     document.getElementById('wap-sessions-wrap').style.display           = 'none';
     document.getElementById('wap-chat').style.display                    = 'flex';
 
+    const isIg = String(_state.activeNum).startsWith('ig:');
+
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
     _renderMsgs(true);
-    _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión
+    if (!isIg) _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión WA
     _renderList(); // actualizar badge en background
-    _loadMsgsSupabase(phone);
+    if (!isIg) _loadMsgsSupabase(phone);
 }
 
 async function _loadMsgsSupabase(phone) {
