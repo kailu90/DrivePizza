@@ -6864,6 +6864,12 @@ async function _sendMessage() {
     const texto = input?.value.trim();
     if (!texto || !_state.activeNum || !_state.activeContact) return;
 
+    // ── IG: routing temprano — sin JID, sin outbox, sin ACK WA ──────────────
+    if (String(_state.activeNum).startsWith('ig:')) {
+        await _sendIgMessage(texto, input);
+        return;
+    }
+
     input.value = '';
     _autoResizeTextarea(input);
     _updateSendVoiceBtn();
@@ -6978,6 +6984,67 @@ async function _retrySend(tmpId) {
         delete m.pending;
         _showToast('⚠️ Sin conexión — intenta de nuevo', 4000);
     }
+    _saveConv();
+    _renderMsgs();
+}
+
+// ── Envío de mensaje Instagram ─────────────────────────────────────────────
+async function _sendIgMessage(texto, input) {
+    const num       = _state.activeNum;                    // 'ig:1'
+    const igsid     = _state.activeContact;               // igsid del contacto
+    const accountId = Number(num.replace('ig:', ''));      // 1
+    const ts        = Math.floor(Date.now() / 1000);
+    const tmpId     = ++_tmpMsgId;
+
+    // Limpiar input
+    input.value = '';
+    _autoResizeTextarea(input);
+    _updateSendVoiceBtn();
+
+    // Deshabilitar botón durante el envío (evita doble submit)
+    const sendBtn = document.getElementById('wap-send');
+    if (sendBtn) sendBtn.disabled = true;
+
+    // Mensaje optimista local
+    if (!_state.conv[num])        _state.conv[num]        = {};
+    if (!_state.conv[num][igsid]) _state.conv[num][igsid] = { canal: 'instagram', accountId, msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
+    const c = _state.conv[num][igsid];
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId });
+    c.lastMsg = texto;
+    c.lastTs  = ts;
+    _saveConv();
+    _renderMsgs();
+
+    try {
+        const r = await fetch(`${HETZNER_URL}/ig/mensajes`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ accountId, igsid, texto, asesor: _asesorActual }),
+            signal:  AbortSignal.timeout(15000),
+        });
+
+        const body = r.ok ? await r.json().catch(() => ({})) : {};
+        const m    = c.msgs.find(x => x.tmpId === tmpId);
+
+        if (r.ok && body.igMsgId && m) {
+            // Éxito: confirmar mensaje, quitar pending
+            delete m.pending;
+            delete m.tmpId;
+            m.msgId = body.igMsgId;
+        } else {
+            // Fallo HTTP o respuesta sin igMsgId: revertir mensaje optimista
+            c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
+            const errMsg = body?.error || 'Error al enviar a Instagram';
+            _showToast(`⚠️ ${errMsg}`, 4000);
+        }
+    } catch {
+        // Excepción de red: revertir mensaje optimista
+        c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
+        _showToast('⚠️ Sin conexión con el servidor', 4000);
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
+    }
+
     _saveConv();
     _renderMsgs();
 }
