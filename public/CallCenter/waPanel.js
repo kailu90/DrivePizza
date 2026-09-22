@@ -4804,7 +4804,10 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     if (!_state.conv[num]) _state.conv[num] = {};
     const isNewConv = !_state.conv[num][phone];
     if (isNewConv) {
-        _state.conv[num][phone] = { canal: 'instagram', accountId: Number(accountId), msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
+        // Inferir ciudad desde otra conv del mismo account scope (mismo accountId → misma ciudad).
+        // Si no hay convs previas aún, queda null y se corrige en el siguiente sync de 60s.
+        const ciudadScope = Object.values(_state.conv[num]).find(c => c.ciudad)?.ciudad || null;
+        _state.conv[num][phone] = { canal: 'instagram', accountId: Number(accountId), ciudad: ciudadScope, msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
     }
     const c   = _state.conv[num][phone];
     const out = !!fromMe;
@@ -4842,6 +4845,18 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     if (isNewConv || !out) _scheduleConteos();
     if (isActive) _renderMsgs(true);
     if (!isActive && !out) _flashIcon();
+    // TODO: unificar con bloque de notif WA cuando se centralice en helper _notificarInbound()
+    if (!out) {
+        const _estadoNotif = _getEstado(num, phone);
+        const _sipActivo = window._sipState === 'incall' || window._sipState === 'ringing'
+            || document.getElementById('sip-panel')?.style.display === 'block';
+        const _debeNotificar = !_sipActivo && (
+            _estadoNotif === 'en_espera'
+            || _estadoNotif === 'resuelto'
+            || (_estadoNotif === 'asignado' && _esMio(num, phone) && !isActive)
+        );
+        if (_debeNotificar) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
+    }
 }
 
 function _onIgAsignacion({ accountId, igsid, asesor }) {
