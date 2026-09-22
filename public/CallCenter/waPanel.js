@@ -6187,9 +6187,9 @@ function _updateChatHeader(phone) {
     }
 
     // Nombre de la conexión (debajo del estado)
+    const isIgHeader = String(_state.activeNum || '').startsWith('ig:');
     const conexionEl = document.getElementById('wap-chat-conexion');
     if (conexionEl) {
-        const isIgHeader = String(_state.activeNum || '').startsWith('ig:');
         if (isIgHeader) {
             conexionEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle;margin-right:3px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="#bc1888" stroke-width="2"/><circle cx="12" cy="12" r="4.5" stroke="#bc1888" stroke-width="2"/><circle cx="17" cy="7" r="1.5" fill="#bc1888"/></svg>Instagram`;
         } else {
@@ -6204,8 +6204,7 @@ function _updateChatHeader(phone) {
     // Botón "Unificar identidad": solo admin y solo WA (no aplica para IG)
     const unificarBtn = document.getElementById('wap-action-unificar');
     if (unificarBtn) {
-        const isIgHeaderU = String(_state.activeNum || '').startsWith('ig:');
-        unificarBtn.style.display = (!isIgHeaderU && ['admin', 'callcenter-admin'].includes(_rolUsuario)) ? '' : 'none';
+        unificarBtn.style.display = (!isIgHeader && ['admin', 'callcenter-admin'].includes(_rolUsuario)) ? '' : 'none';
     }
 
     // Botón "Liberar chat": solo para conversaciones IG (no existe LIBERAR real en WA)
