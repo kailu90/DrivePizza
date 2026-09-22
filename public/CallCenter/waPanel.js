@@ -3396,6 +3396,7 @@ function _renderShell(body) {
                                 <div class="wap-actions-menu" id="wap-actions-menu">
                                     <button class="wap-action-item" id="wap-action-transferir">&#8599; Transferir a...</button>
                                     <div class="wap-asesores-list" id="wap-asesores-list" style="display:none;"></div>
+                                    <button class="wap-action-item" id="wap-action-liberar-ig" style="display:none;">&#8617; Liberar chat</button>
                                     <button class="wap-action-item" id="wap-action-unificar" style="display:none;">&#128279; Unificar identidad</button>
                                 </div>
                             </div>
@@ -3687,6 +3688,11 @@ function _renderShell(body) {
                 _mostrarFormNota(list, btn.dataset.username, _state.activeNum, _state.activeContact);
             });
         });
+    });
+    document.getElementById('wap-action-liberar-ig').addEventListener('click', () => {
+        _closeActionsMenu();
+        if (_state.activeNum && _state.activeContact)
+            _liberarIgChat(_state.activeNum, _state.activeContact);
     });
     document.getElementById('wap-action-unificar').addEventListener('click', e => {
         e.stopPropagation();
@@ -3982,6 +3988,7 @@ async function _loadAsignaciones(suppressRender = false) {
 
 async function _tomarChat(num, phone) {
     if (!_asesorActual) return;
+    if (String(num).startsWith('ig:')) { await _tomarIgChat(num, phone); return; }
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones`, {
             method:  'POST',
@@ -4003,6 +4010,7 @@ async function _tomarChat(num, phone) {
 }
 
 async function _resolverChat(num, phone) {
+    if (String(num).startsWith('ig:')) { await _resolverIgChat(num, phone); return; }
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PUT',
@@ -4052,6 +4060,8 @@ async function _resolverDesdeEspera(num, phone) {
 }
 
 async function _liberarChat(num, phone) {
+    // Para IG: el botón "Resolver" enruta a _resolverIgChat (PUT resuelto)
+    if (String(num).startsWith('ig:')) { await _resolverIgChat(num, phone); return; }
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones/${encodeURIComponent(num)}/${encodeURIComponent(phone)}`, {
             method:  'PUT',
@@ -4068,6 +4078,86 @@ async function _liberarChat(num, phone) {
         _scheduleConteos();
         _showToast('Chat resuelto ✓');
     } catch { _showToast('Error de conexión', 3000); }
+}
+
+// ── Acciones operativas Instagram ──────────────────────────────────────────
+async function _tomarIgChat(num, phone) {
+    if (!_asesorActual) return;
+    const accountId = Number(num.replace('ig:', ''));
+    try {
+        const r = await fetch(`${HETZNER_URL}/ig/asignaciones`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ accountId, igsid: phone, asesor: _asesorActual }),
+        });
+        if (!r.ok) return _showToast('Error al tomar el chat', 3000);
+        _state.asignaciones[`${num}:${phone}`] = { asesor: _asesorActual, estado: 'asignado' };
+        _saveAsig();
+        _scheduleConteos();
+        _state.activeNum = num;
+        _openChat(phone);
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _resolverIgChat(num, phone) {
+    const accountId = Number(num.replace('ig:', ''));
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/ig/asignaciones/${encodeURIComponent(accountId)}/${encodeURIComponent(phone)}`,
+            { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ estado: 'resuelto' }) }
+        );
+        if (!r.ok) return _showToast('Error al resolver', 3000);
+        if (_state.asignaciones[`${num}:${phone}`]) {
+            _state.asignaciones[`${num}:${phone}`].estado = 'resuelto';
+        }
+        _saveAsig();
+        _closeChat();
+        _renderList();
+        _scheduleConteos();
+        _showToast('Chat marcado como resuelto');
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _liberarIgChat(num, phone) {
+    const accountId = Number(num.replace('ig:', ''));
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/ig/asignaciones/${encodeURIComponent(accountId)}/${encodeURIComponent(phone)}`,
+            { method: 'DELETE' }
+        );
+        if (!r.ok) return _showToast('Error al liberar el chat', 3000);
+        delete _state.asignaciones[`${num}:${phone}`];
+        _saveAsig();
+        _closeChat();
+        _renderList();
+        _scheduleConteos();
+        _showToast('Chat liberado — volvió a espera');
+    } catch { _showToast('Error de conexión', 3000); }
+}
+
+async function _transferirIgChat(num, phone, asesorNuevo, nota = null) {
+    const accountId    = Number(num.replace('ig:', ''));
+    const textoSistema = `${_asesorActual || 'Asesor'} transfirió la conversación a ${asesorNuevo}`;
+    if (!_state.conv[num])        _state.conv[num]        = {};
+    if (!_state.conv[num][phone]) _state.conv[num][phone] = { canal: 'instagram', accountId, msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
+    const c  = _state.conv[num][phone];
+    const ts = Math.floor(Date.now() / 1000);
+    c.msgs.push({ text: textoSistema, ts, tipo: 'sistema' });
+    if (nota) c.msgs.push({ text: nota, ts: ts + 1, tipo: 'nota', asesor: _asesorActual });
+    _saveConv();
+    if (_state.activeContact === phone && _state.activeNum === num) _renderMsgs();
+    try {
+        const r = await fetch(
+            `${HETZNER_URL}/ig/asignaciones/${encodeURIComponent(accountId)}/${encodeURIComponent(phone)}`,
+            { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ asesor: asesorNuevo, nota }) }
+        );
+        if (!r.ok) { _showToast('Error al transferir', 3000); return; }
+        _state.asignaciones[`${num}:${phone}`] = { asesor: asesorNuevo, estado: 'asignado' };
+        _saveAsig();
+        _showToast(`Chat transferido a ${asesorNuevo}`);
+    } catch { _showToast('Error de conexión al transferir', 3000); }
 }
 
 // ── Load sessions ──────────────────────────────────────────────────────────
@@ -4602,6 +4692,7 @@ function _mostrarFormNota(container, asesorNuevo, num, phone) {
 
 async function _transferirChat(num, phone, asesorNuevo, nota = null) {
     _closeActionsMenu();
+    if (String(num).startsWith('ig:')) { await _transferirIgChat(num, phone, asesorNuevo, nota); return; }
     // Optimista: mensaje de sistema de transferencia
     const textoSistema = `${_asesorActual || 'Asesor'} transfirió la conversación a ${asesorNuevo}`;
     if (!_state.conv[num]) _state.conv[num] = {};
@@ -5687,11 +5778,11 @@ function _renderList() {
                     ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
                     : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
-        const tomarBtn = (!isIgConv && esLibre)
+        const tomarBtn = esLibre
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
 
-        return `<div class="wap-conv-item${(!isIgConv && esLibre) ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${(!isIgConv && esLibre) ? '78px' : '12px'};">
+        return `<div class="wap-conv-item${esLibre ? ' wap-conv-item--libre' : ''}" data-phone="${phone}" data-num="${num}" style="position:relative; padding-right:${esLibre ? '78px' : '12px'};">
             <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sedeLabel)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};">${_initials(display)}</div>
             <div class="wap-conv-info">
@@ -5989,6 +6080,10 @@ function _updateChatHeader(phone) {
         const isIgHeaderU = String(_state.activeNum || '').startsWith('ig:');
         unificarBtn.style.display = (!isIgHeaderU && ['admin', 'callcenter-admin'].includes(_rolUsuario)) ? '' : 'none';
     }
+
+    // Botón "Liberar chat": solo para conversaciones IG (no existe LIBERAR real en WA)
+    const liberarIgBtn = document.getElementById('wap-action-liberar-ig');
+    if (liberarIgBtn) liberarIgBtn.style.display = isIgHeader ? '' : 'none';
 
     // Badge de color de la conexión en el borde izquierdo del header
     const header = document.querySelector('.wap-chat-header');
