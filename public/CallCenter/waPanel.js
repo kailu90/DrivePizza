@@ -3953,6 +3953,10 @@ async function _loadIgAsignaciones() {
         if (!r.ok) return;
         const data = await r.json();
         if (!Array.isArray(data)) return;
+        // Reemplazar todas las claves ig:* — una asignación eliminada en BD debe desaparecer
+        for (const k of Object.keys(_state.asignaciones)) {
+            if (k.startsWith('ig:')) delete _state.asignaciones[k];
+        }
         for (const a of data) {
             const { account_id, igsid, asesor, estado } = a;
             if (!account_id || !igsid) continue;
