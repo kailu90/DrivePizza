@@ -4397,6 +4397,11 @@ function _connectWs() {
             if (msg.tipo === 'wa:outbox_sent')   _onOutboxSent(msg);
             if (msg.tipo === 'wa:msg_failed')     _onMsgFailed(msg);
             if (msg.tipo === 'wa:msg_uncertain')  _onMsgUncertain(msg);
+            if (msg.tipo === 'ig:mensaje')        _onIgMensaje(msg);
+            if (msg.tipo === 'ig:asignacion')     _onIgAsignacion(msg);
+            if (msg.tipo === 'ig:liberacion')     _onIgLiberacion(msg);
+            if (msg.tipo === 'ig:estado')         _onIgEstado(msg);
+            if (msg.tipo === 'ig:transferencia')  _onIgTransferencia(msg);
         } catch (err) { console.error('[waPanel WS parse error]', err, e.data); }
     };
     _ws.onclose = () => {
@@ -4777,6 +4782,118 @@ function _onEstado({ numero, contacto, estado, asesor }) {
             const puedeResolver = estado === 'asignado' && (_esMio(numero, contacto) || isAdminChat);
             actionsWrap.style.display = puedeResolver ? '' : 'none';
         }
+    }
+}
+
+// ── WS handlers Instagram ──────────────────────────────────────────────────
+function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor }) {
+    const num   = 'ig:' + Number(accountId);
+    const phone = String(igsid);
+
+    if (!_state.conv[num]) _state.conv[num] = {};
+    const isNewConv = !_state.conv[num][phone];
+    if (isNewConv) {
+        _state.conv[num][phone] = { canal: 'instagram', accountId: Number(accountId), msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
+    }
+    const c   = _state.conv[num][phone];
+    const out = !!fromMe;
+
+    // Dedup por igMsgId — cubre eco outbound + duplicado webhook
+    if (igMsgId) {
+        const byId = c.msgs.find(m => m.msgId === igMsgId);
+        if (byId) {
+            _saveConv();
+            return;
+        }
+    }
+
+    // Dedup outbound contra mensajes optimistas (pending)
+    if (out && texto) {
+        const pending = c.msgs.find(m => m.out && m.pending && m.text === texto);
+        if (pending) {
+            if (igMsgId && !pending.msgId) { pending.msgId = igMsgId; delete pending.pending; delete pending.tmpId; }
+            if (!pending.asesor && asesor) pending.asesor = asesor;
+            _saveConv();
+            if (_state.activeContact === phone && _state.activeNum === num) _renderMsgs();
+            return;
+        }
+    }
+
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, tipo: 'mensaje', msgId: igMsgId || null });
+    c.lastMsg = texto || '';
+    c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
+
+    const isActive = _state.activeContact === phone && _state.activeNum === num;
+    if (!isActive && !out) c.unread++;
+
+    _saveConv();
+    _renderList();
+    if (isNewConv || !out) _scheduleConteos();
+    if (isActive) _renderMsgs(true);
+    if (!isActive && !out) _flashIcon();
+}
+
+function _onIgAsignacion({ accountId, igsid, asesor }) {
+    const num = 'ig:' + Number(accountId);
+    const key = `${num}:${igsid}`;
+    _state.asignaciones[key] = { asesor, estado: 'asignado' };
+    _saveAsig();
+    _renderList();
+    _scheduleConteos();
+    if (_state.activeContact === String(igsid) && _state.activeNum === num && asesor !== _asesorActual) {
+        _closeChat();
+        _showToast(`Chat tomado por ${asesor}`);
+    }
+}
+
+function _onIgLiberacion({ accountId, igsid }) {
+    const num = 'ig:' + Number(accountId);
+    const key = `${num}:${igsid}`;
+    delete _state.asignaciones[key];
+    _saveAsig();
+    _renderList();
+    _scheduleConteos();
+}
+
+function _onIgEstado({ accountId, igsid, estado }) {
+    const num = 'ig:' + Number(accountId);
+    const key = `${num}:${igsid}`;
+    if (_state.asignaciones[key]) {
+        _state.asignaciones[key].estado = estado;
+    }
+    _saveAsig();
+    _renderList();
+    _scheduleConteos();
+    if (_state.activeNum === num && _state.activeContact === String(igsid)) {
+        _updateChatHeader(String(igsid));
+        const actionsWrap = document.getElementById('wap-chat-actions-wrap');
+        if (actionsWrap) {
+            const puedeResolver = estado === 'asignado' && (_esMio(num, String(igsid)) || ['admin', 'callcenter-admin'].includes(_rolUsuario));
+            actionsWrap.style.display = puedeResolver ? '' : 'none';
+        }
+    }
+}
+
+function _onIgTransferencia({ accountId, igsid, asesor_nuevo }) {
+    const num = 'ig:' + Number(accountId);
+    const key = `${num}:${igsid}`;
+    if (_state.asignaciones[key]) _state.asignaciones[key].asesor = asesor_nuevo;
+    _saveAsig();
+    _renderList();
+    _scheduleConteos();
+    if (_state.activeContact === String(igsid) && _state.activeNum === num) {
+        _updateChatHeader(String(igsid));
+        const actionsWrap = document.getElementById('wap-chat-actions-wrap');
+        if (actionsWrap) {
+            const puedeResolver = _getEstado(num, String(igsid)) === 'asignado' && (_esMio(num, String(igsid)) || ['admin', 'callcenter-admin'].includes(_rolUsuario));
+            actionsWrap.style.display = puedeResolver ? '' : 'none';
+        }
+        if (asesor_nuevo !== _asesorActual) {
+            _closeChat();
+            _showToast(`Chat transferido a ${asesor_nuevo}`);
+        }
+    } else if (asesor_nuevo === _asesorActual) {
+        _showToast('Te transfirieron un chat de Instagram');
     }
 }
 
