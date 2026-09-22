@@ -51,6 +51,22 @@ function _getAsig(num, phone)   { return _state.asignaciones[`${num}:${phone}`];
 function _getEstado(num, phone) { const a = _getAsig(num, phone); return a ? (a.estado || 'asignado') : 'en_espera'; }
 function _esMio(num, phone)     { return _getAsig(num, phone)?.asesor === _asesorActual; }
 
+// ── Helpers de clave omnicanal ───────────────────────────────────────────────
+// Scope key: primera dimensión de _state.conv
+//   WA:  _scopeKey('whatsapp', '573001234567') → '573001234567'
+//   IG:  _scopeKey('instagram', '1')           → 'ig:1'
+function _scopeKey(canal, accountId) {
+    return canal === 'instagram' ? `ig:${accountId}` : String(accountId);
+}
+
+// Assignment key: clave de _state.asignaciones
+//   WA:  _asigKey('whatsapp', '573001234567', '573009876543') → '573001234567:573009876543'
+//   IG:  _asigKey('instagram', '1', '17841234567890')         → 'ig:1:17841234567890'
+// Para WA produce el mismo resultado que `${num}:${phone}` — sin rotura de compatibilidad.
+function _asigKey(canal, accountId, contactId) {
+    return canal === 'instagram' ? `ig:${accountId}:${contactId}` : `${accountId}:${contactId}`;
+}
+
 let _editingNum    = null;  // numero cuya card está en modo edición
 let _pendingColors = {};   // { [numero]: colorHex } — selección temporal antes de guardar
 
@@ -3919,12 +3935,24 @@ function _limpiarConvsAntiguas() {
 }
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
+// ── IG Asignaciones (stub — Commit B) ──────────────────────────────────────
+// Carga asignaciones Instagram y las mezcla en _state.asignaciones.
+// Modelo de entrada: [{ account_id, igsid, asesor, estado }]
+// Key: _asigKey('instagram', account_id, igsid) → 'ig:{account_id}:{igsid}'
+async function _loadIgAsignaciones() { /* implementar en Commit B */ }
+
 async function _loadAsignaciones(suppressRender = false) {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/asignaciones`);
         if (!r.ok) return;
         const data = await r.json(); // [{ numero, contacto, asesor, estado }]
-        _state.asignaciones = {};
+        // Preservar asignaciones de otros canales (ig:* keys) antes de reemplazar las WA.
+        // Sin este guard, el reset completo borraría asignaciones IG al re-sync WA.
+        const igAsig = {};
+        for (const [k, v] of Object.entries(_state.asignaciones)) {
+            if (k.startsWith('ig:')) igAsig[k] = v;
+        }
+        _state.asignaciones = { ...igAsig };
         for (const a of data) _state.asignaciones[`${a.numero}:${a.contacto}`] = { asesor: a.asesor, estado: a.estado || 'asignado' };
         _saveAsig();
         if (!suppressRender) _renderList();
@@ -4064,6 +4092,7 @@ async function _loadConversaciones(suppressRender = false) {
             if (!newConv[numero]) newConv[numero] = {};
             const prev = _state.conv[numero]?.[contacto] || {};
             newConv[numero][contacto] = {
+                canal:        'whatsapp',
                 msgs:         prev.msgs?.length ? prev.msgs : [],
                 unread:       prev.unread || 0,
                 nombre:       display_name  || nombre_cliente || prev.nombre || null, // backend: clientes BD → push_name
@@ -4098,11 +4127,24 @@ async function _loadConversaciones(suppressRender = false) {
             }
         }
 
+        // Preservar convs de otros canales (ig:* scope) — gestionadas por sus propios loaders.
+        // Sin este guard, el reemplazo completo borraría las conversaciones IG al re-sync WA.
+        for (const [key, val] of Object.entries(_state.conv)) {
+            if (key.startsWith('ig:')) newConv[key] = val;
+        }
         _state.conv = newConv;
         _saveConv();
         if (!suppressRender) _renderList();
     } catch { /* sin conexión — mantener estado actual */ }
 }
+
+// ── IG Conversaciones (stub — Commit B) ────────────────────────────────────
+// Carga conversaciones Instagram y las mezcla en _state.conv bajo scope 'ig:{accountId}'.
+// Modelo de entrada esperado: [{ account_id, igsid, nombre, ultimo_mensaje, ultimo_ts }]
+// Scope key: _scopeKey('instagram', account_id) → 'ig:{account_id}'
+// Asig key:  _asigKey('instagram', account_id, igsid) → 'ig:{account_id}:{igsid}'
+// Conv entry: { canal: 'instagram', msgs: [], unread, nombre, lastMsg, lastTs }
+async function _loadIgConversaciones() { /* implementar en Commit B */ }
 
 // ── Load contacts ──────────────────────────────────────────────────────────
 async function _loadContactos() {
@@ -7315,6 +7357,7 @@ function _loadConv() {
                 if (!_state.conv[num]) _state.conv[num] = {};
                 // Solo msgs, nombre y name como caché — lista y metadata vienen de Supabase
                 _state.conv[num][phone] = {
+                    canal:   c.canal  || null, // preservar canal desde caché
                     msgs:    c.msgs?.slice(-MAX_MSGS) || [],
                     unread:  0,
                     nombre:  c.nombre || null, // clientes BD
