@@ -5725,7 +5725,15 @@ async function _loadResueltas() {
 
     const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
-    if (!isAdmin) params.set('asesor', _asesorActual);
+    if (!isAdmin) {
+        params.set('asesor', _asesorActual);
+    } else {
+        const fa = _state.filtroAsesor;
+        if (fa.has('mio'))      params.set('asesor', _asesorActual);
+        else if (fa.size === 1) params.set('asesor', [...fa][0]);
+        // fa.size === 0: sin filtro → backend devuelve todos (correcto)
+        // fa.size > 1: multi-asesor → backend devuelve global, frontend filtra
+    }
     if (r.busqueda) params.set('busqueda', r.busqueda);
 
     // Si hay exactamente una sesión WA seleccionada, filtrar en backend antes de paginar
