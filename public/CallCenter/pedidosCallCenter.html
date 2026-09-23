@@ -366,32 +366,10 @@
     let   _lastTelLoaded  = null;   // dedup: teléfono cuya data ya está en _clienteDirs
     let   _dirTimer       = null;   // referencia al setTimeout de _aplicarDireccion
 
-    function _logDirState(label) {
-        console.log('[DIR STATE] ' + label, {
-            telefonoActual: telInput.value,
-            lastTelLoaded:  _lastTelLoaded,
-            lastTelQueried: _lastTelQueried,
-            dirsLength:     _clienteDirs.length,
-            dirTimer:       !!_dirTimer,
-            chipsDisplay:   document.getElementById('dir-chips')?.style.display,
-            verLinkDisplay: document.getElementById('dir-ver-link')?.style.display,
-            nombre:         document.getElementById('clienteNombre')?.value,
-            direccion:      document.getElementById('clienteDireccion')?.value,
-            barrio:         document.getElementById('barrioInput')?.value,
-        });
-    }
-
     function _renderDireccionesCliente(dirs) {
         const chipsEl = document.getElementById('dir-chips');
         const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
         const enModoTaller  = document.getElementById('taller-section')?.style.display  === 'block';
-        console.log('[DIR RENDER]', {
-            dirsLength: dirs?.length,
-            enModoReserva,
-            enModoTaller,
-            displayAntes: chipsEl.style.display,
-            htmlAntes: chipsEl.innerHTML
-        });
         if (!dirs.length || enModoReserva || enModoTaller) {
             chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
         }
@@ -419,10 +397,6 @@
             ${cardsHtml}
             <button type="button" class="dir-nueva-btn">+ Usar otra dirección</button>`;
         chipsEl.style.display = 'flex';
-        console.log('[DIR RENDER END]', {
-            displayDespues: chipsEl.style.display,
-            htmlLength: chipsEl.innerHTML.length
-        });
     }
 
     async function _cargarClientePorTelefono(telefono) {
@@ -431,7 +405,6 @@
         const cliente = await cargarCliente(telefono);
         // Race condition: descartar si cambió el campo o hay una consulta más reciente
         const actual = telInput.value.replace(/\D/g, '');
-        _logDirState('despues-cargarCliente:' + telefono + ' actual:' + actual);
         if (_lastTelQueried !== telefono || actual !== telefono) return;
         if (!cliente) {
             _clienteDirs = []; _lastTelLoaded = null;
@@ -442,16 +415,7 @@
         nombreInput.value = cliente.nombre || '';
         _clienteDirs   = cliente.direcciones_cliente || [];
         _lastTelLoaded = telefono;
-        console.log('[DIR DEBUG]', {
-            telefono,
-            cliente,
-            dirs: cliente?.direcciones_cliente,
-            dirsLength: cliente?.direcciones_cliente?.length,
-            lastTelLoaded: _lastTelLoaded,
-            lastTelQueried: _lastTelQueried
-        });
         _renderDireccionesCliente(_clienteDirs);
-        _logDirState('despues-render:' + telefono);
     }
 
     function _aplicarDireccion(d) {
@@ -478,7 +442,6 @@
 
         // Si había datos de un cliente anterior, limpiar estado completo al cambiar el teléfono
         if (_lastTelLoaded !== null) {
-            _logDirState('antes-limpiar');
             clearTimeout(_dirTimer);
             _clienteDirs = []; _lastTelLoaded = null;
             document.getElementById('clienteNombre').value = '';
@@ -488,7 +451,6 @@
             const chipsEl = document.getElementById('dir-chips');
             chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
             document.getElementById('dir-ver-link').style.display = 'none';
-            _logDirState('despues-limpiar');
         }
 
         if (q.length < 4) {
@@ -510,10 +472,7 @@
                 telDropdown.style.display = 'block';
             }
             // ── Carga de cliente — siempre que el número sea válido (no depende del dropdown) ──
-            if (q.length === 10 && q.startsWith('3')) {
-                _logDirState('antes-cargar:' + q);
-                _cargarClientePorTelefono(q);
-            }
+            if (q.length === 10 && q.startsWith('3')) _cargarClientePorTelefono(q);
         }, 300);
     });
 
