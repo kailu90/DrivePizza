@@ -218,7 +218,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
     // Cargar conv y asignaciones en paralelo — renderizar solo cuando AMBAS terminan.
     // Mismo patrón que la reconexión WS: evita que conv termine primero con asignaciones
     // vacías y muestre chats 'en atención' como 'En espera' (race condition).
-    Promise.all([_loadAsignaciones(true), _loadConversaciones(true), _loadIgAsignaciones(), _loadIgConversaciones()])
+    Promise.all([_loadAsignaciones(true), _loadConversaciones(true), _loadIgAsignaciones(), _loadIgConversaciones(), _loadIgCuentas()])
         .then(() => { _limpiarConvsAntiguas(); _renderList(); _scheduleConteos(); _renderAsesorPills(); _renderCiudadPills(); });
     _loadRespuestasRapidas();
     _loadAsesores();
@@ -863,6 +863,15 @@ function _injectStyles() {
 .wap-sessions-cb--checked {
     background: var(--color-primario);
     border-color: var(--color-primario);
+}
+.wap-sessions-group-header {
+    padding: 6px 12px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    user-select: none;
 }
 .wap-sessions-cb--checked::after {
     content: '';
@@ -5316,15 +5325,17 @@ function _renderSessions() {
     if (!wrap || !toggle || !el) return;
 
     const sesiones = _state.sesiones;
+    const igActivas = (_igCuentas || []).filter(c => c.status === 'active');
+    const totalConns = sesiones.length + igActivas.length;
 
-    // Con ≤1 sesión: ocultar ícono y dropdown
-    if (sesiones.length <= 1) {
+    // Con ≤1 conexión total: ocultar ícono y dropdown
+    if (totalConns <= 1) {
         toggle.style.display = 'none';
         wrap.style.display   = 'none';
         return;
     }
 
-    // Con 2+ sesiones: mostrar ícono, registrar listener una sola vez
+    // Con 2+ conexiones: mostrar ícono, registrar listener una sola vez
     toggle.style.display = '';
     if (!toggle._hasListener) {
         toggle._hasListener = true;
@@ -5344,22 +5355,45 @@ function _renderSessions() {
     const sel          = _state.filtroSesiones;
     const todasCls     = sel.size === 0 ? ' wap-sessions-item--active' : '';
     const todasChecked = sel.size === 0 ? ' wap-sessions-cb--checked'  : '';
+    // Mostrar headers de grupo solo cuando hay ambos canales
+    const hasGroups    = sesiones.length > 0 && igActivas.length > 0;
+
+    const waHtml = sesiones.map(s => {
+        const color     = _getColor(s.numero);
+        const checked   = sel.has(s.numero);
+        const activeCls = checked ? ' wap-sessions-item--active' : '';
+        const cbCls     = checked ? ' wap-sessions-cb--checked'  : '';
+        return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
+            <span class="wap-sessions-color-bar" style="background:${color};"></span>
+            <span class="wap-sessions-name">${_sessionLabel(s.numero)}</span>
+            <span class="wap-sessions-cb${cbCls}"></span>
+        </button>`;
+    }).join('');
+
+    const igHtml = igActivas.map(c => {
+        const key       = `ig:${c.id}`;
+        const color     = _getColor(key);
+        const ciudad    = (c.ciudad || '').toLowerCase();
+        const label     = ciudad ? `IG-${ciudad.toUpperCase()}` : (c.display_name || 'IG');
+        const checked   = sel.has(key);
+        const activeCls = checked ? ' wap-sessions-item--active' : '';
+        const cbCls     = checked ? ' wap-sessions-cb--checked'  : '';
+        return `<button class="wap-sessions-item${activeCls}" data-num="${key}">
+            <span class="wap-sessions-color-bar" style="background:${color};"></span>
+            <span class="wap-sessions-name">${_esc(label)}</span>
+            <span class="wap-sessions-cb${cbCls}"></span>
+        </button>`;
+    }).join('');
+
     el.innerHTML = `
         <button class="wap-sessions-item${todasCls}" data-num="">
             <span class="wap-sessions-name">Todas las conexiones</span>
             <span class="wap-sessions-cb${todasChecked}"></span>
         </button>
-        ${sesiones.map(s => {
-            const color     = _getColor(s.numero);
-            const checked   = sel.has(s.numero);
-            const activeCls = checked ? ' wap-sessions-item--active' : '';
-            const cbCls     = checked ? ' wap-sessions-cb--checked'  : '';
-            return `<button class="wap-sessions-item${activeCls}" data-num="${s.numero}">
-                <span class="wap-sessions-color-bar" style="background:${color};"></span>
-                <span class="wap-sessions-name">${_sessionLabel(s.numero)}</span>
-                <span class="wap-sessions-cb${cbCls}"></span>
-            </button>`;
-        }).join('')}
+        ${hasGroups ? '<div class="wap-sessions-group-header">WhatsApp</div>' : ''}
+        ${waHtml}
+        ${hasGroups ? '<div class="wap-sessions-group-header">Instagram</div>' : ''}
+        ${igHtml}
     `;
 
     el.querySelectorAll('.wap-sessions-item').forEach(btn => {
@@ -5601,6 +5635,7 @@ function _computeConteos() {
     // ── IG: contar conversaciones de Instagram (ig:* scope keys)
     for (const [scopeKey, convs] of Object.entries(_state.conv)) {
         if (!scopeKey.startsWith('ig:')) continue;
+        if (_state.filtroSesiones.size > 0 && !_state.filtroSesiones.has(scopeKey)) continue;
         for (const igsid of Object.keys(convs)) {
             const asig = _state.asignaciones[`${scopeKey}:${igsid}`];
             if (!asig) {
@@ -5747,8 +5782,7 @@ function _renderResueltas() {
     // Aplicar filtros transversales (asesor, ciudad, sesión) — texto lo filtra el backend
     let items = r.items;
     if (_state.filtroSesiones.size > 0) {
-        // IG convs no pertenecen a sesiones WA — las excluye del filtro de sesión (consistente con _renderList)
-        items = items.filter(c => c.canal === 'instagram' || _state.filtroSesiones.has(c.numero));
+        items = items.filter(c => _state.filtroSesiones.has(c.numero));
     }
     if (_state.filtroCiudad.size > 0) {
         items = items.filter(c => {
@@ -5883,6 +5917,7 @@ function _renderList() {
     // ── IG: agregar conversaciones de Instagram (ig:* scope keys — no pertenecen a sesionesActivas)
     for (const [scopeKey, convs] of Object.entries(_state.conv)) {
         if (!scopeKey.startsWith('ig:')) continue;
+        if (_state.filtroSesiones.size > 0 && !_state.filtroSesiones.has(scopeKey)) continue;
         for (const [igsid, data] of Object.entries(convs)) {
             allConvs.push({ num: scopeKey, phone: igsid, data });
         }
@@ -6769,8 +6804,6 @@ function _closeChat() {
 // ── Cuentas Instagram ──────────────────────────────────────────────────────
 async function _loadIgCuentas() {
     if (_igCuentas !== null) return; // ya cargadas en esta sesión
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
-    if (!isAdmin) return;
     try {
         const res  = await fetch(`${HETZNER_URL}/ig/cuentas`);
         const data = await res.json();
@@ -6778,7 +6811,9 @@ async function _loadIgCuentas() {
     } catch {
         _igCuentas = [];
     }
-    _renderSesionesView();
+    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    if (isAdmin) _renderSesionesView(); // re-render panel de conexiones si está abierto
+    _renderSessions();                  // actualizar dropdown filtro para todos
 }
 
 // ── Polling OAuth Instagram ────────────────────────────────────────────────
