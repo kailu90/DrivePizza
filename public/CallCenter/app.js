@@ -1570,6 +1570,8 @@ function limpiarFormularioCheckout() {
     document.getElementById('domicilio-precio').textContent = '';
     const _dc = document.getElementById('dir-chips');
     if (_dc) { _dc.innerHTML = ''; _dc.style.display = 'none'; }
+    const _dvl = document.getElementById('dir-ver-link');
+    if (_dvl) _dvl.style.display = 'none';
 
     _restaurarModoNormal();
 }

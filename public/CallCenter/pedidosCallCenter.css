@@ -2705,3 +2705,11 @@ body {
 
 .dir-nueva-btn:hover { opacity: .75; }
 
+#dir-ver-link {
+    display: inline-flex; align-items: center; background: none; border: none;
+    color: var(--color-primario); font-size: 1.25rem; font-weight: 600;
+    cursor: pointer; padding: 4px 0; margin-bottom: 6px;
+    text-decoration: underline; text-underline-offset: 2px;
+}
+#dir-ver-link:hover { opacity: .75; }
+

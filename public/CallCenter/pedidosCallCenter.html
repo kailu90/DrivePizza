@@ -212,6 +212,8 @@
 
             <!-- Chips de dirección: aparecen cuando el cliente tiene direcciones guardadas -->
             <div id="dir-chips" class="dir-chips full-width" style="display:none;"></div>
+            <button type="button" id="dir-ver-link" style="display:none">↩ Cambiar dirección guardada</button>
+            <button type="button" id="dir-ver-link" style="display:none">↩ Cambiar dirección guardada</button>
 
             <!-- Dirección y barrio: solo visible en domicilio — oculto en modo reserva -->
             <div id="direccion-section" class="full-width" style="display:none;">
@@ -467,6 +469,7 @@
             document.getElementById('domicilio-precio').textContent = '';
             const chipsEl = document.getElementById('dir-chips');
             chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
+            document.getElementById('dir-ver-link').style.display = 'none';
         }
 
         if (q.length < 4) {
@@ -496,6 +499,8 @@
         // Botón "Usar otra dirección"
         if (e.target.closest('.dir-nueva-btn')) {
             document.querySelectorAll('#dir-chips .dir-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('dir-chips').style.display = 'none';
+            document.getElementById('dir-ver-link').style.display = 'block';
             document.getElementById('clienteDireccion').focus();
             return;
         }
@@ -504,7 +509,16 @@
         document.querySelectorAll('#dir-chips .dir-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         const d = _clienteDirs[parseInt(card.dataset.idx)];
-        if (d) _aplicarDireccion(d);
+        if (d) {
+            _aplicarDireccion(d);
+            document.getElementById('dir-chips').style.display = 'none';
+            document.getElementById('dir-ver-link').style.display = 'block';
+        }
+    });
+
+    document.getElementById('dir-ver-link').addEventListener('click', () => {
+        document.getElementById('dir-ver-link').style.display = 'none';
+        _renderDireccionesCliente(_clienteDirs);
     });
 
     telDropdown.addEventListener('click', async e => {
