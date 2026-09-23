@@ -2591,36 +2591,117 @@ body {
 .tel-item-nombre { font-weight: 700; font-size: 1.4rem; color: #222; }
 .tel-item-tel    { font-size: 1.2rem; color: #888; }
 
-/* ── CHIPS DE DIRECCIÓN ──────────────────────────────────── */
+/* ── DIRECCIONES GUARDADAS ───────────────────────────────── */
 .dir-chips {
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 0;
     margin-bottom: 6px;
 }
 
-.dir-chip {
-    background: #f5f0ff;
-    border: 1px solid #c8b0f0;
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 1.3rem;
-    cursor: pointer;
-    color: #555;
-    transition: background .15s, border-color .15s, color .15s;
-    text-align: left;
-    line-height: 1.4;
-    max-width: 100%;
-}
+.dir-chips-hdr  { margin-bottom: 8px; }
 
-.dir-chip:hover {
-    background: #ede3ff;
-    border-color: var(--color-primario);
+.dir-chips-titulo {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
     color: #333;
 }
 
-.dir-chip.active {
-    background: var(--color-primario);
-    border-color: var(--color-primario);
-    color: #fff;
+.dir-chips-sub {
+    display: block;
+    font-size: 1.15rem;
+    color: #888;
+    margin-top: 1px;
 }
+
+.dir-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 9px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color .15s, background .15s;
+}
+
+.dir-card:hover    { border-color: var(--color-primario); background: #f5f2ff; }
+
+.dir-card.selected {
+    border-color: var(--color-primario);
+    background: #f0ecff;
+}
+
+.dir-card-radio {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color .15s, background .15s;
+}
+
+.dir-card.selected .dir-card-radio {
+    border-color: var(--color-primario);
+    background: var(--color-primario);
+}
+
+.dir-card.selected .dir-card-radio::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.dir-card-body   { flex: 1; min-width: 0; }
+
+.dir-card-badge-pred {
+    display: inline-block;
+    font-size: 1.05rem;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    margin-bottom: 3px;
+}
+
+.dir-card-addr {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dir-card-barrio {
+    font-size: 1.15rem;
+    color: #777;
+    margin-top: 1px;
+}
+
+.dir-nueva-btn {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--color-primario);
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-top: 2px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.dir-nueva-btn:hover { opacity: .75; }
 

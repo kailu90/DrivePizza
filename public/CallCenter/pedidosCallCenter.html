@@ -370,9 +370,29 @@
         if (!dirs.length || enModoReserva || enModoTaller) {
             chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
         }
-        chipsEl.innerHTML = dirs.map((d, i) =>
-            `<button type="button" class="dir-chip" data-idx="${i}">${d.predeterminada ? '★ ' : ''}${d.direccion}${d.barrio ? ' · ' + d.barrio : ''}</button>`
-        ).join('');
+        const cardsHtml = dirs.map((d, i) => {
+            const badgeHtml = d.predeterminada
+                ? '<span class="dir-card-badge-pred">★ Predeterminada</span>'
+                : '';
+            const barrioHtml = d.barrio
+                ? `<div class="dir-card-barrio">${d.barrio}</div>`
+                : '';
+            return `<div class="dir-card" data-idx="${i}" role="button" tabindex="0">
+                <div class="dir-card-radio"></div>
+                <div class="dir-card-body">
+                    ${badgeHtml}
+                    <div class="dir-card-addr">${d.direccion || ''}</div>
+                    ${barrioHtml}
+                </div>
+            </div>`;
+        }).join('');
+        chipsEl.innerHTML = `
+            <div class="dir-chips-hdr">
+                <span class="dir-chips-titulo">Direcciones guardadas</span>
+                <span class="dir-chips-sub">Selecciona una dirección o usa otra</span>
+            </div>
+            ${cardsHtml}
+            <button type="button" class="dir-nueva-btn">+ Usar otra dirección</button>`;
         chipsEl.style.display = 'flex';
     }
 
@@ -443,11 +463,17 @@
     });
 
     document.getElementById('dir-chips').addEventListener('click', e => {
-        const chip = e.target.closest('.dir-chip');
-        if (!chip) return;
-        document.querySelectorAll('#dir-chips .dir-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        const d = _clienteDirs[parseInt(chip.dataset.idx)];
+        // Botón "Usar otra dirección"
+        if (e.target.closest('.dir-nueva-btn')) {
+            document.querySelectorAll('#dir-chips .dir-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('clienteDireccion').focus();
+            return;
+        }
+        const card = e.target.closest('.dir-card');
+        if (!card) return;
+        document.querySelectorAll('#dir-chips .dir-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const d = _clienteDirs[parseInt(card.dataset.idx)];
         if (d) _aplicarDireccion(d);
     });
 
