@@ -358,12 +358,77 @@
     // ── Autocomplete teléfono ─────────────────────────────────────
     const telInput    = document.getElementById('clienteTelefono');
     const telDropdown = document.getElementById('tel-dropdown');
-    let   telTimer    = null;
+    let   telTimer        = null;
+    let   _clienteDirs    = [];
+    let   _lastTelQueried = null;   // token race condition: descarta respuestas stale
+    let   _lastTelLoaded  = null;   // dedup: teléfono cuya data ya está en _clienteDirs
+
+    function _renderDireccionesCliente(dirs) {
+        const chipsEl = document.getElementById('dir-chips');
+        const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
+        const enModoTaller  = document.getElementById('taller-section')?.style.display  === 'block';
+        if (!dirs.length || enModoReserva || enModoTaller) {
+            chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
+        }
+        chipsEl.innerHTML = dirs.map((d, i) =>
+            `<button type="button" class="dir-chip" data-idx="${i}">${d.predeterminada ? '★ ' : ''}${d.direccion}${d.barrio ? ' · ' + d.barrio : ''}</button>`
+        ).join('');
+        chipsEl.style.display = 'flex';
+    }
+
+    async function _cargarClientePorTelefono(telefono) {
+        if (_lastTelLoaded === telefono) return;            // ya cargado — evitar request duplicado
+        _lastTelQueried = telefono;
+        const cliente = await cargarCliente(telefono);
+        // Race condition: descartar si cambió el campo o hay una consulta más reciente
+        const actual = telInput.value.replace(/\D/g, '');
+        if (_lastTelQueried !== telefono || actual !== telefono) return;
+        if (!cliente) {
+            _clienteDirs = []; _lastTelLoaded = null;
+            const chipsEl = document.getElementById('dir-chips');
+            chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
+        }
+        const nombreInput = document.getElementById('clienteNombre');
+        if (!nombreInput.value.trim()) nombreInput.value = cliente.nombre || '';
+        _clienteDirs   = cliente.direcciones_cliente || [];
+        _lastTelLoaded = telefono;
+        _renderDireccionesCliente(_clienteDirs);
+    }
+
+    function _aplicarDireccion(d) {
+        if (!document.querySelector('.sede-btn.active')) {
+            const sedeBtn = document.querySelector(`.sede-btn[data-sede="${d.sede_id}"]`);
+            sedeBtn?.click();
+        }
+        const tipoActivo = document.querySelector('.entrega-btn.active')?.dataset.tipo;
+        if (tipoActivo !== 'recoger') {
+            document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
+        }
+        document.getElementById('clienteDireccion').value = d.direccion || '';
+        if (d.barrio) {
+            setTimeout(() => {
+                document.getElementById('barrioInput').value = d.barrio;
+                window.actualizarPrecioDomicilio?.();
+            }, 50);
+        }
+    }
 
     telInput.addEventListener('input', () => {
         clearTimeout(telTimer);
         const q = telInput.value.replace(/\D/g, '');
-        if (q.length < 4) { telDropdown.style.display = 'none'; return; }
+
+        // Si había datos de un cliente anterior, limpiar chips inmediatamente al cambiar el teléfono
+        if (_lastTelLoaded !== null) {
+            _clienteDirs = []; _lastTelLoaded = null;
+            const chipsEl = document.getElementById('dir-chips');
+            chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
+        }
+
+        if (q.length < 4) {
+            telDropdown.style.display = 'none';
+            _lastTelQueried = null;
+            return;
+        }
         telTimer = setTimeout(async () => {
             const results = await buscarClientes(q);
             if (!results.length) { telDropdown.style.display = 'none'; return; }
@@ -373,25 +438,9 @@
                     <span class="tel-item-tel">${c.telefono}</span>
                 </div>`).join('');
             telDropdown.style.display = 'block';
+            if (q.length === 10 && q.startsWith('3')) _cargarClientePorTelefono(q);
         }, 300);
     });
-
-    let _clienteDirs = [];
-
-    function _aplicarDireccion(d) {
-        if (!document.querySelector('.sede-btn.active')) {
-            const sedeBtn = document.querySelector(`.sede-btn[data-sede="${d.sede_id}"]`);
-            sedeBtn?.click();
-        }
-        document.querySelector('.entrega-btn[data-tipo="domicilio"]')?.click();
-        document.getElementById('clienteDireccion').value = d.direccion || '';
-        if (d.barrio) {
-            setTimeout(() => {
-                document.getElementById('barrioInput').value = d.barrio;
-                window.actualizarPrecioDomicilio?.();
-            }, 50);
-        }
-    }
 
     document.getElementById('dir-chips').addEventListener('click', e => {
         const chip = e.target.closest('.dir-chip');
@@ -405,38 +454,9 @@
     telDropdown.addEventListener('click', async e => {
         const item = e.target.closest('.tel-dropdown-item');
         if (!item) return;
-        const tel = item.dataset.tel;
-        telInput.value = tel;
+        telInput.value = item.dataset.tel;
         telDropdown.style.display = 'none';
-
-        const cliente = await cargarCliente(tel);
-        if (!cliente) return;
-
-        document.getElementById('clienteNombre').value = cliente.nombre || '';
-
-        _clienteDirs = cliente.direcciones_cliente || [];
-        const chipsEl = document.getElementById('dir-chips');
-
-        const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
-        const enModoTaller  = document.getElementById('taller-section')?.style.display  === 'block';
-        if (enModoReserva || enModoTaller) {
-            chipsEl.style.display = 'none';
-            chipsEl.innerHTML = '';
-            return;
-        }
-
-        if (!_clienteDirs.length) {
-            chipsEl.style.display = 'none';
-            chipsEl.innerHTML = '';
-            return;
-        }
-
-        chipsEl.innerHTML = _clienteDirs.map((d, i) =>
-            `<button type="button" class="dir-chip${i === 0 ? ' active' : ''}" data-idx="${i}">${d.predeterminada ? '★ ' : ''}${d.direccion}${d.barrio ? ' · ' + d.barrio : ''}</button>`
-        ).join('');
-        chipsEl.style.display = 'flex';
-
-        _aplicarDireccion(_clienteDirs[0]);
+        await _cargarClientePorTelefono(item.dataset.tel);
     });
 
     document.addEventListener('click', e => {
@@ -904,7 +924,7 @@
                 direccion: datosPedido.direccion,
                 barrio,
                 sedeId:    sede,
-            }).catch(() => {});
+            }).catch(e => console.warn('[upsertCliente]', e));
         }
 
         return data.n_pedido;
