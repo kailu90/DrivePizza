@@ -2481,9 +2481,9 @@ function _migrarLid(numero, entrada, lidPhone, realPhone) {
 
 export async function enviarMensaje(numero, destinatario, texto, asesor, quotedData, idempotencyKey) {
   const entrada = sesiones.get(numero)
-  if (!entrada) throw new Error(`Sesión ${numero} no existe`)
-  if (entrada.status !== 'conectado') {
-    if (!supabase) throw new Error(`Sesión ${numero} no disponible (estado: ${entrada.status})`)
+  // !entrada = sesión eliminada del Map durante reconexión → tratar igual que no disponible
+  if (!entrada || entrada.status !== 'conectado') {
+    if (!supabase) throw new Error(`Sesión ${numero} no disponible`)
     const destRaw = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
     const { outboxId, mensajeId } = await _outboxEnqueue({
       numero, contacto: destRaw, tipo: 'texto', texto, asesor,
@@ -2668,7 +2668,7 @@ async function _convertToOgg(buffer, inputExt = 'webm') {
 
 export async function enviarMedia(numero, destinatario, buffer, mimetype, fileName, caption, asesor, idempotencyKey) {
   const entrada = sesiones.get(numero)
-  if (!entrada) throw new Error('Sesion ' + numero + ' no existe')
+  // !entrada = sesión eliminada del Map durante reconexión → tratar igual que no disponible
 
   const destRaw = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
   const base    = mimetype.split(';')[0].trim()
@@ -2711,8 +2711,8 @@ export async function enviarMedia(numero, destinatario, buffer, mimetype, fileNa
                  : base.startsWith('audio/') ? 'voz'
                  : 'documento'
 
-  // ── Outbox: sesión no disponible — subir a Storage y encolar ─────────────
-  if (entrada.status !== 'conectado') {
+  // ── Outbox: sesión no disponible o eliminada del Map (reconexión) — subir a Storage y encolar ──
+  if (!entrada || entrada.status !== 'conectado') {
     if (!supabase) throw new Error('Sesion ' + numero + ' no disponible')
     const fileId = `ob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const { storagePath, storageUrl } = await _subirMediaForOutbox(uploadBuffer, uploadMime, tipoDesc, numero, fileId)
