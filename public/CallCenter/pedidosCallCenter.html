@@ -368,6 +368,13 @@
         const chipsEl = document.getElementById('dir-chips');
         const enModoReserva = document.getElementById('personas-section')?.style.display === 'block';
         const enModoTaller  = document.getElementById('taller-section')?.style.display  === 'block';
+        console.log('[DIR RENDER]', {
+            dirsLength: dirs?.length,
+            enModoReserva,
+            enModoTaller,
+            displayAntes: chipsEl.style.display,
+            htmlAntes: chipsEl.innerHTML
+        });
         if (!dirs.length || enModoReserva || enModoTaller) {
             chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
         }
@@ -395,6 +402,10 @@
             ${cardsHtml}
             <button type="button" class="dir-nueva-btn">+ Usar otra dirección</button>`;
         chipsEl.style.display = 'flex';
+        console.log('[DIR RENDER END]', {
+            displayDespues: chipsEl.style.display,
+            htmlLength: chipsEl.innerHTML.length
+        });
     }
 
     async function _cargarClientePorTelefono(telefono) {
@@ -413,6 +424,14 @@
         nombreInput.value = cliente.nombre || '';
         _clienteDirs   = cliente.direcciones_cliente || [];
         _lastTelLoaded = telefono;
+        console.log('[DIR DEBUG]', {
+            telefono,
+            cliente,
+            dirs: cliente?.direcciones_cliente,
+            dirsLength: cliente?.direcciones_cliente?.length,
+            lastTelLoaded: _lastTelLoaded,
+            lastTelQueried: _lastTelQueried
+        });
         _renderDireccionesCliente(_clienteDirs);
     }
 
