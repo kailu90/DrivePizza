@@ -409,7 +409,7 @@
             chipsEl.style.display = 'none'; chipsEl.innerHTML = ''; return;
         }
         const nombreInput = document.getElementById('clienteNombre');
-        if (!nombreInput.value.trim()) nombreInput.value = cliente.nombre || '';
+        nombreInput.value = cliente.nombre || '';
         _clienteDirs   = cliente.direcciones_cliente || [];
         _lastTelLoaded = telefono;
         _renderDireccionesCliente(_clienteDirs);
@@ -437,9 +437,10 @@
         clearTimeout(telTimer);
         const q = telInput.value.replace(/\D/g, '');
 
-        // Si había datos de un cliente anterior, limpiar chips inmediatamente al cambiar el teléfono
+        // Si había datos de un cliente anterior, limpiar estado completo al cambiar el teléfono
         if (_lastTelLoaded !== null) {
             _clienteDirs = []; _lastTelLoaded = null;
+            document.getElementById('clienteNombre').value = '';
             const chipsEl = document.getElementById('dir-chips');
             chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
         }
@@ -450,14 +451,19 @@
             return;
         }
         telTimer = setTimeout(async () => {
+            // ── Autocomplete dropdown — independiente de la carga de cliente ──
             const results = await buscarClientes(q);
-            if (!results.length) { telDropdown.style.display = 'none'; return; }
-            telDropdown.innerHTML = results.map(c => `
-                <div class="tel-dropdown-item" data-tel="${c.telefono}">
-                    <span class="tel-item-nombre">${c.nombre}</span>
-                    <span class="tel-item-tel">${c.telefono}</span>
-                </div>`).join('');
-            telDropdown.style.display = 'block';
+            if (!results.length) {
+                telDropdown.style.display = 'none';
+            } else {
+                telDropdown.innerHTML = results.map(c => `
+                    <div class="tel-dropdown-item" data-tel="${c.telefono}">
+                        <span class="tel-item-nombre">${c.nombre}</span>
+                        <span class="tel-item-tel">${c.telefono}</span>
+                    </div>`).join('');
+                telDropdown.style.display = 'block';
+            }
+            // ── Carga de cliente — siempre que el número sea válido (no depende del dropdown) ──
             if (q.length === 10 && q.startsWith('3')) _cargarClientePorTelefono(q);
         }, 300);
     });
