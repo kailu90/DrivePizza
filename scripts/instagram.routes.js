@@ -320,6 +320,54 @@ export async function instagramRoutes(fastify, options) {
     return reply.send(normalized)
   })
 
+  // ── GET /ig/conversaciones/resueltas — lista paginada de chats IG resueltos
+  // ?offset=0&limit=20&asesor=nombre&busqueda=texto
+  fastify.get('/ig/conversaciones/resueltas', async (request, reply) => {
+    if (!supabase) return reply.code(503).send({ ok: false, error: 'BD no disponible' })
+    const offset   = parseInt(request.query.offset || '0', 10) || 0
+    const limit    = Math.min(parseInt(request.query.limit  || '20',  10), 200)
+    const asesor   = request.query.asesor   || null
+    const busqueda = request.query.busqueda || null
+
+    let q = supabase
+      .from('ig_conversations')
+      .select('account_id, assigned_agent, last_message_at, ig_contacts(igsid, nombre, username), channel_accounts(ciudad)')
+      .eq('status', 'resolved')
+      .order('last_message_at', { ascending: false, nullsFirst: false })
+      .range(offset, offset + limit - 1)
+
+    if (asesor) q = q.eq('assigned_agent', asesor)
+
+    const { data, error } = await q
+    if (error) {
+      fastify.log.error({ error }, 'ig/conversaciones/resueltas: error BD')
+      return reply.code(500).send({ ok: false, error: 'Error al obtener resueltas IG' })
+    }
+
+    let items = (data || []).map(c => ({
+      account_id: c.account_id,
+      igsid:      c.ig_contacts?.igsid    || null,
+      nombre:     c.ig_contacts?.nombre   || null,
+      username:   c.ig_contacts?.username || null,
+      ciudad:     c.channel_accounts?.ciudad?.toLowerCase() || null,
+      asesor:     c.assigned_agent        || null,
+      ultimo_ts:  c.last_message_at
+        ? Math.floor(new Date(c.last_message_at).getTime() / 1000)
+        : null,
+    }))
+
+    if (busqueda) {
+      const q_low = busqueda.toLowerCase()
+      items = items.filter(i =>
+        (i.nombre   || '').toLowerCase().includes(q_low) ||
+        (i.username || '').toLowerCase().includes(q_low) ||
+        (i.igsid    || '').toLowerCase().includes(q_low)
+      )
+    }
+
+    return reply.send(items)
+  })
+
   // ── GET /ig/asignaciones ─────────────────────────────────────────────────
   fastify.get('/ig/asignaciones', async (request, reply) => {
     if (!supabase) return reply.code(503).send({ ok: false, error: 'BD no disponible' })

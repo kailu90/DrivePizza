@@ -5679,24 +5679,53 @@ async function _loadResueltas() {
     if (r.busqueda) params.set('busqueda', r.busqueda);
 
     try {
-        const res  = await fetch(`${HETZNER_URL}/wa/conversaciones/resueltas?${params}`);
-        const data = res.ok ? await res.json() : [];
-        r.items.push(...(Array.isArray(data) ? data : []));
-        r.offset += data.length;
-        r.done    = data.length < 20;
+        // ── WA resueltas — paginado, sin cambios de comportamiento
+        const resWa  = await fetch(`${HETZNER_URL}/wa/conversaciones/resueltas?${params}`);
+        const dataWa = resWa.ok ? await resWa.json() : [];
+        const waArr  = Array.isArray(dataWa) ? dataWa : [];
 
-        // Pre-poblar _state.conv con nombre_cliente/nombre para evitar mostrar el lid crudo
-        // También marcar en _state.asignaciones como resuelto para que _getEstado no los
-        // muestre como 'en_espera' si el usuario vuelve a otra tab.
-        for (const c of (Array.isArray(data) ? data : [])) {
+        // ── IG resueltas — carga única en la primera página (máx 200 registros)
+        let igNorm = [];
+        if (!r.igLoaded) {
+            const igP = new URLSearchParams({ offset: 0, limit: 200 });
+            if (!isAdmin) igP.set('asesor', _asesorActual);
+            if (r.busqueda) igP.set('busqueda', r.busqueda);
+            try {
+                const resIg  = await fetch(`${HETZNER_URL}/ig/conversaciones/resueltas?${igP}`);
+                const dataIg = resIg.ok ? await resIg.json() : [];
+                igNorm = (Array.isArray(dataIg) ? dataIg : []).map(c => ({
+                    numero:         `ig:${c.account_id}`,
+                    contacto:       c.igsid,
+                    asesor:         c.asesor         || null,
+                    ultimo_ts:      c.ultimo_ts      || null,
+                    nombre_cliente: c.nombre         || null,
+                    display_name:   c.nombre || c.username || null,
+                    canal:          'instagram',
+                    ciudad:         c.ciudad         || null,
+                }));
+            } catch { /* IG sin conexión — continuar sin IG */ }
+            r.igLoaded = true;
+        }
+
+        // ── Combinar, ordenar y persistir
+        const allNew = [...waArr, ...igNorm];
+        r.items.push(...allNew);
+        r.items.sort((a, b) => (b.ultimo_ts || 0) - (a.ultimo_ts || 0));
+        r.offset += waArr.length;
+        r.done    = waArr.length < 20; // IG ya cargado completo; WA marca el fin de paginación
+
+        // Pre-poblar _state.conv y _state.asignaciones para evitar lid crudo y estados huérfanos
+        for (const c of allNew) {
             if (!c.numero || !c.contacto) continue;
             if (!_state.conv[c.numero])             _state.conv[c.numero] = {};
             if (!_state.conv[c.numero][c.contacto]) _state.conv[c.numero][c.contacto] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0 };
-            const cv  = _state.conv[c.numero][c.contacto];
+            const cv = _state.conv[c.numero][c.contacto];
             if ((c.display_name || c.nombre_cliente) && !cv.nombre) cv.nombre = c.display_name || c.nombre_cliente;
-            if (c.nombre && !cv.name) cv.name = c.nombre;
-            if (c.display_phone  && !cv.display_phone)  cv.display_phone  = c.display_phone;
-            if (c.customer_id    && !cv.customer_id)    cv.customer_id    = c.customer_id;
+            if (c.nombre         && !cv.name)         cv.name         = c.nombre;
+            if (c.display_phone  && !cv.display_phone) cv.display_phone = c.display_phone;
+            if (c.customer_id    && !cv.customer_id)   cv.customer_id   = c.customer_id;
+            if (c.ciudad         && !cv.ciudad)        cv.ciudad        = c.ciudad;
+            if (c.canal === 'instagram' && !cv.canal)  cv.canal         = 'instagram';
             const key = `${c.numero}:${c.contacto}`;
             if (!_state.asignaciones[key]) {
                 _state.asignaciones[key] = { asesor: c.asesor || null, estado: 'resuelto' };
@@ -5718,10 +5747,16 @@ function _renderResueltas() {
     // Aplicar filtros transversales (asesor, ciudad, sesión) — texto lo filtra el backend
     let items = r.items;
     if (_state.filtroSesiones.size > 0) {
-        items = items.filter(c => _state.filtroSesiones.has(c.numero));
+        // IG convs no pertenecen a sesiones WA — las excluye del filtro de sesión (consistente con _renderList)
+        items = items.filter(c => c.canal === 'instagram' || _state.filtroSesiones.has(c.numero));
     }
     if (_state.filtroCiudad.size > 0) {
-        items = items.filter(c => _state.filtroCiudad.has(_ciudadDeSesion(c.numero)));
+        items = items.filter(c => {
+            const ciudad = (c.canal === 'instagram' || String(c.numero).startsWith('ig:'))
+                ? (c.ciudad || '')
+                : _ciudadDeSesion(c.numero);
+            return _state.filtroCiudad.has(ciudad);
+        });
     }
     if (_state.filtroAsesor.size > 0) {
         const fa     = _state.filtroAsesor;
@@ -5740,16 +5775,15 @@ function _renderResueltas() {
 
     // Agrupar por fecha: insertar separador HOY / AYER / DD MMM YYYY
     let lastLabel = null;
+    const WA_SVG = `<svg width="12" height="12" viewBox="0 0 32 32" fill="#25D366" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.833.738 5.494 2.027 7.808L0 32l8.418-2.004A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.267 13.267 0 0 1-6.74-1.833l-.484-.287-5.002 1.19 1.224-4.867-.315-.5A13.28 13.28 0 0 1 2.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.874c-.398-.199-2.355-1.162-2.72-1.294-.365-.133-.63-.199-.895.199-.266.398-1.029 1.294-1.261 1.56-.232.265-.465.298-.863.1-.398-.2-1.681-.62-3.202-1.977-1.184-1.056-1.983-2.36-2.215-2.758-.232-.398-.025-.613.174-.811.179-.178.398-.465.597-.698.2-.232.266-.398.398-.663.133-.266.067-.498-.033-.697-.1-.2-.895-2.158-1.227-2.955-.323-.776-.651-.671-.895-.683l-.763-.013c-.265 0-.696.1-.1.06 1.494-.265 1.96-.199 2.657.199.697.398 2.456 2.357 2.456 5.748 0 3.39-2.456 6.681-2.821 6.946z"/></svg>`;
+    const IG_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C13584" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#C13584" stroke="none"/></svg>`;
     const html = items.map(c => {
+        const isIgConv = c.canal === 'instagram' || String(c.numero).startsWith('ig:');
         const color    = _getColor(c.numero);
         const convData = _state.conv[c.numero]?.[c.contacto];
         const display  = convData?.nombre || c.display_name || c.nombre_cliente || convData?.name || _fmtPhone(convData?.display_phone || c.display_phone || c.contacto);
         const ts       = c.ultimo_ts ? _fmtTsHora(c.ultimo_ts) : '';
         const isActive = _state.activeContact === c.contacto && _state.activeNum === c.numero;
-
-        // Sede desde sesiones en memoria
-        const sesInfo = _state.sesiones.find(s => s.numero === c.numero);
-        const sede    = sesInfo?.sede ? _capitalizarSede(sesInfo.sede) : '';
 
         // Separador de fecha
         const dateLabel = c.ultimo_ts ? _dateLabelResueltas(c.ultimo_ts) : null;
@@ -5758,29 +5792,43 @@ function _renderResueltas() {
             : '';
         if (dateLabel) lastLabel = dateLabel;
 
-        // Badge de sede (verde fijo)
-        const sedeBadge = sede
-            ? `<span class="wap-r-sede-badge">${_esc(sede)}</span>`
-            : '';
+        let badgeHtml, asesorEl, tooltipStr;
 
-        // Asesor con ícono WA
-        const WA_SVG = `<svg width="12" height="12" viewBox="0 0 32 32" fill="#25D366" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.833.738 5.494 2.027 7.808L0 32l8.418-2.004A15.94 15.94 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.267 13.267 0 0 1-6.74-1.833l-.484-.287-5.002 1.19 1.224-4.867-.315-.5A13.28 13.28 0 0 1 2.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.874c-.398-.199-2.355-1.162-2.72-1.294-.365-.133-.63-.199-.895.199-.266.398-1.029 1.294-1.261 1.56-.232.265-.465.298-.863.1-.398-.2-1.681-.62-3.202-1.977-1.184-1.056-1.983-2.36-2.215-2.758-.232-.398-.025-.613.174-.811.179-.178.398-.465.597-.698.2-.232.266-.398.398-.663.133-.266.067-.498-.033-.697-.1-.2-.895-2.158-1.227-2.955-.323-.776-.651-.671-.895-.683l-.763-.013c-.265 0-.696.1-.1.06 1.494-.265 1.96-.199 2.657.199.697.398 2.456 2.357 2.456 5.748 0 3.39-2.456 6.681-2.821 6.946z"/></svg>`;
-        const asesorEl = c.asesor
-            ? `<span class="wap-r-asesor">${WA_SVG}Resuelto por <strong>${_esc(c.asesor)}</strong></span>`
-            : '';
+        if (isIgConv) {
+            // ── Instagram: badge ciudad + ícono IG
+            const igCiudad = (c.ciudad || convData?.ciudad || '').toLowerCase();
+            const igCls    = igCiudad === 'cartago' ? 'wap-ciudad-badge--ctg'
+                           : igCiudad               ? 'wap-ciudad-badge--bga'
+                           : 'wap-ciudad-badge--ig';
+            const igTxt    = igCiudad ? `IG-${igCiudad.toUpperCase()}` : 'IG';
+            badgeHtml  = `<span class="wap-ciudad-badge ${igCls}">${igTxt}</span>`;
+            tooltipStr = igCiudad ? igTxt : 'Instagram';
+            asesorEl   = c.asesor
+                ? `<span class="wap-r-asesor">${IG_SVG}Resuelto por <strong>${_esc(c.asesor)}</strong></span>`
+                : '';
+        } else {
+            // ── WhatsApp: badge sede + ícono WA (sin cambios)
+            const sesInfo = _state.sesiones.find(s => s.numero === c.numero);
+            const sede    = sesInfo?.sede ? _capitalizarSede(sesInfo.sede) : '';
+            badgeHtml  = sede ? `<span class="wap-r-sede-badge">${_esc(sede)}</span>` : '';
+            tooltipStr = sede;
+            asesorEl   = c.asesor
+                ? `<span class="wap-r-asesor">${WA_SVG}Resuelto por <strong>${_esc(c.asesor)}</strong></span>`
+                : '';
+        }
 
         return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
                     style="align-items:flex-start;padding-right:12px;">
-            <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(sede)}"></div>
+            <div class="wap-conv-stripe" style="background:${color};" data-tooltip="${_esc(tooltipStr)}"></div>
             <div class="wap-avatar" style="background:${color};color:${_textColorForBg(color)};margin-top:2px;flex-shrink:0;">${_initials(display)}</div>
             <div class="wap-conv-info">
                 <div class="wap-conv-row">
                     <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
-                ${sedeBadge ? `<div style="margin-top:3px;">${sedeBadge}</div>` : ''}
-                ${asesorEl ? `<div>${asesorEl}</div>` : ''}
+                ${badgeHtml ? `<div style="margin-top:3px;">${badgeHtml}</div>` : ''}
+                ${asesorEl  ? `<div>${asesorEl}</div>`                          : ''}
             </div>
         </div>`;
     }).join('');
