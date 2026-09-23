@@ -5725,15 +5725,16 @@ async function _loadResueltas() {
 
     const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
-    if (!isAdmin) {
-        params.set('asesor', _asesorActual);
-    } else {
-        const fa = _state.filtroAsesor;
-        if (fa.has('mio'))      params.set('asesor', _asesorActual);
-        else if (fa.size === 1) params.set('asesor', [...fa][0]);
-        // fa.size === 0: sin filtro → backend devuelve todos (correcto)
-        // fa.size > 1: multi-asesor → backend devuelve global, frontend filtra
-    }
+    const fa       = _state.filtroAsesor;
+
+    // Construir array de asesores para filtrar en backend (WA soporta multi, IG solo uno)
+    let asesorArr = null;
+    if (!isAdmin)       asesorArr = [_asesorActual];
+    else if (fa.has('mio'))  asesorArr = [_asesorActual];
+    else if (fa.size >= 1)   asesorArr = [...fa];
+    // fa.size === 0 → null → backend sin filtro de asesor (devuelve todos)
+
+    if (asesorArr) params.set('asesores', asesorArr.join(','));
     if (r.busqueda) params.set('busqueda', r.busqueda);
 
     // Si hay exactamente una sesión WA seleccionada, filtrar en backend antes de paginar
@@ -5748,10 +5749,11 @@ async function _loadResueltas() {
         const waArr  = Array.isArray(dataWa) ? dataWa : [];
 
         // ── IG resueltas — carga única en la primera página (máx 200 registros)
+        // IG solo acepta un asesor; con multi-asesor no filtra en backend (frontend filtra)
         let igNorm = [];
         if (!r.igLoaded) {
             const igP = new URLSearchParams({ offset: 0, limit: 200 });
-            if (!isAdmin) igP.set('asesor', _asesorActual);
+            if (asesorArr?.length === 1) igP.set('asesor', asesorArr[0]);
             if (r.busqueda) igP.set('busqueda', r.busqueda);
             try {
                 const resIg  = await fetch(`${HETZNER_URL}/ig/conversaciones/resueltas?${igP}`);
