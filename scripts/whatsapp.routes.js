@@ -707,16 +707,17 @@ export async function whatsappRoutes(fastify, options) {
 // GET /wa/conversaciones/resueltas -- lista paginada de chats resueltos  // ?offset=0&limit=20&asesor=nombre  fastify.get("/wa/conversaciones/resueltas", async (req, reply) => {    if (!supabase) return []    const offset = parseInt(req.query.offset) || 0    const limit  = Math.min(parseInt(req.query.limit) || 20, 50)    const asesor = req.query.asesor || null    try {      let q = supabase.from("asignaciones_wa")        .select("numero, contacto, asesor")        .eq("activo", true).eq("estado", "resuelto")      if (asesor) q = q.eq("asesor", asesor)      const { data: asigs, error: e1 } = await q      if (e1) throw e1      if (!asigs?.length) return []      // Ultimo mensaje de cada asignacion via Supabase      const pares = asigs.map(a => ).join(",")      const { data: msgs, error: e2 } = await supabase        .from("mensajes_wa")        .select("numero, contacto, nombre, texto, timestamp")        .filter("(numero,contacto)", "in", )        .order("timestamp", { ascending: false })      if (e2) throw e2      // DISTINCT ON por (numero, contacto) -- el primero es el mas reciente      const seen = new Set()      const lastMsg = {}      for (const m of (msgs || [])) {        const k = m.numero + ":" + m.contacto        if (!seen.has(k)) { seen.add(k); lastMsg[k] = m }      }      // Combinar asigs + lastMsg, ordenar por ultimo_ts DESC, paginar      const result = asigs.map(a => {        const k = a.numero + ":" + a.contacto        const m = lastMsg[k] || {}        return { numero: a.numero, contacto: a.contacto, asesor: a.asesor,                 nombre: m.nombre || null, ultimo_mensaje: m.texto || null, ultimo_ts: m.timestamp || 0 }      }).sort((a, b) => b.ultimo_ts - a.ultimo_ts)        .slice(offset, offset + limit)      // Enriquecer con nombres desde clientes      const toTel = c => (c?.length === 12 && c?.startsWith("57")) ? c.slice(2) : c      const tels  = [...new Set(result.map(c => toTel(c.contacto)).filter(Boolean))]      const { data: clientes } = await supabase.from("clientes").select("telefono, nombre").in("telefono", tels)      const clienteMap = Object.fromEntries((clientes || []).map(c => [c.telefono, c.nombre]))      return result.map(c => ({ ...c, nombre_cliente: clienteMap[toTel(c.contacto)] || null }))    } catch (e) {      return reply.code(500).send({ error: e.message })    }  })
 
   // GET /wa/conversaciones/resueltas — lista paginada de chats resueltos
-  // ?offset=0&limit=20&asesor=nombre&busqueda=texto
+  // ?offset=0&limit=20&asesor=nombre&busqueda=texto&numero=573...
   fastify.get('/wa/conversaciones/resueltas', async (req, reply) => {
     if (!supabase) return []
     const offset   = parseInt(req.query.offset) || 0
     const limit    = Math.min(parseInt(req.query.limit) || 20, 50)
-    const asesor   = req.query.asesor    || null
-    const busqueda = req.query.busqueda  || null
+    const asesor   = req.query.asesor   || null
+    const busqueda = req.query.busqueda || null
+    const numero   = req.query.numero   || null
     try {
       const { data, error } = await supabase.rpc('wa_conversaciones_resueltas', {
-        p_offset: offset, p_limit: limit, p_asesor: asesor, p_busqueda: busqueda
+        p_offset: offset, p_limit: limit, p_asesor: asesor, p_busqueda: busqueda, p_numero: numero
       })
       if (error) throw error
       if (!data?.length) return []

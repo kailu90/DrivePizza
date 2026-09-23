@@ -5404,6 +5404,7 @@ function _renderSessions() {
             else sel.add(num);
             _renderSessions();
             _scheduleConteos();
+            if (_state.filtroEstado === 'resuelto') _resetResueltas();
             _renderList();
         });
     });
@@ -5476,6 +5477,7 @@ function _renderAsesorPills(keepOpen = false) {
             _renderAsesorPills(key !== null);
             _renderCiudadPills();
             _scheduleConteos();
+            if (_state.filtroEstado === 'resuelto') _resetResueltas();
             _renderList();
         });
     });
@@ -5566,6 +5568,7 @@ function _renderCiudadPills(keepOpen = false) {
                 else _state.filtroCiudad.add(key);
             }
             _renderCiudadPills(key !== null);
+            if (_state.filtroEstado === 'resuelto') _resetResueltas();
             _renderList();
         });
     });
@@ -5599,6 +5602,7 @@ function _renderFiltroAsesor() {
         else { _state.filtroAsesor.clear(); _state.filtroAsesor.add('mio'); }
         _scheduleConteos();
         _renderFiltros();
+        if (_state.filtroEstado === 'resuelto') _resetResueltas();
         _renderList();
     });
 }
@@ -5702,6 +5706,17 @@ function _renderFiltros() {
 // ── Resueltas — carga paginada ─────────────────────────────────────────────
 let _resueltasObserver = null;
 
+// Resetea el estado de Resueltos e inicia una nueva carga desde cero.
+// Llamar desde cualquier handler de filtro cuando filtroEstado === 'resuelto'.
+function _resetResueltas() {
+    if (_resueltasObserver) { _resueltasObserver.disconnect(); _resueltasObserver = null; }
+    _state.resueltas = {
+        items: [], offset: 0, loading: false, done: false, igLoaded: false,
+        busqueda: _state.resueltas.busqueda || '',
+    };
+    _loadResueltas();
+}
+
 async function _loadResueltas() {
     const r = _state.resueltas;
     if (r.loading || r.done) return;
@@ -5712,6 +5727,11 @@ async function _loadResueltas() {
     const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
     if (!isAdmin) params.set('asesor', _asesorActual);
     if (r.busqueda) params.set('busqueda', r.busqueda);
+
+    // Si hay exactamente una sesión WA seleccionada, filtrar en backend antes de paginar
+    const sel = _state.filtroSesiones;
+    const soloUnaWa = sel.size === 1 && ![...sel][0].startsWith('ig:');
+    if (soloUnaWa) params.set('numero', [...sel][0]);
 
     try {
         // ── WA resueltas — paginado, sin cambios de comportamiento
