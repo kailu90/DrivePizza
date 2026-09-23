@@ -2619,19 +2619,19 @@ body {
     align-items: center;
     gap: 10px;
     padding: 9px 11px;
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid #cdc3b3;
     border-radius: 9px;
     margin-bottom: 5px;
     cursor: pointer;
-    background: #fff;
-    transition: border-color .15s, background .15s;
+    background: var(--color-secundario);
+    transition: border-color .15s, box-shadow .15s;
 }
 
-.dir-card:hover    { border-color: var(--color-primario); background: #f5f2ff; }
+.dir-card:hover    { border-color: var(--color-primario); }
 
 .dir-card.selected {
     border-color: var(--color-primario);
-    background: #f0ecff;
+    box-shadow: 0 0 0 2px rgba(40, 76, 34, 0.18);
 }
 
 .dir-card-radio {
