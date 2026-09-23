@@ -362,6 +362,7 @@
     let   _clienteDirs    = [];
     let   _lastTelQueried = null;   // token race condition: descarta respuestas stale
     let   _lastTelLoaded  = null;   // dedup: teléfono cuya data ya está en _clienteDirs
+    let   _dirTimer       = null;   // referencia al setTimeout de _aplicarDireccion
 
     function _renderDireccionesCliente(dirs) {
         const chipsEl = document.getElementById('dir-chips');
@@ -426,7 +427,7 @@
         }
         document.getElementById('clienteDireccion').value = d.direccion || '';
         if (d.barrio) {
-            setTimeout(() => {
+            _dirTimer = setTimeout(() => {
                 document.getElementById('barrioInput').value = d.barrio;
                 window.actualizarPrecioDomicilio?.();
             }, 50);
@@ -439,8 +440,12 @@
 
         // Si había datos de un cliente anterior, limpiar estado completo al cambiar el teléfono
         if (_lastTelLoaded !== null) {
+            clearTimeout(_dirTimer);
             _clienteDirs = []; _lastTelLoaded = null;
             document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteDireccion').value = '';
+            document.getElementById('barrioInput').value = '';
+            document.getElementById('domicilio-precio').textContent = '';
             const chipsEl = document.getElementById('dir-chips');
             chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
         }
