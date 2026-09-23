@@ -5802,6 +5802,12 @@ function _renderResueltas() {
         );
     }
 
+    // Auto-paginar si el filtro de sesión activo no tiene resultados en las páginas cargadas
+    if (!items.length && !r.loading && !r.done && _state.filtroSesiones.size > 0) {
+        _loadResueltas();
+        return;
+    }
+
     if (!items.length && !r.loading) {
         el.innerHTML = `<div class="wap-empty">No hay chats resueltos</div>`;
         return;
