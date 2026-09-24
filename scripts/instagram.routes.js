@@ -490,7 +490,7 @@ export async function instagramRoutes(fastify, options) {
   fastify.patch('/ig/asignaciones/:accountId/:igsid', async (request, reply) => {
     if (!supabase) return reply.code(503).send({ ok: false, error: 'BD no disponible' })
     const { accountId, igsid }    = request.params
-    const { asesor: asesorNuevo, nota } = request.body || {}
+    const { asesor: asesorNuevo, asesor_actual: asesorActual, nota } = request.body || {}
     if (!asesorNuevo)
       return reply.code(400).send({ ok: false, error: 'asesor requerido' })
 
@@ -515,6 +515,62 @@ export async function instagramRoutes(fastify, options) {
         .update({ assigned_agent: asesorNuevo })
         .eq('account_id', accountId)
         .eq('ig_contact_id', contact.id)
+
+      // Persistir y broadcast mensaje de sistema + nota (igual que WA)
+      const { data: convData } = await supabase
+        .from('ig_conversations')
+        .select('id')
+        .eq('account_id', accountId)
+        .eq('ig_contact_id', contact.id)
+        .single()
+
+      if (convData) {
+        const ts       = Math.floor(Date.now() / 1000)
+        const remitente = asesorActual || 'Asesor'
+        const textoSis = `${remitente} transfirió la conversación a ${asesorNuevo}`
+
+        await supabase.from('ig_messages').insert({
+          ig_conversation_id: convData.id,
+          direction:          'inbound',
+          tipo:               'sistema',
+          texto:              textoSis,
+          timestamp:          ts,
+        })
+        _broadcast(wsClients, {
+          tipo:        'ig:mensaje',
+          accountId,
+          igsid,
+          texto:       textoSis,
+          timestamp:   ts,
+          igMsgId:     null,
+          fromMe:      false,
+          tipoMensaje: 'sistema',
+          convStatus:  'assigned',
+        })
+
+        if (nota?.trim()) {
+          await supabase.from('ig_messages').insert({
+            ig_conversation_id: convData.id,
+            direction:          'inbound',
+            tipo:               'nota',
+            texto:              nota.trim(),
+            timestamp:          ts + 1,
+            asesor:             remitente,
+          })
+          _broadcast(wsClients, {
+            tipo:        'ig:mensaje',
+            accountId,
+            igsid,
+            texto:       nota.trim(),
+            timestamp:   ts + 1,
+            igMsgId:     null,
+            fromMe:      false,
+            tipoMensaje: 'nota',
+            asesor:      remitente,
+            convStatus:  'assigned',
+          })
+        }
+      }
     }
 
     _broadcast(wsClients, { tipo: 'ig:transferencia', accountId, igsid, asesor_nuevo: asesorNuevo })

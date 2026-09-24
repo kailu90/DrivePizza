@@ -4164,7 +4164,7 @@ async function _transferirIgChat(num, phone, asesorNuevo, nota = null) {
         const r = await fetch(
             `${HETZNER_URL}/ig/asignaciones/${encodeURIComponent(accountId)}/${encodeURIComponent(phone)}`,
             { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ asesor: asesorNuevo, nota }) }
+              body: JSON.stringify({ asesor: asesorNuevo, asesor_actual: _asesorActual, nota }) }
         );
         if (!r.ok) { _showToast('Error al transferir', 3000); return; }
         _state.asignaciones[`${num}:${phone}`] = { asesor: asesorNuevo, estado: 'asignado' };
@@ -4800,7 +4800,7 @@ function _onEstado({ numero, contacto, estado, asesor }) {
 }
 
 // ── WS handlers Instagram ──────────────────────────────────────────────────
-function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor, convStatus }) {
+function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor, convStatus, tipoMensaje }) {
     const num   = 'ig:' + Number(accountId);
     const phone = String(igsid);
 
@@ -4845,7 +4845,12 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
         }
     }
 
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, tipo: 'mensaje', msgId: igMsgId || null });
+    // Dedup sistema/nota — evita duplicar optimista de _transferirIgChat con el eco WS
+    if ((tipoMensaje === 'sistema' || tipoMensaje === 'nota') && texto) {
+        if (c.msgs.some(m => m.tipo === tipoMensaje && m.text === texto)) return;
+    }
+
+    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, tipo: tipoMensaje || 'mensaje', msgId: igMsgId || null });
     c.lastMsg = texto || '';
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
