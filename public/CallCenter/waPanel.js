@@ -4856,6 +4856,12 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     _renderList();
     if (isNewConv || !out) _scheduleConteos();
     if (isActive) _renderMsgs(true);
+    if (isActive && convStatus === 'waiting') {
+        _updateChatHeader(phone);
+        _updateOfflineBar();
+        const actionsWrap = document.getElementById('wap-chat-actions-wrap');
+        if (actionsWrap) actionsWrap.style.display = 'none';
+    }
     if (!isActive && !out) _flashIcon();
     // TODO: unificar con bloque de notif WA cuando se centralice en helper _notificarInbound()
     if (!out) {
@@ -4903,6 +4909,7 @@ function _onIgEstado({ accountId, igsid, estado }) {
     _renderList();
     _scheduleConteos();
     if (_state.activeNum === num && _state.activeContact === String(igsid)) {
+        _updateOfflineBar();
         _updateChatHeader(String(igsid));
         const actionsWrap = document.getElementById('wap-chat-actions-wrap');
         if (actionsWrap) {
@@ -6115,7 +6122,7 @@ function _openChat(phone) {
 
     // Mostrar msgs locales de inmediato, luego reemplazar con Supabase
     _renderMsgs(true);
-    if (!isIg) _updateOfflineBar(); // mostrar/ocultar banner según estado de sesión WA
+    _updateOfflineBar(); // mostrar/ocultar barras según estado (WA y IG)
     _renderList(); // actualizar badge en background
     if (isIg) {
         _loadIgMsgsSupabase(Number(_state.activeNum.replace('ig:', '')), phone);
