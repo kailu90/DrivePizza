@@ -4850,6 +4850,7 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
     const isActive = _state.activeContact === phone && _state.activeNum === num;
+    console.log('[IG ACTIVE DEBUG]', { eventNum: num, eventPhone: phone, accountId, igsid, activeNum: _state.activeNum, activeContact: _state.activeContact, isActive, convExiste: !!_state.conv?.[num]?.[phone] });
     if (!isActive && !out) c.unread++;
 
     _saveConv();
