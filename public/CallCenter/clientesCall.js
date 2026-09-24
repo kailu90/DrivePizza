@@ -1,4 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
+import { normDirKey } from '../Shared/normalizarDir.js';
 
 /** Normaliza teléfono: extrae número colombiano de 10 dígitos (ej: 573127410992 → 3127410992) */
 function normTel(t) {
@@ -59,19 +60,22 @@ export async function upsertCliente({ telefono, nombre, direccion, barrio, sedeI
 
     if (error || !cliente?.id || !direccion) return;
 
+    const dirKey = normDirKey(direccion);
+
     const { count } = await supabase
         .from('direcciones_cliente')
         .select('id', { count: 'exact', head: true })
         .eq('cliente_id', cliente.id)
-        .eq('direccion', direccion);
+        .eq('direccion_normalizada', dirKey);
 
     if (count === 0) {
         await supabase.from('direcciones_cliente').insert({
-            cliente_id:    cliente.id,
+            cliente_id:            cliente.id,
             direccion,
-            barrio:        barrio  || null,
-            sede_id:       sedeId  || null,
-            predeterminada: false,
+            direccion_normalizada: dirKey,
+            barrio:                barrio  || null,
+            sede_id:               sedeId  || null,
+            predeterminada:        false,
         });
     }
 }
