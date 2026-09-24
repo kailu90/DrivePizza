@@ -4808,6 +4808,9 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     if (convStatus === 'waiting') {
         const key = `${num}:${phone}`;
         if (_state.asignaciones[key]) { delete _state.asignaciones[key]; _saveAsig(); }
+        // Si el usuario está en la vista "resueltos", refrescar esa lista para que la
+        // conversación reabierta desaparezca de ahí (mismo patrón que todos los handlers WA)
+        if (_state.filtroEstado === 'resuelto') _resetResueltas();
     }
 
     if (!_state.conv[num]) _state.conv[num] = {};
@@ -7391,11 +7394,13 @@ async function _sendIgMessage(texto, input) {
     const sendBtn = document.getElementById('wap-send');
     if (sendBtn) sendBtn.disabled = true;
 
-    // Mensaje optimista local
+    // Mensaje optimista local — captura referencia directa para ser inmune al reemplazo
+    // de array que puede hacer _loadIgMsgsSupabase() mientras el fetch está en vuelo
     if (!_state.conv[num])        _state.conv[num]        = {};
     if (!_state.conv[num][igsid]) _state.conv[num][igsid] = { canal: 'instagram', accountId, msgs: [], unread: 0, nombre: null, lastMsg: '', lastTs: 0 };
     const c = _state.conv[num][igsid];
-    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId });
+    const optimMsg = { text: texto, ts, out: true, asesor: _asesorActual, pending: true, tmpId };
+    c.msgs.push(optimMsg);
     c.lastMsg = texto;
     c.lastTs  = ts;
     _saveConv();
@@ -7413,16 +7418,19 @@ async function _sendIgMessage(texto, input) {
         let body = {};
         try { body = await r.json(); } catch { /* body vacío o no-JSON */ }
 
-        const m = c.msgs.find(x => x.tmpId === tmpId);
-
-        if (r.ok && body.igMsgId && m) {
-            // Éxito: confirmar mensaje, quitar pending
-            delete m.pending;
-            delete m.tmpId;
-            m.msgId = body.igMsgId;
+        if (r.ok && body.igMsgId) {
+            // Éxito: confirmar el objeto por referencia directa (no buscar por tmpId)
+            delete optimMsg.pending;
+            delete optimMsg.tmpId;
+            optimMsg.msgId = body.igMsgId;
+            // Si _loadIgMsgsSupabase reemplazó c.msgs durante el fetch, el mensaje
+            // puede no estar en el array. Re-insertar salvo que ya haya llegado vía WS.
+            const yaEnArray = c.msgs.includes(optimMsg);
+            const yaDeduped = !yaEnArray && c.msgs.some(x => x.msgId === body.igMsgId);
+            if (!yaEnArray && !yaDeduped) c.msgs.push(optimMsg);
         } else {
-            // Fallo HTTP o respuesta sin igMsgId: revertir mensaje optimista
-            c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
+            // Fallo HTTP o respuesta sin igMsgId: revertir por referencia directa
+            c.msgs = c.msgs.filter(x => x !== optimMsg);
             console.error('[IG send] Fallo al enviar mensaje', {
                 status:    r.status,
                 accountId,
@@ -7435,7 +7443,7 @@ async function _sendIgMessage(texto, input) {
         }
     } catch (err) {
         // Excepción de red o timeout (AbortError)
-        c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
+        c.msgs = c.msgs.filter(x => x !== optimMsg);
         console.error('[IG send] Error de red al enviar mensaje IG', { accountId, igsid, err: err?.message });
         _showToast('⚠️ Error de conexión con Instagram. Intenta de nuevo.', 4000);
     } finally {
