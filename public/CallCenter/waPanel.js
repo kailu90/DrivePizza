@@ -4169,6 +4169,9 @@ async function _transferirIgChat(num, phone, asesorNuevo, nota = null) {
         if (!r.ok) { _showToast('Error al transferir', 3000); return; }
         _state.asignaciones[`${num}:${phone}`] = { asesor: asesorNuevo, estado: 'asignado' };
         _saveAsig();
+        _closeChat();
+        _renderList();
+        _scheduleConteos();
         _showToast(`Chat transferido a ${asesorNuevo}`);
     } catch { _showToast('Error de conexión al transferir', 3000); }
 }
