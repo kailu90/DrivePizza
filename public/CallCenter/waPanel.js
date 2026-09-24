@@ -4497,7 +4497,7 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
     const isActive = _state.activeContact === phone && _state.activeNum === numero;
-    if (!isActive) c.unread++;
+    if (!isActive && !out) c.unread++;
 
     _saveConv();
     _renderList();
