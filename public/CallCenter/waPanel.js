@@ -4411,7 +4411,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:outbox_sent')   _onOutboxSent(msg);
             if (msg.tipo === 'wa:msg_failed')     _onMsgFailed(msg);
             if (msg.tipo === 'wa:msg_uncertain')  _onMsgUncertain(msg);
-            if (msg.tipo === 'ig:mensaje')        _onIgMensaje(msg);
+            if (msg.tipo === 'ig:mensaje')        { console.log('[IG WS DEBUG]', { convStatus: msg.convStatus, accountId: msg.accountId, igsid: msg.igsid, fromMe: msg.fromMe, igMsgId: msg.igMsgId }); _onIgMensaje(msg); }
             if (msg.tipo === 'ig:asignacion')     _onIgAsignacion(msg);
             if (msg.tipo === 'ig:liberacion')     _onIgLiberacion(msg);
             if (msg.tipo === 'ig:estado')         _onIgEstado(msg);
@@ -4877,6 +4877,7 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
             convStatus === 'waiting'
             || (convStatus === 'assigned' && _esMio(num, phone))
         );
+        console.log('[IG NOTIF DEBUG]', { accountId, igsid, convStatus, asesorActual: _asesorActual, estadoLocal: _getEstado(num, phone), asignacionLocal: _getAsig(num, phone), esMio: _esMio(num, phone), isActive, debeNotificar: _debeNotificar });
         if (_debeNotificar) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
     }
 }
