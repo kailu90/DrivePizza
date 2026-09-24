@@ -7354,6 +7354,26 @@ async function _retrySend(tmpId) {
     _renderMsgs();
 }
 
+// ── Traduce error HTTP/backend IG a mensaje legible para el asesor ─────────
+function _igSendErrorMsg(status, body) {
+    const metaCode = body?.detail?.code;
+    if (status === 502) {
+        if (body?.detail === null) return 'No fue posible conectar con Instagram. Intenta nuevamente.';
+        if (metaCode === 190 || metaCode === 102) return 'La sesión de Instagram no está activa. Reconectar en Conexiones.';
+        if (metaCode === 551 || metaCode === 10)  return 'La ventana de respuesta de Instagram ya expiró (24 h).';
+        if (metaCode === 4 || metaCode === 17 || metaCode === 613) return 'Instagram rechazó temporalmente el envío. Intenta en un momento.';
+        return 'Instagram rechazó el envío. Verifica la cuenta en Conexiones.';
+    }
+    if (status === 403) return 'La cuenta de Instagram no está activa. Reconectar en Conexiones.';
+    if (status === 404) return 'Cuenta de Instagram no encontrada.';
+    if (status === 400) return 'Error en los datos de envío. Recarga el panel.';
+    if (status === 503) return 'Servicio no disponible. Intenta en un momento.';
+    if (status === 500) return 'Error interno al enviar el mensaje.';
+    const errText = body?.error;
+    if (errText && errText.length <= 80) return errText;
+    return 'No fue posible enviar el mensaje por Instagram.';
+}
+
 // ── Envío de mensaje Instagram ─────────────────────────────────────────────
 async function _sendIgMessage(texto, input) {
     const num       = _state.activeNum;                    // 'ig:1'
@@ -7389,8 +7409,11 @@ async function _sendIgMessage(texto, input) {
             signal:  AbortSignal.timeout(15000),
         });
 
-        const body = r.ok ? await r.json().catch(() => ({})) : {};
-        const m    = c.msgs.find(x => x.tmpId === tmpId);
+        // Parsear body siempre — incluso en 4xx/5xx — para recuperar el error real
+        let body = {};
+        try { body = await r.json(); } catch { /* body vacío o no-JSON */ }
+
+        const m = c.msgs.find(x => x.tmpId === tmpId);
 
         if (r.ok && body.igMsgId && m) {
             // Éxito: confirmar mensaje, quitar pending
@@ -7400,13 +7423,21 @@ async function _sendIgMessage(texto, input) {
         } else {
             // Fallo HTTP o respuesta sin igMsgId: revertir mensaje optimista
             c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
-            const errMsg = body?.error || 'Error al enviar a Instagram';
-            _showToast(`⚠️ ${errMsg}`, 4000);
+            console.error('[IG send] Fallo al enviar mensaje', {
+                status:    r.status,
+                accountId,
+                igsid,
+                error:     body?.error  || null,
+                detail:    body?.detail || null,
+                metaCode:  body?.detail?.code || null,
+            });
+            _showToast(`⚠️ ${_igSendErrorMsg(r.status, body)}`, 4000);
         }
-    } catch {
-        // Excepción de red: revertir mensaje optimista
+    } catch (err) {
+        // Excepción de red o timeout (AbortError)
         c.msgs = c.msgs.filter(x => x.tmpId !== tmpId);
-        _showToast('⚠️ Sin conexión con el servidor', 4000);
+        console.error('[IG send] Error de red al enviar mensaje IG', { accountId, igsid, err: err?.message });
+        _showToast('⚠️ Error de conexión con Instagram. Intenta de nuevo.', 4000);
     } finally {
         if (sendBtn) sendBtn.disabled = false;
     }
