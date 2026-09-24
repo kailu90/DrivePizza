@@ -6285,6 +6285,7 @@ async function _loadIgMsgsSupabase(accountId, igsid) {
             c.lastTs  = ultimo.ts;
         }
 
+        console.log('[IG LOAD DEBUG]', { accountId, igsid, cantidad: msgs.length, ultimoMsgId: msgs[msgs.length-1]?.ig_message_id, ultimoTexto: msgs[msgs.length-1]?.texto, ultimoTs: msgs[msgs.length-1]?.timestamp });
         _saveConv();
         if (_state.activeContact === igsid && _state.activeNum === scopeKey) {
             _renderMsgs(true);
