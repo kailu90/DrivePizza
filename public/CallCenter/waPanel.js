@@ -4865,13 +4865,17 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
     if (!isActive && !out) _flashIcon();
     // TODO: unificar con bloque de notif WA cuando se centralice en helper _notificarInbound()
     if (!out) {
-        const _estadoNotif = _getEstado(num, phone);
         const _sipActivo = window._sipState === 'incall' || window._sipState === 'ringing'
             || document.getElementById('sip-panel')?.style.display === 'block';
-        const _debeNotificar = !_sipActivo && (
-            _estadoNotif === 'en_espera'
-            || _estadoNotif === 'resuelto'
-            || (_estadoNotif === 'asignado' && _esMio(num, phone) && !isActive)
+        // convStatus es la fuente autoritativa del backend (estado real en BD al momento del broadcast).
+        // 'waiting'  → sin asignación → sonar a todos los asesores elegibles
+        // 'assigned' → sonar SOLO si el asesor actual es el dueño (_esMio)
+        //              NOTA: si _state.asignaciones está desactualizado, _esMio puede devolver false
+        //              para el asesor dueño (falso negativo aceptable — mejor silencio que ruido ajeno)
+        // Cualquier otro valor (incl. 'resolved') → no sonar
+        const _debeNotificar = !_sipActivo && !isActive && (
+            convStatus === 'waiting'
+            || (convStatus === 'assigned' && _esMio(num, phone))
         );
         if (_debeNotificar) { _notifAudio.currentTime = 0; _notifAudio.play().catch(() => {}); }
     }
