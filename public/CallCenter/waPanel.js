@@ -6276,7 +6276,7 @@ async function _loadIgMsgsSupabase(accountId, igsid) {
             out:    m.direction === 'outbound',
             asesor: m.asesor || null,
             tipo:   m.tipo || 'mensaje',
-        }));
+        })).reverse();
         c.allLoaded = msgs.length < 50;
 
         if (c.msgs.length) {

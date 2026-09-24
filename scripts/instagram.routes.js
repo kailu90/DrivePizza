@@ -555,7 +555,7 @@ export async function instagramRoutes(fastify, options) {
       .from('ig_messages')
       .select('id, ig_message_id, direction, tipo, texto, timestamp, asesor')
       .eq('ig_conversation_id', conv.id)
-      .order('timestamp', { ascending: true })
+      .order('timestamp', { ascending: false })
       .limit(limit)
 
     if (mErr) {
@@ -596,21 +596,27 @@ export async function instagramRoutes(fastify, options) {
 
     // Enviar mensaje vía Instagram API
     const igUserId = account.external_account_id
-    const sendRes = await fetch(`${IG_GRAPH_URL}/${igUserId}/messages`, {
-      method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({
-        recipient: { id: igsid },
-        message:   { text: texto },
-      }),
-    })
-    const sendData = await sendRes.json()
+    let sendData
+    try {
+      const sendRes = await fetch(`${IG_GRAPH_URL}/${igUserId}/messages`, {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({
+          recipient: { id: igsid },
+          message:   { text: texto },
+        }),
+      })
+      sendData = await sendRes.json()
+    } catch (ex) {
+      fastify.log.error({ ex: ex.message, accountId, igsid }, 'ig/mensajes POST: error de red llamando a Meta')
+      return reply.code(502).send({ ok: false, error: 'Error de conexión con la API de Instagram', detail: null })
+    }
 
     if (sendData.error || !sendData.message_id) {
-      fastify.log.error({ sendData }, 'ig/mensajes POST: error enviando a Instagram API')
+      fastify.log.error({ sendData, accountId, igsid }, 'ig/mensajes POST: error enviando a Instagram API')
       return reply.code(502).send({ ok: false, error: 'Error enviando mensaje a Instagram', detail: sendData.error })
     }
 
