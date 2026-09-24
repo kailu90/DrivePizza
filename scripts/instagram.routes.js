@@ -494,7 +494,7 @@ export async function instagramRoutes(fastify, options) {
     if (!asesorNuevo)
       return reply.code(400).send({ ok: false, error: 'asesor requerido' })
 
-    const update = { asesor: asesorNuevo }
+    const update = { asesor: asesorNuevo, estado: 'asignado' }
     if (nota !== undefined) update.nota = nota
 
     const { error: aErr } = await supabase
@@ -512,7 +512,7 @@ export async function instagramRoutes(fastify, options) {
     if (contact) {
       await supabase
         .from('ig_conversations')
-        .update({ assigned_agent: asesorNuevo })
+        .update({ assigned_agent: asesorNuevo, status: 'assigned' })
         .eq('account_id', accountId)
         .eq('ig_contact_id', contact.id)
 

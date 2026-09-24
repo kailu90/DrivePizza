@@ -4934,7 +4934,7 @@ function _onIgEstado({ accountId, igsid, estado }) {
 function _onIgTransferencia({ accountId, igsid, asesor_nuevo }) {
     const num = 'ig:' + Number(accountId);
     const key = `${num}:${igsid}`;
-    if (_state.asignaciones[key]) _state.asignaciones[key].asesor = asesor_nuevo;
+    _state.asignaciones[key] = { asesor: asesor_nuevo, estado: 'asignado' };
     _saveAsig();
     _renderList();
     _scheduleConteos();
