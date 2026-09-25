@@ -4594,11 +4594,10 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   align-items: center;
   justify-content: space-between;
   gap: .75rem;
-  margin-bottom: .75rem;
 }
 .pw-home-sede-info { flex: 1; min-width: 0; }
 .pw-home-sede-nombre {
-  font-size: 1.375rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--dp-dark);
   line-height: 1.2;
@@ -4628,20 +4627,37 @@ input, textarea, select { font-family: var(--dp-font-ui); }
 .pw-home-sede-meta-estado--ok     { color: #16a34a; font-weight: 600; }
 .pw-home-sede-meta-estado--cerrada{ color: #6b7280; }
 .pw-home-sede-meta-estado--ok::before  { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; margin-right: .2rem; }
+.pw-home-sede-photo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .5rem;
+  flex-shrink: 0;
+  width: 90px;
+}
 .pw-home-sede-photo {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   border-radius: 1rem;
   overflow: hidden;
   flex-shrink: 0;
   background: var(--dp-sand);
 }
 .pw-home-sede-photo img { width: 100%; height: 100%; object-fit: cover; }
-.pw-home-sede-actions {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
+.pw-home-sede-estado-top {
+  display: block;
+  text-align: center;
+  font-size: .75rem;
+  font-weight: 600;
 }
+.pw-home-sede-photo-col .pw-home-ver-menu-btn {
+  flex: none;
+  width: 100%;
+  padding: .5rem .25rem;
+  font-size: .78rem;
+  border-radius: .75rem;
+}
+.pw-home-sede-actions { display: none; }
 .pw-home-ver-menu-btn {
   flex: 1;
   padding: .75rem 1.25rem;

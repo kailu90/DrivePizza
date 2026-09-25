@@ -247,21 +247,21 @@ function _renderCardDomicilio(sede, { barrio = '', label = '' } = {}) {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               45–60 min
             </span>
-            <span class="pw-home-sede-meta-estado pw-home-sede-meta-estado--${abierta ? 'ok' : 'cerrada'}">
-              ${abierta ? 'Abierto' : 'Cerrado'}
-            </span>
           </div>
           <p class="pw-home-sede-sub">Te atendemos desde la sede más conveniente para tu zona</p>
+          <button class="pw-home-cambiar-link" id="btn-cambiar-dir">Cambiar ubicación</button>
         </div>
-        <div class="pw-home-sede-photo">
-          <img src="${sedeImg}" alt="${nombre}">
+        <div class="pw-home-sede-photo-col">
+          <span class="pw-home-sede-meta-estado pw-home-sede-meta-estado--${abierta ? 'ok' : 'cerrada'} pw-home-sede-estado-top">
+            ${abierta ? 'Abierto' : 'Cerrado'}
+          </span>
+          <div class="pw-home-sede-photo">
+            <img src="${sedeImg}" alt="${nombre}">
+          </div>
+          ${abierta && !fuera
+            ? `<button class="pw-home-ver-menu-btn" id="btn-pedir-aqui">Ver men&uacute; &#8594;</button>`
+            : `<button class="pw-home-ver-menu-btn pw-home-ver-menu-btn--disabled" disabled>No disponible</button>`}
         </div>
-      </div>
-      <div class="pw-home-sede-actions">
-        ${abierta && !fuera
-          ? `<button class="pw-home-ver-menu-btn" id="btn-pedir-aqui">Ver men&uacute; &#8594;</button>`
-          : `<button class="pw-home-ver-menu-btn pw-home-ver-menu-btn--disabled" disabled>No disponible ahora</button>`}
-        <button class="pw-home-cambiar-link" id="btn-cambiar-dir">Cambiar ubicación</button>
       </div>
     </div>`;
 
