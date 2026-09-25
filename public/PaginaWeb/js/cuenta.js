@@ -14,7 +14,9 @@ const AVATAR_LG_SVG = `<svg width="52" height="52" viewBox="0 0 24 24" fill="non
 
 const EXIT_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
 
-const BACK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+const BACK_SVG    = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+const EYE_SVG     = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
 
 /* ── Menú de accesos rápidos ─────────────────────────────── */
 const MENU_ITEMS = [
@@ -93,6 +95,19 @@ function _renderNoSesion(wrap, cbs) {
   wrap.querySelector('#btn-auth-registro').addEventListener('click', () => _renderFormRegistro(wrap, cbs));
 }
 
+/* ── Helper: toggle visibilidad contraseña ───────────────── */
+function _bindPwToggle(wrap) {
+  const btn   = wrap.querySelector('.pw-auth-pw-toggle');
+  const input = wrap.querySelector('#auth-password');
+  if (!btn || !input) return;
+  btn.addEventListener('click', () => {
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OFF_SVG : EYE_SVG;
+    btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  });
+}
+
 /* ── Render: formulario login ────────────────────────────── */
 function _renderFormLogin(wrap, cbs) {
   wrap.innerHTML = `
@@ -106,9 +121,10 @@ function _renderFormLogin(wrap, cbs) {
           <input type="email" id="auth-email" class="pw-auth-input"
             placeholder="Correo electrónico" autocomplete="email" required>
         </div>
-        <div class="pw-auth-field">
+        <div class="pw-auth-field pw-auth-pw-wrap">
           <input type="password" id="auth-password" class="pw-auth-input"
             placeholder="Contraseña" autocomplete="current-password" required>
+          <button type="button" class="pw-auth-pw-toggle" aria-label="Mostrar contraseña" tabindex="-1">${EYE_SVG}</button>
         </div>
         <p class="pw-auth-error" id="auth-error" hidden></p>
         <button type="submit" class="pw-btn-primary" id="btn-login-submit">Iniciar sesión</button>
@@ -120,6 +136,7 @@ function _renderFormLogin(wrap, cbs) {
     </div>
   `;
 
+  _bindPwToggle(wrap);
   wrap.querySelector('#btn-auth-volver').addEventListener('click', () => _renderNoSesion(wrap, cbs));
   wrap.querySelector('#btn-ir-registro').addEventListener('click', () => _renderFormRegistro(wrap, cbs));
 
@@ -168,9 +185,10 @@ function _renderFormRegistro(wrap, cbs) {
           <input type="email" id="auth-email" class="pw-auth-input"
             placeholder="Correo electrónico" autocomplete="email" required>
         </div>
-        <div class="pw-auth-field">
+        <div class="pw-auth-field pw-auth-pw-wrap">
           <input type="password" id="auth-password" class="pw-auth-input"
             placeholder="Contraseña (mín. 6 caracteres)" autocomplete="new-password" required minlength="6">
+          <button type="button" class="pw-auth-pw-toggle" aria-label="Mostrar contraseña" tabindex="-1">${EYE_SVG}</button>
         </div>
         <p class="pw-auth-error" id="auth-error" hidden></p>
         <button type="submit" class="pw-btn-primary" id="btn-registro-submit">Crear cuenta</button>
@@ -182,6 +200,7 @@ function _renderFormRegistro(wrap, cbs) {
     </div>
   `;
 
+  _bindPwToggle(wrap);
   wrap.querySelector('#btn-auth-volver').addEventListener('click', () => _renderNoSesion(wrap, cbs));
   wrap.querySelector('#btn-ir-login').addEventListener('click', () => _renderFormLogin(wrap, cbs));
 
