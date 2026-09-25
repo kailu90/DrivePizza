@@ -170,7 +170,6 @@ function _renderFormRegistro(wrap, cbs) {
     <div class="pw-cuenta-inner">
       <div class="pw-auth-form-header">
         <button class="pw-auth-back-btn" id="btn-auth-volver">${BACK_SVG}</button>
-        <h2 class="pw-cuenta-titulo">Crear cuenta</h2>
       </div>
       <form class="pw-auth-form" id="form-registro" novalidate>
         <div class="pw-auth-field">
@@ -307,7 +306,6 @@ function _renderPerfil(wrap, cliente, { onMisPedidos, onMisDirecciones, onFavori
       <div class="pw-cuenta-perfil">
         <div class="pw-cuenta-avatar">${AVATAR_SVG}</div>
         <div class="pw-cuenta-perfil-info">
-          <h2 class="pw-cuenta-titulo">Mi cuenta</h2>
           <p class="pw-cuenta-hola">Hola, ${nombre} <span aria-hidden="true">👋</span></p>
           ${email ? `<span class="pw-cuenta-sub">${email}</span>` : ''}
           ${telBadge}

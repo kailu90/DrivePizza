@@ -70,7 +70,7 @@ function orderCard(p) {
     <div class="pw-pedidos-card">
       <div class="pw-pedidos-card-top">
         <div class="pw-pedidos-card-meta">
-          <span class="pw-pedidos-nped">${p.nPedido ? `Pedido #${p.nPedido}` : 'Pedido'}</span>
+          <span class="pw-pedidos-nped">${p.n_pedido ? `Pedido #${p.n_pedido}` : 'Pedido'}</span>
           <span class="pw-pedidos-fecha">${fmtFecha(p.fecha)}</span>
           ${p.sede ? `<span class="pw-pedidos-sede">${p.sede}</span>` : ''}
         </div>
@@ -85,7 +85,7 @@ function orderCard(p) {
         <span class="pw-pedidos-total">${formatPrecio(p.total || 0)}</span>
       </div>
       <div class="pw-pedidos-card-actions">
-        <button class="pw-pedidos-btn-outline js-ped-detalle" data-nped="${p.nPedido || ''}">Ver detalles</button>
+        <button class="pw-pedidos-btn-outline js-ped-detalle" data-nped="${p.n_pedido || ''}">Ver detalles</button>
         ${p.estado === 'entregado' ? `<button class="pw-pedidos-btn-pedir js-ped-pedir">Pedir de nuevo</button>` : ''}
       </div>
     </div>`;
@@ -161,7 +161,7 @@ export async function initMisPedidosView({ onVolver, onIrAlMenu } = {}) {
     try {
       let query = supabase
         .from('pedidos_callcenter')
-        .select('nPedido, sede, productos, total, estado, fecha, canal')
+        .select('n_pedido, sede, productos, total, estado, fecha, canal')
         .eq('telefono', telefono)
         .order('fecha', { ascending: false })
         .limit(50);
@@ -246,7 +246,7 @@ export async function initMisPedidosView({ onVolver, onIrAlMenu } = {}) {
         : `<div class="pw-subview-empty"><p>No hay pedidos en esta categoría.</p></div>`;
 
       el.querySelectorAll('.js-ped-detalle').forEach(btn => {
-        const p = pedidos.find(x => String(x.nPedido) === String(btn.dataset.nped));
+        const p = pedidos.find(x => String(x.n_pedido) === String(btn.dataset.nped));
         if (p) btn.addEventListener('click', () => showDetalle(p));
       });
       el.querySelectorAll('.js-ped-pedir').forEach(btn => {
@@ -285,7 +285,7 @@ export async function initMisPedidosView({ onVolver, onIrAlMenu } = {}) {
     const canalTxt = CANAL_LABEL[p.canal] || 'Teléfono';
     overlay.querySelector('#detalle-body').innerHTML = `
       <div class="pw-detalle-head">
-        <span class="pw-pedidos-nped">${p.nPedido ? `Pedido #${p.nPedido}` : 'Pedido'}</span>
+        <span class="pw-pedidos-nped">${p.n_pedido ? `Pedido #${p.n_pedido}` : 'Pedido'}</span>
         <span class="pw-pedidos-badge pw-pedidos-badge--${mod}">${ESTADO_LABEL[p.estado] || p.estado}</span>
       </div>
       <p class="pw-detalle-meta">${fmtFecha(p.fecha)}${p.sede ? ` \u00b7 ${p.sede}` : ''} \u00b7 ${canalTxt}</p>

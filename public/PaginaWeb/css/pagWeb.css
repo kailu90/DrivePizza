@@ -3647,7 +3647,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   padding-bottom: calc(var(--nav-height, 64px) + 1.5rem);
 }
 .pw-cuenta-inner {
-  padding: 1rem .9rem 0;
+  padding: 0 .9rem 0;
   max-width: 480px;
   margin: 0 auto;
 }
@@ -3657,7 +3657,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 0 1.25rem;
+  padding: .5rem 0;
 }
 .pw-cuenta-avatar {
   width: 72px;
@@ -3697,7 +3697,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   min-height: 138px;
 }
 .pw-cuenta-cta-text {
@@ -3748,6 +3748,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   text-transform: uppercase;
   letter-spacing: .06em;
   margin: 0 0 .5rem .1rem;
+  padding-top: .5rem;
 }
 .pw-cuenta-menu-list {
   background: #fff;
