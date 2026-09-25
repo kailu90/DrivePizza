@@ -3760,7 +3760,7 @@ input, textarea, select { font-family: var(--dp-font-ui); }
   display: flex;
   align-items: center;
   gap: .85rem;
-  padding: .85rem 1rem;
+  padding: .5rem 1rem;
   width: 100%;
   background: none;
   border: none;
