@@ -1030,6 +1030,12 @@ async function _guardarMensaje({ numero, contacto, nombre, texto, timestamp, sal
     // Si no hay data es porque msg_id ya existía (ignoreDuplicates lo descartó) → duplicado
     const inserted = !msgId || (Array.isArray(data) && data.length > 0)
 
+    if (inserted) {
+      _waLog('INBOUND_DB_INSERT_OK', { msgId, sessionId: numero, contacto, saliente })
+    } else {
+      _waLog('DUPLICATE_MESSAGE', { msgId, sessionId: numero, contacto })
+    }
+
     // RC-1: consumir early ack si existe, tanto si se insertó como si ya existía.
     // Caso "ya existía" (inserted=false): el row viene de una sesión anterior con status=1.
     // El early ack lleva el status=2+ real que llegó tras el reinicio → aplicar igualmente.
@@ -1045,6 +1051,7 @@ async function _guardarMensaje({ numero, contacto, nombre, texto, timestamp, sal
     return inserted
   } catch (e) {
     console.error('[WA] Error guardando mensaje en Supabase:', e.message)
+    _waLog('INBOUND_DB_INSERT_FAIL', { msgId, sessionId: numero, error: e.message })
     return true
   }
 }
@@ -1822,11 +1829,30 @@ export async function iniciarSesion(numero, sede) {
   })
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return
+    if (type !== 'notify') {
+      _waLog('INBOUND_BATCH_SKIPPED', { sessionId: numero, type, count: messages?.length })
+      return
+    }
     for (const msg of messages) {
       try {
       const remitente = msg.key.remoteJid
-      if (!_jidValido(remitente)) continue
+      const _msgKeys  = msg.message ? Object.keys(msg.message) : []
+      _waLog('INBOUND_MSG', {
+        sessionId:      numero,
+        msgId:          msg.key.id,
+        remoteJid:      remitente,
+        fromMe:         !!msg.key.fromMe,
+        isLid:          !!remitente?.endsWith('@lid'),
+        messageKeys:    _msgKeys,
+        timestamp:      msg.messageTimestamp,
+        hasText:        !!( msg.message?.conversation || msg.message?.extendedTextMessage?.text ),
+        hasEditedMsg:   !!msg.message?.editedMessage,
+        protocolMsgType: msg.message?.protocolMessage?.type ?? null,
+      })
+      if (!_jidValido(remitente)) {
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'invalid_jid' })
+        continue
+      }
 
       const fromMe  = !!msg.key.fromMe
 
@@ -1835,6 +1861,7 @@ export async function iniciarSesion(numero, sede) {
       // Solo evidencia directa — sin atribución heurística desde stderr.
       if (!fromMe) {
         if (msg.message == null) {
+          _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'decrypt_fail' })
           _onSignalDecryptFail(numero, remitente)
           continue
         }
@@ -1873,6 +1900,7 @@ export async function iniciarSesion(numero, sede) {
         const emoji       = reaccion.text || ''  // '' = quitar reacción
         const reactor     = fromMe ? 'asesor' : 'cliente'
         const phone       = _phoneDesdeJid(remitente)
+        _waLog('INBOUND_REACTION', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, fromMe, targetMsgId, hasEmoji: !!emoji })
         if (targetMsgId && supabase) {
           try {
             const { data: row } = await supabase.from('mensajes_wa')
@@ -1888,6 +1916,7 @@ export async function iniciarSesion(numero, sede) {
             console.error('[WA] Error guardando reacción:', e.message)
           }
         }
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'reaction' })
         continue  // no procesar como mensaje normal
       }
       // ── Mensajes editados ─────────────────────────────────────────────
@@ -1902,9 +1931,20 @@ export async function iniciarSesion(numero, sede) {
         const _peRaw = _phoneDesdeJid(remitente)
         const _peEntrada = sesiones.get(numero)
         const phoneEdit = (remitente.endsWith('@lid') && _peEntrada?.lidToPhone?.get(_peRaw)) || _peRaw
+        _waLog('EDIT_RECEIVED', { sessionId: numero, format: 'wrapper', msgId: msg.key.id, remoteJid: remitente, fromMe, originalMsgId })
+        if (originalMsgId && textoEditado) {
+          _waLog('EDIT_PARSE_OK', { sessionId: numero, format: 'wrapper', originalMsgId, extractedTextLength: textoEditado.length })
+        } else {
+          _waLog('EDIT_PARSE_FAILED', { sessionId: numero, format: 'wrapper', msgId: msg.key.id, originalMsgId, hasText: !!textoEditado })
+        }
         if (originalMsgId && textoEditado && supabase) {
           try {
-            await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId)
+            const { data: _ued } = await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId).select('id')
+            if (_ued?.length > 0) {
+              _waLog('EDIT_DB_UPDATED', { sessionId: numero, format: 'wrapper', originalMsgId })
+            } else {
+              _waLog('EDIT_TARGET_NOT_FOUND', { sessionId: numero, format: 'wrapper', originalMsgId })
+            }
             broadcast({ tipo: 'wa:msg_edit', numero, contacto: phoneEdit, msgId: originalMsgId, textoNuevo: textoEditado })
           } catch (e) { console.error('[WA] Error guardando edicion wrapper:', e.message) }
         }
@@ -1914,7 +1954,10 @@ export async function iniciarSesion(numero, sede) {
       // Formato 2: protocolMessage.type === 14 directo en upsert (asesor edita desde celular, fromMe:true)
       const protoMsg = msg.message?.protocolMessage
       // Saltar protocolMessages que no son ediciones (type 17 sync, etc.)
-      if (protoMsg && !(protoMsg.type === 14 && protoMsg.editedMessage)) continue
+      if (protoMsg && !(protoMsg.type === 14 && protoMsg.editedMessage)) {
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'protocol_message', protocolType: protoMsg.type })
+        continue
+      }
       if (protoMsg?.type === 14 && protoMsg?.editedMessage) {
         const originalMsgId = protoMsg.key?.id
         const editM = extractMessageContent(protoMsg.editedMessage) || protoMsg.editedMessage || {}
@@ -1922,11 +1965,20 @@ export async function iniciarSesion(numero, sede) {
         const _pe2Raw = _phoneDesdeJid(remitente)
         const _pe2Entrada = sesiones.get(numero)
         const phoneEdit = (remitente.endsWith('@lid') && _pe2Entrada?.lidToPhone?.get(_pe2Raw)) || _pe2Raw
+        _waLog('EDIT_RECEIVED', { sessionId: numero, format: 'proto14_upsert', msgId: msg.key.id, remoteJid: remitente, fromMe, originalMsgId })
+        if (originalMsgId && textoEditado) {
+          _waLog('EDIT_PARSE_OK', { sessionId: numero, format: 'proto14_upsert', originalMsgId, extractedTextLength: textoEditado.length })
+        } else {
+          _waLog('EDIT_PARSE_FAILED', { sessionId: numero, format: 'proto14_upsert', msgId: msg.key.id, originalMsgId, hasText: !!textoEditado })
+        }
         if (originalMsgId && textoEditado && supabase) {
           try {
-            await supabase.from('mensajes_wa')
-              .update({ texto: textoEditado, editado: true })
-              .eq('msg_id', originalMsgId)
+            const { data: _ued2 } = await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId).select('id')
+            if (_ued2?.length > 0) {
+              _waLog('EDIT_DB_UPDATED', { sessionId: numero, format: 'proto14_upsert', originalMsgId })
+            } else {
+              _waLog('EDIT_TARGET_NOT_FOUND', { sessionId: numero, format: 'proto14_upsert', originalMsgId })
+            }
             broadcast({ tipo: 'wa:msg_edit', numero, contacto: phoneEdit, msgId: originalMsgId, textoNuevo: textoEditado })
           } catch (e) { console.error('[WA] Error guardando edicion:', e.message) }
         }
@@ -1935,7 +1987,10 @@ export async function iniciarSesion(numero, sede) {
       // ───────────────────────────────────────────────────────────────────
 
       // Saltar mensajes internos de WA que acompañan ediciones del cliente
-      if (msg.message?.secretEncryptedMessage) continue
+      if (msg.message?.secretEncryptedMessage) {
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'secret_encrypted' })
+        continue
+      }
 
       // extractMessageContent desenvuelve wrappers de Baileys (viewOnce, ephemeral, edited, etc.)
       // evitando que mensajes de texto lleguen como '[multimedia]' por estar anidados
@@ -1944,7 +1999,10 @@ export async function iniciarSesion(numero, sede) {
       // - messageContextInfo: metadata interna de WA
       // - secretEncryptedMessage: mensaje cifrado que WA envía junto a ediciones del cliente
       const _SKIP_KEYS = new Set(['messageContextInfo', 'secretEncryptedMessage'])
-      if (!Object.keys(m).some(k => !_SKIP_KEYS.has(k))) continue
+      if (!Object.keys(m).some(k => !_SKIP_KEYS.has(k))) {
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'empty_message', messageKeys: Object.keys(m) })
+        continue
+      }
       // Catch-all: si extractMessageContent devolvio un protocolMessage type 14, es una edicion
       // (puede ocurrir si el edit llego envuelto en viewOnce u otro wrapper no anticipado)
       if (m.protocolMessage?.type === 14 && m.protocolMessage?.editedMessage) {
@@ -1955,9 +2013,20 @@ export async function iniciarSesion(numero, sede) {
         const _pe3Raw = _phoneDesdeJid(remitente)
         const _pe3Entrada = sesiones.get(numero)
         const phoneEdit = (remitente.endsWith('@lid') && _pe3Entrada?.lidToPhone?.get(_pe3Raw)) || _pe3Raw
+        _waLog('EDIT_RECEIVED', { sessionId: numero, format: 'proto14_catchall', msgId: msg.key.id, remoteJid: remitente, fromMe, originalMsgId })
+        if (originalMsgId && textoEditado) {
+          _waLog('EDIT_PARSE_OK', { sessionId: numero, format: 'proto14_catchall', originalMsgId, extractedTextLength: textoEditado.length })
+        } else {
+          _waLog('EDIT_PARSE_FAILED', { sessionId: numero, format: 'proto14_catchall', msgId: msg.key.id, originalMsgId, hasText: !!textoEditado })
+        }
         if (originalMsgId && textoEditado && supabase) {
           try {
-            await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId)
+            const { data: _ued3 } = await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId).select('id')
+            if (_ued3?.length > 0) {
+              _waLog('EDIT_DB_UPDATED', { sessionId: numero, format: 'proto14_catchall', originalMsgId })
+            } else {
+              _waLog('EDIT_TARGET_NOT_FOUND', { sessionId: numero, format: 'proto14_catchall', originalMsgId })
+            }
             broadcast({ tipo: 'wa:msg_edit', numero, contacto: phoneEdit, msgId: originalMsgId, textoNuevo: textoEditado })
           } catch (e) { console.error('[WA] Error guardando edicion catch-all:', e.message) }
         }
@@ -2007,6 +2076,7 @@ export async function iniciarSesion(numero, sede) {
         } else {
           phone = await _resolverLid(entrada2, lidPhone, 1500)
           if (phone !== lidPhone) {
+            _waLog('IDENTITY_RESOLVED', { sessionId: numero, msgId: msg.key.id, lidPhone, realPhone: phone, source: 'resolver_lid' })
             console.log('[WA] @lid resuelto: ' + lidPhone + ' → ' + phone)
             // Migrar mensajes y asignación activa de lid → número real en Supabase.
             // Esto garantiza que _loadAsignaciones() cargue el contacto correcto (número real)
@@ -2043,6 +2113,7 @@ export async function iniciarSesion(numero, sede) {
               broadcast({ tipo: 'wa:merge', numero, sede, lidPhone, realPhone: phone })
             }
           } else {
+            _waLog('IDENTITY_RESOLVE_FAILED', { sessionId: numero, msgId: msg.key.id, lidPhone, source: 'resolver_lid' })
             console.log('[WA] @lid sin resolver: ' + lidPhone + ' — usando lid como contacto')
           }
         }
@@ -2100,7 +2171,10 @@ export async function iniciarSesion(numero, sede) {
       })
 
       // Duplicado (replay de Baileys al reconectar) — no hacer broadcast ni efectos secundarios
-      if (!esNuevo) continue
+      if (!esNuevo) {
+        _waLog('INBOUND_SKIPPED', { sessionId: numero, msgId: msg.key.id, remoteJid: remitente, reason: 'duplicate', fromMe })
+        continue
+      }
 
       if (!enviadoDesdeEverest) {
         // Si era @lid: usar número real (@s.whatsapp.net) si se resolvió, o @lid si no
@@ -2180,32 +2254,54 @@ export async function iniciarSesion(numero, sede) {
     }
   })
 
-  // messages.update — ticks de estado (enviado, entregado, leído)
+  // messages.update — ticks de estado (enviado, entregado, leído) y ediciones entrantes
   sock.ev.on('messages.update', async updates => {
     for (const { key, update } of updates) {
+      _waLog('INBOUND_UPDATE', {
+        sessionId: numero, msgId: key.id, remoteJid: key.remoteJid, fromMe: !!key.fromMe,
+        hasEditedWrapper: !!update.message?.editedMessage,
+        hasProtoEdit: !!(update.message?.protocolMessage?.type === 14),
+        hasStatus: update.status != null,
+      })
       // ── Mensajes editados por el cliente (fromMe: false) ─────────────
       if (!key.fromMe) {
         const editedWrapper = update.message?.editedMessage
         const protoEdit = update.message?.protocolMessage
         let originalMsgId = null
         let textoEditado = null
+        let editFormat = null
         if (editedWrapper) {
           // Baileys 6.7.x: key.id ya es el ID del mensaje original; editedWrapper.message es el contenido nuevo
+          editFormat = 'editedWrapper'
           originalMsgId = key.id
           const editedMsg = editedWrapper.message || {}
           const inner = extractMessageContent(editedMsg) || editedMsg
           textoEditado = inner.conversation || inner.extendedTextMessage?.text || null
         } else if (protoEdit?.type === 14 && protoEdit?.editedMessage) {
+          editFormat = 'proto14_update'
           originalMsgId = protoEdit.key?.id
           const inner = extractMessageContent(protoEdit.editedMessage) || protoEdit.editedMessage || {}
           textoEditado = inner.conversation || inner.extendedTextMessage?.text || null
+        }
+        if (editFormat) {
+          _waLog('EDIT_RECEIVED', { sessionId: numero, format: editFormat, msgId: key.id, remoteJid: key.remoteJid, fromMe: false, originalMsgId })
+          if (originalMsgId && textoEditado) {
+            _waLog('EDIT_PARSE_OK', { sessionId: numero, format: editFormat, originalMsgId, extractedTextLength: textoEditado.length })
+          } else {
+            _waLog('EDIT_PARSE_FAILED', { sessionId: numero, format: editFormat, msgId: key.id, originalMsgId, hasText: !!textoEditado })
+          }
         }
         if (originalMsgId && textoEditado && supabase) {
           const _updRaw = _phoneDesdeJid(key.remoteJid)
           const _updEntrada = sesiones.get(numero)
           const phoneEdit = (key.remoteJid.endsWith('@lid') && _updEntrada?.lidToPhone?.get(_updRaw)) || _updRaw
           try {
-            await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId)
+            const { data: _updRes } = await supabase.from('mensajes_wa').update({ texto: textoEditado, editado: true }).eq('msg_id', originalMsgId).select('id')
+            if (_updRes?.length > 0) {
+              _waLog('EDIT_DB_UPDATED', { sessionId: numero, format: editFormat, originalMsgId })
+            } else {
+              _waLog('EDIT_TARGET_NOT_FOUND', { sessionId: numero, format: editFormat, originalMsgId })
+            }
             broadcast({ tipo: 'wa:msg_edit', numero, contacto: phoneEdit, msgId: originalMsgId, textoNuevo: textoEditado })
           } catch (e) { console.error('[WA] Error guardando edicion cliente:', e.message) }
         }
@@ -2287,6 +2383,18 @@ export async function iniciarSesion(numero, sede) {
       } catch (e) {
         console.error('[WA] Error guardando reaccion:', e.message)
       }
+    }
+  })
+
+  // messages.delete — eliminaciones de mensajes (logging only)
+  sock.ev.on('messages.delete', (items) => {
+    try {
+      const keys = Array.isArray(items)
+        ? items.map(k => ({ msgId: k.id, remoteJid: k.remoteJid, fromMe: k.fromMe }))
+        : (items?.keys ?? []).map(k => ({ msgId: k.id, remoteJid: k.remoteJid, fromMe: k.fromMe }))
+      _waLog('INBOUND_DELETE', { sessionId: numero, count: keys.length, keys })
+    } catch (e) {
+      console.error('[WA] Error logging messages.delete:', e.message)
     }
   })
 }
@@ -2640,11 +2748,22 @@ export function registrarLidManual(numero, lid, realPhone) {
 // ── Enviar media (imagen, audio, video, documento) ─────────────────────────
 // Convierte cualquier audio a OGG/Opus mono 48kHz — único formato que WA acepta como nota de voz.
 // inputExt: extensión del archivo de entrada (webm, ogg, mp3, m4a, aac…)
+// [DEBUG-AUDIO] flag de captura única — eliminar tras diagnóstico
+let _debugAudioCaptured = false
+
 async function _convertToOgg(buffer, inputExt = 'webm') {
   const uid    = Date.now() + '_' + Math.random().toString(36).slice(2, 8)
   const tmpIn  = '/tmp/wa_audio_in_'  + uid + '.' + inputExt
   const tmpOut = '/tmp/wa_audio_out_' + uid + '.ogg'
   writeFileSync(tmpIn, buffer)
+
+  // [DEBUG-AUDIO] capturar PRIMER audio real para diagnóstico iPhone
+  if (!_debugAudioCaptured) {
+    _debugAudioCaptured = true
+    try { writeFileSync('/tmp/debug_real_input.' + inputExt, buffer) } catch {}
+    _waLog('DEBUG_AUDIO_CAPTURED_INPUT', { inputExt, bytes: buffer.length })
+  }
+
   await new Promise((resolve, reject) => {
     const ff = spawn('/usr/bin/ffmpeg', [
       '-y', '-i', tmpIn,
@@ -2660,6 +2779,15 @@ async function _convertToOgg(buffer, inputExt = 'webm') {
     ff.on('close', code => code === 0 ? resolve() : reject(new Error('ffmpeg exit ' + code)))
   })
   const result = readFileSync(tmpOut)
+
+  // [DEBUG-AUDIO] capturar OGG resultante del primer audio real
+  try {
+    if (readFileSync('/tmp/debug_real_input.' + inputExt).length === buffer.length) {
+      writeFileSync('/tmp/debug_real_output.ogg', result)
+      _waLog('DEBUG_AUDIO_CAPTURED_OUTPUT', { outputBytes: result.length })
+    }
+  } catch {}
+
   try { unlinkSync(tmpIn) } catch {}
   try { unlinkSync(tmpOut) } catch {}
   _waLog('AUDIO_CONV', { inputExt, inputBytes: buffer.length, outputBytes: result.length })
@@ -3129,6 +3257,36 @@ export async function editarMensaje(numero, msgId, contacto, texto, asesor) {
   if (supabase) {
     await supabase.from('mensajes_wa').update({ texto, editado: true }).eq('msg_id', msgId)
   }
+}
+
+// ── [DEBUG-AUDIO] TEST F2: envío directo por Baileys sin conversión ─────────
+// Eliminar tras diagnóstico de compatibilidad iPhone.
+export async function testSendRawOgg(numero, destinatario) {
+  const entrada = sesiones.get(numero)
+  if (!entrada?.socket || entrada.status !== 'conectado') {
+    throw new Error(`Sesión ${numero} no disponible`)
+  }
+  const buffer   = readFileSync('/tmp/debug_real_output.ogg')
+  const destRaw  = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
+  const esLid    = entrada.lidToPhone?.has(destRaw) || destRaw.length > 12
+  const jid      = esLid ? destRaw + '@lid' : destRaw + '@s.whatsapp.net'
+  const content  = { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: true }
+  const result   = await entrada.socket.sendMessage(jid, content)
+  _waLog('TEST_F2_SENT', {
+    numero, destinatario, jid,
+    fileLength: buffer.length,
+    msgId:        result?.key?.id,
+    mediaKey:     result?.message?.audioMessage?.mediaKey?.toString('base64'),
+    directPath:   result?.message?.audioMessage?.directPath,
+    url:          result?.message?.audioMessage?.url,
+    fileSha256:   result?.message?.audioMessage?.fileSha256?.toString('base64'),
+    fileEncSha256:result?.message?.audioMessage?.fileEncSha256?.toString('base64'),
+    seconds:      result?.message?.audioMessage?.seconds,
+    waveform:     result?.message?.audioMessage?.waveform ? 'presente' : 'ausente',
+    ptt:          result?.message?.audioMessage?.ptt,
+    mimetype:     result?.message?.audioMessage?.mimetype,
+  })
+  return result?.key?.id
 }
 
 // ── SIGTERM: liberar locks antes de que PM2 mate el proceso ─────────────────
