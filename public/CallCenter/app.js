@@ -291,17 +291,15 @@ function renderProducts(categoria) {
         if (_ciudadPromo === 'cartago') {
             const _hCtg  = new Date();
             const diaCtg = _hCtg.getDay();   // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
-            const horaCtg = _hCtg.getHours();
             const esMarJue   = diaCtg === 2 || diaCtg === 4;
-            const esHora2x1  = horaCtg >= 12 && horaCtg < 18;
-            const esActivo2x1 = esMarJue && esHora2x1;
+            const esActivo2x1 = esMarJue;
             const esLunMieVie = diaCtg === 1 || diaCtg === 3 || diaCtg === 5;
             grid.innerHTML = `
                 <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
                     <div class="promo-badge">MAR · JUE</div>
                     <h4>2 × 1</h4>
                     <p class="product-desc">Compra una pizza y lleva una Clásica del mismo tamaño gratis.</p>
-                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger · 12pm – 6pm' : esMarJue ? 'Disponible 12pm – 6pm' : 'Disponible martes y jueves 12pm – 6pm'}</p>
+                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger' : 'Disponible martes y jueves'}</p>
                 </div>
                 <div class="card card-promo ${esLunMieVie ? '' : 'card-promo--inactiva'}" onclick="${esLunMieVie ? 'abrirPromoLasEspCtg()' : ''}">
                     <div class="promo-badge">LUN · MIÉ · VIE</div>
