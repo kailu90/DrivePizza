@@ -4486,7 +4486,12 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
         if (msgId) {
             const byId = c.msgs.find(m => m.msgId === msgId);
             if (byId) {
-                if (mediaUrl && !byId.mediaUrl) { byId.mediaUrl = mediaUrl; byId.tipo = tipoMensaje || byId.tipo; }
+                const _oldUrl = byId.mediaUrl;
+                if (mediaUrl && (!_oldUrl || _oldUrl.startsWith('blob:'))) {
+                    if (_oldUrl?.startsWith('blob:')) URL.revokeObjectURL(_oldUrl);
+                    byId.mediaUrl = mediaUrl;
+                    byId.tipo = tipoMensaje || byId.tipo;
+                }
                 _saveConv();
                 if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs();
                 return;
@@ -4511,7 +4516,13 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
                 if (existing.pending) { delete existing.pending; delete existing.tmpId; }
                 changed = true;
             }
-            if (mediaUrl && !existing.mediaUrl) { existing.mediaUrl = mediaUrl; existing.tipo = tipoMensaje || existing.tipo; changed = true; }
+            const _oldUrl = existing.mediaUrl;
+            if (mediaUrl && (!_oldUrl || _oldUrl.startsWith('blob:'))) {
+                if (_oldUrl?.startsWith('blob:')) URL.revokeObjectURL(_oldUrl);
+                existing.mediaUrl = mediaUrl;
+                existing.tipo = tipoMensaje || existing.tipo;
+                changed = true;
+            }
             if (changed) { _saveConv(); if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs(); }
             return;
         }
