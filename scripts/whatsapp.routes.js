@@ -11,7 +11,6 @@ import {
   registrarLidManual,
   eliminarMensaje,
   editarMensaje,
-  testSendRawOgg,  // [DEBUG-AUDIO] eliminar tras diagnóstico
   invalidateIdentityCache,
   recrearSocket,
   getSessionDiagnostico,
@@ -946,18 +945,6 @@ export async function whatsappRoutes(fastify, options) {
     }
   })
 
-  // [DEBUG-AUDIO] POST /wa/test/raw-ogg — TEST F2: envía debug_real_output.ogg directo por Baileys
-  // Eliminar tras diagnóstico de compatibilidad iPhone.
-  fastify.post('/wa/test/raw-ogg', async (req, reply) => {
-    const { numero, destinatario } = req.body ?? {}
-    if (!numero || !destinatario) return reply.code(400).send({ error: 'numero y destinatario requeridos' })
-    try {
-      const msgId = await testSendRawOgg(numero, destinatario)
-      return { ok: true, msgId }
-    } catch (e) {
-      return reply.code(503).send({ error: e.message })
-    }
-  })
 
   // PATCH /wa/mensajes/:numero/:contacto/:msgId — editar mensaje
   fastify.patch('/wa/mensajes/:numero/:contacto/:msgId', async (req, reply) => {

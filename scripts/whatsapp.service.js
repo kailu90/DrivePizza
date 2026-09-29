@@ -2748,30 +2748,21 @@ export function registrarLidManual(numero, lid, realPhone) {
 // ── Enviar media (imagen, audio, video, documento) ─────────────────────────
 // Convierte cualquier audio a OGG/Opus mono 48kHz — único formato que WA acepta como nota de voz.
 // inputExt: extensión del archivo de entrada (webm, ogg, mp3, m4a, aac…)
-// [DEBUG-AUDIO] flag de captura única — eliminar tras diagnóstico
-let _debugAudioCaptured = false
-
 async function _convertToOgg(buffer, inputExt = 'webm') {
   const uid    = Date.now() + '_' + Math.random().toString(36).slice(2, 8)
   const tmpIn  = '/tmp/wa_audio_in_'  + uid + '.' + inputExt
   const tmpOut = '/tmp/wa_audio_out_' + uid + '.ogg'
   writeFileSync(tmpIn, buffer)
 
-  // [DEBUG-AUDIO] capturar PRIMER audio real para diagnóstico iPhone
-  if (!_debugAudioCaptured) {
-    _debugAudioCaptured = true
-    try { writeFileSync('/tmp/debug_real_input.' + inputExt, buffer) } catch {}
-    _waLog('DEBUG_AUDIO_CAPTURED_INPUT', { inputExt, bytes: buffer.length })
-  }
-
   await new Promise((resolve, reject) => {
     const ff = spawn('/usr/bin/ffmpeg', [
       '-y', '-i', tmpIn,
-      '-vn',                 // sin video
-      '-c:a', 'libopus',    // codec Opus
-      '-ac', '1',           // mono — WA voice notes siempre mono; estéreo puede causar "audio no disponible"
-      '-ar', '48000',       // 48 kHz — tasa nativa de Opus
-      '-b:a', '64k',        // bitrate adecuado para voz
+      '-vn',                               // sin video
+      '-c:a', 'libopus',                  // codec Opus
+      '-ac', '1',                         // mono — WA voice notes siempre mono; estéreo puede causar "audio no disponible"
+      '-ar', '48000',                     // 48 kHz — tasa nativa de Opus
+      '-b:a', '64k',                      // bitrate adecuado para voz
+      '-avoid_negative_ts', 'make_zero',  // iOS WA rechaza OGG con start_pts negativo (libopus encoder delay)
       tmpOut,
     ])
     ff.stderr.on('data', () => {})
@@ -2779,14 +2770,6 @@ async function _convertToOgg(buffer, inputExt = 'webm') {
     ff.on('close', code => code === 0 ? resolve() : reject(new Error('ffmpeg exit ' + code)))
   })
   const result = readFileSync(tmpOut)
-
-  // [DEBUG-AUDIO] capturar OGG resultante del primer audio real
-  try {
-    if (readFileSync('/tmp/debug_real_input.' + inputExt).length === buffer.length) {
-      writeFileSync('/tmp/debug_real_output.ogg', result)
-      _waLog('DEBUG_AUDIO_CAPTURED_OUTPUT', { outputBytes: result.length })
-    }
-  } catch {}
 
   try { unlinkSync(tmpIn) } catch {}
   try { unlinkSync(tmpOut) } catch {}
@@ -3257,36 +3240,6 @@ export async function editarMensaje(numero, msgId, contacto, texto, asesor) {
   if (supabase) {
     await supabase.from('mensajes_wa').update({ texto, editado: true }).eq('msg_id', msgId)
   }
-}
-
-// ── [DEBUG-AUDIO] TEST F2: envío directo por Baileys sin conversión ─────────
-// Eliminar tras diagnóstico de compatibilidad iPhone.
-export async function testSendRawOgg(numero, destinatario) {
-  const entrada = sesiones.get(numero)
-  if (!entrada?.socket || entrada.status !== 'conectado') {
-    throw new Error(`Sesión ${numero} no disponible`)
-  }
-  const buffer   = readFileSync('/tmp/debug_real_output.ogg')
-  const destRaw  = destinatario.replace(/@s\.whatsapp\.net$/, '').replace(/@lid$/, '')
-  const esLid    = entrada.lidToPhone?.has(destRaw) || destRaw.length > 12
-  const jid      = esLid ? destRaw + '@lid' : destRaw + '@s.whatsapp.net'
-  const content  = { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: true }
-  const result   = await entrada.socket.sendMessage(jid, content)
-  _waLog('TEST_F2_SENT', {
-    numero, destinatario, jid,
-    fileLength: buffer.length,
-    msgId:        result?.key?.id,
-    mediaKey:     result?.message?.audioMessage?.mediaKey?.toString('base64'),
-    directPath:   result?.message?.audioMessage?.directPath,
-    url:          result?.message?.audioMessage?.url,
-    fileSha256:   result?.message?.audioMessage?.fileSha256?.toString('base64'),
-    fileEncSha256:result?.message?.audioMessage?.fileEncSha256?.toString('base64'),
-    seconds:      result?.message?.audioMessage?.seconds,
-    waveform:     result?.message?.audioMessage?.waveform ? 'presente' : 'ausente',
-    ptt:          result?.message?.audioMessage?.ptt,
-    mimetype:     result?.message?.audioMessage?.mimetype,
-  })
-  return result?.key?.id
 }
 
 // ── SIGTERM: liberar locks antes de que PM2 mate el proceso ─────────────────
