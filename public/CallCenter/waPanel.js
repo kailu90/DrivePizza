@@ -7547,6 +7547,8 @@ async function _sendMedia() {
     if (inputEl) { inputEl.value = ''; _autoResizeTextarea(inputEl); _updateSendVoiceBtn(); }
 
     // ── 1. Texto separado solo para audio/documento ────────────────────────
+    // DIAGNÓSTICO TEMPORAL: auditar valor de texto antes del branch
+    if (tipo === 'voz') console.warn('[AUDIO_DIAG] _sendMedia texto=', JSON.stringify(texto), 'soportaCaption=', soportaCaption, 'enviará texto separado=', !!(texto && !soportaCaption));
     if (texto && !soportaCaption) {
         const ts1   = Math.floor(Date.now() / 1000);
         const tmpId = ++_tmpMsgId;
