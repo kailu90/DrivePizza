@@ -2856,23 +2856,11 @@ export async function enviarMedia(numero, destinatario, buffer, mimetype, fileNa
   // Log auditoría de media — permite verificar que WA aceptó el upload (directPath ≠ null)
   // sinDirectPath:true → WA no procesó el archivo → cliente verá "audio no disponible"
   if (tipoDesc === 'voz') {
-    const am  = sent?.message?.audioMessage
-    const msg = sent?.message || {}
+    const am = sent?.message?.audioMessage
     _waLog('AUDIO_SENT', {
       numero, phone, msgId,
       mimeOrigen: mimetype,
       mimeFinal:  'audio/ogg; codecs=opus',
-      // ── DIAGNÓSTICO TEMPORAL: inspeccionar estructura real de sent.message ──
-      msgKeys:              Object.keys(msg),
-      hasAudioMessage:      !!msg.audioMessage,
-      hasConversation:      !!msg.conversation,
-      hasExtendedTextMessage: !!msg.extendedTextMessage,
-      hasDocumentMessage:   !!msg.documentMessage,
-      hasImageMessage:      !!msg.imageMessage,
-      hasVideoMessage:      !!msg.videoMessage,
-      conversationVal:      msg.conversation   ?? null,
-      extendedTextVal:      msg.extendedTextMessage?.text ?? null,
-      // ── audioMessage detalle ──
       ptt:        am?.ptt          ?? null,
       mimetype:   am?.mimetype     ?? null,
       seconds:    am?.seconds      ?? null,
