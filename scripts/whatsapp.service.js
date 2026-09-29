@@ -467,8 +467,12 @@ async function _attemptProactiveRotation(numero, sede, openAt) {
     const rec   = _recoveryPending.get(numero)
     const ageMs = Date.now() - rec.startedAt
     if (ageMs < PROACTIVE_ROTATION_PENDING_TTL_MS) {
-      _waLog('PROACTIVE_ROTATION_SKIPPED', { numero, sede, reason: 'recovery_pending',
-        age_ms: ageMs, ttl_ms: PROACTIVE_ROTATION_PENDING_TTL_MS })
+      // Programar retry para cuando el TTL expire + 30s de buffer.
+      // Se mantiene el mismo openAt → stale_timer invalida el retry si hubo nueva conexión.
+      const retryMs = (PROACTIVE_ROTATION_PENDING_TTL_MS - ageMs) + 30_000
+      _waLog('PROACTIVE_ROTATION_POSTPONED', { numero, sede,
+        reason: 'recovery_pending', age_ms: ageMs, retry_ms: retryMs })
+      setTimeout(() => _attemptProactiveRotation(numero, sede, openAt), retryMs)
       return
     }
     // TTL expirado — tráfico no llegó en ventana (ej. madrugada), liberar ciclo
