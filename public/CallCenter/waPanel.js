@@ -203,6 +203,7 @@ export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
         const rawAsig = localStorage.getItem(LS_KEY_ASIG);
         if (rawAsig) _state.asignaciones = JSON.parse(rawAsig);
     } catch { /* ignorar */ }
+    _reconciliarIgResueltas();  // Fix C: limpiar resueltas stale antes del render inicial
     // Cargar mapa sede→ciudad desde Supabase (fire-and-forget; defecto 'bucaramanga')
     getSedes().then(sedes => {
         SEDES_CIUDAD = Object.fromEntries(
@@ -3952,6 +3953,25 @@ function _limpiarConvsAntiguas() {
 
 // ── Asignaciones ───────────────────────────────────────────────────────────
 // ── IG Asignaciones ─────────────────────────────────────────────────────────
+// Elimina de _state.conv las convs IG cuya asignación ya está en estado 'resuelto'.
+// Guard: no toca la conv activa (para no romper el chat abierto).
+// Se llama desde: Fix C (init), Fix B (sync 60s), Fix A (WS ig:estado=resuelto).
+function _reconciliarIgResueltas() {
+    let changed = false;
+    for (const [scopeKey, convs] of Object.entries(_state.conv)) {
+        if (!scopeKey.startsWith('ig:')) continue;
+        for (const igsid of Object.keys(convs)) {
+            const asig = _state.asignaciones[`${scopeKey}:${igsid}`];
+            if (asig?.estado !== 'resuelto') continue;
+            const isActive = _state.activeNum === scopeKey && _state.activeContact === igsid;
+            if (isActive) continue;
+            delete _state.conv[scopeKey][igsid];
+            changed = true;
+        }
+    }
+    if (changed) _saveConv();
+}
+
 // Carga asignaciones Instagram y las mezcla en _state.asignaciones.
 // Solo toca claves ig:* — nunca modifica entradas WA existentes.
 // Modelo de entrada: [{ account_id, igsid, asesor, estado }]
@@ -3975,6 +3995,7 @@ async function _loadIgAsignaciones() {
             };
         }
         _saveAsig();
+        _reconciliarIgResueltas();
     } catch { /* sin conexión — no interrumpe init */ }
 }
 
@@ -4918,6 +4939,7 @@ function _onIgEstado({ accountId, igsid, estado }) {
         _state.asignaciones[key].estado = estado;
     }
     _saveAsig();
+    if (estado === 'resuelto') _reconciliarIgResueltas();
     _renderList();
     _scheduleConteos();
     if (_state.activeNum === num && _state.activeContact === String(igsid)) {
