@@ -88,17 +88,25 @@ const SESSION_DEGRADED_WINDOW_MS = 2 * 60 * 60_000  // ventana de observación: 
 const SESSION_DEGRADED_CHECK_MS  = 10 * 60_000 // primer check post-OPEN: 10 min
 const SESSION_DEGRADED_MIN_UP_MS = 8 * 60_000  // uptime mínimo antes de evaluar
 
-// ── Rotación preventiva de socket (Megamall + Cabecera) ──────────────────────
-// El 500 "Stream Errored (ack)" se observa cada ~50 min en estas sesiones.
-// Rotamos preventivamente en ventana 42-46 min con jitter aleatorio, usando el
-// mismo path de recrear-socket (conserva auth + Signal keys, no requiere QR).
-// Megamall aprobado (13 ciclos limpios). Cabecera: piloto activo desde 2026-09-18.
-const PROACTIVE_ROTATION_NUMEROS = new Set([
-  '573023566057',  // Megamall  — piloto aprobado (13 ciclos)
-  '573208619277',  // Cabecera  — piloto activo desde 2026-09-18
+// ── Rotación preventiva de socket — ventanas por sesión ───────────────────────
+// badSession natural: ~50min exactos para la mayoría de sesiones.
+// Cada sesión tiene ventana propia {min, max} en ms desde OPEN.
+// Fallback a 42–46min si un número activo no tiene entrada en el mapa.
+// Sesiones comentadas = preparadas pero NO activas hasta validar ciclo de retry.
+const PROACTIVE_ROTATION_DEFAULT_MIN_MS = 42 * 60_000   // fallback
+const PROACTIVE_ROTATION_DEFAULT_MAX_MS = 46 * 60_000   // fallback
+const PROACTIVE_ROTATION_CONFIG = new Map([
+  // ── Activas ──────────────────────────────────────────────────────────────────
+  ['573023566057', { min: 42 * 60_000, max: 46 * 60_000 }],  // Megamall    — sin cambio
+  ['573208619277', { min: 42 * 60_000, max: 46 * 60_000 }],  // Cabecera    — sin cambio
+  // ── Preparadas (descomentar tras validar ciclo retry) ────────────────────────
+  // ['573161111803', { min: 40 * 60_000, max: 42 * 60_000 }],  // Acrópolis   — badSession ~50min
+  // ['573113220209', { min: 41 * 60_000, max: 43 * 60_000 }],  // CC Nuestro  — badSession ~50min
+  // ['573161111845', { min: 42 * 60_000, max: 44 * 60_000 }],  // Piedecuesta — badSession ~50min
+  // ['573115941215', { min: 44 * 60_000, max: 46 * 60_000 }],  // Prado       — ciclo variable
+  // ['573147513040', { min: 46 * 60_000, max: 48 * 60_000 }],  // Único       — badSession ~117min
+  // ['573213714622', { min: 46 * 60_000, max: 48 * 60_000 }],  // Cañaveral   — badSession ~84min
 ])
-const PROACTIVE_ROTATION_MIN_MS       = 42 * 60_000     // 42 min mínimo desde OPEN
-const PROACTIVE_ROTATION_MAX_MS       = 46 * 60_000     // 46 min máximo desde OPEN
 const PROACTIVE_ROTATION_RETRY_MIN_MS = 30_000          // retry si ocupado: mín 30s
 const PROACTIVE_ROTATION_RETRY_MAX_MS = 60_000          // retry si ocupado: máx 60s
 
@@ -438,15 +446,20 @@ function _checkZombieV2(numero, sede) {
   })
 }
 
-// ── Rotación preventiva de socket (piloto Megamall) ───────────────────────────
+// ── Rotación preventiva de socket ────────────────────────────────────────────
 function _scheduleProactiveRotation(numero, sede, openAt) {
-  if (!PROACTIVE_ROTATION_NUMEROS.has(numero)) return
-  const jitter = Math.floor(Math.random() * (PROACTIVE_ROTATION_MAX_MS - PROACTIVE_ROTATION_MIN_MS))
-  const delay  = PROACTIVE_ROTATION_MIN_MS + jitter
+  const cfg   = PROACTIVE_ROTATION_CONFIG.get(numero)
+  if (!cfg) return
+  const minMs  = cfg.min ?? PROACTIVE_ROTATION_DEFAULT_MIN_MS
+  const maxMs  = cfg.max ?? PROACTIVE_ROTATION_DEFAULT_MAX_MS
+  const jitter = Math.floor(Math.random() * (maxMs - minMs))
+  const delay  = minMs + jitter
   _waLog('PROACTIVE_ROTATION_SCHEDULED', {
     numero, sede,
-    delay_min: (delay / 60_000).toFixed(1),
-    fires_at:  new Date(Date.now() + delay).toISOString(),
+    min_delay_ms:    minMs,
+    max_delay_ms:    maxMs,
+    chosen_delay_ms: delay,
+    fires_at:        new Date(Date.now() + delay).toISOString(),
   })
   setTimeout(() => _attemptProactiveRotation(numero, sede, openAt), delay)
 }
@@ -509,6 +522,10 @@ async function _attemptProactiveRotation(numero, sede, openAt) {
                   h => ({ ts: new Date(h.ts).toISOString(), recv: h.recv })
                 ),
   }
+  const _rotCfg = PROACTIVE_ROTATION_CONFIG.get(numero) ??
+    { min: PROACTIVE_ROTATION_DEFAULT_MIN_MS, max: PROACTIVE_ROTATION_DEFAULT_MAX_MS }
+  const _wMin   = _rotCfg.min / 60_000
+  const _wMax   = _rotCfg.max / 60_000
   const startedAt = Date.now()
   entrada._proactiveRotationPending = true
 
@@ -521,7 +538,7 @@ async function _attemptProactiveRotation(numero, sede, openAt) {
     msgs_sent:   ctrs.sent,
     msgs_recv:   ctrs.recv,
     bad_history: snapshot.badHistory,
-    window:      `${PROACTIVE_ROTATION_MIN_MS/60000}–${PROACTIVE_ROTATION_MAX_MS/60000}min`,
+    window:      `${_wMin}–${_wMax}min`,
   })
   _logConnEvent('WA_PROACTIVE_ROTATION', {
     numero, sede,
@@ -532,7 +549,7 @@ async function _attemptProactiveRotation(numero, sede, openAt) {
       started_at: new Date(startedAt).toISOString(),
       open_at:    new Date(openAt).toISOString(),
       uptime_ms:  uptimeMs,
-      window_min: `${PROACTIVE_ROTATION_MIN_MS/60000}–${PROACTIVE_ROTATION_MAX_MS/60000}`,
+      window_min: `${_wMin}–${_wMax}`,
       bad_history: snapshot.badHistory,
     },
   })
