@@ -1064,7 +1064,7 @@ async function poblarSelectsSedes() {
     _todasLasSedes = sedes;
 }
 
-const _SEDES_EXCLUIDAS_CC = new Set(['planta de produccion', 'gastrofusion']);
+const _SEDES_EXCLUIDAS_CC = new Set(['planta produccion', 'gastrofusion']);
 
 function _actualizarOpcionesSedes(ciudad) {
     const sedesFiltradas = _todasLasSedes.filter(s => {
