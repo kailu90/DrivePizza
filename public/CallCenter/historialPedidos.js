@@ -1064,10 +1064,14 @@ async function poblarSelectsSedes() {
     _todasLasSedes = sedes;
 }
 
+const _SEDES_EXCLUIDAS_CC = new Set(['planta de produccion', 'gastrofusion']);
+
 function _actualizarOpcionesSedes(ciudad) {
-    const sedesFiltradas = _todasLasSedes.filter(
-        s => (s.ciudad || 'bucaramanga').toLowerCase() === ciudad
-    );
+    const sedesFiltradas = _todasLasSedes.filter(s => {
+        const nombre = s.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return (s.ciudad || 'bucaramanga').toLowerCase() === ciudad
+            && !_SEDES_EXCLUIDAS_CC.has(nombre);
+    });
     ['filtro-sede', 'cf-sede'].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
