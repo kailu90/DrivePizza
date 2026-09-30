@@ -97,15 +97,14 @@ const PROACTIVE_ROTATION_DEFAULT_MIN_MS = 42 * 60_000   // fallback
 const PROACTIVE_ROTATION_DEFAULT_MAX_MS = 46 * 60_000   // fallback
 const PROACTIVE_ROTATION_CONFIG = new Map([
   // ── Activas ──────────────────────────────────────────────────────────────────
-  ['573023566057', { min: 42 * 60_000, max: 46 * 60_000 }],  // Megamall    — sin cambio
-  ['573208619277', { min: 42 * 60_000, max: 46 * 60_000 }],  // Cabecera    — sin cambio
-  // ── Preparadas (descomentar tras validar ciclo retry) ────────────────────────
-  // ['573161111803', { min: 40 * 60_000, max: 42 * 60_000 }],  // Acrópolis   — badSession ~50min
-  // ['573113220209', { min: 41 * 60_000, max: 43 * 60_000 }],  // CC Nuestro  — badSession ~50min
-  // ['573161111845', { min: 42 * 60_000, max: 44 * 60_000 }],  // Piedecuesta — badSession ~50min
-  // ['573115941215', { min: 44 * 60_000, max: 46 * 60_000 }],  // Prado       — ciclo variable
-  // ['573147513040', { min: 46 * 60_000, max: 48 * 60_000 }],  // Único       — badSession ~117min
-  // ['573213714622', { min: 46 * 60_000, max: 48 * 60_000 }],  // Cañaveral   — badSession ~84min
+  ['573023566057', { min: 42 * 60_000, max: 46 * 60_000 }],  // Megamall    — validado 2026-09-30
+  ['573208619277', { min: 42 * 60_000, max: 46 * 60_000 }],  // Cabecera    — validado 2026-09-30
+  ['573161111803', { min: 40 * 60_000, max: 42 * 60_000 }],  // Acrópolis   — badSession ~50min
+  ['573113220209', { min: 41 * 60_000, max: 43 * 60_000 }],  // CC Nuestro  — badSession ~50min
+  ['573161111845', { min: 42 * 60_000, max: 44 * 60_000 }],  // Piedecuesta — badSession ~50min
+  ['573115941215', { min: 44 * 60_000, max: 46 * 60_000 }],  // Prado       — ciclo variable
+  ['573147513040', { min: 46 * 60_000, max: 48 * 60_000 }],  // Único       — badSession ~117min
+  ['573213714622', { min: 46 * 60_000, max: 48 * 60_000 }],  // Cañaveral   — badSession ~84min
 ])
 const PROACTIVE_ROTATION_RETRY_MIN_MS = 30_000          // retry si ocupado: mín 30s
 const PROACTIVE_ROTATION_RETRY_MAX_MS = 60_000          // retry si ocupado: máx 60s
