@@ -102,6 +102,23 @@ function preLlenarDireccion() {
     const saved = JSON.parse(localStorage.getItem('dp_direccion'));
     if (!saved) return;
 
+    // Si el usuario eligió Recoger en home, pre-activar pill recoger
+    if (saved.tipoEntrega === 'recoger') {
+      _tipoEntrega = 'recoger';
+      document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.tipo === 'recoger');
+      });
+      coDomSec.style.display     = 'none';
+      coRecogerSec.style.display = '';
+      coRecogerInfo.innerHTML = `
+        <p>Pasa a recoger tu pedido en nuestra sede:</p>
+        <strong>${displayNombre(_sede)}</strong>
+        ${_sede?.direccion ? `<span>${_sede.direccion}</span>` : ''}`;
+      _domicilioFee = 0;
+      renderTotales();
+      return;
+    }
+
     // Activar pill domicilio
     _tipoEntrega = 'domicilio';
     document.querySelectorAll('#co-entrega-pills .pw-entrega-pill').forEach(p => {
