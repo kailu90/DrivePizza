@@ -7040,7 +7040,7 @@ async function _buscarClientes(q) {
         } else {
             _state.activeNum = num;
             _navTo('conv');
-            _openChat(normPhone);
+            _tomarChat(num, normPhone);
         }
     };
 
