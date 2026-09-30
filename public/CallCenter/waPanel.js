@@ -5979,7 +5979,7 @@ function _renderResueltas() {
                 : '';
         }
 
-        const sinNumeroR = !isIgConv && convData?.jidSuffix === '@lid' && !(c.display_phone || convData?.display_phone)
+        const sinNumeroR = !isIgConv && !/^\d{10,13}$/.test(c.contacto) && !(c.display_phone || convData?.display_phone)
             ? `<span class="wap-sin-num-badge" title="Sin número vinculado">⚠ Sin nro.</span>`
             : '';
 
@@ -6144,7 +6144,8 @@ function _renderList() {
                     ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
                     : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
-        const sinNumeroBadge = (data.jidSuffix === '@lid' && !data.display_phone && !isIgConv)
+        const _esLid = p => !data.display_phone && !/^\d{10,13}$/.test(p);
+        const sinNumeroBadge = !isIgConv && _esLid(phone)
             ? `<span class="wap-sin-num-badge" title="Sin número vinculado">⚠ Sin nro.</span>`
             : '';
 
