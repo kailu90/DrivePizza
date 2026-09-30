@@ -2449,16 +2449,20 @@ function _injectStyles() {
 .wap-reactions { position: absolute; bottom: -14px; right: 6px; display: flex; gap: 3px; z-index: 1; }
 .wap-msg--in .wap-reactions { right: auto; left: 6px; }
 .wap-reaction-badge { display: inline-flex; align-items: center; padding: 2px 6px; background: #fff; border-radius: 12px; font-size: 14px; cursor: default; box-shadow: 0 1px 3px rgba(0,0,0,.20); border: 1px solid rgba(0,0,0,.06); line-height: 1.4; }
+.wap-msg-footer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    align-self: flex-end;
+}
 .wap-msg-ts {
     font-size: 1rem;
     color: #9ca3af;
-    align-self: flex-end;
 }
 .wap-msg-edited {
     font-size: 1rem;
     color: #9ca3af;
     font-style: italic;
-    align-self: flex-end;
 }
 .wap-input-row {
     display: flex;
@@ -7210,7 +7214,7 @@ function _renderMsgs(forceBottom = false) {
             ${menuBtn}
             ${m.celular ? `<span class="wap-msg-celular-label">📱 Desde celular</span>` : (m.out && m.asesor ? `<span class="wap-msg-asesor">${_esc(m.asesor)}</span>` : '')}
             ${msgContent}
-            ${isEditing ? '' : `${m.editado ? '<span class="wap-msg-edited">Editado</span>' : ''}<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTsHora(m.ts) : '')}</span>${statusEl}`}
+            ${isEditing ? '' : `<div class="wap-msg-footer">${m.editado ? '<span class="wap-msg-edited">Editado</span>' : ''}<span class="wap-msg-ts">${m.pending || m.failed ? '' : (m.ts ? _fmtTsHora(m.ts) : '')}</span>${statusEl}</div>`}
             ${reactionBadges}
         </div>`;
         })());
