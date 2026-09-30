@@ -989,7 +989,8 @@ function filtrarColumnas(reiniciarPagina = false) {
         (!sede      || (p.sede     ?? "").toLowerCase().includes(sede)) &&
         (!asesor    || (p.asesor   ?? "").toLowerCase().includes(asesor)) &&
         (!estado    || (p.estado   ?? "").toLowerCase() === estado) &&
-        _ciudadDeSede(p.sede) === ciudadActual
+        _ciudadDeSede(p.sede) === ciudadActual &&
+        !_SEDES_EXCLUIDAS_CC.has((p.sede ?? "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
     );
     renderTabla(filtrados);
     renderResumen(filtrados);
