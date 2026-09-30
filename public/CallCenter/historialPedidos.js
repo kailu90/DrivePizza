@@ -25,8 +25,9 @@ if (_modoReservas) document.body.classList.add('modo-reservas');
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
 
 // ── CIUDAD ─────────────────────────────────────────────────────────────
-let _sedesCiudadMap  = {};
-let _todasLasSedes   = [];
+let _sedesCiudadMap      = {};
+let _todasLasSedes       = [];
+let _sedesActivasCiudad  = new Set(); // sedes visibles según ciudad actual (excluyendo no-CC)
 
 function _ciudadDeSede(sede) {
     const key = (sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -988,8 +989,7 @@ function filtrarColumnas(reiniciarPagina = false) {
         (!sede      || (p.sede     ?? "").toLowerCase().includes(sede)) &&
         (!asesor    || (p.asesor   ?? "").toLowerCase().includes(asesor)) &&
         (!estado    || (p.estado   ?? "").toLowerCase() === estado) &&
-        _ciudadDeSede(p.sede) === ciudadActual &&
-        !_SEDES_EXCLUIDAS_CC.has((p.sede ?? "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+        (!_sedesActivasCiudad.size || _sedesActivasCiudad.has((p.sede ?? "").toLowerCase()))
     );
     renderTabla(filtrados);
     renderResumen(filtrados);
@@ -1087,6 +1087,9 @@ function _actualizarOpcionesSedes(ciudad) {
         const sigueValida = [...sel.options].some(o => o.value === valorActual);
         sel.value = sigueValida ? valorActual : '';
     });
+
+    // Actualizar el Set de sedes válidas para filtrar las filas de la tabla
+    _sedesActivasCiudad = new Set(sedesFiltradas.map(s => s.name.toLowerCase()));
 }
 
 async function obtenerUsuarioCC() {
