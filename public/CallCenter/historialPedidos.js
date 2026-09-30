@@ -25,7 +25,8 @@ if (_modoReservas) document.body.classList.add('modo-reservas');
 const ESTADOS_ACTIVOS = new Set(["recibido", "en preparacion", "despachado"]);
 
 // ── CIUDAD ─────────────────────────────────────────────────────────────
-let _sedesCiudadMap = {};
+let _sedesCiudadMap  = {};
+let _todasLasSedes   = [];
 
 function _ciudadDeSede(sede) {
     const key = (sede || '').toLowerCase().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1060,15 +1061,27 @@ async function poblarSelectsSedes() {
         ])
     );
 
+    _todasLasSedes = sedes;
+}
+
+function _actualizarOpcionesSedes(ciudad) {
+    const sedesFiltradas = _todasLasSedes.filter(
+        s => (s.ciudad || 'bucaramanga').toLowerCase() === ciudad
+    );
     ['filtro-sede', 'cf-sede'].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
-        sedes.forEach(s => {
+        const valorActual = sel.value;
+        while (sel.options.length > 1) sel.remove(1);
+        sedesFiltradas.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.name.toLowerCase();
             opt.textContent = s.name;
             sel.appendChild(opt);
         });
+        // Mantener selección si sigue siendo válida en la nueva ciudad
+        const sigueValida = [...sel.options].some(o => o.value === valorActual);
+        sel.value = sigueValida ? valorActual : '';
     });
 }
 
@@ -1147,7 +1160,11 @@ async function obtenerUsuarioCC() {
             window.ciudadActual = usuario.ciudad;
         }
         initCiudadToggle('ciudad-toggle', { locked: rol === 'pizzeria' });
-        document.addEventListener('ciudad:change', () => filtrarColumnas(true));
+        _actualizarOpcionesSedes(getCiudadActual());
+        document.addEventListener('ciudad:change', () => {
+            _actualizarOpcionesSedes(getCiudadActual());
+            filtrarColumnas(true);
+        });
 
         // frame-visible / frame-hidden: gestión del ciclo de vida del iframe
         window.addEventListener('message', e => {
@@ -1202,6 +1219,7 @@ async function obtenerUsuarioCC() {
             document.querySelectorAll('.ciudad-btn').forEach(b =>
                 b.classList.toggle('ciudad-btn--active', b.dataset.ciudad === e.newValue)
             );
+            _actualizarOpcionesSedes(e.newValue);
             filtrarColumnas(true);
         });
 
