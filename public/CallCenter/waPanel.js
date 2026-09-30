@@ -148,6 +148,7 @@ let _asesorDdEl      = null;  // dropdown asesor singleton en <body> (escapa ove
 let _qrNumero        = null;  // numero cuyo QR modal esta abierto
 let _waitingQrFor    = null;  // numero que este cliente esta esperando escanear (solo quien lo genero)
 let _qrStepTimers    = [];    // timers de animación de pasos del modal QR
+let _qrCountdownTimer = null; // intervalo del cronómetro del modal QR
 let _tmpMsgId        = 0;     // contador para identificar mensajes optimistas
 let _asesoresCache   = [];    // lista de asesores pre-cargada al iniciar
 let _igCuentas       = null;  // null=no cargado, []=cargado vacío, [{...}]=datos
@@ -2818,6 +2819,30 @@ function _injectStyles() {
     margin-bottom: 16px;
     line-height: 1.4;
 }
+.wap-qr-timer-wrap {
+    margin-bottom: 14px;
+}
+.wap-qr-timer-bar {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.wap-qr-timer-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 3px;
+    transition: width 1s linear, background 0.5s;
+}
+.wap-qr-timer-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+    transition: color 0.5s;
+}
 .wap-qr-close {
     background: var(--color-primario);
     color: #fff;
@@ -3643,6 +3668,10 @@ function _renderShell(body) {
                 <p class="wap-qr-num" id="wap-qr-num"></p>
                 <div class="wap-qr-img" id="wap-qr-img"></div>
                 <p class="wap-qr-hint" id="wap-qr-hint">Abre WhatsApp &rarr; Dispositivos vinculados &rarr; Vincular dispositivo</p>
+                <div class="wap-qr-timer-wrap" id="wap-qr-timer-wrap" style="display:none">
+                    <div class="wap-qr-timer-bar"><div class="wap-qr-timer-fill" id="wap-qr-timer-fill"></div></div>
+                    <p class="wap-qr-timer-text" id="wap-qr-timer-text">3:00</p>
+                </div>
                 <button class="wap-qr-close" id="wap-qr-close">Cerrar</button>
             </div>
         </div>
@@ -4582,6 +4611,7 @@ function _onStatus({ numero, sede, status }) {
         const hintEl = document.getElementById('wap-qr-hint');
         if (modal?.classList.contains('active') && imgEl) {
             _stopQrSteps();
+            _stopQrCountdown();
             imgEl.innerHTML = `
                 <div class="wap-qr-loader">
                     <div class="wap-qr-scanned">✓</div>
@@ -7760,6 +7790,7 @@ function _showQr(numero, qrData) {
         _stopQrSteps();
         imgEl.innerHTML = `<img src="${qrData}" alt="QR WhatsApp">`;
         if (hintEl) hintEl.style.display = '';
+        _startQrCountdown(180);
     } else {
         // Sin QR aún — mostrar loader animado con pasos
         imgEl.innerHTML = `
@@ -7786,9 +7817,44 @@ function _showQr(numero, qrData) {
 
 function _closeQr() {
     _stopQrSteps();
+    _stopQrCountdown();
     document.getElementById('wap-qr-modal')?.classList.remove('active');
     _qrNumero     = null;
     _waitingQrFor = null;
+}
+
+function _startQrCountdown(totalSecs) {
+    _stopQrCountdown();
+    const wrap = document.getElementById('wap-qr-timer-wrap');
+    const fill = document.getElementById('wap-qr-timer-fill');
+    const text = document.getElementById('wap-qr-timer-text');
+    if (!wrap || !fill || !text) return;
+    wrap.style.display = '';
+    let remaining = totalSecs;
+    const _tick = () => {
+        const pct = (remaining / totalSecs) * 100;
+        fill.style.width = pct + '%';
+        fill.style.background = pct > 50 ? '#25D366' : pct > 20 ? '#f59e0b' : '#ef4444';
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        text.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        text.style.color  = pct > 50 ? '#25D366' : pct > 20 ? '#f59e0b' : '#ef4444';
+        if (remaining <= 0) {
+            _stopQrCountdown();
+            text.textContent = 'QR expirado — nuevo código en camino...';
+            fill.style.width = '0%';
+            return;
+        }
+        remaining--;
+    };
+    _tick();
+    _qrCountdownTimer = setInterval(_tick, 1000);
+}
+
+function _stopQrCountdown() {
+    if (_qrCountdownTimer) { clearInterval(_qrCountdownTimer); _qrCountdownTimer = null; }
+    const wrap = document.getElementById('wap-qr-timer-wrap');
+    if (wrap) wrap.style.display = 'none';
 }
 
 // ── Reconectar sesión desconectada (admin) ────────────────────────────────

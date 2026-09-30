@@ -1401,6 +1401,7 @@ export async function iniciarSesion(numero, sede) {
     },
     logger,
     printQRInTerminal: false,
+    qrTimeout: 180_000,
     browser: Browsers.ubuntu('Chrome'),
     keepAliveIntervalMs: 20_000,
     connectTimeoutMs: 60_000,
