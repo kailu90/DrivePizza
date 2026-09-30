@@ -2362,9 +2362,9 @@ function _injectStyles() {
 .wap-espera-bar {
     display: none;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 6px 14px;
     background: #fffbeb;
     border-top: 2px solid #fde68a;
     font-size: 1.05rem;
@@ -2372,7 +2372,7 @@ function _injectStyles() {
     flex-shrink: 0;
 }
 .wap-espera-bar.visible { display: flex; }
-.wap-espera-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.wap-espera-btns { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
 .wap-tomar-chat-btn {
     background: var(--color-primario);
     color: #fff;
@@ -3439,6 +3439,10 @@ function _renderShell(body) {
                                     <button class="wap-action-item" id="wap-action-unificar" style="display:none;">&#128279; Unificar identidad</button>
                                 </div>
                             </div>
+                            <div class="wap-espera-btns" id="wap-espera-header-btns" style="display:none;">
+                                <button class="wap-tomar-chat-btn" id="wap-tomar-chat-btn">Tomar</button>
+                                <button class="wap-resolver-espera-btn" id="wap-resolver-espera-btn">&#10003; Resolver</button>
+                            </div>
                             <button class="wap-abrir-btn" id="wap-abrir-btn" style="display:none;">Abrir conversaci&#xF3;n</button>
                         </div>
                         <div class="wap-msgs" id="wap-msgs"></div>
@@ -3447,10 +3451,6 @@ function _renderShell(body) {
                         </div>
                         <div class="wap-espera-bar" id="wap-espera-bar">
                             <span id="wap-espera-label">💬 En espera — toma el chat para responder</span>
-                            <div class="wap-espera-btns">
-                                <button class="wap-tomar-chat-btn" id="wap-tomar-chat-btn">Tomar</button>
-                                <button class="wap-resolver-espera-btn" id="wap-resolver-espera-btn">&#10003; Resolver</button>
-                            </div>
                         </div>
                         <div class="wap-resuelto-bar" id="wap-resuelto-bar">
                             <span>&#x2705; Chat resuelto &mdash; solo lectura</span>
@@ -7274,13 +7274,11 @@ function _updateOfflineBar() {
     if (resBar)    resBar.classList.toggle('visible', resuelto);
     const abrirBtn = document.getElementById('wap-abrir-btn');
     if (abrirBtn)  abrirBtn.style.display = resuelto ? '' : 'none';
-    if (esperaBar) {
-        esperaBar.classList.toggle('visible', enEspera);
-        const tomarBtn    = document.getElementById('wap-tomar-chat-btn');
-        const esperaLabel = document.getElementById('wap-espera-label');
-        if (tomarBtn)    tomarBtn.style.display = '';
-        if (esperaLabel) esperaLabel.textContent = '💬 En espera — toma el chat para responder';
-    }
+    if (esperaBar) esperaBar.classList.toggle('visible', enEspera);
+    const esperaHeaderBtns = document.getElementById('wap-espera-header-btns');
+    if (esperaHeaderBtns) esperaHeaderBtns.style.display = enEspera ? 'flex' : 'none';
+    const esperaLabel = document.getElementById('wap-espera-label');
+    if (esperaLabel) esperaLabel.textContent = '💬 En espera — toma el chat para responder';
 
     // Bloqueado (resuelto o en espera): ocultar input y atenuar mensajes
     if (inputRow) inputRow.style.display = bloqueado ? 'none' : '';
