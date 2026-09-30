@@ -152,8 +152,7 @@ async function cargarPedidos(filtros = {}, forzar = false) {
         if (cached) {
             pedidosCargados = cached;
             poblarSelectAsesores();
-            renderTabla(pedidosCargados);
-            renderResumen(pedidosCargados);
+            filtrarColumnas();
             mostrarEstadoCache(true);
             return;
         }
