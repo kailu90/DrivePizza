@@ -163,9 +163,11 @@
                             <tr class="inventory-management__row">
                                 <th class="inventory-management__heading">N°</th>
                                 <th class="inventory-management__heading">Fecha / Hora</th>
+                                <th class="inventory-management__heading">Teléfono</th>
                                 <th class="inventory-management__heading">Cliente</th>
                                 <th class="inventory-management__heading">Dirección</th>
                                 <th class="inventory-management__heading">Canal</th>
+                                <th class="inventory-management__heading">Pago</th>
                                 <th class="inventory-management__heading">Sede</th>
                                 <th class="inventory-management__heading">Asesor</th>
                                 <th class="inventory-management__heading">Estado</th>
@@ -175,6 +177,7 @@
                             <tr class="filtros-columna">
                                 <th><input type="text" class="col-filter" id="cf-npedido" placeholder="N° pedido"></th>
                                 <th><input type="text" class="col-filter" id="cf-fecha" placeholder="dd/mm/aa"></th>
+                                <th><input type="text" class="col-filter" id="cf-telefono" placeholder="Teléfono"></th>
                                 <th><input type="text" class="col-filter" id="cf-cliente" placeholder="Nombre cliente"></th>
                                 <th><input type="text" class="col-filter" id="cf-direccion" placeholder="Dirección"></th>
                                 <th>
@@ -185,6 +188,7 @@
                                         <option value="web">Web</option>
                                     </select>
                                 </th>
+                                <th><input type="text" class="col-filter" id="cf-pago" placeholder="Método de pago"></th>
                                 <th>
                                     <select class="col-filter" id="cf-sede">
                                         <option value="">Todas</option>
@@ -211,7 +215,7 @@
                         </thead>
                         <tbody id="historial-tbody">
                             <tr>
-                                <td class="inventory-management__cell" colspan="10" style="text-align:center; padding: 30px;">
+                                <td class="inventory-management__cell" colspan="12" style="text-align:center; padding: 30px;">
                                     Cargando pedidos...
                                 </td>
                             </tr>

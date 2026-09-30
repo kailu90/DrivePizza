@@ -297,7 +297,7 @@ function renderTabla(pedidos) {
         const desde = document.getElementById("filtro-desde").value;
         const hasta = document.getElementById("filtro-hasta").value;
         const rango = desde === hasta ? `el ${desde}` : `del ${desde} al ${hasta}`;
-        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="10" style="text-align:center;padding:30px;">No se encontraron pedidos para ${rango}.</td></tr>`;
+        tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="12" style="text-align:center;padding:30px;">No se encontraron pedidos para ${rango}.</td></tr>`;
         renderPaginacion(0);
         return;
     }
@@ -359,9 +359,11 @@ function renderTabla(pedidos) {
             title="${activo ? "Gestionar pedido" : "Ver detalle"}">
             <td class="inventory-management__cell">#${p.nPedido ?? "—"}${puntoCelda}</td>
             <td class="inventory-management__cell">${formatFecha(p.fecha)}</td>
+            <td class="inventory-management__cell">${p.telefono ?? "—"}</td>
             <td class="inventory-management__cell">${p.nombre ?? "—"}</td>
             <td class="inventory-management__cell" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;" title="${esTaller ? "Taller Pizzeritos" : esReserva ? "Reserva" : esRecoger ? "Recoger en tienda" : (p.direccion ?? "")}">${dirDisplay}</td>
             <td class="inventory-management__cell" style="text-align:center;">${canalLabel}</td>
+            <td class="inventory-management__cell">${p.pago ?? "—"}</td>
             <td class="inventory-management__cell" style="text-transform:capitalize;">${p.sede ?? "—"}</td>
             <td class="inventory-management__cell">${p.asesor ?? "—"}</td>
             <td class="inventory-management__cell">${badgeEstado(p.estado ?? "—")}</td>
@@ -962,9 +964,11 @@ function filtrarColumnas(reiniciarPagina = false) {
     if (reiniciarPagina) paginaActual = 1;
     const npedido   = document.getElementById("cf-npedido").value.toLowerCase();
     const fecha     = document.getElementById("cf-fecha").value.toLowerCase();
+    const telefono  = document.getElementById("cf-telefono").value.toLowerCase();
     const cliente   = document.getElementById("cf-cliente").value.toLowerCase();
     const direccion = document.getElementById("cf-direccion").value.toLowerCase();
     const canal     = document.getElementById("cf-canal").value.toLowerCase();
+    const pago      = document.getElementById("cf-pago").value.toLowerCase();
     const sede      = document.getElementById("cf-sede").value.toLowerCase();
     const asesor    = document.getElementById("cf-asesor").value.toLowerCase();
     const estado    = document.getElementById("cf-estado").value.toLowerCase();
@@ -983,9 +987,11 @@ function filtrarColumnas(reiniciarPagina = false) {
     const filtrados = base.filter(p =>
         (!npedido   || String(p.nPedido ?? "").includes(npedido)) &&
         (!fecha     || formatFecha(p.fecha).toLowerCase().includes(fecha)) &&
+        (!telefono  || (p.telefono ?? "").toLowerCase().includes(telefono)) &&
         (!cliente   || (p.nombre   ?? "").toLowerCase().includes(cliente)) &&
         (!direccion || (p.direccion ?? "").toLowerCase().includes(direccion)) &&
         (!canal     || (p.canal    ?? "").toLowerCase() === canal) &&
+        (!pago      || (p.pago     ?? "").toLowerCase().includes(pago)) &&
         (!sede      || (p.sede     ?? "").toLowerCase().includes(sede)) &&
         (!asesor    || (p.asesor   ?? "").toLowerCase().includes(asesor)) &&
         (!estado    || (p.estado   ?? "").toLowerCase() === estado) &&
@@ -1006,7 +1012,7 @@ function cerrarPanel() {
 }
 
 // ── EVENTOS ────────────────────────────────────────────────────────────
-["cf-npedido","cf-fecha","cf-cliente","cf-direccion","cf-canal","cf-sede","cf-asesor","cf-estado"].forEach(id => {
+["cf-npedido","cf-fecha","cf-telefono","cf-cliente","cf-direccion","cf-canal","cf-pago","cf-sede","cf-asesor","cf-estado"].forEach(id => {
     document.getElementById(id).addEventListener("input", () => filtrarColumnas(true));
 });
 document.getElementById("filtro-tipo").addEventListener("change", () => filtrarColumnas(true));
