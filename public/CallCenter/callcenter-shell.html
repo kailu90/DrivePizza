@@ -374,6 +374,19 @@
         if (e.data?.type === 'wa-visible') {
             _setWaVisible(e.data.show !== false);
         }
+        if (e.data?.type === 'filtros-panel') {
+            const waPanel = document.getElementById('wa-panel');
+            if (e.data.open) {
+                waPanel._filtrosWasExpanded = waPanel.classList.contains('expanded');
+                waPanel.style.display = 'none';
+                _postWaOffset();
+            } else {
+                waPanel.style.display = '';
+                if (waPanel._filtrosWasExpanded) waPanel.classList.add('expanded');
+                waPanel._filtrosWasExpanded = undefined;
+                _postWaOffset();
+            }
+        }
         if (e.data?.type === 'nav-switch') {
             _switchView(e.data.page, e.data.params);
             return;

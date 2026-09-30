@@ -1005,10 +1005,18 @@ function filtrarColumnas(reiniciarPagina = false) {
 function abrirPanel() {
     document.getElementById("filtros-panel").classList.add("open");
     document.getElementById("filtros-overlay").classList.add("open");
+    // Ocultar panel WA del shell para que no tape el filtro
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'filtros-panel', open: true }, '*');
+    }
 }
 function cerrarPanel() {
     document.getElementById("filtros-panel").classList.remove("open");
     document.getElementById("filtros-overlay").classList.remove("open");
+    // Restaurar panel WA del shell
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'filtros-panel', open: false }, '*');
+    }
 }
 
 // ── EVENTOS ────────────────────────────────────────────────────────────
