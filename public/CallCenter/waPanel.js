@@ -5979,6 +5979,10 @@ function _renderResueltas() {
                 : '';
         }
 
+        const sinNumeroR = !isIgConv && convData?.jidSuffix === '@lid' && !(c.display_phone || convData?.display_phone)
+            ? `<span class="wap-sin-num-badge" title="Sin número vinculado">⚠ Sin nro.</span>`
+            : '';
+
         return `${sep}<div class="wap-conv-item${isActive ? ' wap-conv-item--active' : ''}"
                     data-phone="${c.contacto}" data-num="${c.numero}"
                     style="align-items:flex-start;padding-right:12px;">
@@ -5989,7 +5993,7 @@ function _renderResueltas() {
                     <span class="wap-conv-name">${_esc(display)}</span>
                     <span class="wap-conv-ts">${ts}</span>
                 </div>
-                ${badgeHtml ? `<div style="margin-top:3px;">${badgeHtml}</div>` : ''}
+                ${badgeHtml || sinNumeroR ? `<div style="margin-top:3px;">${badgeHtml}${sinNumeroR}</div>` : ''}
                 ${asesorEl  ? `<div>${asesorEl}</div>`                          : ''}
             </div>
         </div>`;
