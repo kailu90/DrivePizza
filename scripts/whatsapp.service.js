@@ -2283,20 +2283,28 @@ export async function iniciarSesion(numero, sede) {
         hasProtoEdit: !!(update.message?.protocolMessage?.type === 14),
         hasStatus: update.status != null,
       })
-      // ── Mensajes editados por el cliente (fromMe: false) ─────────────
-      if (!key.fromMe) {
+      // ── Mensajes editados (fromMe: false = cliente, fromMe: true = asesor desde celular) ──
+      if (!key.fromMe || update.message?.editedMessage || update.message?.protocolMessage?.type === 14) {
+        if (!_jidValido(key.remoteJid)) continue  // ignorar status@broadcast y broadcasts
         const editedWrapper = update.message?.editedMessage
         const protoEdit = update.message?.protocolMessage
         let originalMsgId = null
         let textoEditado = null
         let editFormat = null
         if (editedWrapper) {
-          // Baileys 6.7.x: key.id ya es el ID del mensaje original; editedWrapper.message es el contenido nuevo
+          // Navegar igual que messages.upsert formato 1:
+          // editedWrapper.message.protocolMessage.key.id = ID original
+          // editedWrapper.message.protocolMessage.editedMessage = contenido nuevo
           editFormat = 'editedWrapper'
-          originalMsgId = key.id
-          const editedMsg = editedWrapper.message || {}
-          const inner = extractMessageContent(editedMsg) || editedMsg
-          textoEditado = inner.conversation || inner.extendedTextMessage?.text || null
+          const innerProto = editedWrapper.message?.protocolMessage
+          originalMsgId = innerProto?.key?.id || key.id
+          const innerM = extractMessageContent(innerProto?.editedMessage) || innerProto?.editedMessage || {}
+          textoEditado = innerM.conversation || innerM.extendedTextMessage?.text || null
+          // Fallback: el mensaje puede venir plano en editedWrapper.message
+          if (!textoEditado) {
+            const fb = extractMessageContent(editedWrapper.message) || editedWrapper.message || {}
+            textoEditado = fb.conversation || fb.extendedTextMessage?.text || null
+          }
         } else if (protoEdit?.type === 14 && protoEdit?.editedMessage) {
           editFormat = 'proto14_update'
           originalMsgId = protoEdit.key?.id
@@ -2304,7 +2312,7 @@ export async function iniciarSesion(numero, sede) {
           textoEditado = inner.conversation || inner.extendedTextMessage?.text || null
         }
         if (editFormat) {
-          _waLog('EDIT_RECEIVED', { sessionId: numero, format: editFormat, msgId: key.id, remoteJid: key.remoteJid, fromMe: false, originalMsgId })
+          _waLog('EDIT_RECEIVED', { sessionId: numero, format: editFormat, msgId: key.id, remoteJid: key.remoteJid, fromMe: !!key.fromMe, originalMsgId })
           if (originalMsgId && textoEditado) {
             _waLog('EDIT_PARSE_OK', { sessionId: numero, format: editFormat, originalMsgId, extractedTextLength: textoEditado.length })
           } else {
