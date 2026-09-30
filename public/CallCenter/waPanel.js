@@ -1205,6 +1205,9 @@ function _injectStyles() {
 .wap-estado--espera  { background: #fef9c3; color: #b45309; }
 .wap-estado--mio     { background: #dbeafe; color: #1d4ed8; }
 .wap-estado--resuelto{ background: #dcfce7; color: #16a34a; }
+.wap-sin-num-badge   { display: inline-block; font-size: 1rem; font-weight: 700;
+                       padding: 1px 6px; border-radius: 10px; margin-left: 4px;
+                       background: #fee2e2; color: #b91c1c; }
 
 /* ── Resueltas — lista enriquecida ───────────────── */
 .wap-r-date-sep {
@@ -6137,6 +6140,10 @@ function _renderList() {
                     ? `<span class="wap-estado-tag wap-estado--resuelto">Resuelto</span>`
                     : asig ? `<span class="wap-estado-tag wap-estado--mio">${_esc(asig.asesor)}</span>` : '';
 
+        const sinNumeroBadge = (data.jidSuffix === '@lid' && !data.display_phone && !isIgConv)
+            ? `<span class="wap-sin-num-badge" title="Sin número vinculado">⚠ Sin nro.</span>`
+            : '';
+
         const tomarBtn = esLibre
             ? `<button class="wap-tomar-btn" data-num="${num}" data-phone="${phone}">TOMAR</button>`
             : '';
@@ -6153,7 +6160,7 @@ function _renderList() {
                     <span class="wap-conv-last">${sub || _esc(data.lastMsg)}</span>
                     ${unread}
                 </div>
-                ${estadoTag ? `<div class="wap-conv-row" style="margin-top:3px;">${estadoTag}</div>` : ''}
+                ${(estadoTag || sinNumeroBadge) ? `<div class="wap-conv-row" style="margin-top:3px;">${estadoTag}${sinNumeroBadge}</div>` : ''}
                 <div class="wap-conv-row" style="margin-top:3px;justify-content:flex-end;">${ciudadBadge}</div>
             </div>
             ${tomarBtn}
