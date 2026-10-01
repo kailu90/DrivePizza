@@ -135,7 +135,7 @@ async function initializeForm({ username, sede, rol }) {
 }
 
 function estaEnVentanaAviso() {
-  // Ventana: lunes 16:00 → miércoles 16:00 (hora Colombia UTC-5)
+  // Ventana: martes 14:00 → jueves 14:00 (hora Colombia UTC-5)
   const ahora = new Date();
   const offsetCOL = -5 * 60;
   const localMin  = ahora.getTime() / 60000 + ahora.getTimezoneOffset() + offsetCOL;
@@ -143,7 +143,7 @@ function estaEnVentanaAviso() {
   const dia  = col.getDay();
   const hhmm = col.getHours() * 60 + col.getMinutes();
   const las14 = 14 * 60;
-  return (dia === 1 && hhmm >= las14) || dia === 2 || (dia === 3 && hhmm < las14);
+  return (dia === 2 && hhmm >= las14) || dia === 3 || (dia === 4 && hhmm < las14);
 }
 
 function mostrarAvisoOBienvenida() {
