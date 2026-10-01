@@ -7075,12 +7075,18 @@ async function _buscarClientes(q) {
         if (d.startsWith('3')  && d.length === 10) return `57${d}`;
         return d;
     };
-    const _iniciarConNum = (phone) => {
+    const _iniciarConNum = (phone, nombre = null) => {
         if (!_ncSesionSeleccionada) { alert('Selecciona una sesión primero'); return; }
         const normPhone = _normPhone(phone);
         const num       = _ncSesionSeleccionada;
         const cb        = _ncCallback; // guardar ANTES de cerrar (closeModal pone _ncCallback=null)
         _closeNuevaConvModal();
+        // Sembrar nombre en _state.conv para que el header lo muestre inmediatamente
+        if (nombre) {
+            if (!_state.conv[num]) _state.conv[num] = {};
+            if (!_state.conv[num][normPhone]) _state.conv[num][normPhone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, nombre: null, name: null };
+            _state.conv[num][normPhone].nombre = nombre;
+        }
         if (cb) {
             cb(num, normPhone);
         } else {
@@ -7097,7 +7103,7 @@ async function _buscarClientes(q) {
     const yaEnResultados = clientes.some(c => c.telefono === numLimpio || c.telefono === q);
 
     const htmlResultados = clientes.map(c => `
-        <div class="wap-nc-result" data-phone="${c.telefono}">
+        <div class="wap-nc-result" data-phone="${c.telefono}" data-nombre="${_esc(c.nombre || '')}">
             <span class="wap-nc-result-name">${_esc(c.nombre || '—')}</span>
             <span class="wap-nc-result-phone">${_esc(c.telefono)}${c.ciudad ? ' · ' + _esc(c.ciudad) : ''}</span>
         </div>
@@ -7117,7 +7123,7 @@ async function _buscarClientes(q) {
     res.innerHTML = htmlResultados + htmlNuevoNum;
 
     res.querySelectorAll('.wap-nc-result').forEach(el => {
-        el.addEventListener('click', () => _iniciarConNum(el.dataset.phone));
+        el.addEventListener('click', () => _iniciarConNum(el.dataset.phone, el.dataset.nombre || null));
     });
     res.querySelector('.wap-nc-new-num')?.addEventListener('click', e => {
         _iniciarConNum(e.currentTarget.dataset.phone);
