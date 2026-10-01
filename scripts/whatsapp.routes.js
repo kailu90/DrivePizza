@@ -20,7 +20,8 @@ import { normalizarTelefono } from './wa-utils.js'
 
 // Enriquece lista de conversaciones con identidad comercial.
 // Prioridad: wa_contacts.customer_id → clientes (fuente de verdad)
-// Fallback:  JOIN por teléfono normalizado (descubrimiento cuando customer_id IS NULL)
+// Fallback 1: JOIN por teléfono normalizado (descubrimiento cuando customer_id IS NULL)
+// Fallback 2: LIDs (numérico ≥13 dígitos) → wa_identidades → teléfono real → clientes
 // Retorna cada conv con: nombre_cliente, display_name, display_phone, customer_id, push_name
 async function _enriquecerConversaciones(convs) {
   if (!convs?.length || !supabase) return convs
@@ -63,13 +64,30 @@ async function _enriquecerConversaciones(convs) {
     }
   }
 
+  // ── Paso 2b: resolver LIDs via wa_identidades ─────────────────────────────
+  // LID: numérico ≥13 dígitos — normalizarTelefono no puede convertirlo a teléfono real.
+  // wa_identidades acumula el mapeo lid→telefono desde vincular manual y merge automático.
+  const lidSet = new Set(phonesFb.filter(t => /^\d{13,}$/.test(t)))
+  const lidToPhone = {} // { lid: telefono_10_digitos }
+  if (lidSet.size) {
+    const { data: identRows } = await supabase.from('wa_identidades')
+      .select('lid, telefono')
+      .in('lid', [...lidSet])
+    for (const r of (identRows || [])) lidToPhone[r.lid] = r.telefono
+  }
+  // phonesFbFinal: teléfonos normales + teléfonos resueltos desde LIDs (sin los LIDs mismos)
+  const phonesFbFinal = [
+    ...phonesFb.filter(t => !/^\d{13,}$/.test(t)),
+    ...Object.values(lidToPhone),
+  ]
+
   // ── Paso 3: consultar clientes (en paralelo, por UUID y por teléfono) ─────
   const [{ data: clientesPorId }, { data: clientesPorTel }] = await Promise.all([
     customerIds.length
       ? supabase.from('clientes').select('id, nombre, telefono').in('id', [...new Set(customerIds)])
       : Promise.resolve({ data: [] }),
-    phonesFb.length
-      ? supabase.from('clientes').select('id, nombre, telefono').in('telefono', [...new Set(phonesFb)])
+    phonesFbFinal.length
+      ? supabase.from('clientes').select('id, nombre, telefono').in('telefono', [...new Set(phonesFbFinal)])
       : Promise.resolve({ data: [] }),
   ])
 
@@ -89,14 +107,17 @@ async function _enriquecerConversaciones(convs) {
       // Fast path: vínculo oficial ya establecido
       cliente = clienteByIdMap[customer_id] || null
     } else {
-      // Discovery: JOIN por teléfono normalizado (customer_id se llenará en próximo mensaje)
-      const tel = normalizarTelefono(c.contacto)
-      cliente   = tel ? (clienteByTelMap[tel] || null) : null
+      // Discovery: teléfono normalizado; para LIDs usar teléfono resuelto desde wa_identidades
+      const rawTel = normalizarTelefono(c.contacto)
+      const tel    = lidToPhone[rawTel] || rawTel
+      cliente      = tel ? (clienteByTelMap[tel] || null) : null
     }
 
     const nombre_cliente = cliente?.nombre || null
     const display_name   = nombre_cliente  || push_name || null
-    const display_phone  = cliente?.telefono || normalizarTelefono(c.contacto) || c.contacto
+    // display_phone: teléfono real del cliente, o resuelto desde LID, o normalizado del contacto
+    const resolvedPhone  = cliente?.telefono || lidToPhone[normalizarTelefono(c.contacto)] || null
+    const display_phone  = resolvedPhone || normalizarTelefono(c.contacto) || c.contacto
 
     return { ...c, nombre_cliente, display_name, display_phone, customer_id, push_name }
   })
