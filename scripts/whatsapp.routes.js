@@ -169,7 +169,18 @@ export async function whatsappRoutes(fastify, options) {
     if (!nombre?.trim()) return reply.code(400).send({ error: 'nombre requerido' })
     if (!supabase) return reply.code(503).send({ error: 'Supabase no disponible' })
 
-    const telefono = normalizarTelefono(contacto) ?? contacto
+    let telefono = normalizarTelefono(contacto) ?? contacto
+    // Si el contacto es un LID (numérico ≥13 dígitos), resolver el teléfono real via wa_identidades
+    // para que el upsert actualice el registro correcto en clientes y no cree un registro fantasma
+    if (/^\d{13,}$/.test(telefono)) {
+      const { data: identRow } = await supabase.from('wa_identidades')
+        .select('telefono').eq('lid', telefono).maybeSingle()
+      if (identRow?.telefono) {
+        telefono = identRow.telefono
+      } else {
+        return reply.code(422).send({ error: 'Contacto sin teléfono real vinculado. Usa el botón 🔗 primero.' })
+      }
+    }
 
     // 1. Upsert en clientes (fuente de verdad para nombre/teléfono)
     const { error } = await supabase.from('clientes')
