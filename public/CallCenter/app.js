@@ -1858,7 +1858,7 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         : (menuData["Bordes"] || []).filter(b => b.opciones[tamanoRaw] !== undefined);
 
     const _conteo = (nombre) =>
-        carrito.filter(c => c.pizzaId === itemId && c.nombre.startsWith(nombre + ' (')).length;
+        carrito.filter(c => c.pizzaId === itemId && (c.nombre === nombre || c.nombre.startsWith(nombre + ' —'))).length;
 
     // ── Vista 1: Selector de adición / borde ────────────────────────────────
     function mostrarVistaSelector() {
@@ -1906,7 +1906,7 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
             btn.addEventListener('click', () => {
                 carrito.push({
                     id:            Date.now(),
-                    nombre:        `${btn.dataset.nombre} (${tamanoRaw})`,
+                    nombre:        btn.dataset.nombre,
                     precio:        Number(btn.dataset.precio),
                     qty:           1,
                     pizzaId:       itemId,
@@ -1942,9 +1942,10 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
 
         gridOpciones.querySelectorAll('.btn-alcance-pick').forEach(btn => {
             btn.addEventListener('click', () => {
+                const etiqAlcance = btn.dataset.alcance === 'completa' ? 'Completa' : 'Media';
                 carrito.push({
                     id:            Date.now(),
-                    nombre:        `${nombreAdicion} (${tamanoRaw})`,
+                    nombre:        `${nombreAdicion} — ${etiqAlcance}`,
                     precio:        Number(btn.dataset.precio),
                     qty:           1,
                     pizzaId:       itemId,
