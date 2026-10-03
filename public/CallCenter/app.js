@@ -472,8 +472,34 @@ function renderProducts(categoria) {
         const prefijo = modoCalzoneActivo ? "Calzone " : "";
         const nombreCompleto = `${prefijo}${p.nombre}`;
 
-        // Fast-combo: todas las hamburguesas con combo en Cartago → botones Sola/En Combo
+        // Fast-variante: productos con variantes de preparación → botones directos en card
         const opEfectivasRender = _resolverOpciones(p, opcionesFinales, _ciudadMenu, _sedeMenu);
+        if (p.variantes?.length) {
+            const preciosBase  = Object.values(opEfectivasRender);
+            const precioMin    = Math.min(...preciosBase);
+            const precioMax    = Math.max(...preciosBase);
+            const precioDisplay = precioMin === precioMax
+                ? `$${precioMin.toLocaleString()}`
+                : `$${precioMin.toLocaleString()}+`;
+            const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
+            const btnClasses = ['fast-combo-btn--sola', 'fast-combo-btn--combo'];
+            return `
+                <div class="card card--fast-combo" data-nombre="${nombreCompleto}">
+                    <h4>${nombreCompleto}</h4>
+                    ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[_ciudadMenu] || p.descripcion}</p>` : ''}
+                    ${p.noNuestro && _ciudadMenu === 'cartago' ? `<span class="badge-no-nuestro">⚠️ Solo El Prado</span>` : ''}
+                    <div class="fast-combo-actions">
+                        ${p.variantes.map((v, i) => `
+                            <button class="fast-combo-btn ${btnClasses[i] || ''}" onclick='agregarRapidoVariante(${pJson}, ${JSON.stringify(v)})'>
+                                ${v} &nbsp;<strong>${precioDisplay}</strong>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fast-combo: todas las hamburguesas con combo en Cartago → botones Sola/En Combo
         if (p.tieneCombo && _ciudadMenu === 'cartago') {
             const preciosBase = Object.values(opEfectivasRender);
             const precioMinBase = Math.min(...preciosBase);
@@ -545,6 +571,23 @@ function prepararSeleccion(producto, categoria) {
     
     abrirSeleccion(productoFinal);
 }
+
+// Agrega producto con variante directamente al carrito (ej: Pasta Marinera — Salsa Blanca)
+window.agregarRapidoVariante = function(producto, variante) {
+    const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
+    const entries = Object.entries(opEfectivas);
+    const meta = {};
+    if (producto.noNuestro) meta.noNuestro = true;
+    const nombreConVariante = `${producto.nombre} — ${variante}`;
+    if (entries.length === 1) {
+        const [, precio] = entries[0];
+        confirmarAgregar(nombreConVariante, '', precio, meta);
+    } else {
+        abrirOpcionesRapidas({ ...producto, nombre: nombreConVariante }, false);
+    }
+};
 
 // Agrega hamburguesa directo al carrito o abre modal de opciones (fast-combo, Cartago)
 window.agregarRapidoSola = function(producto) {

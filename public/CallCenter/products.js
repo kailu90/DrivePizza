@@ -148,7 +148,7 @@ const menuData = {
         { nombre: "Pasta Alfredo", opciones: preciosPastas.alfredo , descripcion: "Salsa alfredo y pollo." },
         { nombre: "Pasta Pesto Camaron", opciones: preciosPastas.pestoCamaron , descripcion: "Salsa pesto, camarones, tomates cherry y queso parmesano."  },
         { nombre: "Pasta Matriziana", opciones: preciosPastas.matriziana, descripcion: "Salsa napolitana, tocineta, tomate en julianas, pimienta roja y queso parmesano." },
-        { nombre: "Pasta Marinera", opciones: preciosPastas.marinera, descripcion: "Pulpo, anillos de calamar y camarones en salsa aurora o salsa blanca y queso parmesano.", noNuestro: true },
+        { nombre: "Pasta Marinera", opciones: preciosPastas.marinera, descripcion: "Pulpo, anillos de calamar y camarones en salsa aurora o salsa blanca y queso parmesano.", noNuestro: true, variantes: ["Salsa Blanca", "Salsa Napolitana"] },
         { nombre: "Pasta Spaguetti Sencillo", opciones: preciosPastas.spaguettiSencillo , descripcion: "1 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado." },
         { nombre: "Pasta Spaguetti Mixto", opciones: preciosPastas.spaguettiMixto , descripcion: "2 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado."  },
         { nombre: "Pasta Spaguetti Remix", opciones: preciosPastas.spaguettiRemix , descripcion: "3 proteina (Carne,Pollo o champiñones) preparado con salsa napolitana y queso gratinado."  },
