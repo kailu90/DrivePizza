@@ -49,6 +49,12 @@ function _aplicarFiltroSedes() {
     }
 }
 
+// Resuelve opciones efectivas: opcionesSede (por sede) > opcionesCiudad > opciones base
+function _resolverOpciones(p, base, ciudad, sede) {
+    if (sede && p.opcionesSede?.[sede]) return p.opcionesSede[sede];
+    return p.opcionesCiudad?.[ciudad] ?? base;
+}
+
 function _limpiarFiltroSedes() {
     const tienePromoRestringida = carrito.some(i => i.esPromo65k);
     if (tienePromoRestringida) return;
@@ -433,6 +439,7 @@ function renderProducts(categoria) {
 
     // Filtrar por ciudad activa
     const _ciudadMenu = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const _sedeMenu   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
     const _excluirProds = new Set(MENU_EXCLUIR?.[_ciudadMenu]?.productos || []);
     if (_excluirProds.size) productos = productos.filter(p => !_excluirProds.has(p.nombre));
 
@@ -448,7 +455,7 @@ function renderProducts(categoria) {
         } else {
             opcionesFinales = p.opciones || {};
         }
-        const opcionesEfectivas = p.opcionesCiudad?.[_ciudadMenu] ?? opcionesFinales;
+        const opcionesEfectivas = _resolverOpciones(p, opcionesFinales, _ciudadMenu, _sedeMenu);
         const listaPrecios = Object.values(opcionesEfectivas);
 
         // Si el producto no tiene precios (por un error en products.js), lo saltamos
@@ -466,7 +473,7 @@ function renderProducts(categoria) {
         const nombreCompleto = `${prefijo}${p.nombre}`;
 
         // Fast-combo: todas las hamburguesas con combo en Cartago → botones Sola/En Combo
-        const opEfectivasRender = p.opcionesCiudad?.[_ciudadMenu] ?? opcionesFinales;
+        const opEfectivasRender = _resolverOpciones(p, opcionesFinales, _ciudadMenu, _sedeMenu);
         if (p.tieneCombo && _ciudadMenu === 'cartago') {
             const preciosBase = Object.values(opEfectivasRender);
             const precioMinBase = Math.min(...preciosBase);
@@ -485,6 +492,7 @@ function renderProducts(categoria) {
                     <h4>${nombreCompleto}</h4>
                     ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[_ciudadMenu] || p.descripcion}</p>` : ''}
                     ${p.noNuestro ? `<span class="badge-no-nuestro">⚠️ Solo El Prado</span>` : ''}
+                    ${(p.opcionesSede?.nuestro && _ciudadMenu === 'cartago') ? `<span class="badge-solo-nuestro">⭐ Sabor exclusivo Nuestro</span>` : ''}
                     <div class="fast-combo-actions">
                         <button class="fast-combo-btn fast-combo-btn--sola" onclick='agregarRapidoSola(${pJson})'>
                             Sola &nbsp;<strong>${solaDisplay}</strong>
@@ -497,8 +505,11 @@ function renderProducts(categoria) {
             `;
         }
 
-        const badgeNuestro = (p.noNuestro && _ciudadMenu === 'cartago')
+        const badgeNuestro     = (p.noNuestro && _ciudadMenu === 'cartago')
             ? `<span class="badge-no-nuestro">⚠️ Solo El Prado</span>`
+            : '';
+        const badgeSoloNuestro = (p.opcionesSede?.nuestro && _ciudadMenu === 'cartago')
+            ? `<span class="badge-solo-nuestro">⭐ Sabor exclusivo Nuestro</span>`
             : '';
 
         return `
@@ -506,7 +517,7 @@ function renderProducts(categoria) {
                 <h4>${nombreCompleto}</h4>
                 ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[localStorage.getItem('cc_ciudad') || 'bucaramanga'] || p.descripcion}</p>` : ''}
                 <p class="price">${precioMostrar}</p>
-                ${badgeNuestro}
+                ${badgeNuestro}${badgeSoloNuestro}
             </div>
         `;
     }).join('');
@@ -542,7 +553,8 @@ function prepararSeleccion(producto, categoria) {
 // Agrega hamburguesa directo al carrito o abre modal de opciones (fast-combo, Cartago)
 window.agregarRapidoSola = function(producto) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
-    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
     const entries = Object.entries(opEfectivas);
     if (entries.length === 1) {
         const [tam, precio] = entries[0];
@@ -557,7 +569,8 @@ window.agregarRapidoSola = function(producto) {
 
 window.agregarRapidoCombo = function(producto) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
-    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
     const entries = Object.entries(opEfectivas);
     if (entries.length === 1) {
         const [tam, precioBase] = entries[0];
@@ -576,7 +589,8 @@ window.agregarRapidoCombo = function(producto) {
 
 function abrirOpcionesRapidas(producto, esCombo) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
-    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
 
     const modal = document.getElementById('modal-seleccion');
     const titulo = document.getElementById('modal-titulo');
@@ -648,7 +662,8 @@ function abrirSubOpciones(producto, tamPadre, precio, subOpts, esCombo) {
 function abrirSeleccion(producto) {
     // opcionesCiudad permite variantes distintas por ciudad (ej: Hamburguesa Mixta en Cartago)
     const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
-    const opEfectivas = producto.opcionesCiudad?.[ciudad] ?? producto.opciones;
+    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
+    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
     const opciones = Object.keys(opEfectivas);
 
     // Si solo tiene una opción y no aplica combo en esta ciudad, se agrega directo sin modal
