@@ -3340,12 +3340,12 @@ function _renderShell(body) {
                     </svg>
                 </button>
 
-                ${isAdmin ? `<button class="wap-nav-icon" data-view="ses" title="Conexiones">
+                <button class="wap-nav-icon" data-view="ses" title="Conexiones">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/>
                         <path d="M17 6H7a4 4 0 000 8h1v4a2 2 0 004 0v-4h2v4a2 2 0 004 0v-4h1a4 4 0 000-8z"/>
                     </svg>
-                </button>` : ''}
+                </button>
 
             </nav>
 
@@ -5253,12 +5253,12 @@ function _renderSesionesView() {
                     ${statusBadge}
                 </div>
                 <div class="wap-ses-card-actions">
-                    <button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
+                    ${isAdmin ? `<button class="wap-ses-btn-edit" data-num="${s.numero}" title="Editar">
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
-                    </button>
+                    </button>` : ''}
                     ${actionBtn}
                     ${isAdmin ? `<button class="wap-ses-btn-del" data-num="${s.numero}" title="Eliminar conexión">🗑️</button>` : ''}
                 </div>
@@ -5266,10 +5266,10 @@ function _renderSesionesView() {
         }).join('');
     }
 
-    // ── Instagram section (solo admin) ──────────────────────────────────────
-    if (isAdmin) {
+    // ── Instagram section ────────────────────────────────────────────────────
+    {
         _sesHtml += `<div class="wap-ses-channel-label">Instagram
-            <button class="wap-ses-channel-add" disabled>+ Agregar cuenta</button>
+            ${isAdmin ? `<button class="wap-ses-channel-add" disabled>+ Agregar cuenta</button>` : ''}
         </div>`;
 
         if (_igCuentas === null) {
@@ -5304,7 +5304,7 @@ function _renderSesionesView() {
                         <span class="wap-ses-badge ${badgeClass}">${badgeLabel}</span>
                     </div>
                     <div class="wap-ses-card-actions">
-                        ${showConnect ? `<button class="wap-ig-btn-conectar" data-id="${c.id}">Conectar Instagram</button>` : ''}
+                        ${isAdmin && showConnect ? `<button class="wap-ig-btn-conectar" data-id="${c.id}">Conectar Instagram</button>` : ''}
                     </div>
                 </div>`;
             }).join('');
