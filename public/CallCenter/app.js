@@ -1938,10 +1938,26 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
 
         document.getElementById('btn-listo-adic').addEventListener('click', cerrarModal);
 
-        // Adiciones → Vista 2 (elegir Completa o Media)
+        // Adiciones → Vista 2 solo para pizzas; demás productos → Completa directo
         gridOpciones.querySelectorAll('.btn-adicion:not(.btn-adicion--borde)').forEach(btn => {
-            btn.addEventListener('click', () =>
-                mostrarVistaAlcance(btn.dataset.nombre, Number(btn.dataset.precio)));
+            btn.addEventListener('click', () => {
+                if (itemPadre.esPizza) {
+                    mostrarVistaAlcance(btn.dataset.nombre, Number(btn.dataset.precio));
+                } else {
+                    carrito.push({
+                        id:            Date.now(),
+                        nombre:        btn.dataset.nombre,
+                        precio:        Number(btn.dataset.precio),
+                        qty:           1,
+                        pizzaId:       itemId,
+                        alcance:       'completa',
+                        saborObjetivo: null,
+                        precioBase:    Number(btn.dataset.precio),
+                    });
+                    actualizarComanda();
+                    mostrarVistaSelector();
+                }
+            });
         });
 
         // Bordes → agregar directo (solo completo, aplica solo a pizzas no estofadas)
