@@ -1920,12 +1920,24 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         });
     }
 
-    // ── Vista 2: Completa o Media (solo adiciones) ───────────────────────────
+    // ── Vista 2: Completa o Media/Mitad (solo adiciones) ────────────────────
     function mostrarVistaAlcance(nombreAdicion, precioCompleta) {
         const precioMedia = Math.round(precioCompleta / 2);
+        const sabores     = itemPadre.sabores || null; // [s1, s2] para pizza ½+½
 
         titulo.innerHTML = `⊕ ${nombreAdicion}<br>
             <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
+
+        const botonesMedia = sabores
+            ? `<button class="btn-tamano btn-alcance-pick" data-alcance="mitad1" data-precio="${precioMedia}">
+                   Mitad ${sabores[0]}<br><strong>$${precioMedia.toLocaleString()}</strong>
+               </button>
+               <button class="btn-tamano btn-alcance-pick" data-alcance="mitad2" data-precio="${precioMedia}">
+                   Mitad ${sabores[1]}<br><strong>$${precioMedia.toLocaleString()}</strong>
+               </button>`
+            : `<button class="btn-tamano btn-alcance-pick" data-alcance="media" data-precio="${precioMedia}">
+                   Media<br><strong>$${precioMedia.toLocaleString()}</strong>
+               </button>`;
 
         gridOpciones.innerHTML = `
             <button class="btn-tamano" id="btn-volver-adic"
@@ -1933,16 +1945,18 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
             <button class="btn-tamano btn-alcance-pick" data-alcance="completa" data-precio="${precioCompleta}">
                 Completa<br><strong>$${precioCompleta.toLocaleString()}</strong>
             </button>
-            <button class="btn-tamano btn-alcance-pick" data-alcance="media" data-precio="${precioMedia}">
-                Media<br><strong>$${precioMedia.toLocaleString()}</strong>
-            </button>
+            ${botonesMedia}
         `;
 
         document.getElementById('btn-volver-adic').addEventListener('click', mostrarVistaSelector);
 
         gridOpciones.querySelectorAll('.btn-alcance-pick').forEach(btn => {
             btn.addEventListener('click', () => {
-                const etiqAlcance = btn.dataset.alcance === 'completa' ? 'Completa' : 'Media';
+                const alcance = btn.dataset.alcance;
+                const etiqAlcance = alcance === 'completa' ? 'Completa'
+                    : alcance === 'mitad1' ? `Mitad ${sabores[0]}`
+                    : alcance === 'mitad2' ? `Mitad ${sabores[1]}`
+                    : 'Media';
                 carrito.push({
                     id:            Date.now(),
                     nombre:        `${nombreAdicion} — ${etiqAlcance}`,
