@@ -93,13 +93,13 @@ const preciosBebidas = {
     granizadaEspecial:  { "MaracuMango": 10000 , "Frutos Rojos": 10000 , "Fresa": 10000  , "Frutos Blancos": 10000 , "Frutos Amarillos": 10000 },
 
     // Limonadas
-    limonada:    { "Natural": 8000 , "Cerezada": 10000 , "Coco": 11000 , "Hierbabuena": 9000 , "frutos Rojos": 11000 },   
+    limonada:    { "Natural": 9000 , "Cerezada": 10000 , "Coco": 11000 , "Hierbabuena": 9000 , "frutos Rojos": 11000 },   
 
     // Sodas
     sodas:    { "Frutos Rojos": 12000 , "Frutos Amarillos": 12000 , "Lychee": 12000 , "Tamarindo": 12000 },   
     
     // Cervezas
-    cervezaNacional:    { "Club Colombia": 8000 , "Heineken": 8000 , "Sol": 8000 },
+    cervezaNacional:    { "Club Colombia": 9000 , "Heineken": 9000 , "Sol": 9000 },
     cerveza3Cordilleras:{ "unidad": 10000 },
     vasoMichelado:      { "Unidad": 2200 },   
 
@@ -107,7 +107,7 @@ const preciosBebidas = {
     MrTea:      { "Limon": 6000, "Durazno": 6000  },
     H2OH:       { "Limon": 6000, "Maracuyá": 6000 , "Limonata": 6000  },
     HatsuSoda:  { "Rojo": 8000, "Blanco": 8000, "Negro": 8000 , "Rosado": 8000 , "Verde": 8000 },
-    Hatsu:      { "Rojo": 8000, "Blanco": 8000, "Negro": 8000 , "Rosado": 8000 , "Verde": 8000 }
+    Hatsu:      { "Rojo": 10000, "Blanco": 10000, "Negro": 10000 , "Rosado": 10000 , "Verde": 10000 , "lila": 10000 , "Amarillo": 10000 , "Fucsia": 10000 }
 };
 const preciosEntradas = {
     panDeAjo:    { "Unidad": 3500 },
@@ -239,6 +239,7 @@ const menuData = {
         { nombre: "Adición Pimentón", opciones: preciosAdiciones.basicas },
         { nombre: "Adición Maduro", opciones: preciosAdiciones.basicas },
         { nombre: "Adición Jalapeños", opciones: preciosAdiciones.basicas },
+        { nombre: "Adición Pimienta Roja / Pepperonchino", opciones: preciosAdiciones.basicas },
         { nombre: "Adición Jamón", opciones: preciosAdiciones.intermedia },
         { nombre: "Adición Ranchera", opciones: preciosAdiciones.intermedia },
         { nombre: "Adición Maiz", opciones: preciosAdiciones.intermedia },
@@ -320,7 +321,7 @@ const menuData = {
         { nombre: "Granizada Especial", opciones: preciosBebidas.granizadaEspecial, noNuestro: true },
     ],
      "Limonadas": [
-        { nombre: "Limonada", opciones: preciosBebidas.limonada, opcionesCiudad: { cartago: { "Natural": 8000, "Cerezada": 10000, "Coco": 11000, "Hierbabuena": 9000 } } },
+        { nombre: "Limonada", opciones: preciosBebidas.limonada, opcionesCiudad: { cartago: { "Natural": 9000, "Cerezada": 10000, "Coco": 11000, "Hierbabuena": 9000 } } },
     ],
      "Sodas": [
         { nombre: "Sodas", opciones: preciosBebidas.sodas },
