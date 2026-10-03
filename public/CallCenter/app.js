@@ -599,7 +599,7 @@ function abrirOpcionesRapidas(producto, esCombo) {
     gridOpciones.className = 'opciones-grid';
     gridOpciones.innerHTML = Object.entries(opDisplay).map(([tam, precioBase]) => {
         const precio = esCombo ? (producto.comboPrecioFijo ?? (precioBase + 5000)) : precioBase;
-        const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
+        const badgeEx = _excluSivasNuestro.has(tam) ? `<span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
         return `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${precio}">
                 ${tam}<br><strong>$${precio.toLocaleString()}</strong>${badgeEx}
@@ -733,7 +733,7 @@ function abrirSeleccion(producto) {
         const _opDisplay = { ..._opBase, ..._opNuestro };
         const _excluSivasNuestro = new Set(Object.keys(_opNuestro).filter(k => !_opBase[k]));
         gridOpciones.innerHTML = toggleHtml + Object.entries(_opDisplay).map(([tam, pre]) => {
-            const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
+            const badgeEx = _excluSivasNuestro.has(tam) ? `<span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
             return `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${pre}">
                 ${tam} <br> <strong>$${pre.toLocaleString()}</strong>${badgeEx}

@@ -670,20 +670,20 @@ body {
 
 /* ── BADGE SABOR EXCLUSIVO NUESTRO (sabor disponible solo en CC Nuestro) ── */
 .badge-solo-nuestro {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    margin-top: 3px;
+    position: absolute;
+    top: -7px;
+    right: -7px;
     padding: 1px 6px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    font-style: normal;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
     text-transform: uppercase;
+    white-space: nowrap;
     background: var(--color-sexto);
     color: var(--color-secundario);
     border-radius: 99px;
-    box-shadow: 0 1px 4px rgba(30, 43, 228, 0.30);
+    box-shadow: 0 1px 4px rgba(30, 43, 228, 0.35);
+    pointer-events: none;
 }
 
 /* ── CHECKOUT ─────────────────────────────────────────────────── */
@@ -801,6 +801,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    position: relative;
+    overflow: visible;
 }
 
 .aviso-sede-nuestro {
