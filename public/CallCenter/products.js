@@ -333,7 +333,7 @@ const menuData = {
     ],
      "Otros": [
         { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
-        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, noNuestro: true },
+        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, opcionesSede: { nuestro: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
         { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
