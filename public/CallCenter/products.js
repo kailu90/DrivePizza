@@ -107,7 +107,7 @@ const preciosBebidas = {
     MrTea:      { "Limon": 6000, "Durazno": 6000  },
     H2OH:       { "Limon": 6000, "Maracuyá": 6000 , "Limonata": 6000  },
     HatsuSoda:  { "Rojo": 8000, "Blanco": 8000, "Negro": 8000 , "Rosado": 8000 , "Verde": 8000 },
-    Hatsu:      { "Rojo": 10000, "Blanco": 10000, "Negro": 10000 , "Rosado": 10000 , "Verde": 10000 , "lila": 10000 , "Amarillo": 10000 , "Fucsia": 10000 }
+    Hatsu:      { "Rojo": 10000, "Blanco": 10000, "Negro": 10000 , "Rosado": 10000 , "Verde": 10000 , "lila": 10000 , "Amarillo": 10000 , "Fucsia": 10000 , "Azul": 10000}
 };
 const preciosEntradas = {
     panDeAjo:    { "Unidad": 3500 },
