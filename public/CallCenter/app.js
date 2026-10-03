@@ -1014,7 +1014,7 @@ function actualizarComanda() {
                     </div>
                     <div class="item-controls">
                         ${botonAdicion}
-                        ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromo2x1Ctg) ? '' : botonObs}
+                        ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
                         ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
