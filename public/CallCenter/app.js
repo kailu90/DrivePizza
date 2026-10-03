@@ -492,7 +492,6 @@ function renderProducts(categoria) {
                     <h4>${nombreCompleto}</h4>
                     ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[_ciudadMenu] || p.descripcion}</p>` : ''}
                     ${p.noNuestro ? `<span class="badge-no-nuestro">⚠️ Solo El Prado</span>` : ''}
-                    ${(p.opcionesSede?.nuestro && _ciudadMenu === 'cartago') ? `<span class="badge-solo-nuestro">⭐ Sabor exclusivo Nuestro</span>` : ''}
                     <div class="fast-combo-actions">
                         <button class="fast-combo-btn fast-combo-btn--sola" onclick='agregarRapidoSola(${pJson})'>
                             Sola &nbsp;<strong>${solaDisplay}</strong>
@@ -505,11 +504,8 @@ function renderProducts(categoria) {
             `;
         }
 
-        const badgeNuestro     = (p.noNuestro && _ciudadMenu === 'cartago')
+        const badgeNuestro = (p.noNuestro && _ciudadMenu === 'cartago')
             ? `<span class="badge-no-nuestro">⚠️ Solo El Prado</span>`
-            : '';
-        const badgeSoloNuestro = (p.opcionesSede?.nuestro && _ciudadMenu === 'cartago')
-            ? `<span class="badge-solo-nuestro">⭐ Sabor exclusivo Nuestro</span>`
             : '';
 
         return `
@@ -517,7 +513,7 @@ function renderProducts(categoria) {
                 <h4>${nombreCompleto}</h4>
                 ${p.descripcion ? `<p class="product-desc">${p.descripcionCiudad?.[localStorage.getItem('cc_ciudad') || 'bucaramanga'] || p.descripcion}</p>` : ''}
                 <p class="price">${precioMostrar}</p>
-                ${badgeNuestro}${badgeSoloNuestro}
+                ${badgeNuestro}
             </div>
         `;
     }).join('');
@@ -598,11 +594,17 @@ function abrirOpcionesRapidas(producto, esCombo) {
 
     titulo.innerText = producto.nombre + (esCombo ? ' — Combo' : '');
     gridOpciones.className = 'opciones-grid';
+    const _excluSivasNuestro = new Set(
+        Object.keys(producto.opcionesSede?.nuestro || {}).filter(
+            k => !(producto.opcionesCiudad?.[ciudad] || {})[k]
+        )
+    );
     gridOpciones.innerHTML = Object.entries(opEfectivas).map(([tam, precioBase]) => {
         const precio = esCombo ? (producto.comboPrecioFijo ?? (precioBase + 5000)) : precioBase;
+        const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
         return `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${precio}">
-                ${tam}<br><strong>$${precio.toLocaleString()}</strong>
+                ${tam}<br><strong>$${precio.toLocaleString()}</strong>${badgeEx}
             </button>
         `;
     }).join('');
@@ -727,11 +729,18 @@ function abrirSeleccion(producto) {
             ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$${_comboDelta.toLocaleString()})</small></button>`
             : '';
 
-        gridOpciones.innerHTML = toggleHtml + Object.entries(opEfectivas).map(([tam, pre]) => `
+        const _excluSivasNuestro = new Set(
+            Object.keys(producto.opcionesSede?.nuestro || {}).filter(
+                k => !(producto.opcionesCiudad?.[ciudad] || {})[k]
+            )
+        );
+        gridOpciones.innerHTML = toggleHtml + Object.entries(opEfectivas).map(([tam, pre]) => {
+            const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
+            return `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${pre}">
-                ${tam} <br> <strong>$${pre.toLocaleString()}</strong>
+                ${tam} <br> <strong>$${pre.toLocaleString()}</strong>${badgeEx}
             </button>
-        `).join('');
+        `}).join('');
 
         let _comboActivo = false;
 
