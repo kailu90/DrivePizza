@@ -516,6 +516,7 @@
     window._usuarioCCPromise = (async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { window.location.href = '../index.html'; return; }
+        const { data: { session } } = await supabase.auth.getSession();
         try {
             const { data, error } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
             if (error || !data) { window.location.href = '../index.html'; return; }
@@ -540,7 +541,7 @@
             const { initWaPanel, resetWaView, destroyWaPanel } = await import('./waPanel.js');
             _resetWaView    = resetWaView;
             _destroyWaPanel = destroyWaPanel;
-            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email });
+            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email, authToken: session?.access_token || '' });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
             // Precargar historial en background — 1.5s para que pedidos cargue primero
             setTimeout(_preloadHistorialFrame, 1500);

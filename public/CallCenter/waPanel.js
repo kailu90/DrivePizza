@@ -123,6 +123,10 @@ function _textColorForBg(hex) {
 
 let _rolUsuario   = '';
 let _asesorActual = '';
+let _authToken    = '';
+
+// Devuelve headers con Authorization si hay token — usado en rutas sensibles (admin)
+const _withAuth = (h = {}) => _authToken ? { ...h, Authorization: `Bearer ${_authToken}` } : h;
 
 // Mapa sede → ciudad — se construye dinámicamente desde Supabase en initWaPanel
 let SEDES_CIUDAD = {};
@@ -182,11 +186,12 @@ export function resetWaView() {
     _showListView();
 }
 
-export function initWaPanel(bodyId, { rol = '', asesor = '' } = {}) {
+export function initWaPanel(bodyId, { rol = '', asesor = '', authToken = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;
     _rolUsuario   = rol;
     _asesorActual = asesor;
+    _authToken    = authToken;
     _injectStyles();
     _loadMeta();          // restaurar nombres personalizados desde localStorage
     _loadConv();          // caché de msgs para mostrar rápido mientras llega Supabase
@@ -5384,7 +5389,7 @@ function _renderSesionesView() {
             if (color !== undefined) body.color = color;
             try {
                 await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(num)}/config`, {
-                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    method: 'PATCH', headers: _withAuth({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(body),
                 });
             } catch { _showToast('Error guardando configuración', 3000); }
@@ -7886,7 +7891,7 @@ async function _reconectarSesion(numero) {
     try {
         const r = await fetch(`${HETZNER_URL}/wa/sesiones`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: _withAuth({ 'Content-Type': 'application/json' }),
             body:    JSON.stringify({ numero, sede: s.sede }),
         });
         const data = await r.json().catch(() => ({}));
@@ -7903,7 +7908,7 @@ async function _reconectarSesion(numero) {
 async function _desconectarSesion(numero) {
     if (!confirm(`¿Desconectar sesión ${_fmtPhone(numero)}?`)) return;
     try {
-        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
+        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE', headers: _withAuth() });
 
         // No eliminamos conv ni asignaciones — las conversaciones quedan
         // visibles en la bandeja con indicador de sesión caída (Opción B).
@@ -7936,7 +7941,7 @@ async function _eliminarSesion(numero) {
     const label = _sessionLabel(numero);
     if (!confirm(`¿Eliminar la conexión "${label}" permanentemente?\n\nSe eliminará la sesión, los archivos de autenticación y el registro en la base de datos. Las conversaciones pasadas se conservan.`)) return;
     try {
-        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}?eliminar=true`, { method: 'DELETE' });
+        await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}?eliminar=true`, { method: 'DELETE', headers: _withAuth() });
 
         // Eliminar completamente del estado
         _state.sesiones = _state.sesiones.filter(s => s.numero !== numero);
@@ -7996,7 +8001,7 @@ function _toggleConnectForm() {
         try {
             const r = await fetch(`${HETZNER_URL}/wa/sesiones`, {
                 method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: _withAuth({ 'Content-Type': 'application/json' }),
                 body:    JSON.stringify({ numero, sede }),
             });
             const data = await r.json().catch(() => ({}));
@@ -8021,12 +8026,12 @@ function _toggleConnectForm() {
                 ]);
                 try {
                     // Borrar sesión existente
-                    await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE' });
+                    await fetch(`${HETZNER_URL}/wa/sesiones/${encodeURIComponent(numero)}`, { method: 'DELETE', headers: _withAuth() });
                     // Esperar un momento y recrear
                     await new Promise(r => setTimeout(r, 1500));
                     const r2 = await fetch(`${HETZNER_URL}/wa/sesiones`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: _withAuth({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({ numero, sede }),
                     });
                     const d2 = await r2.json().catch(() => ({}));
