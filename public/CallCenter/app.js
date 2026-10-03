@@ -310,7 +310,7 @@ function renderProducts(categoria) {
                 <div class="card card-promo ${esLunMieVie ? '' : 'card-promo--inactiva'}" onclick="${esLunMieVie ? 'abrirPromoLasEspCtg()' : ''}">
                     <div class="promo-badge">LUN · MIÉ · VIE</div>
                     <h4>42.9K</h4>
-                    <p class="product-desc">2 Lasañas o 2 Espaguettis<br>+ 1 Gaseosa 250ml</p>
+                    <p class="product-desc">2 Lasañas o 2 Espaguettis<br>+ 2 Gaseosas 250ml</p>
                     <p class="promo-elegibles">${esLunMieVie ? 'Disponible hoy' : 'Disponible lunes, miércoles y viernes'}</p>
                 </div>
             `;
@@ -2615,8 +2615,8 @@ function _promoLasEspGetProductosPaso2() {
 }
 
 const _PROMO_LAS_ESP_CFGS = {
-    bga: { precio: 48000, label: '48K',   gaseosas: 2, obsKey: 'dp_promoLasEsp_obs',    obsLabel: 'PROMO 48K - '   },
-    ctg: { precio: 42900, label: '42.9K', gaseosas: 1, obsKey: 'dp_promoLasEspCtg_obs', obsLabel: 'PROMO 42.9K - ' },
+    bga: { precio: 48000, label: '48K',   gaseosas: 2,                   obsKey: 'dp_promoLasEsp_obs',    obsLabel: 'PROMO 48K - '   },
+    ctg: { precio: 42900, label: '42.9K', gaseosas: 2, variante: 'ctg', obsKey: 'dp_promoLasEspCtg_obs', obsLabel: 'PROMO 42.9K - ' },
 };
 
 let _promoLasEspState = null;
@@ -2820,7 +2820,7 @@ window._promoLasEspSelGaseosa = function (sabor) {
     // Paso final — agregar todo al carrito
     cerrarModal();
     const now = Date.now();
-    const promoVariante = cfg.gaseosas > 1 ? undefined : 'ctg';
+    const promoVariante = cfg.variante;
     carrito.push({ id: now,     nombre: state.prod1.nombre, precio: cfg.precio, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now, promoCategoria: state.categoria, ...(promoVariante && { promoVariante }) });
     carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: 0,          qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
     if (cfg.gaseosas > 1) {
