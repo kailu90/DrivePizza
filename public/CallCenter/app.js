@@ -298,8 +298,8 @@ function renderProducts(categoria) {
             const _hCtg  = new Date();
             const diaCtg = _hCtg.getDay();   // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
             const esMarJue   = diaCtg === 2 || diaCtg === 4;
-            const esActivo2x1 = esMarJue;
-            const esLunMieVie = diaCtg === 1 || diaCtg === 3 || diaCtg === 5;
+            const esActivo2x1 = true; // TEMPORAL: pruebas — restaurar a: esMarJue
+            const esLunMieVie = true; // TEMPORAL: pruebas — restaurar a: diaCtg === 1 || diaCtg === 3 || diaCtg === 5
             grid.innerHTML = `
                 <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
                     <div class="promo-badge">MAR · JUE</div>
