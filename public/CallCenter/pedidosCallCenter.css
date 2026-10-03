@@ -671,10 +671,11 @@ body {
 /* ── BADGE SABOR EXCLUSIVO NUESTRO (sabor disponible solo en CC Nuestro) ── */
 .badge-solo-nuestro {
     position: absolute;
-    top: -7px;
-    right: -7px;
-    padding: 1px 6px;
-    font-size: 0.7rem;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1px 8px;
+    font-size: 0.85rem;
     font-weight: 700;
     letter-spacing: 0.2px;
     text-transform: uppercase;
