@@ -579,7 +579,8 @@ window.agregarRapidoVariante = function(producto, variante) {
     const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
     const entries = Object.entries(opEfectivas);
     const meta = {};
-    if (producto.noNuestro) meta.noNuestro = true;
+    if (producto.noNuestro)    meta.noNuestro    = true;
+    if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
     const nombreConVariante = `${producto.nombre} en ${variante}`;
     if (entries.length === 1) {
         const [, precio] = entries[0];
