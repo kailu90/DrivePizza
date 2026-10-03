@@ -580,7 +580,7 @@ window.agregarRapidoVariante = function(producto, variante) {
     const entries = Object.entries(opEfectivas);
     const meta = {};
     if (producto.noNuestro) meta.noNuestro = true;
-    const nombreConVariante = `${producto.nombre} — ${variante}`;
+    const nombreConVariante = `${producto.nombre} en ${variante}`;
     if (entries.length === 1) {
         const [, precio] = entries[0];
         confirmarAgregar(nombreConVariante, '', precio, meta);
