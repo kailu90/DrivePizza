@@ -308,9 +308,9 @@ const menuData = {
     //**Variedades de Bebidas***/
      "Refrescos": [
         { nombre: "Jugo Hit 500 ml", opciones: preciosBebidas.jugoHit500ml , descripcion: "Jugo hit 500 ml plástica."},
-        { nombre: "Gaseosa 250 ml", opciones: preciosBebidas.gaseosa250ml, opcionesCiudad: { cartago: { "Pepsi": 4000, "Manzana": 4000, "Uva": 4000, "Colombiana": 4000, "Naranja": 4000 } }, opcionesSede: { nuestro: { "Pepsi": 4000, "Manzana": 4000, "Uva": 4000, "Canada Dry": 4000, "Colombiana": 4000, "Naranja": 4000 } }, descripcion: "Sabores postobón." },
-        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Colombiana": 6000, "Naranja": 6000 } }, opcionesSede: { nuestro: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
-        { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Colombiana": 9000, "Naranja": 9000 } }, opcionesSede: { nuestro: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Canada Dry": 9000, "Colombiana": 9000, "Naranja": 9000 } }, descripcion: "Sabores postobón."},
+        { nombre: "Gaseosa 250 ml", opciones: preciosBebidas.gaseosa250ml, opcionesCiudad: { cartago: { "Pepsi": 4000, "Manzana": 4000, "Uva": 4000, "Colombiana": 4000, "Naranja": 4000 } }, noNuestro: true, descripcion: "Sabores postobón." },
+        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Colombiana": 6000, "Naranja": 6000 } }, noNuestro: true, descripcion: "Sabores postobón."},
+        { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Colombiana": 9000, "Naranja": 9000 } }, noNuestro: true, descripcion: "Sabores postobón."},
         { nombre: "Agua", opciones: preciosBebidas.agua },
         { nombre: "Bretaña", opciones: preciosBebidas.bretaña, noNuestro: true }
     ],       
@@ -333,7 +333,7 @@ const menuData = {
     ],
      "Otros": [
         { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
-        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, opcionesSede: { nuestro: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
+        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, noNuestro: true },
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
         { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
