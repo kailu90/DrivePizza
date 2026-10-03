@@ -309,7 +309,7 @@ const menuData = {
      "Refrescos": [
         { nombre: "Jugo Hit 500 ml", opciones: preciosBebidas.jugoHit500ml , descripcion: "Jugo hit 500 ml plástica."},
         { nombre: "Gaseosa 250 ml", opciones: preciosBebidas.gaseosa250ml, opcionesCiudad: { cartago: { "Pepsi": 4000, "Manzana": 4000, "Uva": 4000, "Canada Dry": 4000, "Colombiana": 4000, "Naranja": 4000 } }, descripcion: "Sabores postobón." },
-        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
+        { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Colombiana": 6000, "Naranja": 6000 } }, opcionesSede: { nuestro: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
         { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Colombiana": 9000, "Naranja": 9000 } }, opcionesSede: { nuestro: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Canada Dry": 9000, "Colombiana": 9000, "Naranja": 9000 } }, descripcion: "Sabores postobón."},
         { nombre: "Agua", opciones: preciosBebidas.agua },
         { nombre: "Bretaña", opciones: preciosBebidas.bretaña, noNuestro: true }
