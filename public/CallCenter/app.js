@@ -585,8 +585,11 @@ window.agregarRapidoCombo = function(producto) {
 
 function abrirOpcionesRapidas(producto, esCombo) {
     const ciudad = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
-    const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
-    const opEfectivas = _resolverOpciones(producto, producto.opciones, ciudad, sede);
+    // Mostrar siempre la unión: opciones ciudad + sabores exclusivos Nuestro
+    const opBase    = producto.opcionesCiudad?.[ciudad] ?? producto.opciones ?? {};
+    const opNuestro = (ciudad === 'cartago' && producto.opcionesSede?.nuestro) ? producto.opcionesSede.nuestro : {};
+    const opDisplay = { ...opBase, ...opNuestro };
+    const _excluSivasNuestro = new Set(Object.keys(opNuestro).filter(k => !opBase[k]));
 
     const modal = document.getElementById('modal-seleccion');
     const titulo = document.getElementById('modal-titulo');
@@ -594,12 +597,7 @@ function abrirOpcionesRapidas(producto, esCombo) {
 
     titulo.innerText = producto.nombre + (esCombo ? ' — Combo' : '');
     gridOpciones.className = 'opciones-grid';
-    const _excluSivasNuestro = new Set(
-        Object.keys(producto.opcionesSede?.nuestro || {}).filter(
-            k => !(producto.opcionesCiudad?.[ciudad] || {})[k]
-        )
-    );
-    gridOpciones.innerHTML = Object.entries(opEfectivas).map(([tam, precioBase]) => {
+    gridOpciones.innerHTML = Object.entries(opDisplay).map(([tam, precioBase]) => {
         const precio = esCombo ? (producto.comboPrecioFijo ?? (precioBase + 5000)) : precioBase;
         const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
         return `
@@ -617,7 +615,8 @@ function abrirOpcionesRapidas(producto, esCombo) {
             } else {
                 const meta = {};
                 if (producto.soloSedePrado) meta.soloSedePrado = true;
-        if (producto.noNuestro) meta.noNuestro = true;
+                if (producto.noNuestro) meta.noNuestro = true;
+                if (_excluSivasNuestro.has(btn.dataset.tam)) meta.soloNuestro = true;
                 confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), meta);
                 if (esCombo) {
                     const parentId = carrito[carrito.length - 1].id;
@@ -729,12 +728,11 @@ function abrirSeleccion(producto) {
             ? `<button id="combo-toggle-btn" class="btn-combo-toggle" type="button">🍟 En Combo <small>(+$${_comboDelta.toLocaleString()})</small></button>`
             : '';
 
-        const _excluSivasNuestro = new Set(
-            Object.keys(producto.opcionesSede?.nuestro || {}).filter(
-                k => !(producto.opcionesCiudad?.[ciudad] || {})[k]
-            )
-        );
-        gridOpciones.innerHTML = toggleHtml + Object.entries(opEfectivas).map(([tam, pre]) => {
+        const _opBase    = producto.opcionesCiudad?.[ciudad] ?? producto.opciones ?? {};
+        const _opNuestro = (ciudad === 'cartago' && producto.opcionesSede?.nuestro) ? producto.opcionesSede.nuestro : {};
+        const _opDisplay = { ..._opBase, ..._opNuestro };
+        const _excluSivasNuestro = new Set(Object.keys(_opNuestro).filter(k => !_opBase[k]));
+        gridOpciones.innerHTML = toggleHtml + Object.entries(_opDisplay).map(([tam, pre]) => {
             const badgeEx = _excluSivasNuestro.has(tam) ? `<br><span class="badge-solo-nuestro">⭐ Solo Nuestro</span>` : '';
             return `
             <button class="btn-tamano" data-tam="${tam}" data-pre="${pre}">
@@ -765,7 +763,8 @@ function abrirSeleccion(producto) {
                     ? { esAdicionable: true, tamanoRaw: producto.tamanoRaw || btn.dataset.tam }
                     : {};
                 if (producto.soloSedePrado) meta.soloSedePrado = true;
-        if (producto.noNuestro) meta.noNuestro = true;
+                if (producto.noNuestro) meta.noNuestro = true;
+                if (_excluSivasNuestro.has(btn.dataset.tam)) meta.soloNuestro = true;
                 const precioFinal = _comboActivo
                     ? (producto.comboPrecioFijo ?? Number(btn.dataset.pre) + 5000)
                     : Number(btn.dataset.pre);
@@ -1067,6 +1066,33 @@ function actualizarComanda() {
             avisoSede?.remove();
             btnNuestro.style.position = '';
             btnNuestro.style.overflow = '';
+        }
+    }
+
+    // Deshabilitar sede El Prado si hay sabores exclusivos de Nuestro en el carrito
+    const btnPrado = document.querySelector('.sede-btn[data-sede="prado"]');
+    if (btnPrado) {
+        const soloNuestroItems = carrito.filter(i => i.soloNuestro);
+        const tieneSoloNuestro = soloNuestroItems.length > 0;
+        btnPrado.disabled = tieneSoloNuestro;
+        let avisoPrado = document.getElementById('aviso-sede-prado');
+        if (tieneSoloNuestro) {
+            const count = soloNuestroItems.length;
+            const texto = `${count} sabor${count > 1 ? 'es' : ''} no disponibles`;
+            if (!avisoPrado) {
+                avisoPrado = document.createElement('span');
+                avisoPrado.id = 'aviso-sede-prado';
+                avisoPrado.className = 'aviso-sede-nuestro';
+                btnPrado.style.position = 'relative';
+                btnPrado.style.overflow = 'visible';
+                btnPrado.appendChild(avisoPrado);
+            }
+            avisoPrado.textContent = texto;
+            if (btnPrado.classList.contains('active')) btnPrado.classList.remove('active');
+        } else {
+            avisoPrado?.remove();
+            btnPrado.style.position = '';
+            btnPrado.style.overflow = '';
         }
     }
 
