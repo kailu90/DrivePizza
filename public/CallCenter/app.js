@@ -1844,112 +1844,121 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
     const gridOpciones = document.getElementById('opciones-tamano');
     const modalContent = modal.querySelector('.modal-content');
 
-    titulo.innerHTML = `⊕ Adición<br>
-        <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
     modalContent.classList.add('modal-sabor2');
     gridOpciones.className = 'opciones-grid opciones-adiciones';
-
-    // Los bordes solo aplican a pizzas no estofadas (no tienen precio "Porción")
-    const adiciones = (menuData["Adiciones"] || []).filter(a => a.opciones[tamanoRaw] !== undefined);
-    const bordes    = itemPadre.esEstofada
-        ? []
-        : (menuData["Bordes"] || []).filter(b => b.opciones[tamanoRaw] !== undefined);
-
-    if (adiciones.length === 0 && bordes.length === 0) {
-        gridOpciones.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay adiciones disponibles para este tamaño.</p>';
-        modal.style.display = 'flex';
-        return;
-    }
 
     const nombreLower     = itemPadre.nombre?.toLowerCase() || '';
     const esCalzoneGrande = nombreLower.includes('calzone') && itemPadre.nombre.includes('(Grande)');
     const esStromboli     = nombreLower.includes('stromboli');
     const multiplicador   = (esCalzoneGrande || esStromboli) ? 2 : 1;
 
-    const sabores = itemPadre.sabores || null; // [s1, s2] para pizza ½+½, null para pizza simple
+    const adiciones = (menuData["Adiciones"] || []).filter(a => a.opciones[tamanoRaw] !== undefined);
+    const bordes    = itemPadre.esEstofada
+        ? []
+        : (menuData["Bordes"] || []).filter(b => b.opciones[tamanoRaw] !== undefined);
 
-    // ── Bordes: siempre completos — lógica original ───────────────────────────
-    const renderBtnBorde = (prod) => {
-        const precio = prod.opciones[tamanoRaw] * multiplicador;
-        return `
-        <button class="btn-adicion" data-nombre="${prod.nombre}" data-precio="${precio}">
-            <span class="adicion-nombre">${prod.nombre}</span>
-            <span class="adicion-precio">$${precio.toLocaleString()}</span>
-            <span class="adicion-badge" style="display:none;">0</span>
-        </button>`;
-    };
+    const _conteo = (nombre) =>
+        carrito.filter(c => c.pizzaId === itemId && c.nombre.startsWith(nombre + ' (')).length;
 
-    // ── Adiciones: selector Completa / Mitad 1 / Mitad 2 ─────────────────────
-    const renderBtnAlcance = (prod) => {
-        const precioBase  = prod.opciones[tamanoRaw] * multiplicador;
-        const precioMitad = Math.round(precioBase / 2);
-        const etiq1 = sabores ? `Mitad 1 — ${sabores[0]}` : 'Mitad 1';
-        const etiq2 = sabores ? `Mitad 2 — ${sabores[1]}` : 'Mitad 2';
-        const s1    = sabores ? sabores[0] : '';
-        const s2    = sabores ? sabores[1] : '';
-        return `
-        <div class="adicion-alcance-row" data-nombre="${prod.nombre}" data-preciobase="${precioBase}">
-            <span class="adicion-alcance-label">${prod.nombre}</span>
-            <div class="adicion-alcance-btns">
-                <button class="btn-alcance" data-alcance="completa" data-precio="${precioBase}" data-sabor="">Completa <strong>$${precioBase.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
-                <button class="btn-alcance" data-alcance="mitad1"   data-precio="${precioMitad}" data-sabor="${s1}">${etiq1} <strong>$${precioMitad.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
-                <button class="btn-alcance" data-alcance="mitad2"   data-precio="${precioMitad}" data-sabor="${s2}">${etiq2} <strong>$${precioMitad.toLocaleString()}</strong><span class="adicion-badge" style="display:none;">0</span></button>
-            </div>
-        </div>`;
-    };
+    // ── Vista 1: Selector de adición / borde ────────────────────────────────
+    function mostrarVistaSelector() {
+        titulo.innerHTML = `⊕ Adición<br>
+            <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
 
-    gridOpciones.innerHTML = `
-        <div class="adicion-section-title">Adiciones</div>
-        ${adiciones.map(renderBtnAlcance).join('')}
-        ${bordes.length > 0 ? `<div class="adicion-section-title">Bordes</div>${bordes.map(renderBtnBorde).join('')}` : ''}
-        <button class="btn-listo-adiciones" onclick="cerrarModal()">✓ Listo</button>
-    `;
+        if (adiciones.length === 0 && bordes.length === 0) {
+            gridOpciones.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No hay adiciones disponibles para este tamaño.</p>';
+            modal.style.display = 'flex';
+            return;
+        }
 
-    // Listener bordes (siempre completa)
-    gridOpciones.querySelectorAll('.btn-adicion').forEach(btn => {
-        btn.addEventListener('click', () => {
-            carrito.push({
-                id:            Date.now(),
-                nombre:        `${btn.dataset.nombre} (${tamanoRaw})`,
-                precio:        Number(btn.dataset.precio),
-                qty:           1,
-                pizzaId:       itemId,
-                alcance:       'completa',
-                saborObjetivo: null,
-                precioBase:    Number(btn.dataset.precio),
-            });
-            const badge = btn.querySelector('.adicion-badge');
-            const count = (parseInt(badge.textContent) || 0) + 1;
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-            btn.classList.add('adicion-agregada');
-            actualizarComanda();
+        const renderBtn = (prod, esBorde) => {
+            const precio  = prod.opciones[tamanoRaw] * multiplicador;
+            const conteo  = _conteo(prod.nombre);
+            const claseEx = esBorde ? ' btn-adicion--borde' : '';
+            return `<button class="btn-adicion${claseEx}${conteo > 0 ? ' adicion-agregada' : ''}"
+                        data-nombre="${prod.nombre}" data-precio="${precio}">
+                <span class="adicion-nombre">${prod.nombre}</span>
+                <span class="adicion-precio">$${precio.toLocaleString()}</span>
+                ${conteo > 0 ? `<span class="adicion-badge">${conteo}</span>` : ''}
+            </button>`;
+        };
+
+        gridOpciones.innerHTML = `
+            <div class="adicion-section-title">Adiciones</div>
+            ${adiciones.map(a => renderBtn(a, false)).join('')}
+            ${bordes.length > 0 ? `
+                <div class="adicion-section-title">Bordes</div>
+                ${bordes.map(b => renderBtn(b, true)).join('')}
+            ` : ''}
+            <button class="btn-listo-adiciones" id="btn-listo-adic">✓ Listo</button>
+        `;
+
+        document.getElementById('btn-listo-adic').addEventListener('click', cerrarModal);
+
+        // Adiciones → Vista 2 (elegir Completa o Media)
+        gridOpciones.querySelectorAll('.btn-adicion:not(.btn-adicion--borde)').forEach(btn => {
+            btn.addEventListener('click', () =>
+                mostrarVistaAlcance(btn.dataset.nombre, Number(btn.dataset.precio)));
         });
-    });
 
-    // Listener adiciones con selector de alcance
-    gridOpciones.querySelectorAll('.btn-alcance').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const row = btn.closest('.adicion-alcance-row');
-            carrito.push({
-                id:            Date.now(),
-                nombre:        `${row.dataset.nombre} (${tamanoRaw})`,
-                precio:        Number(btn.dataset.precio),
-                qty:           1,
-                pizzaId:       itemId,
-                alcance:       btn.dataset.alcance,
-                saborObjetivo: btn.dataset.sabor || null,
-                precioBase:    Number(row.dataset.preciobase),
+        // Bordes → agregar directo (solo completo, aplica solo a pizzas no estofadas)
+        gridOpciones.querySelectorAll('.btn-adicion--borde').forEach(btn => {
+            btn.addEventListener('click', () => {
+                carrito.push({
+                    id:            Date.now(),
+                    nombre:        `${btn.dataset.nombre} (${tamanoRaw})`,
+                    precio:        Number(btn.dataset.precio),
+                    qty:           1,
+                    pizzaId:       itemId,
+                    alcance:       'completa',
+                    saborObjetivo: null,
+                    precioBase:    Number(btn.dataset.precio),
+                });
+                actualizarComanda();
+                mostrarVistaSelector();
             });
-            const badge = btn.querySelector('.adicion-badge');
-            const count = (parseInt(badge.textContent) || 0) + 1;
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-            btn.classList.add('adicion-agregada');
-            actualizarComanda();
         });
-    });
+    }
 
+    // ── Vista 2: Completa o Media (solo adiciones) ───────────────────────────
+    function mostrarVistaAlcance(nombreAdicion, precioCompleta) {
+        const precioMedia = Math.round(precioCompleta / 2);
+
+        titulo.innerHTML = `⊕ ${nombreAdicion}<br>
+            <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
+
+        gridOpciones.innerHTML = `
+            <button class="btn-tamano" id="btn-volver-adic"
+                style="grid-column:1/-1;background:#f5f5f5;color:#555;font-size:1.3rem;">← Volver</button>
+            <button class="btn-tamano btn-alcance-pick" data-alcance="completa" data-precio="${precioCompleta}">
+                Completa<br><strong>$${precioCompleta.toLocaleString()}</strong>
+            </button>
+            <button class="btn-tamano btn-alcance-pick" data-alcance="media" data-precio="${precioMedia}">
+                Media<br><strong>$${precioMedia.toLocaleString()}</strong>
+            </button>
+        `;
+
+        document.getElementById('btn-volver-adic').addEventListener('click', mostrarVistaSelector);
+
+        gridOpciones.querySelectorAll('.btn-alcance-pick').forEach(btn => {
+            btn.addEventListener('click', () => {
+                carrito.push({
+                    id:            Date.now(),
+                    nombre:        `${nombreAdicion} (${tamanoRaw})`,
+                    precio:        Number(btn.dataset.precio),
+                    qty:           1,
+                    pizzaId:       itemId,
+                    alcance:       btn.dataset.alcance,
+                    saborObjetivo: null,
+                    precioBase:    precioCompleta,
+                });
+                actualizarComanda();
+                mostrarVistaSelector();
+            });
+        });
+    }
+
+    mostrarVistaSelector();
     modal.style.display = 'flex';
 }
 
