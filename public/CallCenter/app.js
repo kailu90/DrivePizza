@@ -2128,9 +2128,7 @@ function _p65kAbrirModal() {
     const stepBar = (activo) => `
         <span style="color:${activo === 1 ? 'var(--color-primario)' : '#555'};font-weight:${activo === 1 ? '900' : 'normal'};">1. Pizza Grande</span>
         <span style="color:#ddd;margin:0 5px;">›</span>
-        <span style="color:${activo === 2 ? 'var(--color-primario)' : '#ccc'};font-weight:${activo === 2 ? '900' : 'normal'};">2. Gaseosa 1.5 lts</span>
-        <span style="color:#ddd;margin:0 5px;">›</span>
-        <span style="color:${activo === 3 ? 'var(--color-primario)' : '#ccc'};font-weight:${activo === 3 ? '900' : 'normal'};">3. Borde</span>`;
+        <span style="color:${activo === 2 ? 'var(--color-primario)' : '#ccc'};font-weight:${activo === 2 ? '900' : 'normal'};">2. Gaseosa 1.5 lts</span>`;
 
     if (_promo65kState.step === 1) {
         titulo.innerHTML = `
@@ -2164,21 +2162,6 @@ function _p65kAbrirModal() {
         gridOpciones.innerHTML = sabores.map(s =>
             `<button class="btn-tamano" onclick="_p65kSelGaseosa('${s}')">${s}</button>`
         ).join('');
-        modal.style.display = 'flex';
-
-    } else {
-        titulo.innerHTML = `
-            <div style="font-size:1.15rem;margin-bottom:6px;">${stepBar(3)}</div>
-            <small style="font-size:1.3rem;color:#666;font-weight:normal;">¿Agregar borde? · Pizza <strong>${_promo65kState.pizza}</strong> + ${_promo65kState.gaseosa}</small>`;
-
-        const bordes = menuData["Bordes"] || [];
-        const precioBorde = preciosBordes["Grande"];
-        gridOpciones.className = 'opciones-grid';
-        gridOpciones.innerHTML =
-            bordes.map(b => `<button class="btn-tamano" onclick="_p65kSelBorde('${b.nombre.replace(/'/g, "\\'")}')">
-                ${b.nombre}<br><small>+$${precioBorde.toLocaleString('es-CO')}</small>
-            </button>`).join('') +
-            `<button class="btn-tamano" style="grid-column:1/-1;background:#f0f0f0;color:#555;" onclick="_p65kSinBorde()">Sin borde</button>`;
         modal.style.display = 'flex';
     }
 }
@@ -2274,11 +2257,10 @@ window._p65kSelPizza = function (sabor, tipo) {
 
 window._p65kSelGaseosa = function (sabor) {
     _promo65kState.gaseosa = sabor;
-    _promo65kState.step    = 3;
-    _p65kAbrirModal();
+    _p65kFinalizarCarrito();
 };
 
-function _p65kFinalizarCarrito(borde) {
+function _p65kFinalizarCarrito() {
     const now = Date.now();
     carrito.push({
         id: now,
@@ -2286,7 +2268,9 @@ function _p65kFinalizarCarrito(borde) {
         precio: 65000,
         qty: 1,
         esPromo65k: true,
-        promoId65k: now
+        promoId65k: now,
+        esAdicionable: true,
+        tamanoRaw: 'Grande',
     });
     carrito.push({
         id: now + 1,
@@ -2297,24 +2281,11 @@ function _p65kFinalizarCarrito(borde) {
         esGaseosa65k: true,
         promoId65k: now
     });
-    if (borde) {
-        carrito.push({
-            id: now + 2,
-            nombre: borde,
-            precio: preciosBordes["Grande"],
-            qty: 1,
-            esPromo65k: true,
-            promoId65k: now
-        });
-    }
     localStorage.setItem('dp_promo65k_obs', 'PROMO 65K');
     _aplicarFiltroSedes();
     cerrarModal();
     actualizarComanda();
 }
-
-window._p65kSelBorde = function (borde) { _p65kFinalizarCarrito(borde); };
-window._p65kSinBorde = function ()      { _p65kFinalizarCarrito(null); };
 
 // ── PROMO 3×2 ──────────────────────────────────────────────────────────────
 
