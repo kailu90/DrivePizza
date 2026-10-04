@@ -2118,7 +2118,7 @@ function _injectStyles() {
     max-width: 85%;
     padding: 6px 10px;
     border-radius: 10px;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     line-height: 1.4;
     word-break: break-word;
     display: flex;
