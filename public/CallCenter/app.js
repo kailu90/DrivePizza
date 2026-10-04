@@ -68,6 +68,11 @@ function _limpiarFiltroSedes() {
 }
 
 function _aplicarFiltroPizzeta() {
+    const ciudad = localStorage.getItem('cc_ciudad') || 'bucaramanga';
+    if (ciudad !== 'bucaramanga') {
+        document.getElementById('sede-restriccion-pizzeta-aviso')?.remove();
+        return;
+    }
     const tienePizzeta = carrito.some(i => i.esPizzeta);
     // Porción de estofadas aplica en todas las sedes — solo filtrar porciones de clásicas/típicas/especiales
     const tienePorcion = carrito.some(i => i.esPizza && !i.esPizzeta && !i.esEstofada && i.tamanoRaw === 'Porción');
