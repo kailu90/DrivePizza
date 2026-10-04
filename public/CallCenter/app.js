@@ -69,7 +69,8 @@ function _limpiarFiltroSedes() {
 
 function _aplicarFiltroPizzeta() {
     const tienePizzeta = carrito.some(i => i.esPizzeta);
-    const tienePorcion = carrito.some(i => i.esPizza && !i.esPizzeta && i.tamanoRaw === 'Porción');
+    // Porción de estofadas aplica en todas las sedes — solo filtrar porciones de clásicas/típicas/especiales
+    const tienePorcion = carrito.some(i => i.esPizza && !i.esPizzeta && !i.esEstofada && i.tamanoRaw === 'Porción');
     const hayOtraRestricion = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromo2x1Ctg);
     let avisoEl = document.getElementById('sede-restriccion-pizzeta-aviso');
 
