@@ -181,6 +181,8 @@ async function cargaCompleta(filtros) {
                 .select('*')
                 .gte('fecha', colFechaToUTC(desde, 'inicio'))
                 .lte('fecha', colFechaToUTC(hasta, 'fin'))
+                .neq('sede', 'gastrofusion')
+                .neq('sede', 'planta produccion')
                 .order('fecha', { ascending: false })
                 .range(offset, offset + PAGE_SIZE - 1);
 

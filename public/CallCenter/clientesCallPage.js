@@ -610,10 +610,14 @@ async function obtenerUsuarioCC() {
             }
         });
 
-        const sedes = await getSedes();
-        SEDE_LABELS = Object.fromEntries(sedes.map(s => [s.name.toLowerCase(), s.name]));
+        const _SEDES_EXCL_CC = new Set(['planta produccion', 'gastrofusion']);
+        const sedesCC = (await getSedes()).filter(s => {
+            const n = s.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return !_SEDES_EXCL_CC.has(n);
+        });
+        SEDE_LABELS = Object.fromEntries(sedesCC.map(s => [s.name.toLowerCase(), s.name]));
         const selSede = document.getElementById('hist-filtro-sede');
-        sedes.forEach(s => {
+        sedesCC.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.name.toLowerCase();
             opt.textContent = s.name;

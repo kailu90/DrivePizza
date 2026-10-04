@@ -75,7 +75,11 @@ mostrarSkeleton('historial');
             document.getElementById('migration-banner').style.display = 'none';
         }
 
-        const sedes = await getSedes();
+        const _SEDES_EXCL = new Set(['planta produccion', 'gastrofusion']);
+        const sedes = (await getSedes()).filter(s => {
+            const n = s.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return !_SEDES_EXCL.has(n);
+        });
         const nav   = document.getElementById('admin-sede-nav');
         sedes.forEach((s, i) => {
             const btn = document.createElement('button');
