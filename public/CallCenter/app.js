@@ -314,8 +314,7 @@ function renderCategories() {
         "Sandwiches",
         "Ensaladas",
         "Entradas/Adición",
-        "Bebidas Especiales",
-        "Empaques",
+        "Otros",
     ].filter(c => !_excluirCat.has(c));
 
     nav.innerHTML = categoriasVisibles.map(c =>
@@ -483,7 +482,7 @@ function renderProducts(categoria) {
     
     
     else if (categoria === "Bebidas") {
-        const llavesBebidas = ["Gaseosas", "Jugos Naturales", "Limonadas", "Sodas", "Refrescos", "Cervezas", "Otros"];
+        const llavesBebidas = ["Gaseosas", "Jugos Naturales", "Limonadas", "Sodas", "Refrescos", "Cervezas"];
         llavesBebidas.forEach(key => {
             if (menuData[key]) productos = [...productos, ...menuData[key]];
         });

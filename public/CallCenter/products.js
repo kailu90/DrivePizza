@@ -312,8 +312,11 @@ const menuData = {
         { nombre: "Gaseosa 400 ml", opciones: preciosBebidas.gaseosa400ml, opcionesCiudad: { cartago: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Colombiana": 6000, "Naranja": 6000 } }, opcionesSede: { nuestro: { "Pepsi": 6000, "Manzana": 6000, "Uva": 6000, "Canada Dry": 6000, "Colombiana": 6000, "Naranja": 6000 } }, descripcion: "Sabores postobón."},
         { nombre: "Gaseosa 1.5 lts", opciones: preciosBebidas.gaseosa1500ml, opcionesCiudad: { cartago: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Colombiana": 9000, "Naranja": 9000 } }, opcionesSede: { nuestro: { "Pepsi": 9000, "Manzana": 9000, "Uva": 9000, "Canada Dry": 9000, "Colombiana": 9000, "Naranja": 9000 } }, descripcion: "Sabores postobón."},
         { nombre: "Agua", opciones: preciosBebidas.agua },
-        { nombre: "Bretaña", opciones: preciosBebidas.bretaña, noNuestro: true }
-    ],       
+        { nombre: "Bretaña", opciones: preciosBebidas.bretaña, noNuestro: true },
+        { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
+        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, opcionesSede: { nuestro: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
+        { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
+    ],
     "Jugos Naturales": [
         { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua, opcionesCiudad: { cartago: { "Mango": 9000, "Mora": 9000, "Lulo": 9000, "Maracuyá": 9000, "Guanábana": 9000 } } },
         { nombre: "Jugo en Leche", opciones: preciosBebidas.jugoEnLeche, opcionesCiudad: { cartago: { "Mango": 10000, "Mora": 10000, "Lulo": 10000, "Maracuyá": 10000, "Guanábana": 10000 } } },
@@ -325,20 +328,15 @@ const menuData = {
     ],
      "Sodas": [
         { nombre: "Sodas", opciones: preciosBebidas.sodas },
+        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
+        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
     ],
     "Cervezas": [
         { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional, noNuestro: true },
         { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras, noNuestro: true },
         { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado, noNuestro: true }
     ],
-     "Bebidas Especiales": [
-        { nombre: "Mr Tea", opciones: preciosBebidas.MrTea },
-        { nombre: "H2OH", opciones: preciosBebidas.H2OH, opcionesCiudad: { cartago: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000 } }, opcionesSede: { nuestro: { "Limon": 6000, "Maracuyá": 6000, "Limonata": 6000, "Manzana": 6000 } } },
-        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
-        { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
-        { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
-    ],
-    "Empaques": [
+    "Otros": [
         { nombre: "Porta pizzas", opciones: { "Unidad": 300 }, descripcion: "Caja porta pizzas." },
     ],
     };
@@ -348,7 +346,7 @@ const menuData = {
 // Las promos son exclusivas de Bucaramanga (sedes BGA), por eso se ocultan en Cartago.
 const MENU_EXCLUIR = {
     bucaramanga: {
-        categorias: ['Empaques'],
+        categorias: ['Otros'],
         productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora']
     },
     cartago: {
