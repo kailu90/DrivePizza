@@ -797,7 +797,7 @@ function abrirSeleccion(producto) {
         gridOpciones.className = 'opciones-grid opciones-pizza';
         gridOpciones.innerHTML = Object.entries(producto.opciones).map(([tam, pre]) => {
             const mixable = TAMANOS_MIXABLES.has(tam);
-            if (tam === 'Porción' && !producto.esEstofada) {
+            if (tam === 'Porción' && !producto.esEstofada && ciudad === 'bucaramanga') {
                 return `
                 <div class="tamano-fila">
                     <button class="btn-tamano btn-solo" data-tam="Porción" data-pre="${pre}">
