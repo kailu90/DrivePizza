@@ -141,6 +141,7 @@ const menuData = {
         { nombre: "Salsa Mi Cuate", opciones: preciosEntradas.salsaMiCuate, descripcion: "Copa de 1.5 Oz de salsa Mi Cuate." },
         { nombre: "Salsa Napolitana", opciones: preciosEntradas.salsaNapolitana, descripcion: "Copa de 1.5 Oz de salsa Napolitana." },
         { nombre: "Piña Calada", opciones: preciosEntradas.piñaCalada , descripcion: "Copa de 1.5 Onzas de piña calada."},
+        { nombre: "Porta pizzas", opciones: { "Unidad": 300 }, descripcion: "Caja porta pizzas." },
     ],
 //*******Variedades Pastas***********/    
     "Pastas": [
@@ -348,7 +349,7 @@ const menuData = {
 const MENU_EXCLUIR = {
     bucaramanga: {
         categorias: [],
-        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Malteada']
+        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Malteada', 'Porta pizzas']
     },
     cartago: {
         categorias: [],
