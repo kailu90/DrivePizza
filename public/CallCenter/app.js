@@ -2344,8 +2344,8 @@ function abrirPromo3x2() {
 
 // Categorías que pueden mezclarse entre sí en la promo 3x2
 const PROMO3X2_CATEGORIAS_COMPATIBLES = {
-    'Lasañas': ['Lasañas', 'Pastas'],
-    'Pastas':  ['Lasañas', 'Pastas'],
+    'Lasañas': ['Lasañas'],
+    'Pastas':  ['Pastas'],
 };
 
 // Productos permitidos como obsequio por categoría en la promo 3x2
@@ -2353,7 +2353,9 @@ const PROMO3X2_OBSEQUIO_PIZZAS    = ["Hawaiana", "Tres Carnes"];
 const PROMO3X2_OBSEQUIO_ENSALADAS = ["Ensalada Cesar"];
 const PROMO3X2_OBSEQUIO_LASAÑAS   = ["Lasaña Sencilla"];
 const PROMO3X2_OBSEQUIO_CALZONES  = ["Calzone Hawaiana", "Calzone Tres Carnes"];
-const PROMO3X2_PASTAS_EXCLUIDAS        = ["Pasta Carbonara", "Pasta Pesto Camaron", "Pasta Matriziana", "Pasta Marinera"];
+const PROMO3X2_PASTAS_EXCLUIDAS        = ["Pasta Carbonara", "Pasta Pesto Camaron", "Pasta Matriziana", "Pasta Marinera", "Pasta Alfredo",
+                                          "Macaroni Sencillo", "Macaroni Mixto", "Macaroni Remix",
+                                          "Fetuccine sencillo", "Fetuccine mixto", "Fetuccine remix"];
 const PROMO3X2_OBSEQUIO_PASTAS         = ["Pasta Spaguetti Sencillo"];
 const PROMO3X2_OBSEQUIO_HAMBURGUESAS   = ["hamburguesa Clasica"];
 const PROMO3X2_OBSEQUIO_SANDWICHES     = ["Sandwiche Jamon"];
