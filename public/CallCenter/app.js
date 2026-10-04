@@ -911,7 +911,7 @@ function renderGridSabores2(sabores) {
             const sabor2 = sabores.find(s => s.nombre === btn.dataset.nombre);
             const precio2 = Number(btn.dataset.precio2);
             const precioFinal = Math.max(precio1, precio2);
-            const nombreMezcla = `Pizza ${sabor1.nombre} y mitad ${btn.dataset.nombre} (${tamano})`;
+            const nombreMezcla = `Pizza mitad ${sabor1.nombre} y mitad ${btn.dataset.nombre} (${tamano})`;
             const esEstofada = !!(sabor1.esEstofada || sabor2?.esEstofada);
             confirmarAgregar(nombreMezcla, '', precioFinal,
                 { esPizza: true, esAdicionable: true, tamanoRaw: tamano, sabores: [sabor1.nombre, btn.dataset.nombre], ...(esEstofada && { esEstofada: true }) });
