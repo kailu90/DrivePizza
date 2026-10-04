@@ -28,6 +28,9 @@ function _renderAcomps(ciudad) {
 const SEDES_PROMO_ESPECIAL  = new Set(['acropolis', 'megamall', 'unico']);
 // Sedes donde aplica la promo 2×1 Cartago
 const SEDES_PROMO_2X1_CTG   = new Set(['nuestro']);
+// Sedes donde aplican pizzetas (en vez de porción triangular)
+const SEDES_PIZZETA      = new Set(['megamall', 'acropolis', 'piedecuesta', 'unico']);
+const SEDES_PORCION_PIZZA = new Set(['cañaveral', 'cabecera', 'prado', 'nuestro']);
 
 function _aplicarFiltroSedes() {
     let sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
@@ -62,6 +65,57 @@ function _limpiarFiltroSedes() {
         btn.disabled = false;
     });
     document.getElementById('sede-restriccion-aviso')?.remove();
+}
+
+function _aplicarFiltroPizzeta() {
+    const tienePizzeta = carrito.some(i => i.esPizzeta);
+    const tienePorcion = carrito.some(i => i.esPizza && !i.esPizzeta && i.tamanoRaw === 'Porción');
+    const hayOtraRestricion = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromo2x1Ctg);
+    let avisoEl = document.getElementById('sede-restriccion-pizzeta-aviso');
+
+    if (!tienePizzeta && !tienePorcion) {
+        avisoEl?.remove();
+        if (!hayOtraRestricion) {
+            [...SEDES_PIZZETA, ...SEDES_PORCION_PIZZA].forEach(s => {
+                const btn = document.querySelector(`.sede-toggle .sede-btn[data-sede="${s}"]`);
+                if (btn) btn.disabled = false;
+            });
+        }
+        return;
+    }
+
+    const toggle = document.querySelector('.sede-toggle');
+    if (!avisoEl && toggle) {
+        avisoEl = document.createElement('p');
+        avisoEl.id = 'sede-restriccion-pizzeta-aviso';
+        avisoEl.className = 'sede-restriccion-aviso';
+        toggle.insertAdjacentElement('afterend', avisoEl);
+    }
+
+    if (tienePizzeta && tienePorcion) {
+        if (avisoEl) avisoEl.textContent = '⚠️ Hay porción y pizzeta en el pedido: verifica la sede.';
+        return;
+    }
+
+    const sedesBloquear = tienePizzeta ? SEDES_PORCION_PIZZA : SEDES_PIZZETA;
+    const sedesPermitir  = tienePizzeta ? SEDES_PIZZETA : SEDES_PORCION_PIZZA;
+    const texto = tienePizzeta
+        ? '🍕 Pizzeta: solo Megamall, Acrópolis, Piedecuesta y Único.'
+        : '🍕 Porción triangular: solo Cañaveral, Cabecera, Prado y Nuestro.';
+
+    sedesBloquear.forEach(s => {
+        const btn = document.querySelector(`.sede-toggle .sede-btn[data-sede="${s}"]`);
+        if (!btn) return;
+        if (btn.classList.contains('active')) btn.classList.remove('active');
+        btn.disabled = true;
+    });
+    if (!hayOtraRestricion) {
+        sedesPermitir.forEach(s => {
+            const btn = document.querySelector(`.sede-toggle .sede-btn[data-sede="${s}"]`);
+            if (btn) btn.disabled = false;
+        });
+    }
+    if (avisoEl) avisoEl.textContent = texto;
 }
 
 function _aplicarFiltro2x1Ctg() {
@@ -740,6 +794,19 @@ function abrirSeleccion(producto) {
         gridOpciones.className = 'opciones-grid opciones-pizza';
         gridOpciones.innerHTML = Object.entries(producto.opciones).map(([tam, pre]) => {
             const mixable = TAMANOS_MIXABLES.has(tam);
+            if (tam === 'Porción' && !producto.esEstofada) {
+                return `
+                <div class="tamano-fila">
+                    <button class="btn-tamano btn-solo" data-tam="Porción" data-pre="${pre}">
+                        Porción<br><strong>$${pre.toLocaleString()}</strong>
+                    </button>
+                    <button class="btn-tamano btn-solo btn-pizzeta" data-tam="Pizzeta" data-pre="${pre}">
+                        Pizzeta<br><strong>$${pre.toLocaleString()}</strong>
+                    </button>
+                    <div class="btn-mitad-placeholder"></div>
+                </div>
+                `;
+            }
             return `
                 <div class="tamano-fila">
                     <button class="btn-tamano btn-solo" data-tam="${tam}" data-pre="${pre}">
@@ -755,8 +822,14 @@ function abrirSeleccion(producto) {
 
         gridOpciones.querySelectorAll('.btn-solo').forEach(btn => {
             btn.addEventListener('click', () => {
-                confirmarAgregar(`Pizza ${producto.nombre}`, btn.dataset.tam, Number(btn.dataset.pre),
-                    { esPizza: true, esAdicionable: true, tamanoRaw: btn.dataset.tam, ...(producto.esEstofada && { esEstofada: true }) });
+                const tam = btn.dataset.tam;
+                const esPizzeta = tam === 'Pizzeta';
+                const prefix   = esPizzeta ? 'Pizzeta' : 'Pizza';
+                const tamRaw   = esPizzeta ? 'Porción' : tam;
+                confirmarAgregar(`${prefix} ${producto.nombre}`, tam, Number(btn.dataset.pre),
+                    { esPizza: true, esAdicionable: true, tamanoRaw: tamRaw,
+                      ...(esPizzeta && { esPizzeta: true }),
+                      ...(producto.esEstofada && { esEstofada: true }) });
                 cerrarModal();
             });
         });
@@ -1146,6 +1219,7 @@ function actualizarComanda() {
         }
     }
 
+    _aplicarFiltroPizzeta();
     actualizarCartBar();
 }
 
