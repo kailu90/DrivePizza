@@ -314,7 +314,8 @@ function renderCategories() {
         "Sandwiches",
         "Ensaladas",
         "Entradas/Adición",
-        "Otros",
+        "Bebidas Especiales",
+        "Empaques",
     ].filter(c => !_excluirCat.has(c));
 
     nav.innerHTML = categoriasVisibles.map(c =>

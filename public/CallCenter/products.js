@@ -348,8 +348,8 @@ const menuData = {
 // Las promos son exclusivas de Bucaramanga (sedes BGA), por eso se ocultan en Cartago.
 const MENU_EXCLUIR = {
     bucaramanga: {
-        categorias: [],
-        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Porta pizzas']
+        categorias: ['Empaques'],
+        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora']
     },
     cartago: {
         categorias: [],
