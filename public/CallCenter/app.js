@@ -2006,12 +2006,12 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
                </button>`;
 
         gridOpciones.innerHTML = `
-            <button class="btn-tamano" id="btn-volver-adic"
-                style="grid-column:1/-1;background:#f5f5f5;color:#555;font-size:1.3rem;">← Volver</button>
             <button class="btn-tamano btn-alcance-pick" data-alcance="completa" data-precio="${precioCompleta}">
                 Completa<br><strong>$${precioCompleta.toLocaleString()}</strong>
             </button>
             ${botonesMedia}
+            <button id="btn-volver-adic"
+                style="grid-column:1/-1;background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer;padding:6px;margin-top:4px;">← Volver</button>
         `;
 
         document.getElementById('btn-volver-adic').addEventListener('click', mostrarVistaSelector);
