@@ -1939,10 +1939,10 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
 
         document.getElementById('btn-listo-adic').addEventListener('click', cerrarModal);
 
-        // Adiciones → Vista 2 solo para pizzas; demás productos → Completa directo
+        // Adiciones → Vista 2 solo para pizzas no-porción; porción y demás productos → Completa directo
         gridOpciones.querySelectorAll('.btn-adicion:not(.btn-adicion--borde)').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (itemPadre.esPizza) {
+                if (itemPadre.esPizza && tamanoRaw !== 'Porción') {
                     mostrarVistaAlcance(btn.dataset.nombre, Number(btn.dataset.precio));
                 } else {
                     carrito.push({
