@@ -779,7 +779,9 @@ function abrirSeleccion(producto) {
             : {};
         if (producto.soloSedePrado) meta.soloSedePrado = true;
         if (producto.noNuestro) meta.noNuestro = true;
-        confirmarAgregar(producto.nombre, tamano, opEfectivas[tamano], meta);
+        // Si el tamano ya está en el nombre del producto (ej: "Pizzeta Majestuosa" + "Pizzeta"), no duplicar
+        const tamanoDisplay = producto.nombre.toLowerCase().includes(tamano.toLowerCase()) ? '' : tamano;
+        confirmarAgregar(producto.nombre, tamanoDisplay, opEfectivas[tamano], meta);
         return;
     }
 
