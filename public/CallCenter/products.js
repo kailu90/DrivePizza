@@ -337,8 +337,6 @@ const menuData = {
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
         { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
-        // ── Solo Cartago ──────────────────────────────────────────────────────
-        { nombre: "Malteada", opciones: { "Oreo": 16000, "Café": 16000, "Frutos Rojos": 16000, "Vainilla": 16000 }, noNuestro: true },
     ],
     "Otros": [
         { nombre: "Porta pizzas", opciones: { "Unidad": 300 }, descripcion: "Caja porta pizzas." },
@@ -351,7 +349,7 @@ const menuData = {
 const MENU_EXCLUIR = {
     bucaramanga: {
         categorias: ['Otros'],
-        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Malteada']
+        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora']
     },
     cartago: {
         categorias: [],
