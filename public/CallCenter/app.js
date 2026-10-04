@@ -826,7 +826,7 @@ function abrirSeleccion(producto) {
                 const esPizzeta = tam === 'Pizzeta';
                 const prefix   = esPizzeta ? 'Pizzeta' : 'Pizza';
                 const tamRaw   = esPizzeta ? 'Porción' : tam;
-                confirmarAgregar(`${prefix} ${producto.nombre}`, tam, Number(btn.dataset.pre),
+                confirmarAgregar(`${prefix} ${producto.nombre}`, esPizzeta ? '' : tam, Number(btn.dataset.pre),
                     { esPizza: true, esAdicionable: true, tamanoRaw: tamRaw,
                       ...(esPizzeta && { esPizzeta: true }),
                       ...(producto.esEstofada && { esEstofada: true }) });
