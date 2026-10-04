@@ -6,7 +6,7 @@ let _modoTaller  = false;
 let _toppingsCC = new Set();
 
 const ACOMP_POR_CIUDAD = {
-    bucaramanga: ['Salsa Tártara', 'Orégano', 'Sal de Ajo'],
+    bucaramanga: ['Salsa Tártara', 'Orégano', 'Sal de Ajo', 'Pimienta en Hojuelas'],
     cartago:     ['Salsa Rosada', 'Miel'],
 };
 function _renderAcomps(ciudad) {
