@@ -161,6 +161,7 @@ const CATEGORIAS_ADICIONABLES = {
     "Ensaladas":     "Porción",
     "Sandwiches":    "Unidad",
     "Hamburguesas":  "Hamburguesa",
+    "Maicitos":      "Unidad",
 };
 
 // Estado temporal para la selección de segundo sabor
