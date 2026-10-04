@@ -337,8 +337,6 @@ const menuData = {
         { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
         { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
-    ],
-    "Otros": [
         { nombre: "Porta pizzas", opciones: { "Unidad": 300 }, descripcion: "Caja porta pizzas." },
     ],
     };
@@ -348,8 +346,8 @@ const menuData = {
 // Las promos son exclusivas de Bucaramanga (sedes BGA), por eso se ocultan en Cartago.
 const MENU_EXCLUIR = {
     bucaramanga: {
-        categorias: ['Otros'],
-        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora']
+        categorias: [],
+        productos:  ['Hamburguesa La Propia', 'Hamburguesa La Golosa', 'Hamburguesa La Gladiadora', 'Porta pizzas']
     },
     cartago: {
         categorias: [],
