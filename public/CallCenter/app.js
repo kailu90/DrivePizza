@@ -3010,10 +3010,10 @@ window._promoLasEspSelGaseosa = function (sabor) {
     carrito.push({ id: now,     nombre: state.prod1.nombre, precio: cfg.precio, qty: 1, esPromoLasEsp: true, promoIdLasEsp: now, promoCategoria: state.categoria, ...(promoVariante && { promoVariante }) });
     carrito.push({ id: now + 1, nombre: state.prod2.nombre, precio: 0,          qty: 1, esPromoLasEsp: true, esExtra28k: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
     if (cfg.gaseosas > 1) {
-        carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
-        carrito.push({ id: now + 3, nombre: `Gaseosa ${sabor}`,          precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now });
+        carrito.push({ id: now + 2, nombre: `Gaseosa ${state.gaseosa1}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
+        carrito.push({ id: now + 3, nombre: `Gaseosa ${sabor}`,          precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
     } else {
-        carrito.push({ id: now + 2, nombre: `Gaseosa ${sabor}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now, promoVariante: 'ctg' });
+        carrito.push({ id: now + 2, nombre: `Gaseosa ${sabor}`, precio: 0, qty: 1, esPromoLasEsp: true, esGaseosaLasEsp: true, promoIdLasEsp: now, ...(promoVariante && { promoVariante }) });
     }
     localStorage.setItem(cfg.obsKey, `${cfg.obsLabel}${state.categoria}`);
     actualizarComanda();
