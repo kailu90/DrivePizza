@@ -209,7 +209,7 @@ const menuData = {
         { nombre: "Pollo Champiñones", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo y champiñones."},
         { nombre: "Pepperoni", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella y pepperoni."},   
         { nombre: "Maduro tocineta", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, maduro y tocineta."},
-        { nombre: "Toc", opciones: preciosPizzas.tipica , descripcion: "Maiz tierno, queso cheddar y tocineta."},
+        { nombre: "Toc", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, tocineta, maíz tierno y queso cheddar."},
         { nombre: "Suprema", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, jamón, cabano, salami, pimentón, cebolla y orégano."},
         { nombre: "Suprema de Pollo", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo, pimentón, cebolla y orégano."},
         { nombre: "Pollo Bbq", opciones: preciosPizzas.tipica , descripcion: "Queso mozzarella, pollo aderezado con salsa BBQ."},
