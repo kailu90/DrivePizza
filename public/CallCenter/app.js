@@ -84,7 +84,7 @@ function _aplicarFiltroPizzeta() {
         if (!hayOtraRestricion) {
             [...SEDES_PIZZETA, ...SEDES_PORCION_PIZZA].forEach(s => {
                 const btn = document.querySelector(`.sede-toggle .sede-btn[data-sede="${s}"]`);
-                if (btn) btn.disabled = false;
+                if (btn && !carrito.some(i => i.noSedes?.includes(s))) btn.disabled = false;
             });
         }
         return;
@@ -118,7 +118,7 @@ function _aplicarFiltroPizzeta() {
     if (!hayOtraRestricion) {
         sedesPermitir.forEach(s => {
             const btn = document.querySelector(`.sede-toggle .sede-btn[data-sede="${s}"]`);
-            if (btn) btn.disabled = false;
+            if (btn && !carrito.some(i => i.noSedes?.includes(s))) btn.disabled = false;
         });
     }
     if (avisoEl) avisoEl.textContent = texto;
@@ -642,6 +642,7 @@ window.agregarRapidoVariante = function(producto, variante) {
     const entries = Object.entries(opEfectivas);
     const meta = {};
     if (producto.noNuestro)    meta.noNuestro    = true;
+    if (producto.noSedes)      meta.noSedes      = producto.noSedes;
     if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
     const nombreConVariante = `${producto.nombre} en ${variante}`;
     if (entries.length === 1) {
@@ -663,6 +664,7 @@ window.agregarRapidoSola = function(producto) {
         const meta = {};
         if (producto.soloSedePrado) meta.soloSedePrado = true;
         if (producto.noNuestro) meta.noNuestro = true;
+        if (producto.noSedes)   meta.noSedes   = producto.noSedes;
         if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
         confirmarAgregar(producto.nombre, tam, precio, meta);
     } else {
@@ -681,6 +683,7 @@ window.agregarRapidoCombo = function(producto) {
         const meta = {};
         if (producto.soloSedePrado) meta.soloSedePrado = true;
         if (producto.noNuestro) meta.noNuestro = true;
+        if (producto.noSedes)   meta.noSedes   = producto.noSedes;
         if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
         confirmarAgregar(producto.nombre, tam, precioCombo, meta);
         const parentId = carrito[carrito.length - 1].id;
@@ -724,6 +727,7 @@ function abrirOpcionesRapidas(producto, esCombo) {
                 const meta = {};
                 if (producto.soloSedePrado) meta.soloSedePrado = true;
                 if (producto.noNuestro) meta.noNuestro = true;
+                if (producto.noSedes)   meta.noSedes   = producto.noSedes;
                 if (_excluSivasNuestro.has(btn.dataset.tam)) meta.soloNuestro = true;
                 if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
                 confirmarAgregar(producto.nombre, btn.dataset.tam, Number(btn.dataset.pre), meta);
@@ -757,6 +761,7 @@ function abrirSubOpciones(producto, tamPadre, precio, subOpts, esCombo) {
             const meta = {};
             if (producto.soloSedePrado) meta.soloSedePrado = true;
             if (producto.noNuestro) meta.noNuestro = true;
+            if (producto.noSedes)   meta.noSedes   = producto.noSedes;
             if (producto.esAdicionable) { meta.esAdicionable = true; meta.tamanoRaw = producto.tamanoRaw; }
             confirmarAgregar(producto.nombre, btn.dataset.sub, Number(btn.dataset.pre), meta);
             if (esCombo) {
@@ -785,6 +790,7 @@ function abrirSeleccion(producto) {
             : {};
         if (producto.soloSedePrado) meta.soloSedePrado = true;
         if (producto.noNuestro) meta.noNuestro = true;
+        if (producto.noSedes)   meta.noSedes   = producto.noSedes;
         // Si el tamano ya está en el nombre del producto (ej: "Pizzeta Majestuosa" + "Pizzeta"), no duplicar
         const tamanoDisplay = producto.nombre.toLowerCase().includes(tamano.toLowerCase()) ? '' : tamano;
         confirmarAgregar(producto.nombre, tamanoDisplay, opEfectivas[tamano], meta);
@@ -895,6 +901,7 @@ function abrirSeleccion(producto) {
                     : {};
                 if (producto.soloSedePrado) meta.soloSedePrado = true;
                 if (producto.noNuestro) meta.noNuestro = true;
+                if (producto.noSedes)   meta.noSedes   = producto.noSedes;
                 if (_excluSivasNuestro.has(btn.dataset.tam)) meta.soloNuestro = true;
                 const precioFinal = _comboActivo
                     ? (producto.comboPrecioFijo ?? Number(btn.dataset.pre) + 5000)
@@ -1228,6 +1235,40 @@ function actualizarComanda() {
     }
 
     _aplicarFiltroPizzeta();
+
+    // Restricción genérica noSedes — deshabilitar sede si algún item en carrito la excluye
+    const _sedesNoDisp = new Set(carrito.flatMap(i => i.noSedes || []));
+    document.querySelectorAll('.sede-toggle .sede-btn[data-sede]').forEach(btn => {
+        const sede = btn.dataset.sede;
+        const restricted = _sedesNoDisp.has(sede);
+        const avisoId = `aviso-nosedes-${sede}`;
+        let aviso = document.getElementById(avisoId);
+        if (restricted) {
+            const count = carrito.filter(i => i.noSedes?.includes(sede)).length;
+            btn.disabled = true;
+            if (btn.classList.contains('active')) btn.classList.remove('active');
+            if (!aviso) {
+                aviso = document.createElement('span');
+                aviso.id = avisoId;
+                aviso.className = 'aviso-sede-nuestro';
+                btn.style.position = 'relative';
+                btn.style.overflow = 'visible';
+                btn.appendChild(aviso);
+            }
+            aviso.textContent = `${count} producto${count > 1 ? 's' : ''} no disponible${count > 1 ? 's' : ''}`;
+        } else if (aviso) {
+            aviso.remove();
+            btn.style.position = '';
+            btn.style.overflow = '';
+            // Re-habilitar solo si pizzeta tampoco bloquea esta sede
+            const tienePizzeta = carrito.some(i => i.esPizzeta);
+            const tienePorcion = carrito.some(i => i.esPizza && !i.esPizzeta && !i.esEstofada && i.tamanoRaw === 'Porción');
+            const bloqPizzeta = tienePizzeta && SEDES_PORCION_PIZZA.has(sede);
+            const bloqPorcion = tienePorcion && SEDES_PIZZETA.has(sede);
+            if (!bloqPizzeta && !bloqPorcion) btn.disabled = false;
+        }
+    });
+
     actualizarCartBar();
 }
 
