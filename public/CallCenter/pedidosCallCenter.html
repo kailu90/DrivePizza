@@ -230,11 +230,18 @@
             <!-- Cantidad de personas — solo visible en modo reserva -->
             <div id="personas-section" class="full-width" style="display:none;">
                 <p class="form-label" style="margin-bottom:6px;">Fecha de reserva</p>
-                <input type="date" id="fechaReserva" class="full-width" style="margin-bottom:12px;">
-                <p class="form-label" style="margin-bottom:6px;">Hora de reserva</p>
-                <div id="hora-reserva-grid" class="hora-reserva-grid"></div>
+                <input type="date" id="fechaReserva" class="full-width" style="margin-bottom:6px;">
+                <p id="reserva-msg-fecha" class="reserva-msg">Selecciona primero una sede</p>
+                <div id="reserva-info-dia" class="reserva-info-dia" style="display:none;"></div>
+                <div id="reserva-hora-section" style="display:none;">
+                    <p class="form-label" style="margin-bottom:6px; margin-top:12px;">Hora de reserva</p>
+                    <div id="hora-reserva-grid" class="hora-reserva-grid"></div>
+                </div>
                 <input type="hidden" id="horaReserva">
-                <input type="number" id="cantidadPersonas" placeholder="Cantidad de personas" min="1" class="full-width" style="margin-top:10px;">
+                <div class="personas-input-wrap" id="reserva-personas-wrap" style="margin-top:10px; display:none;">
+                    <input type="number" id="cantidadPersonas" placeholder="Cantidad de personas" min="1">
+                    <span class="personas-input-icon">&#128101;</span>
+                </div>
             </div>
 
             <!-- Reserva Pizzeritos — solo visible en modo reserva pizzeritos -->
@@ -337,6 +344,7 @@
 
     <script type="module">
     import { supabase } from '../Api/supabaseConfig.js';
+    window._supabase = supabase; // expuesto para app.js (consulta ocupación reservas)
     import { mostrarSkeleton, ocultarSkeleton } from "../Shared/skeleton.js";
     import { cargarTodosBarrios, cargarBarriosSede, invalidarCacheBarrios } from "./barriosService.js";
     import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from "../Shared/overlay.js";

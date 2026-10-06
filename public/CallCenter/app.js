@@ -1489,6 +1489,81 @@ function abrirCheckout() {
 
 const SEDES_RESERVA = new Set(['cabecera', 'cañaveral', 'piedecuesta']);
 
+// Capacidad máxima de personas por franja horaria (por sede)
+const CAPACIDAD_SLOT_RESERVA = {
+    cabecera:    30,
+    cañaveral:   50,
+    piedecuesta: 30,
+};
+const _CAP_DEFAULT = 30;
+
+// Cache de ocupación: key = "sede_fecha" — se invalida al crear una reserva
+const _ocupacionCache = new Map();
+
+// ── TEST: inyectar ocupación mock desde la consola del navegador ──────────────
+// Uso: _testReservaOcupacion('2026-10-06')
+window._testReservaOcupacion = function(fecha) {
+    const mock = {
+        '18:00': 10,   // 20% verde
+        '18:15': 26,   // 52% naranja
+        '18:30': 38,   // 76% naranja
+        '18:45': 44,   // 88% rojo
+        '19:00': 50,   // 100% lleno
+        '19:15': 30,   // 60% naranja
+        '19:30': 5,    // 10% verde
+    };
+    _ocupacionCache.set(`cañaveral_${fecha}`, mock);
+    console.log(`[TEST] Mock inyectado para cañaveral_${fecha}`, mock);
+};
+
+async function _fetchOcupacionReserva(sede, fecha) {
+    const key = `${sede}_${fecha}`;
+    if (_ocupacionCache.has(key)) return _ocupacionCache.get(key);
+    const sb = window._supabase;
+    if (!sb) return {};
+    const { data } = await sb
+        .from('pedidos_callcenter')
+        .select('hora_reserva, cantidad_personas')
+        .eq('sede', sede)
+        .eq('fecha_reserva', fecha)
+        .eq('tipo', 'reserva')
+        .neq('estado', 'cancelado');
+    const mapa = {};
+    for (const r of data || []) {
+        if (!r.hora_reserva) continue;
+        mapa[r.hora_reserva] = (mapa[r.hora_reserva] || 0) + (r.cantidad_personas || 0);
+    }
+    _ocupacionCache.set(key, mapa);
+    return mapa;
+}
+
+function _formatFechaReserva(fechaStr) {
+    const [y, m, d] = fechaStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${dias[date.getDay()]} ${d} ${meses[m - 1]} ${y}`;
+}
+
+function _actualizarInfoDia(sede, fecha, capacidad) {
+    const el = document.getElementById('reserva-info-dia');
+    if (!el) return;
+    if (!sede || !fecha) { el.style.display = 'none'; return; }
+    const label = sede.charAt(0).toUpperCase() + sede.slice(1);
+    el.textContent = `${label} • ${_formatFechaReserva(fecha)} • Capacidad del día: ${capacidad} personas`;
+    el.style.display = 'block';
+}
+
+async function _refreshHorasReserva() {
+    const sede  = document.querySelector('.sede-toggle .sede-btn.active')?.dataset.sede || '';
+    const fecha = document.getElementById('fechaReserva')?.value || '';
+    const cap   = CAPACIDAD_SLOT_RESERVA[sede] ?? _CAP_DEFAULT;
+    _actualizarInfoDia(sede, fecha, cap);
+    if (!sede || !fecha) { renderHorariosReserva({}, cap); return; }
+    const ocupacion = await _fetchOcupacionReserva(sede, fecha);
+    renderHorariosReserva(ocupacion, cap);
+}
+
 function _generarSlots(desde, hasta) {
     const slots = [];
     let [h, m] = desde;
@@ -1505,37 +1580,74 @@ function _generarSlots(desde, hasta) {
     return slots;
 }
 
-function renderHorariosReserva() {
+function renderHorariosReserva(ocupacion = {}, capacidad = _CAP_DEFAULT) {
     const grid = document.getElementById('hora-reserva-grid');
     const slotsPrimarios  = _generarSlots([18, 0],  [21, 0]);
     const slotsEarly      = _generarSlots([15, 15], [17, 45]);
     const slotsLate       = _generarSlots([21, 15], [23, 0]);
 
-    function crearBotones(slots, ocultos = false) {
-        return slots.map(s => `
-            <button type="button"
-                class="hora-btn${ocultos ? ' hora-btn--extra' : ''}"
-                data-hora="${s.value}"
-                onclick="seleccionarHora(this)">
-                ${s.label}
-            </button>`).join('');
+    function _colorClass(pct) {
+        if (pct >= 100) return 'hora-btn--lleno';
+        if (pct >= 80)  return 'hora-btn--rojo';
+        if (pct >= 50)  return 'hora-btn--naranja';
+        return 'hora-btn--verde';
     }
+
+    function crearBotones(slots, ocultos = false) {
+        return slots.map(s => {
+            const ocupadas = ocupacion[s.value] || 0;
+            const pct      = capacidad > 0 ? Math.min(100, Math.round((ocupadas / capacidad) * 100)) : 0;
+            const disp     = Math.max(0, capacidad - ocupadas);
+            const clase    = _colorClass(pct);
+            const lleno    = pct >= 100;
+            const dispHtml = lleno
+                ? `<span class="hora-btn__disp">Lleno</span>`
+                : `<span class="hora-btn__disp">Disp. ${disp}</span>`;
+            return `
+            <button type="button"
+                class="hora-btn ${clase}${ocultos ? ' hora-btn--extra' : ''}"
+                data-hora="${s.value}"
+                ${lleno ? 'disabled' : ''}
+                onclick="seleccionarHora(this)">
+                <span class="hora-btn__time">${s.label}</span>
+                <span class="hora-btn__pers"><span class="hora-btn__dot"></span>${ocupadas} pers.</span>
+                <span class="hora-btn__pct">${pct}%</span>
+                ${dispHtml}
+            </button>`;
+        }).join('');
+    }
+
+    // Preservar selección activa si el usuario ya eligió una hora
+    const horaActiva = document.getElementById('horaReserva')?.value || '';
 
     grid.innerHTML = `
         ${crearBotones(slotsPrimarios)}
-        <div id="horarios-extra" style="display:none; width:100%; display:none;">
+        <div id="horarios-extra" style="display:none; width:100%;">
             ${crearBotones(slotsEarly)}
             ${crearBotones(slotsLate)}
         </div>
         <button type="button" id="btn-ver-mas-horarios" class="hora-btn-vermas"
             onclick="toggleHorariosExtra()">+ Ver otros horarios ▾</button>
     `;
+
+    // Restaurar clase .active si la hora aún sigue seleccionada
+    if (horaActiva) {
+        const btn = grid.querySelector(`[data-hora="${horaActiva}"]`);
+        if (btn && !btn.disabled) btn.classList.add('active');
+        else if (btn?.disabled) document.getElementById('horaReserva').value = '';
+    }
 }
 
 window.seleccionarHora = function(btn) {
     document.querySelectorAll('.hora-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('horaReserva').value = btn.dataset.hora;
+    // Mostrar cantidad de personas al elegir hora (solo en modo reserva)
+    if (_modoReserva) {
+        const wrap = document.getElementById('reserva-personas-wrap');
+        wrap.style.display = 'flex';
+        document.getElementById('cantidadPersonas').focus();
+    }
 };
 
 window.toggleHorariosExtra = function() {
@@ -1596,16 +1708,22 @@ window.actualizarTotalKits = function() {
 
 function abrirModalReserva() {
     limpiarFormularioCheckout();
-    renderHorariosReserva();
 
     // Activar modo reserva: ocultar secciones de pedido, mostrar personas
     document.getElementById('modal-checkout-titulo').textContent = 'NUEVA RESERVA';
     document.getElementById('entrega-toggle-section').style.display = 'none';
     document.getElementById('pago-section').style.display = 'none';
     document.getElementById('acomp-section').style.display = 'none';
+    document.getElementById('checkout-total-box').style.display = 'none';
     document.getElementById('personas-section').style.display = 'block';
     document.getElementById('btn-enviar-pedido').style.display = 'none';
     document.getElementById('btn-crear-reserva').style.display = 'block';
+
+    // Progressive disclosure: esperar sede → fecha → hora → personas
+    document.getElementById('fechaReserva').disabled = true;
+    document.getElementById('reserva-msg-fecha').style.display = 'block';
+    document.getElementById('reserva-hora-section').style.display = 'none';
+    document.getElementById('reserva-personas-wrap').style.display = 'none';
 
     // Restringir sedes a las que aplican reservas
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
@@ -1641,6 +1759,14 @@ async function procesarReservaFinal() {
     if (!hora)                return alert('⚠️ La hora de la reserva es obligatoria.');
     if (!personas || personas < 1) return alert('⚠️ Ingresa la cantidad de personas (mínimo 1).');
 
+    // Validar cupo disponible en el slot seleccionado
+    const _cap        = CAPACIDAD_SLOT_RESERVA[sede] ?? _CAP_DEFAULT;
+    const _ocupSlot   = (_ocupacionCache.get(`${sede}_${fecha}`) || {})[hora] || 0;
+    const _disponibles = Math.max(0, _cap - _ocupSlot);
+    if (personas > _disponibles) {
+        return alert(`⚠️ Solo quedan ${_disponibles} lugar${_disponibles !== 1 ? 'es' : ''} disponibles en ese horario.`);
+    }
+
     const datos = {
         tipo: 'reserva',
         canal,
@@ -1657,6 +1783,9 @@ async function procesarReservaFinal() {
     window.mostrarOverlay?.('Creando reserva...');
     try {
         const pedidoId = await window.enviarAFirebase(datos);
+
+        // Invalidar cache de ocupación para que el próximo acceso sea fresco
+        _ocupacionCache.delete(`${sede}_${fecha}`);
 
         cerrarCheckout();
         limpiarFormularioCheckout();
@@ -1755,6 +1884,7 @@ function _restaurarModoNormal() {
     document.getElementById('acomp-section').style.display = '';
     document.getElementById('personas-section').style.display = 'none';
     document.getElementById('taller-section').style.display = 'none';
+    document.getElementById('checkout-total-box').style.display = '';
     document.getElementById('checkout-subtotal-row').style.display = '';
     document.getElementById('checkout-total-final').textContent = '$0';
     document.getElementById('btn-enviar-pedido').style.display = '';
@@ -1776,6 +1906,17 @@ function limpiarFormularioCheckout() {
     document.getElementById('horaReserva').value = '';
     document.getElementById('cantidadPersonas').value = '';
     document.getElementById('hora-reserva-grid').innerHTML = '';
+    const _infoEl = document.getElementById('reserva-info-dia');
+    if (_infoEl) _infoEl.style.display = 'none';
+    // Resetear progressive disclosure
+    const _fechaEl = document.getElementById('fechaReserva');
+    if (_fechaEl) _fechaEl.disabled = true;
+    const _msgFecha = document.getElementById('reserva-msg-fecha');
+    if (_msgFecha) _msgFecha.style.display = 'block';
+    const _horaSection = document.getElementById('reserva-hora-section');
+    if (_horaSection) _horaSection.style.display = 'none';
+    const _persWrap = document.getElementById('reserva-personas-wrap');
+    if (_persWrap) _persWrap.style.display = 'none';
     document.getElementById('fechaTaller').value = '';
     document.getElementById('horaTaller').value = '';
     document.getElementById('cantidadKits').value = '';
@@ -1821,6 +1962,40 @@ document.getElementById('clienteTelefono').addEventListener('input', function ()
     const vacio = this.value.length === 0;
     this.style.borderColor  = vacio ? '' : norm ? 'var(--color-primario)' : '#e53e3e';
     this.style.outlineColor = vacio ? '' : norm ? 'var(--color-primario)' : '#e53e3e';
+});
+
+// ── Listeners para ocupación de reservas ─────────────────────────────────────
+// Al cambiar la fecha: mostrar grilla y cargar ocupación real
+document.getElementById('fechaReserva').addEventListener('change', () => {
+    if (!_modoReserva) return;
+    // Mostrar sección de horas y ocultar personas hasta que elija slot
+    document.getElementById('reserva-hora-section').style.display = 'block';
+    document.getElementById('reserva-personas-wrap').style.display = 'none';
+    document.getElementById('horaReserva').value = '';
+    _refreshHorasReserva();
+});
+
+// Al cambiar de sede estando en modo reserva: habilitar fecha y refrescar grilla
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sede-toggle .sede-btn');
+    if (!btn || !_modoReserva) return;
+    setTimeout(() => {
+        // Habilitar fecha y quitar mensaje guía
+        const fechaInput = document.getElementById('fechaReserva');
+        fechaInput.disabled = false;
+        document.getElementById('reserva-msg-fecha').style.display = 'none';
+        // Si ya había una fecha elegida, refrescar disponibilidad
+        if (fechaInput.value) {
+            _refreshHorasReserva();
+        } else {
+            // Ocultar grilla hasta que elija fecha
+            document.getElementById('reserva-hora-section').style.display = 'none';
+            document.getElementById('reserva-personas-wrap').style.display = 'none';
+            document.getElementById('horaReserva').value = '';
+            _actualizarInfoDia('', '', 0);
+        }
+        fechaInput.focus();
+    }, 0);
 });
 
 // Solo cerramos si el mousedown Y el click terminaron sobre el overlay (no al arrastrar desde un input)
