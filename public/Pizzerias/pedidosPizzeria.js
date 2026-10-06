@@ -237,12 +237,12 @@ function renderFila(p) {
             : `🏪 Recoge en tienda`;
 
     return `
-        <div class="order-row ${estadoClass}" onclick="abrirModalPedido('${p.id}')">
+        <div class="order-row ${estadoClass}${esReserva ? ' orden-reserva' : ''}" onclick="abrirModalPedido('${p.id}')">
             <div class="order-row-info">
                 <div class="order-row-top">
                     <span class="order-npedido">#${p.nPedido}</span>
                     <span class="order-cliente">${p.nombre}</span>
-                    <span class="order-estado-badge ${badgeClass}">${badgeLabel}</span>
+                    ${esReserva ? '<span class="badge-reserva">📅 Reserva</span>' : `<span class="order-estado-badge ${badgeClass}">${badgeLabel}</span>`}
                 </div>
                 <div class="order-row-sub">${sublinea}</div>
             </div>

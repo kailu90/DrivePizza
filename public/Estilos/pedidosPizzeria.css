@@ -69,6 +69,23 @@
 .order-row.estado-preparacion { border-left-color: #e67e22; }
 .order-row.estado-despachado  { border-left-color: #2980b9; }
 
+.order-row.orden-reserva {
+    background: #dcfce7;
+    border-left-color: #16a34a;
+    border-left-width: 6px;
+}
+
+.badge-reserva {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: #16a34a;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
 .order-row-info {
     flex: 1;
     min-width: 0;
