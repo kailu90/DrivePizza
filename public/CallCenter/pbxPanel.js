@@ -378,14 +378,32 @@ export function initPbxPanel(containerId = 'pbx-body') {
         }).join('');
     }
 
+    // Cierra en Supabase llamadas en_curso > 2 min (zombie de sesión anterior)
+    async function _cleanupStale(ext) {
+        try {
+            const r = await fetch(`${API_BASE}/pbx/calls/end-stale`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ extension: ext }),
+            });
+            if (!r.ok) return;
+            const { updated } = await r.json();
+            if (updated > 0) {
+                console.log(`[pbx] ${updated} llamada(s) zombie limpiadas`);
+                setTimeout(() => loadCallsFromServer(ext), 600);
+            }
+        } catch { /* sin red */ }
+    }
+
     // ── API pública ──────────────────────────────────────────────────
     function update(state, data = {}) {
         const ext = data?.extension;
 
-        // Al registrar por primera vez: cargar historial de llamadas
+        // Al registrar por primera vez: limpiar zombies y cargar historial
         if (state === 'registered' && ext && ext !== currentExt) {
             currentExt      = ext;
             currentUsername = data?.username || null;
+            _cleanupStale(ext);
             loadCallsFromServer(ext);
         }
 
