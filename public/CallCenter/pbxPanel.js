@@ -270,7 +270,7 @@ export function initPbxPanel(containerId = 'pbx-body') {
         });
 
         document.getElementById('pbx-btn-hangup')?.addEventListener('click', () => {
-            const secs = stopTimer();
+            const secs = currentCall ? Math.floor((Date.now() - currentCall.time) / 1000) : 0;
             if (currentCall) addToHistory({ ...currentCall, duration: secs });
             currentCall = null;
             document.getElementById('pbx-live').innerHTML = '';
