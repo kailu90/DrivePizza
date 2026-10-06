@@ -505,10 +505,6 @@ body {
     display: inline-block;
     flex-shrink: 0;
 }
-.hora-btn__pct {
-    font-size: 1.0rem;
-    color: #999;
-}
 .hora-btn__disp {
     font-size: 1.0rem;
     font-weight: 600;

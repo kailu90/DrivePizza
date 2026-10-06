@@ -1602,8 +1602,8 @@ function renderHorariosReserva(ocupacion = {}, capacidad = _CAP_DEFAULT) {
             const clase    = _colorClass(pct);
             const lleno    = pct >= 100;
             const dispHtml = lleno
-                ? `<span class="hora-btn__disp">Lleno</span>`
-                : `<span class="hora-btn__disp">Disp. ${disp}</span>`;
+                ? `<span class="hora-btn__disp">Sin sillas</span>`
+                : `<span class="hora-btn__disp">Disponible ${disp} sillas</span>`;
             return `
             <button type="button"
                 class="hora-btn ${clase}${ocultos ? ' hora-btn--extra' : ''}"
@@ -1612,7 +1612,6 @@ function renderHorariosReserva(ocupacion = {}, capacidad = _CAP_DEFAULT) {
                 onclick="seleccionarHora(this)">
                 <span class="hora-btn__time">${s.label}</span>
                 <span class="hora-btn__pers"><span class="hora-btn__dot"></span>${ocupadas} pers.</span>
-                <span class="hora-btn__pct">${pct}%</span>
                 ${dispHtml}
             </button>`;
         }).join('');
