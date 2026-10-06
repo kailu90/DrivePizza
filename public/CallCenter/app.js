@@ -1590,7 +1590,8 @@ function renderHorariosReserva(ocupacion = {}, capacidad = _CAP_DEFAULT) {
         if (pct >= 100) return 'hora-btn--lleno';
         if (pct >= 80)  return 'hora-btn--rojo';
         if (pct >= 50)  return 'hora-btn--naranja';
-        return 'hora-btn--verde';
+        if (pct > 0)    return 'hora-btn--verde';
+        return ''; // 0% → blanco sin clase
     }
 
     function crearBotones(slots, ocultos = false) {

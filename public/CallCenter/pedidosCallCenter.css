@@ -514,20 +514,33 @@ body {
     font-weight: 600;
 }
 
-/* Estados de ocupación */
+/* Estados de ocupación — borde + fondo + dot + texto */
+.hora-btn--verde {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+}
 .hora-btn--verde .hora-btn__dot  { background: #22c55e; }
 .hora-btn--verde .hora-btn__disp { color: #16a34a; }
 
+.hora-btn--naranja {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.09);
+}
 .hora-btn--naranja .hora-btn__dot  { background: #f59e0b; }
 .hora-btn--naranja .hora-btn__disp { color: #d97706; }
 
+.hora-btn--rojo {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.09);
+}
 .hora-btn--rojo .hora-btn__dot  { background: #ef4444; }
 .hora-btn--rojo .hora-btn__disp { color: #dc2626; }
 
 .hora-btn--lleno {
     opacity: 0.55;
     cursor: not-allowed;
-    border-color: #e0e0e0;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.06);
 }
 .hora-btn--lleno .hora-btn__dot  { background: #ef4444; }
 .hora-btn--lleno .hora-btn__disp { color: #dc2626; font-weight: 700; }
