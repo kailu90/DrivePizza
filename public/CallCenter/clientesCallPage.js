@@ -1251,6 +1251,7 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
     paginaActual = pagina;
     const q = searchInput.value.trim();
 
+    _infHasMore = true;
     _disconnectObserver();
 
     if (fromSearch) {
@@ -1269,6 +1270,12 @@ async function ejecutarBusqueda(pagina = 1, fromSearch = false) {
     _infQuery = q;
 
     renderTabla(data);
+
+    // Scroll infinito para páginas siguientes
+    _infHasMore = data.length >= POR_PAGINA;
+    if (_infHasMore) {
+        _initScrollObserver(p => _fetchTodosPagina(q, p).then(r => r.data));
+    }
 
     // Paginación prev/next
     const pag = document.getElementById('clientes-paginacion');
