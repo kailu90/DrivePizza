@@ -17,6 +17,14 @@ function toDate(ts) {
     return ts ? new Date(ts) : null;
 }
 
+function _formatFechaReservaLocal(fechaStr) {
+    // fechaStr = 'YYYY-MM-DD' — construir como local para evitar desfase UTC
+    const [y, m, d] = fechaStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('es-CO', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+    });
+}
+
 // ── ICONOS SVG ────────────────────────────────────────────────────
 const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" stroke-width="3"
@@ -58,6 +66,32 @@ const STEPS = [
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
+               </svg>`
+    },
+];
+
+const STEPS_RESERVA = [
+    {
+        key: 'en preparacion',
+        label: 'Confirmar',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <polyline points="9 16 11 18 15 14"/>
+               </svg>`
+    },
+    {
+        key: 'entregado',
+        label: 'Completado',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
                </svg>`
     },
 ];
@@ -162,7 +196,7 @@ function iniciarListener(sede) {
 
 // ── AUTO-AVANCE RECIBIDO → EN PREPARACIÓN ─────────────────────────
 function gestionarAutoPreparacion(pedidos) {
-    const recibidos = pedidos.filter(p => p.estado === 'recibido');
+    const recibidos = pedidos.filter(p => p.estado === 'recibido' && p.tipo !== 'reserva');
 
     // Limpiar timers de pedidos que ya no están en 'recibido'
     timersPreparacion.forEach((_, id) => {
@@ -260,44 +294,66 @@ window.abrirModalPedido = (id) => {
 };
 
 function infoReserva(p) {
-    if (p.fechaReserva || p.horaReserva) {
-        const partes = [`📅 Reserva: ${p.fechaReserva || ''} ${p.horaReserva || ''}`.trim()];
-        if (p.cantidadPersonas) partes.push(`${p.cantidadPersonas} personas`);
-        return partes.join(' · ');
-    }
-    return p.obs ? `📅 Reserva · ${p.obs}` : '📅 Reserva (sin fecha registrada)';
+    const partes = [];
+    if (p.fechaReserva) partes.push(`📅 ${_formatFechaReservaLocal(p.fechaReserva)}`);
+    if (p.horaReserva)  partes.push(`🕐 ${p.horaReserva}`);
+    if (p.cantidadPersonas) partes.push(`👥 ${p.cantidadPersonas} pers.`);
+    return partes.length ? partes.join(' · ') : '📅 Reserva';
 }
 
 function poblarModal(p) {
     const esReserva   = p.tipo === 'reserva';
     const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
 
-    document.getElementById('mp-npedido').textContent  = `#${p.nPedido}`;
-    document.getElementById('mp-cliente').textContent  = p.nombre;
-    document.getElementById('mp-tel').textContent      = `📞 ${p.telefono}`;
-    document.getElementById('mp-entrega').textContent  = esReserva
-        ? infoReserva(p)
-        : esDomicilio
+    document.getElementById('mp-npedido').textContent = `#${p.nPedido}`;
+    document.getElementById('mp-cliente').textContent = p.nombre;
+    document.getElementById('mp-tel').textContent     = `📞 ${p.telefono}`;
+
+    // Entrega / info reserva
+    if (esReserva) {
+        const fechaFmt = p.fechaReserva ? _formatFechaReservaLocal(p.fechaReserva) : '—';
+        const pers     = p.cantidadPersonas;
+        document.getElementById('mp-entrega').innerHTML =
+            `<div class="reserva-detail-card">` +
+            `<div class="reserva-detail-row"><span class="reserva-detail-icon">📅</span>${fechaFmt}</div>` +
+            (p.horaReserva ? `<div class="reserva-detail-row"><span class="reserva-detail-icon">🕐</span>${p.horaReserva}</div>` : '') +
+            (pers ? `<div class="reserva-detail-row reserva-detail-pers"><span class="reserva-detail-icon">👥</span><strong>${pers} persona${pers !== 1 ? 's' : ''}</strong></div>` : '') +
+            `</div>`;
+    } else {
+        document.getElementById('mp-entrega').textContent = esDomicilio
             ? `📍 ${p.direccion || ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
             : `🏪 Recoge en tienda`;
+    }
 
-    document.getElementById('mp-productos').innerHTML =
-        (p.productos || [])
-        .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
-        .map(prod => `<li><strong>${prod.qty || 1}×</strong> ${prod.nombre}</li>`)
-        .join('');
+    // Mostrar/ocultar sección productos y totales
+    const dNone = esReserva ? 'none' : '';
+    document.querySelector('.mpedido-productos-title').style.display = dNone;
+    document.getElementById('mp-productos').style.display            = dNone;
+    document.querySelector('.mpedido-totals').style.display          = dNone;
+    document.querySelector('.mpedido-sep').style.display             = dNone;
 
-    document.getElementById('mp-total').textContent = `$${(p.total || 0).toLocaleString()}`;
-    document.getElementById('mp-domicilio').textContent =
-        esDomicilio && p.domicilio?.valor ? `+ Dom $${p.domicilio.valor.toLocaleString()}` : '';
+    if (!esReserva) {
+        document.getElementById('mp-productos').innerHTML =
+            (p.productos || [])
+            .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
+            .map(prod => `<li><strong>${prod.qty || 1}×</strong> ${prod.nombre}</li>`)
+            .join('');
+        document.getElementById('mp-total').textContent    = `$${(p.total || 0).toLocaleString()}`;
+        document.getElementById('mp-domicilio').textContent =
+            esDomicilio && p.domicilio?.valor ? `+ Dom $${p.domicilio.valor.toLocaleString()}` : '';
+    }
 
     document.getElementById('mp-obs').innerHTML =
         (p.acompanamientos ? `<div class="mpedido-obs">🥗 <strong>Acompañamientos:</strong> ${p.acompanamientos}</div>` : '') +
         (p.obs ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : '');
 
-    document.getElementById('mp-stepper').innerHTML     = renderStepper(p);
-    document.getElementById('mp-cancel-area').innerHTML = p.estado === 'en preparacion'
-        ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`
+    document.getElementById('mp-stepper').innerHTML = renderStepper(p);
+
+    const puedeCancel = esReserva
+        ? ['recibido', 'en preparacion'].includes(p.estado)
+        : p.estado === 'en preparacion';
+    document.getElementById('mp-cancel-area').innerHTML = puedeCancel
+        ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar reserva</button>`
         : '';
 }
 
@@ -314,10 +370,11 @@ document.getElementById('modal-pedido').addEventListener('click', (e) => {
 
 // ── STEPPER ───────────────────────────────────────────────────────
 function renderStepper(p) {
-    const currentIdx = STEPS.findIndex(s => s.key === p.estado);
+    const steps      = p.tipo === 'reserva' ? STEPS_RESERVA : STEPS;
+    const currentIdx = steps.findIndex(s => s.key === p.estado);
     let html = '<div class="stepper">';
 
-    STEPS.forEach((step, i) => {
+    steps.forEach((step, i) => {
         let cls = '', onclick = '', icon = step.icon;
 
         if (i < currentIdx) {
@@ -337,7 +394,7 @@ function renderStepper(p) {
             <span class="step-label">${step.label}</span>
         </div>`;
 
-        if (i < STEPS.length - 1) {
+        if (i < steps.length - 1) {
             html += `<div class="step-connector ${i < currentIdx ? 'active' : ''}"></div>`;
         }
     });

@@ -86,6 +86,36 @@
     border-radius: 20px;
 }
 
+.reserva-detail-card {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.reserva-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.reserva-detail-icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.reserva-detail-pers {
+    font-size: 0.95rem;
+    color: #15803d;
+}
+
 .order-row-info {
     flex: 1;
     min-width: 0;
