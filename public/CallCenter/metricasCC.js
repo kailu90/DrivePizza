@@ -270,9 +270,10 @@ function setEsqueleto() {
 const DIAS_LABEL   = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MESES_ABREV  = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-let _chartDias   = null;
-let _chartEvol   = null;
-let _chartVentas = null;
+let _chartDias     = null;
+let _chartEvol     = null;
+let _chartVentas   = null;
+let _chartCiudades = null;
 
 function getAgrupacion(p) {
     return { '7d': 'dia', '30d': 'dia', 'mes': 'dia', '3m': 'semana', 'año': 'mes' }[p] || 'mes';
@@ -293,9 +294,10 @@ function fmtLabel(str, agrupacion) {
 }
 
 function destroyCharts() {
-    _chartDias?.destroy();   _chartDias   = null;
-    _chartEvol?.destroy();   _chartEvol   = null;
-    _chartVentas?.destroy(); _chartVentas = null;
+    _chartDias?.destroy();     _chartDias     = null;
+    _chartEvol?.destroy();     _chartEvol     = null;
+    _chartVentas?.destroy();   _chartVentas   = null;
+    _chartCiudades?.destroy(); _chartCiudades = null;
 }
 
 const CHART_DEFAULTS = {
@@ -437,7 +439,10 @@ async function cargarTablas(ini, fin) {
     if (e1) console.error(e1);
     if (e2) console.error(e2);
     if (dataProds) renderTablaProductos(dataProds);
-    if (dataSede)  renderTablaSede(dataSede);
+    if (dataSede) {
+        renderTablaSede(dataSede);
+        renderCiudades(dataSede);
+    }
 }
 
 function renderTablaProductos(data) {
@@ -475,6 +480,81 @@ function renderTablaSede(data) {
                 <td class="num mc-pct-bar" data-pct="${r.pct_ventas}">${r.pct_ventas}%</td>
             </tr>`).join('')
         : '<tr><td colspan="6" class="mc-dim" style="text-align:center;padding:16px">Sin datos</td></tr>';
+}
+
+// ── Donut por ciudad ──────────────────────────────────────────
+const SEDES_CARTAGO  = new Set(['nuestro', 'el prado']);
+const COLOR_CIUDAD   = { Bucaramanga: '#e67e22', Cartago: '#2980b9' };
+
+function renderCiudades(dataSede) {
+    const acum = {
+        Bucaramanga: { domicilios: 0, pedidos: 0, ventas: 0 },
+        Cartago:     { domicilios: 0, pedidos: 0, ventas: 0 },
+    };
+    dataSede.forEach(r => {
+        const c = SEDES_CARTAGO.has((r.sede || '').toLowerCase()) ? 'Cartago' : 'Bucaramanga';
+        acum[c].domicilios += r.domicilios || 0;
+        acum[c].pedidos    += r.pedidos    || 0;
+        acum[c].ventas     += Number(r.ventas) || 0;
+    });
+
+    const total = acum.Bucaramanga.domicilios + acum.Cartago.domicilios;
+
+    _chartCiudades?.destroy();
+    _chartCiudades = new Chart(document.getElementById('chart-ciudades'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Bucaramanga', 'Cartago'],
+            datasets: [{
+                data: [acum.Bucaramanga.domicilios, acum.Cartago.domicilios],
+                backgroundColor: [COLOR_CIUDAD.Bucaramanga, COLOR_CIUDAD.Cartago],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }],
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw(chart) {
+                const { ctx, chartArea: { width, height, left, top } } = chart;
+                ctx.save();
+                const cx = left + width / 2;
+                const cy = top + height / 2;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '800 18px Inter, sans-serif';
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillText(fmtNum(total), cx, cy - 9);
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText('domicilios', cx, cy + 10);
+                ctx.restore();
+            },
+        }],
+        options: {
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${fmtNum(ctx.parsed)} domicilios`,
+                    },
+                },
+            },
+            animation: { duration: 400 },
+        },
+    });
+
+    document.getElementById('mc-ciudad-leyenda').innerHTML =
+        Object.entries(acum).map(([nombre, d]) => {
+            const pct = total > 0 ? (d.domicilios / total * 100).toFixed(1) : '0.0';
+            return `
+                <div class="mc-ciudad-item">
+                    <span class="mc-ciudad-dot" style="background:${COLOR_CIUDAD[nombre]}"></span>
+                    <span class="mc-ciudad-label">${nombre}</span>
+                    <span class="mc-ciudad-val">${fmtNum(d.domicilios)}</span>
+                    <span class="mc-dim">${pct}%</span>
+                </div>`;
+        }).join('');
 }
 
 // ── Inicio ────────────────────────────────────────────────────

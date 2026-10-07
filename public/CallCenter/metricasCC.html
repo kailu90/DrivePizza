@@ -93,22 +93,30 @@
         </div>
     </div>
 
-    <p class="mc-section-title">Participación por sede</p>
+    <p class="mc-section-title">Participación geográfica</p>
 
-    <div class="mc-sede-wrap">
-        <table class="mc-table mc-table--full" id="tbl-sede">
-            <thead>
-                <tr>
-                    <th>Sede</th>
-                    <th class="num">Pedidos</th>
-                    <th class="num">% pedidos</th>
-                    <th class="num">Domicilios</th>
-                    <th class="num">Ventas</th>
-                    <th class="num">% ventas</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div class="mc-geo-row">
+        <div class="mc-chart-card mc-geo-donut">
+            <div class="mc-chart-title">Por ciudad</div>
+            <canvas id="chart-ciudades"></canvas>
+            <div id="mc-ciudad-leyenda" class="mc-ciudad-leyenda"></div>
+        </div>
+        <div class="mc-table-card mc-geo-table">
+            <div class="mc-chart-title">Por sede</div>
+            <table class="mc-table mc-table--full" id="tbl-sede">
+                <thead>
+                    <tr>
+                        <th>Sede</th>
+                        <th class="num">Pedidos</th>
+                        <th class="num">% ped.</th>
+                        <th class="num">Domicilios</th>
+                        <th class="num">Ventas</th>
+                        <th class="num">% ventas</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
 </div>
