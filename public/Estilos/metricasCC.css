@@ -4,7 +4,7 @@
 
 /* ── Página ──────────────────────────────────────────── */
 .mc-page {
-    padding: 16px 20px 40px;
+    padding: 96px 20px 40px; /* 80px header fijo + 16px */
 }
 
 /* ── Header ──────────────────────────────────────────── */
@@ -216,5 +216,11 @@
 @media (max-width: 380px) {
     .mc-kpis {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .mc-page {
+        padding-top: 74px; /* 58px header móvil + 16px */
     }
 }
