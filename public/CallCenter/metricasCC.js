@@ -22,7 +22,7 @@ initVersionBanner();
 CargarSidebar(() => _initNavSwitch());
 
 // ── Estado ────────────────────────────────────────────────────
-let _periodo       = '30d';
+let _periodo       = 'mes';
 let _sede          = '';
 let _seccionActiva = 'sec-kpis';
 
@@ -93,11 +93,10 @@ function getRango(p) {
     const cd  = col.getUTCDate();
 
     const ini = {
-        '7d':  colIni(cy, cm, cd - 6),
-        '30d': colIni(cy, cm, cd - 29),
+        'hoy': colIni(cy, cm, cd),
+        'sem': colIni(cy, cm, cd - 6),
         'mes': colIni(cy, cm, 1),
-        '3m':  colIni(cy, cm - 3, 1),
-        'año': colIni(cy, 0, 1),
+        'max': colIni(2024, 0, 1),
     }[p];
 
     return { ini, fin };
@@ -323,7 +322,7 @@ let _chartVentas   = null;
 let _chartCiudades = null;
 
 function getAgrupacion(p) {
-    return { '7d': 'dia', '30d': 'dia', 'mes': 'dia', '3m': 'semana', 'año': 'mes' }[p] || 'mes';
+    return { 'hoy': 'dia', 'sem': 'dia', 'mes': 'dia', 'max': 'mes' }[p] || 'mes';
 }
 
 function fmtLabel(str, agrupacion) {

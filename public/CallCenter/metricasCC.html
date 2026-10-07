@@ -19,18 +19,6 @@
     <div class="mc-header">
         <h2 class="mc-title">Métricas <span>CallCenter</span></h2>
         <div class="mc-filters">
-            <div class="mc-chips">
-                <button class="mc-chip active" data-p="30d">30 días</button>
-                <button class="mc-chip" data-p="7d">7 días</button>
-                <button class="mc-chip" data-p="mes">Este mes</button>
-                <button class="mc-chip" data-p="3m">3 meses</button>
-                <button class="mc-chip" data-p="año">Este año</button>
-            </div>
-            <div class="mc-date-range">
-                <input type="date" id="mc-fecha-ini" class="mc-date-input">
-                <span class="mc-date-sep">→</span>
-                <input type="date" id="mc-fecha-fin" class="mc-date-input">
-            </div>
             <select id="mc-ciudad" class="mc-sede-sel">
                 <option value="">Todas las ciudades</option>
                 <option value="bga">Bucaramanga</option>
@@ -39,6 +27,17 @@
             <select id="mc-sede" class="mc-sede-sel">
                 <option value="">Todas las sedes</option>
             </select>
+            <div class="mc-date-range">
+                <input type="date" id="mc-fecha-ini" class="mc-date-input">
+                <span class="mc-date-sep">→</span>
+                <input type="date" id="mc-fecha-fin" class="mc-date-input">
+            </div>
+            <div class="mc-chips">
+                <button class="mc-chip" data-p="hoy">Hoy</button>
+                <button class="mc-chip" data-p="sem">Semana</button>
+                <button class="mc-chip active" data-p="mes">Mes</button>
+                <button class="mc-chip" data-p="max">Máx</button>
+            </div>
         </div>
     </div>
 
