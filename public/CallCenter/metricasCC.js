@@ -1,6 +1,6 @@
-import { supabase }        from '../Api/supabaseConfig.js';
-import { getSedes }         from '../Shared/sedesService.js';
-import { initVersionBanner } from '../Shared/components.js';
+import { supabase }                    from '../Api/supabaseConfig.js';
+import { getSedes }                    from '../Shared/sedesService.js';
+import { initVersionBanner, CargarHeader } from '../Shared/components.js';
 
 const ROLES_OK          = ['callcenter-admin', 'admin'];
 const SEDES_EXCLUIDAS   = ['planta produccion', 'gastrofusion'];
@@ -16,6 +16,7 @@ if (!ROLES_OK.includes(perfil?.rol)) {
     window.top.location.href = '/index.html';
 }
 
+CargarHeader('CallCenter', './callcenter.html');
 initVersionBanner();
 
 // ── Estado ────────────────────────────────────────────────────
