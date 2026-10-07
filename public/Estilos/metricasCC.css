@@ -52,6 +52,36 @@
 .mc-chip:hover  { border-color: #e67e22; color: #e67e22; }
 .mc-chip.active { background: #e67e22; border-color: #e67e22; color: white; }
 
+/* ── Date range ──────────────────────────────────────── */
+.mc-date-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mc-date-input {
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    color: #444;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 130px;
+}
+
+.mc-date-input:focus { border-color: #e67e22; }
+
+.mc-date-sep {
+    font-size: 0.8rem;
+    color: #bbb;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
 /* ── Sede selector ───────────────────────────────────── */
 .mc-sede-sel {
     padding: 5px 10px;

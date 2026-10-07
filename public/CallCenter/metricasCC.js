@@ -36,25 +36,33 @@ sedes
     });
 $sede.addEventListener('change', () => { _sede = $sede.value; cargar(); });
 
-// ── Period chips ──────────────────────────────────────────────
-document.querySelectorAll('.mc-chip').forEach(btn =>
-    btn.addEventListener('click', () => {
-        document.querySelector('.mc-chip.active')?.classList.remove('active');
-        btn.classList.add('active');
-        _periodo = btn.dataset.p;
-        cargar();
-    })
-);
-
 // ── Rango Colombia UTC-5 ──────────────────────────────────────
 function colIni(y, m, d) {
     // Colombia 00:00 = UTC 05:00
     return new Date(Date.UTC(y, m, d, 5, 0, 0, 0)).toISOString();
 }
 
+function colFin(y, m, d) {
+    // Colombia 23:59:59 = siguiente día UTC 04:59:59 ≈ UTC siguiente día 05:00
+    return new Date(Date.UTC(y, m, d + 1, 5, 0, 0, 0)).toISOString();
+}
+
+function toColDateStr(isoStr) {
+    // ISO UTC → fecha YYYY-MM-DD en Colombia (UTC-5)
+    const d = new Date(new Date(isoStr).getTime() - 5 * 3600_000);
+    return d.toISOString().slice(0, 10);
+}
+
 function getRango(p) {
+    if (p === 'custom') {
+        const ini = new Date($fechaIni.value + 'T05:00:00Z').toISOString();
+        const finD = new Date($fechaFin.value + 'T05:00:00Z');
+        finD.setUTCDate(finD.getUTCDate() + 1);
+        return { ini, fin: finD.toISOString() };
+    }
+
     const fin = new Date().toISOString();
-    const col = new Date(Date.now() - 5 * 3600_000); // fecha actual en Colombia
+    const col = new Date(Date.now() - 5 * 3600_000);
     const cy  = col.getUTCFullYear();
     const cm  = col.getUTCMonth();
     const cd  = col.getUTCDate();
@@ -69,6 +77,50 @@ function getRango(p) {
 
     return { ini, fin };
 }
+
+// ── Date range inputs ─────────────────────────────────────────
+const $fechaIni = document.getElementById('mc-fecha-ini');
+const $fechaFin = document.getElementById('mc-fecha-fin');
+
+const todayCol = toColDateStr(new Date().toISOString());
+$fechaIni.max = todayCol;
+$fechaFin.max = todayCol;
+
+function syncDateInputs(ini, fin) {
+    $fechaIni.value = toColDateStr(ini);
+    $fechaFin.value = toColDateStr(fin);
+}
+
+$fechaIni.addEventListener('change', () => {
+    if ($fechaFin.value && $fechaIni.value > $fechaFin.value) $fechaFin.value = $fechaIni.value;
+    onCustomRange();
+});
+$fechaFin.addEventListener('change', () => {
+    if ($fechaIni.value && $fechaFin.value < $fechaIni.value) $fechaIni.value = $fechaFin.value;
+    onCustomRange();
+});
+
+function onCustomRange() {
+    if (!$fechaIni.value || !$fechaFin.value) return;
+    document.querySelector('.mc-chip.active')?.classList.remove('active');
+    _periodo = 'custom';
+    cargar();
+}
+
+// ── Period chips ──────────────────────────────────────────────
+document.querySelectorAll('.mc-chip').forEach(btn =>
+    btn.addEventListener('click', () => {
+        document.querySelector('.mc-chip.active')?.classList.remove('active');
+        btn.classList.add('active');
+        _periodo = btn.dataset.p;
+        const { ini, fin } = getRango(_periodo);
+        syncDateInputs(ini, fin);
+        cargar();
+    })
+);
+
+// Inicializar inputs con el período por defecto (30d)
+syncDateInputs(...Object.values(getRango(_periodo)));
 
 // ── Formatos ──────────────────────────────────────────────────
 const fmtNum  = n => new Intl.NumberFormat('es-CO').format(n);
