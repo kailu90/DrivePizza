@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas CC</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/metricasCC.css">
+</head>
+<body>
+
+<div class="mc-page">
+
+    <div class="mc-header">
+        <h2 class="mc-title">Métricas <span>CallCenter</span></h2>
+        <div class="mc-filters">
+            <div class="mc-chips">
+                <button class="mc-chip active" data-p="30d">30 días</button>
+                <button class="mc-chip" data-p="7d">7 días</button>
+                <button class="mc-chip" data-p="mes">Este mes</button>
+                <button class="mc-chip" data-p="3m">3 meses</button>
+                <button class="mc-chip" data-p="año">Este año</button>
+            </div>
+            <select id="mc-sede" class="mc-sede-sel">
+                <option value="">Todas las sedes</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="mc-kpis" id="mc-kpis">
+        <div class="mc-card mc-skel"></div>
+        <div class="mc-card mc-skel"></div>
+        <div class="mc-card mc-skel"></div>
+        <div class="mc-card mc-skel"></div>
+        <div class="mc-card mc-skel"></div>
+        <div class="mc-card mc-skel"></div>
+    </div>
+
+</div>
+
+<script type="module" src="../Auth/authCheck.js"></script>
+<script type="module" src="metricasCC.js"></script>
+</body>
+</html>

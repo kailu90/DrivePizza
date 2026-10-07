@@ -1,0 +1,160 @@
+/* ═══════════════════════════════════════════════════════
+   MÉTRICAS CALLCENTER
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Página ──────────────────────────────────────────── */
+.mc-page {
+    padding: 16px 20px 40px;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.mc-header {
+    margin-bottom: 20px;
+}
+
+.mc-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #222;
+    margin: 0 0 14px;
+}
+
+.mc-title span { color: #e67e22; }
+
+.mc-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ── Period chips ────────────────────────────────────── */
+.mc-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.mc-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    color: #666;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+}
+
+.mc-chip:hover  { border-color: #e67e22; color: #e67e22; }
+.mc-chip.active { background: #e67e22; border-color: #e67e22; color: white; }
+
+/* ── Sede selector ───────────────────────────────────── */
+.mc-sede-sel {
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    color: #444;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.mc-sede-sel:focus { border-color: #e67e22; }
+
+/* ── Grid KPIs ───────────────────────────────────────── */
+.mc-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+/* ── Tarjeta ─────────────────────────────────────────── */
+.mc-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 130px;
+}
+
+.mc-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.mc-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mc-card-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.mc-card-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mc-card-value {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #1a1a1a;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.mc-card-sub {
+    font-size: 0.77rem;
+    color: #bbb;
+    margin-top: 2px;
+}
+
+/* ── Skeleton ────────────────────────────────────────── */
+.mc-skel {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: mc-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mc-pulse {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 680px) {
+    .mc-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mc-card-value {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .mc-kpis {
+        grid-template-columns: 1fr;
+    }
+}
