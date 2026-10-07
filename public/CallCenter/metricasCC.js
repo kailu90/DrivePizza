@@ -4,6 +4,7 @@ import { initVersionBanner, CargarHeader, CargarSidebar } from '../Shared/compon
 
 const ROLES_OK          = ['callcenter-admin', 'admin'];
 const SEDES_EXCLUIDAS   = ['planta produccion', 'gastrofusion'];
+const SEDES_CTG         = new Set(['nuestro', 'el prado']);
 
 // ── Auth ──────────────────────────────────────────────────────
 const { data: { user } } = await supabase.auth.getUser();
@@ -24,17 +25,39 @@ CargarSidebar(() => _initNavScroll());
 let _periodo = '30d';
 let _sede    = '';
 
-// ── Sedes ─────────────────────────────────────────────────────
+// ── Sedes / Ciudad ────────────────────────────────────────────
 const sedes = await getSedes();
-const $sede = document.getElementById('mc-sede');
-sedes
-    .filter(s => !SEDES_EXCLUIDAS.includes(s.name.toLowerCase()))
-    .forEach(s => {
-        const o = document.createElement('option');
-        o.value       = s.name.toLowerCase();
-        o.textContent = s.name;
-        $sede.appendChild(o);
-    });
+const $ciudad = document.getElementById('mc-ciudad');
+const $sede   = document.getElementById('mc-sede');
+
+let _ciudad = '';
+
+function _poblarSedes(ciudadFiltro) {
+    $sede.innerHTML = '<option value="">Todas las sedes</option>';
+    sedes
+        .filter(s => !SEDES_EXCLUIDAS.includes(s.name.toLowerCase()))
+        .filter(s => {
+            if (!ciudadFiltro) return true;
+            const esCtg = SEDES_CTG.has(s.name.toLowerCase());
+            return ciudadFiltro === 'ctg' ? esCtg : !esCtg;
+        })
+        .forEach(s => {
+            const o = document.createElement('option');
+            o.value       = s.name.toLowerCase();
+            o.textContent = s.name;
+            $sede.appendChild(o);
+        });
+}
+
+_poblarSedes('');
+
+$ciudad.addEventListener('change', () => {
+    _ciudad = $ciudad.value;
+    _sede   = '';
+    _poblarSedes(_ciudad);
+    cargar();
+});
+
 $sede.addEventListener('change', () => { _sede = $sede.value; cargar(); });
 
 // ── Rango Colombia UTC-5 ──────────────────────────────────────
@@ -143,16 +166,28 @@ function fmtCambio(actual, anterior, invertir = false) {
     return `<span class="mc-change ${cls}">${arrow} ${signo}${pct.toFixed(1)}% vs período anterior</span>`;
 }
 
+// ── Filtro sede efectivo ───────────────────────────────────────
+// Si hay ciudad seleccionada y no sede específica, devuelve la primera
+// sede de esa ciudad para usarla como filtro de ciudad en los RPCs
+// que solo aceptan p_sede. Para el donut usamos dataSede completa.
+function _sedeParam() {
+    // Si hay sede específica, úsala directamente
+    if (_sede) return _sede;
+    // Si hay ciudad, no filtramos por sede (el RPC devuelve todo y el JS agrupa)
+    return null;
+}
+
 // ── Carga ─────────────────────────────────────────────────────
 async function cargar() {
     setEsqueleto();
     const { ini, fin } = getRango(_periodo);
+    const sedeP = _sedeParam();
 
     const [resumen] = await Promise.all([
-        supabase.rpc('metricas_cc_resumen', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
-        cargarGraficas(ini, fin),
-        cargarTablas(ini, fin),
-        cargarPromos(ini, fin),
+        supabase.rpc('metricas_cc_resumen', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP }),
+        cargarGraficas(ini, fin, sedeP),
+        cargarTablas(ini, fin, sedeP),
+        cargarPromos(ini, fin, sedeP),
     ]);
 
     if (resumen.error) { console.error(resumen.error); return; }
@@ -311,12 +346,12 @@ const CHART_DEFAULTS = {
     animation: { duration: 400 },
 };
 
-async function cargarGraficas(ini, fin) {
+async function cargarGraficas(ini, fin, sedeP) {
     const agrupacion = getAgrupacion(_periodo);
 
     const [{ data: dataDias }, { data: dataEvol }] = await Promise.all([
-        supabase.rpc('metricas_cc_dias_semana', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
-        supabase.rpc('metricas_cc_evolucion',   { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null, p_agrupacion: agrupacion }),
+        supabase.rpc('metricas_cc_dias_semana', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP }),
+        supabase.rpc('metricas_cc_evolucion',   { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP, p_agrupacion: agrupacion }),
     ]);
 
     destroyCharts();
@@ -433,17 +468,22 @@ async function cargarGraficas(ini, fin) {
 // ── Tablas ────────────────────────────────────────────────────
 const RANK_COLOR = ['#f39c12', '#95a5a6', '#cd7f32'];
 
-async function cargarTablas(ini, fin) {
+async function cargarTablas(ini, fin, sedeP) {
     const [{ data: dataProds, error: e1 }, { data: dataSede, error: e2 }] = await Promise.all([
-        supabase.rpc('metricas_cc_top_productos', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
+        supabase.rpc('metricas_cc_top_productos', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP }),
         supabase.rpc('metricas_cc_por_sede',      { p_fecha_ini: ini, p_fecha_fin: fin }),
     ]);
     if (e1) console.error(e1);
     if (e2) console.error(e2);
     if (dataProds) renderTablaProductos(dataProds);
     if (dataSede) {
-        renderTablaSede(dataSede);
-        renderCiudades(dataSede);
+        // Filtrar por ciudad si aplica
+        const filtrada = !_ciudad ? dataSede : dataSede.filter(r => {
+            const esCtg = SEDES_CTG.has((r.sede || '').toLowerCase());
+            return _ciudad === 'ctg' ? esCtg : !esCtg;
+        });
+        renderTablaSede(filtrada);
+        renderCiudades(filtrada);
     }
 }
 
@@ -485,9 +525,9 @@ function renderTablaSede(data) {
 }
 
 // ── Promos ────────────────────────────────────────────────────
-async function cargarPromos(ini, fin) {
+async function cargarPromos(ini, fin, sedeP) {
     const { data, error } = await supabase.rpc('metricas_cc_promos', {
-        p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null,
+        p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP,
     });
     if (error) { console.error(error); return; }
     renderPromos(data || []);
