@@ -4,7 +4,7 @@
 
 /* ── Página ──────────────────────────────────────────── */
 .mc-page {
-    padding: 96px 20px 40px; /* 80px header fijo + 16px */
+    padding: 104px 20px 40px; /* 80px header fijo + 24px */
 }
 
 /* ── Header ──────────────────────────────────────────── */
@@ -221,6 +221,6 @@
 
 @media (max-width: 768px) {
     .mc-page {
-        padding-top: 74px; /* 58px header móvil + 16px */
+        padding-top: 80px; /* 58px header móvil + 22px */
     }
 }
