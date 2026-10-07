@@ -4,6 +4,7 @@
 
 /* ── Página ──────────────────────────────────────────── */
 .mc-page {
+    flex: 1;
     padding: 104px 20px 40px; /* 80px header fijo + 24px */
 }
 
