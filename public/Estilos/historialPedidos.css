@@ -772,6 +772,20 @@ html, body {
 }
 .btn-marcar-recibido:hover { background: #27ae60; color: white; }
 .btn-marcar-recibido:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-imprimir-comanda {
+    width: 100%;
+    padding: 11px;
+    border: 1.5px solid #7f8c8d;
+    background: none;
+    color: #7f8c8d;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    margin-top: 8px;
+}
+.btn-imprimir-comanda:hover { background: #7f8c8d; color: white; }
 
 /* Indicador de impresión en modal */
 .badge-impreso {

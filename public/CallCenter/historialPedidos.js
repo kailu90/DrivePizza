@@ -561,6 +561,163 @@ window.marcarRecibido = async function(pedidoId, impreso) {
     }
 };
 
+// ── IMPRIMIR COMANDA ───────────────────────────────────────────────────
+function _buildComandaHtml(p) {
+    const esReserva           = p.tipo === 'reserva';
+    const esReservaPizzeritos = p.tipo === 'reserva_pizzeritos';
+    const logoUrl = `${window.location.origin}/Imagenes/logo.png`;
+
+    const BASE_CSS = `
+        html,body{margin:0;padding:0;}
+        .wrap{width:280px;font-family:'Courier New',monospace;color:#000;background:#fff;padding:5px;margin:0 auto;font-weight:700;}
+        p{margin:5px 0;font-size:11pt;font-weight:700;}
+        .center{text-align:center;}
+        .num-box{border:4px solid #000;display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 10px;margin:10px 0;}
+        .sep-d{border-top:2px dashed #000;margin:10px 0;}
+        .sep-s{border-top:3px solid #000;margin:10px 0;}
+        .footer{text-align:center;margin-top:20px;font-size:9pt;}
+    `;
+
+    if (esReserva) {
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_CSS}</style></head>
+<body onload="window.print();window.close();">
+<div class="wrap">
+  <div class="center"><img src="${logoUrl}" style="max-width:180px;height:auto;filter:invert(1);"></div>
+  <p class="center">${(p.sede || '').toUpperCase()}</p>
+  <div class="num-box" style="background:#f0e6ff;">
+    <span style="font-size:13pt;font-weight:bold;">🗓 RESERVA N°</span>
+    <span style="font-size:24pt;font-weight:900;">#${p.nPedido || '---'}</span>
+  </div>
+  <div class="sep-d"></div>
+  <div style="text-align:center;padding:8px 0;">
+    ${p.fechaReserva ? `<div style="font-size:13pt;font-weight:900;margin-bottom:6px;">📅 FECHA: ${p.fechaReserva.split('-').reverse().join('/')}</div>` : ''}
+    <div style="font-size:16pt;font-weight:900;margin-bottom:4px;">🕐 ${formatHora12(p.horaReserva)}</div>
+    <div style="font-size:20pt;font-weight:900;">👥 ${p.cantidadPersonas ?? '—'} PERSONAS</div>
+  </div>
+  ${p.obs ? `<div class="sep-d" style="padding-top:6px;"><p><strong>OBS:</strong> ${p.obs}</p></div>` : ''}
+  <div class="sep-d"></div>
+  <p><strong>CLIENTE:</strong> ${p.nombre}</p>
+  <p><strong>TEL:</strong> ${p.telefono}</p>
+  <p><strong>CANAL:</strong> ${p.canal || '---'}</p>
+  <p><strong>ASESOR:</strong> ${p.asesor || '---'}</p>
+  <p><strong>FECHA:</strong> ${formatFecha(p.fecha)}</p>
+  <p class="footer">*** RESERVA DE MESA ***</p>
+</div>
+</body></html>`;
+    }
+
+    if (esReservaPizzeritos) {
+        const fechaFmt = p.fechaReserva ? p.fechaReserva.split('-').reverse().join('/') : '—';
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_CSS}</style></head>
+<body onload="window.print();window.close();">
+<div class="wrap">
+  <div class="center"><img src="${logoUrl}" style="max-width:180px;height:auto;filter:invert(1);"></div>
+  <p class="center">${(p.sede || '').toUpperCase()}</p>
+  <div class="num-box" style="background:#fff3e0;">
+    <span style="font-size:13pt;font-weight:bold;">🍕 PIZZERITOS N°</span>
+    <span style="font-size:24pt;font-weight:900;">#${p.nPedido || '---'}</span>
+  </div>
+  <div class="sep-d"></div>
+  <div style="text-align:center;padding:8px 0;">
+    <div style="font-size:13pt;font-weight:900;margin-bottom:6px;">📅 FECHA: ${fechaFmt}</div>
+    <div style="font-size:16pt;font-weight:900;margin-bottom:4px;">🕐 ${formatHora12(p.horaReserva)}</div>
+    <div style="font-size:18pt;font-weight:900;">🍕 ${p.cantidadPersonas ?? '—'} KIT(S)</div>
+  </div>
+  <div class="sep-s" style="text-align:right;padding-top:5px;">
+    <span style="font-size:16pt;font-weight:bold;">TOTAL: $${formatPrecio(p.total)}</span>
+  </div>
+  ${p.obs ? `<div class="sep-d" style="padding-top:6px;"><p><strong>OBS:</strong> ${p.obs}</p></div>` : ''}
+  <div class="sep-d"></div>
+  <p><strong>CLIENTE:</strong> ${p.nombre}</p>
+  <p><strong>TEL:</strong> ${p.telefono}</p>
+  <p><strong>ASESOR:</strong> ${p.asesor || '---'}</p>
+  <p><strong>FECHA:</strong> ${formatFecha(p.fecha)}</p>
+  <p class="footer">*** TALLER PIZZERITOS ***</p>
+</div>
+</body></html>`;
+    }
+
+    // Pedido normal
+    const esDomicilio = p.domicilio?.tipo !== 'recoger';
+    const valDom = esDomicilio ? (p.domicilio?.valor || 0) : 0;
+
+    const productosHtml = (p.productos || []).map(item => {
+        const qty = item.qty || 1;
+        const subtotal = (item.precio || 0) * qty;
+        const adicionesHtml = Array.isArray(item.adiciones) && item.adiciones.length
+            ? item.adiciones.map(a => {
+                const aqty = a.qty || 1;
+                const nombreBase = a.nombre.replace(/\s*\([^)]*\)\s*$/, '').trim();
+                const alcanceLabel = (a.alcance && a.alcance !== 'completa')
+                    ? ` — Mitad ${a.saborObjetivo || (a.alcance === 'mitad1' ? '1' : '2')}`
+                    : '';
+                return `<div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:11pt;padding-left:12px;font-weight:700;">
+                    <span>+ ${nombreBase + alcanceLabel}</span>
+                    <span>${a.precio > 0 ? `$${formatPrecio(a.precio * aqty)}` : 'Incluido'}</span>
+                </div>`;
+            }).join('')
+            : '';
+        const obsHtml = item.obs
+            ? `<div style="padding-left:10px;font-size:11pt;font-weight:700;">📝 ${item.obs}</div>`
+            : '';
+        return `<div style="margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:11pt;">
+                <span style="font-weight:bold;">${qty}× ${item.nombre}</span>
+                ${subtotal > 0 ? `<span style="font-weight:bold;">$${formatPrecio(subtotal)}</span>` : ''}
+            </div>
+            ${obsHtml}${adicionesHtml}
+        </div>`;
+    }).join('');
+
+    const barrioHtml = (esDomicilio && p.domicilio?.barrio)
+        ? `<p><strong>BARRIO:</strong> ${p.domicilio.barrio}</p>`
+        : '';
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_CSS}</style></head>
+<body onload="window.print();window.close();">
+<div class="wrap">
+  <div class="center"><img src="${logoUrl}" style="max-width:180px;height:auto;filter:invert(1);"></div>
+  <p class="center">${(p.sede || '').toUpperCase()}</p>
+  <div class="num-box">
+    <span style="font-size:14pt;font-weight:bold;">PEDIDO N°</span>
+    <span style="font-size:24pt;font-weight:900;">#${p.nPedido || '---'}</span>
+  </div>
+  <div class="sep-d"></div>
+  <p class="center" style="font-size:12pt;margin-bottom:10px;">DETALLE DEL PEDIDO</p>
+  <div>${productosHtml}</div>
+  ${p.acompanamientos ? `<div class="sep-d" style="padding-top:6px;"><p><strong>ACOMPAÑAMIENTOS:</strong> ${p.acompanamientos}</p></div>` : ''}
+  ${p.obs ? `<div class="sep-d" style="padding-top:6px;"><p><strong>OBS:</strong> ${p.obs}</p></div>` : ''}
+  <div class="sep-s" style="text-align:right;padding-top:5px;">
+    <span style="font-size:16pt;font-weight:bold;">TOTAL: $${formatPrecio(p.total)}</span>
+    ${esDomicilio
+        ? `<div style="font-size:11pt;margin-top:4px;">DOMICILIO: <strong>$${formatPrecio(valDom)}</strong></div>`
+        : `<div style="font-size:11pt;margin-top:4px;">RECOGER: <strong>Recoge en tienda</strong></div>`}
+  </div>
+  <div class="sep-d"></div>
+  <p><strong>FECHA:</strong> ${formatFecha(p.fecha)}</p>
+  <p><strong>CLIENTE:</strong> ${p.nombre}</p>
+  <p><strong>TEL:</strong> ${p.telefono}</p>
+  ${esDomicilio
+      ? `<p><strong>DIR:</strong> ${p.direccion || ''}</p>`
+      : `<p><strong>ENTREGA:</strong> Recoge en tienda</p>`}
+  ${barrioHtml}
+  <p><strong>CANAL:</strong> ${p.canal || '---'}</p>
+  <p><strong>ASESOR:</strong> ${p.asesor || '---'}</p>
+  <p><strong>PAGO:</strong> ${p.pago || '---'}</p>
+  <p class="footer">*** COMPROBANTE DE SEDE ***</p>
+</div>
+</body></html>`;
+}
+
+window.imprimirComanda = (id) => {
+    const p = pedidosCargados.find(x => x.id === id);
+    if (!p) return;
+    const win = window.open('', '_blank', 'width=420,height=700');
+    if (!win) { alert('Activa los pop-ups para imprimir.'); return; }
+    win.document.write(_buildComandaHtml(p));
+    win.document.close();
+};
+
 // ── MODAL DETALLE ──────────────────────────────────────────────────────
 function abrirDetalle(p) {
     const esReserva          = p.tipo === "reserva";
@@ -693,6 +850,8 @@ function abrirDetalle(p) {
         cancelArea += `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`;
     if (p.estado === "pendiente" && esAdmin)
         cancelArea += `<button class="btn-marcar-recibido" onclick="marcarRecibido('${p.id}', ${impreso})">✓ Marcar como recibido</button>`;
+    if (!esTaller)
+        cancelArea += `<button class="btn-imprimir-comanda" onclick="imprimirComanda('${p.id}')">🖨 Reimprimir comanda</button>`;
     document.getElementById("modal-cancel-area").innerHTML = cancelArea;
 
     document.getElementById("modal-detalle").style.display = "flex";
