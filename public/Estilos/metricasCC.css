@@ -216,7 +216,7 @@ section[id]          { display: none; }
 
 .mc-charts {
     display: grid;
-    grid-template-columns: 1fr 2fr 2fr;
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
     gap: 14px;
 }
 
@@ -225,6 +225,8 @@ section[id]          { display: none; }
     border-radius: 16px;
     padding: 16px 18px 12px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .mc-chart-title {
@@ -236,6 +238,7 @@ section[id]          { display: none; }
 
 .mc-chart-card canvas {
     max-height: 210px;
+    max-width: 100%;
 }
 
 /* ── Sección tablas ──────────────────────────────────── */
@@ -338,10 +341,6 @@ section[id]          { display: none; }
 
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 900px) {
-    .mc-charts {
-        grid-template-columns: 1fr 1fr;
-    }
-
     .mc-geo-row {
         grid-template-columns: 1fr;
     }
