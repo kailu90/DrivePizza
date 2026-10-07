@@ -762,11 +762,14 @@ function abrirDetalle(p) {
 
     document.getElementById("modal-cliente").textContent = p.nombre ?? "—";
 
+    const canalLabel = { whatsapp: '💬 WhatsApp', ivr: '📞 IVR', web: '🌐 Web' }[p.canal]
+        ?? (p.canal ? p.canal : '—');
+
     document.getElementById("modal-meta").innerHTML = (esReserva || esTaller)
         ? `📞 ${p.telefono ?? "—"} &nbsp;·&nbsp; 🏬 ${p.sede ?? "—"} &nbsp;·&nbsp; 👤 ${p.asesor ?? "—"}` +
-          `<br><small>${formatFecha(p.fecha)}</small>`
+          `<br><small>${formatFecha(p.fecha)} &nbsp;·&nbsp; ${canalLabel}</small>`
         : `📞 ${p.telefono ?? "—"} &nbsp;·&nbsp; 🏬 ${p.sede ?? "—"} &nbsp;·&nbsp; 👤 ${p.asesor ?? "—"}` +
-          `<br><small>${formatFecha(p.fecha)} &nbsp;·&nbsp; Pago: ${p.pago ?? "—"}</small>`;
+          `<br><small>${formatFecha(p.fecha)} &nbsp;·&nbsp; Pago: ${p.pago ?? "—"} &nbsp;·&nbsp; ${canalLabel}</small>`;
 
     document.getElementById("modal-entrega").innerHTML = (esReserva || esTaller)
         ? ""
