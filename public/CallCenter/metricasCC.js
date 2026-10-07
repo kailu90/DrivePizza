@@ -8,8 +8,8 @@ const SEDES_EXCLUIDAS = ['planta produccion', 'gastrofusion'];
 // Mapeo sede → ciudad. Todo lo que no esté aquí = Bucaramanga.
 // Para agregar una ciudad nueva: añadir las sedes correspondientes.
 const CIUDAD_MAP = {
-    'nuestro':  'Cartago',
-    'el prado': 'Cartago',
+    'nuestro': 'Cartago',
+    'prado':   'Cartago',
 };
 
 const CIUDAD_COLORS = ['#e67e22', '#2980b9', '#27ae60', '#8e44ad', '#16a085', '#c0392b'];
