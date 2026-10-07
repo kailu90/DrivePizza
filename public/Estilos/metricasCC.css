@@ -281,6 +281,10 @@
 .mc-nombre { font-weight: 600; color: #333; }
 .mc-dim    { color: #bbb; font-size: 0.75rem; }
 
+.mc-promo-group td          { background: #fdf8f3; border-top: 1.5px solid #f0f0f0; padding-top: 10px; }
+.mc-promo-group:first-child td { border-top: none; }
+.mc-promo-sede td           { padding-top: 5px; padding-bottom: 5px; }
+
 /* ── Participación geográfica ────────────────────────── */
 .mc-geo-row {
     display: grid;

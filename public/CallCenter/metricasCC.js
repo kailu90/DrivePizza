@@ -151,6 +151,7 @@ async function cargar() {
         supabase.rpc('metricas_cc_resumen', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
         cargarGraficas(ini, fin),
         cargarTablas(ini, fin),
+        cargarPromos(ini, fin),
     ]);
 
     if (resumen.error) { console.error(resumen.error); return; }
@@ -480,6 +481,60 @@ function renderTablaSede(data) {
                 <td class="num mc-pct-bar" data-pct="${r.pct_ventas}">${r.pct_ventas}%</td>
             </tr>`).join('')
         : '<tr><td colspan="6" class="mc-dim" style="text-align:center;padding:16px">Sin datos</td></tr>';
+}
+
+// ── Promos ────────────────────────────────────────────────────
+async function cargarPromos(ini, fin) {
+    const { data, error } = await supabase.rpc('metricas_cc_promos', {
+        p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null,
+    });
+    if (error) { console.error(error); return; }
+    renderPromos(data || []);
+}
+
+function renderPromos(data) {
+    const tbody = document.querySelector('#tbl-promos tbody');
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="mc-dim" style="text-align:center;padding:16px">Sin datos de promos en este período</td></tr>';
+        return;
+    }
+
+    // Agrupar por promo preservando el orden (ya viene ordenado por total DESC)
+    const grupos = new Map();
+    data.forEach(r => {
+        if (!grupos.has(r.promo)) grupos.set(r.promo, []);
+        grupos.get(r.promo).push(r);
+    });
+
+    const filas = [];
+    grupos.forEach((sedes, promo) => {
+        const total = sedes.reduce((s, r) => s + r.pedidos, 0);
+
+        if (sedes.length === 1) {
+            // Una sola sede: fila simple
+            filas.push(`
+                <tr>
+                    <td class="mc-nombre">${promo}</td>
+                    <td class="mc-dim">${sedes[0].sede}</td>
+                    <td class="num">${fmtNum(sedes[0].pedidos)}</td>
+                </tr>`);
+        } else {
+            // Varias sedes: fila de grupo + detalle por sede
+            filas.push(`
+                <tr class="mc-promo-group">
+                    <td class="mc-nombre" colspan="2">${promo}</td>
+                    <td class="num"><strong>${fmtNum(total)}</strong></td>
+                </tr>`);
+            sedes.forEach(r => filas.push(`
+                <tr class="mc-promo-sede">
+                    <td></td>
+                    <td class="mc-dim">${r.sede}</td>
+                    <td class="num">${fmtNum(r.pedidos)}</td>
+                </tr>`));
+        }
+    });
+
+    tbody.innerHTML = filas.join('');
 }
 
 // ── Donut por ciudad ──────────────────────────────────────────
