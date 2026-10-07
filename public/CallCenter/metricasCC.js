@@ -74,6 +74,21 @@ const fmtNum  = n => new Intl.NumberFormat('es-CO').format(n);
 const fmtPeso = n => '$\u00a0' + new Intl.NumberFormat('es-CO').format(Math.round(n));
 const fmtPct  = (a, b) => b > 0 ? (a / b * 100).toFixed(1) + '%' : '0%';
 
+// ── Indicador de cambio vs período anterior ────────────────────
+// invertir=true: subir es malo (cancelados)
+function fmtCambio(actual, anterior, invertir = false) {
+    if (!anterior || anterior === 0) {
+        return `<span class="mc-change neutral">— sin datos previos</span>`;
+    }
+    const pct  = ((actual - anterior) / anterior * 100);
+    const sube = pct > 0;
+    const bueno = invertir ? !sube : sube;
+    const cls   = pct === 0 ? 'neutral' : bueno ? 'positive' : 'negative';
+    const arrow = sube ? '↑' : pct < 0 ? '↓' : '→';
+    const signo = sube ? '+' : '';
+    return `<span class="mc-change ${cls}">${arrow} ${signo}${pct.toFixed(1)}% vs período anterior</span>`;
+}
+
 // ── Carga ─────────────────────────────────────────────────────
 async function cargar() {
     setEsqueleto();
@@ -127,46 +142,54 @@ const SVG = {
 };
 
 // ── Render tarjetas ───────────────────────────────────────────
-function renderKpis(d) {
-    const pctCancel = fmtPct(d.cancelados, d.total_con_cancelados);
-    const recoger   = d.pedidos_total - d.domicilios;
+function renderKpis(data) {
+    const a  = data.actual;
+    const p  = data.anterior;
+    const pctCancel = fmtPct(a.cancelados, a.total_con_cancelados);
+    const recoger   = a.pedidos_total - a.domicilios;
 
     const cards = [
         {
             svg: SVG.pedidos, color: '#2980b9', bg: '#e3f1fb',
-            label: 'Pedidos',
-            value: fmtNum(d.pedidos_total),
-            sub:   `${fmtNum(d.total_con_cancelados)} recibidos en total`,
+            label:  'Pedidos',
+            value:  fmtNum(a.pedidos_total),
+            sub:    `${fmtNum(a.total_con_cancelados)} recibidos en total`,
+            cambio: fmtCambio(a.pedidos_total, p.pedidos_total),
         },
         {
             svg: SVG.domicilios, color: '#e67e22', bg: '#fdf0e0',
-            label: 'Domicilios',
-            value: fmtNum(d.domicilios),
-            sub:   `${fmtNum(recoger)} para recoger en sede`,
+            label:  'Domicilios',
+            value:  fmtNum(a.domicilios),
+            sub:    `${fmtNum(recoger)} para recoger en sede`,
+            cambio: fmtCambio(a.domicilios, p.domicilios),
         },
         {
             svg: SVG.ventas, color: '#27ae60', bg: '#e8f8ef',
-            label: 'Ventas totales',
-            value: fmtPeso(d.ventas_total),
-            sub:   'suma de pedidos completados',
+            label:  'Ventas totales',
+            value:  fmtPeso(a.ventas_total),
+            sub:    'suma de pedidos completados',
+            cambio: fmtCambio(a.ventas_total, p.ventas_total),
         },
         {
             svg: SVG.ticket, color: '#8e44ad', bg: '#f3e8fa',
-            label: 'Ticket promedio',
-            value: fmtPeso(d.ticket_promedio),
-            sub:   'valor promedio por pedido',
+            label:  'Ticket promedio',
+            value:  fmtPeso(a.ticket_promedio),
+            sub:    'valor promedio por pedido',
+            cambio: fmtCambio(a.ticket_promedio, p.ticket_promedio),
         },
         {
             svg: SVG.vdom, color: '#16a085', bg: '#e8f7f4',
-            label: 'Valor domicilios',
-            value: fmtPeso(d.valor_domicilios),
-            sub:   'cobrado en fletes',
+            label:  'Valor domicilios',
+            value:  fmtPeso(a.valor_domicilios),
+            sub:    'cobrado en fletes',
+            cambio: fmtCambio(a.valor_domicilios, p.valor_domicilios),
         },
         {
             svg: SVG.cancelados, color: '#e74c3c', bg: '#fce8e8',
-            label: 'Cancelados',
-            value: fmtNum(d.cancelados),
-            sub:   `${pctCancel} del total recibido`,
+            label:  'Cancelados',
+            value:  fmtNum(a.cancelados),
+            sub:    `${pctCancel} del total recibido`,
+            cambio: fmtCambio(a.cancelados, p.cancelados, true),
         },
     ];
 
@@ -179,6 +202,7 @@ function renderKpis(d) {
                 <span class="mc-card-label">${c.label}</span>
             </div>
             <div class="mc-card-value">${c.value}</div>
+            <div class="mc-card-cambio">${c.cambio}</div>
             <div class="mc-card-sub">${c.sub}</div>
         </div>
     `).join('');

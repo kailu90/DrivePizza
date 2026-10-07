@@ -124,10 +124,26 @@
     letter-spacing: -0.5px;
 }
 
-.mc-card-sub {
-    font-size: 0.77rem;
-    color: #bbb;
+.mc-card-cambio {
     margin-top: 2px;
+}
+
+.mc-change {
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.mc-change.positive { color: #27ae60; }
+.mc-change.negative { color: #e74c3c; }
+.mc-change.neutral  { color: #bbb; font-weight: 400; }
+
+.mc-card-sub {
+    font-size: 0.75rem;
+    color: #bbb;
+    margin-top: 3px;
 }
 
 /* ── Skeleton ────────────────────────────────────────── */
