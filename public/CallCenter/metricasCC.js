@@ -612,5 +612,27 @@ function renderCiudades(dataSede) {
         }).join('');
 }
 
+// ── Scroll-spy ────────────────────────────────────────────────
+const _navItems = document.querySelectorAll('.mc-nav-item');
+
+const _spy = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            _navItems.forEach(a => a.classList.remove('active'));
+            document.querySelector(`.mc-nav-item[data-sec="${e.target.id}"]`)
+                ?.classList.add('active');
+        }
+    });
+}, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+
+document.querySelectorAll('section[id]').forEach(s => _spy.observe(s));
+
+_navItems.forEach(a => a.addEventListener('click', () => {
+    const sec = document.getElementById(a.dataset.sec);
+    if (!sec) return;
+    const y = sec.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+}));
+
 // ── Inicio ────────────────────────────────────────────────────
 cargar();
