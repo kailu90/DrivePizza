@@ -149,7 +149,7 @@ export function CargarSidebar(onReady = null) {
 
             const toggleBtn = document.getElementById('toggle-btn');
             const sidebar   = document.getElementById('sidebar');
-            const main      = document.querySelector('.dashboard__main, .inventory__main, .ap-main, .inf-main');
+            const main      = document.querySelector('.dashboard__main, .inventory__main, .ap-main, .inf-main, .mc-main');
             const footer    = document.querySelector('.dashboard__footer, .inventory__footer');
             const sections  = document.querySelectorAll('.dashboard__section, .inventory__section');
             const isMobile  = () => window.innerWidth <= 768;

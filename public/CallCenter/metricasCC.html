@@ -10,191 +10,140 @@
 <body>
 
 <div id="header-container"></div>
+<div id="sidebar-container"></div>
 
-<div class="mc-layout">
+<main class="mc-main">
 
-    <!-- ── Sidebar ── -->
-    <aside class="mc-sidebar">
-        <nav class="mc-nav">
-            <p class="mc-nav-group">Métricas CC</p>
+    <button class="toggle-btn" id="toggle-btn">&lt;</button>
 
-            <a class="mc-nav-item active" data-sec="sec-kpis">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-                </svg>
-                Resumen general
-            </a>
+    <div class="mc-header">
+        <h2 class="mc-title">Métricas <span>CallCenter</span></h2>
+        <div class="mc-filters">
+            <div class="mc-chips">
+                <button class="mc-chip active" data-p="30d">30 días</button>
+                <button class="mc-chip" data-p="7d">7 días</button>
+                <button class="mc-chip" data-p="mes">Este mes</button>
+                <button class="mc-chip" data-p="3m">3 meses</button>
+                <button class="mc-chip" data-p="año">Este año</button>
+            </div>
+            <div class="mc-date-range">
+                <input type="date" id="mc-fecha-ini" class="mc-date-input">
+                <span class="mc-date-sep">→</span>
+                <input type="date" id="mc-fecha-fin" class="mc-date-input">
+            </div>
+            <select id="mc-sede" class="mc-sede-sel">
+                <option value="">Todas las sedes</option>
+            </select>
+        </div>
+    </div>
 
-            <a class="mc-nav-item" data-sec="sec-graficas">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-                </svg>
-                Comportamiento
-            </a>
+    <section id="sec-kpis">
+        <div class="mc-kpis" id="mc-kpis">
+            <div class="mc-card mc-skel"></div>
+            <div class="mc-card mc-skel"></div>
+            <div class="mc-card mc-skel"></div>
+            <div class="mc-card mc-skel"></div>
+            <div class="mc-card mc-skel"></div>
+            <div class="mc-card mc-skel"></div>
+        </div>
+    </section>
 
-            <a class="mc-nav-item" data-sec="sec-productos">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-                    <line x1="7" y1="7" x2="7.01" y2="7"/>
-                </svg>
-                Productos
-            </a>
-
-            <a class="mc-nav-item" data-sec="sec-promos">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
-                    <line x1="12" y1="22" x2="12" y2="7"/>
-                    <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/>
-                    <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
-                </svg>
-                Promos
-            </a>
-
-            <a class="mc-nav-item" data-sec="sec-geo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.21 15.89A10 10 0 118 2.83"/>
-                    <path d="M22 12A10 10 0 0012 2v10z"/>
-                </svg>
-                Participación
-            </a>
-        </nav>
-    </aside>
-
-    <!-- ── Contenido principal ── -->
-    <main class="mc-main">
-
-        <div class="mc-header">
-            <h2 class="mc-title">Métricas <span>CallCenter</span></h2>
-            <div class="mc-filters">
-                <div class="mc-chips">
-                    <button class="mc-chip active" data-p="30d">30 días</button>
-                    <button class="mc-chip" data-p="7d">7 días</button>
-                    <button class="mc-chip" data-p="mes">Este mes</button>
-                    <button class="mc-chip" data-p="3m">3 meses</button>
-                    <button class="mc-chip" data-p="año">Este año</button>
-                </div>
-                <div class="mc-date-range">
-                    <input type="date" id="mc-fecha-ini" class="mc-date-input">
-                    <span class="mc-date-sep">→</span>
-                    <input type="date" id="mc-fecha-fin" class="mc-date-input">
-                </div>
-                <select id="mc-sede" class="mc-sede-sel">
-                    <option value="">Todas las sedes</option>
-                </select>
+    <section id="sec-graficas">
+        <p class="mc-section-title">Comportamiento de pedidos</p>
+        <div class="mc-charts" id="mc-charts">
+            <div class="mc-chart-card">
+                <div class="mc-chart-title">Domicilios por día de la semana</div>
+                <canvas id="chart-dias"></canvas>
+            </div>
+            <div class="mc-chart-card">
+                <div class="mc-chart-title">Domicilios y pedidos por período</div>
+                <canvas id="chart-evolucion"></canvas>
+            </div>
+            <div class="mc-chart-card">
+                <div class="mc-chart-title">Evolución de ventas</div>
+                <canvas id="chart-ventas"></canvas>
             </div>
         </div>
+    </section>
 
-        <section id="sec-kpis">
-            <div class="mc-kpis" id="mc-kpis">
-                <div class="mc-card mc-skel"></div>
-                <div class="mc-card mc-skel"></div>
-                <div class="mc-card mc-skel"></div>
-                <div class="mc-card mc-skel"></div>
-                <div class="mc-card mc-skel"></div>
-                <div class="mc-card mc-skel"></div>
-            </div>
-        </section>
-
-        <section id="sec-graficas">
-            <p class="mc-section-title">Comportamiento de pedidos</p>
-            <div class="mc-charts" id="mc-charts">
-                <div class="mc-chart-card">
-                    <div class="mc-chart-title">Domicilios por día de la semana</div>
-                    <canvas id="chart-dias"></canvas>
-                </div>
-                <div class="mc-chart-card">
-                    <div class="mc-chart-title">Domicilios y pedidos por período</div>
-                    <canvas id="chart-evolucion"></canvas>
-                </div>
-                <div class="mc-chart-card">
-                    <div class="mc-chart-title">Evolución de ventas</div>
-                    <canvas id="chart-ventas"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <section id="sec-productos">
-            <p class="mc-section-title">Productos más vendidos</p>
-            <div class="mc-tables" id="mc-tables-productos">
-                <div class="mc-table-card">
-                    <div class="mc-chart-title">Por unidades vendidas</div>
-                    <table class="mc-table" id="tbl-unidades">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Producto</th>
-                                <th class="num">Uds.</th>
-                                <th class="num">Valor</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="mc-table-card">
-                    <div class="mc-chart-title">Por valor generado</div>
-                    <table class="mc-table" id="tbl-valor">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Producto</th>
-                                <th class="num">Valor</th>
-                                <th class="num">Uds.</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section id="sec-promos">
-            <p class="mc-section-title">Promos vendidas</p>
+    <section id="sec-productos">
+        <p class="mc-section-title">Productos más vendidos</p>
+        <div class="mc-tables" id="mc-tables-productos">
             <div class="mc-table-card">
-                <table class="mc-table" id="tbl-promos">
+                <div class="mc-chart-title">Por unidades vendidas</div>
+                <table class="mc-table" id="tbl-unidades">
                     <thead>
                         <tr>
-                            <th>Promo</th>
-                            <th>Sede</th>
-                            <th class="num">Pedidos</th>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="num">Uds.</th>
+                            <th class="num">Valor</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
-
-        <section id="sec-geo">
-            <p class="mc-section-title">Participación geográfica</p>
-            <div class="mc-geo-row">
-                <div class="mc-chart-card mc-geo-donut">
-                    <div class="mc-chart-title">Por ciudad</div>
-                    <canvas id="chart-ciudades"></canvas>
-                    <div id="mc-ciudad-leyenda" class="mc-ciudad-leyenda"></div>
-                </div>
-                <div class="mc-table-card mc-geo-table">
-                    <div class="mc-chart-title">Por sede</div>
-                    <table class="mc-table mc-table--full" id="tbl-sede">
-                        <thead>
-                            <tr>
-                                <th>Sede</th>
-                                <th class="num">Pedidos</th>
-                                <th class="num">% ped.</th>
-                                <th class="num">Domicilios</th>
-                                <th class="num">Ventas</th>
-                                <th class="num">% ventas</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+            <div class="mc-table-card">
+                <div class="mc-chart-title">Por valor generado</div>
+                <table class="mc-table" id="tbl-valor">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="num">Valor</th>
+                            <th class="num">Uds.</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
-        </section>
+        </div>
+    </section>
 
-    </main>
+    <section id="sec-promos">
+        <p class="mc-section-title">Promos vendidas</p>
+        <div class="mc-table-card">
+            <table class="mc-table" id="tbl-promos">
+                <thead>
+                    <tr>
+                        <th>Promo</th>
+                        <th>Sede</th>
+                        <th class="num">Pedidos</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
 
-</div>
+    <section id="sec-geo">
+        <p class="mc-section-title">Participación geográfica</p>
+        <div class="mc-geo-row">
+            <div class="mc-chart-card mc-geo-donut">
+                <div class="mc-chart-title">Por ciudad</div>
+                <canvas id="chart-ciudades"></canvas>
+                <div id="mc-ciudad-leyenda" class="mc-ciudad-leyenda"></div>
+            </div>
+            <div class="mc-table-card mc-geo-table">
+                <div class="mc-chart-title">Por sede</div>
+                <table class="mc-table mc-table--full" id="tbl-sede">
+                    <thead>
+                        <tr>
+                            <th>Sede</th>
+                            <th class="num">Pedidos</th>
+                            <th class="num">% ped.</th>
+                            <th class="num">Domicilios</th>
+                            <th class="num">Ventas</th>
+                            <th class="num">% ventas</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</main>
 
 <footer class="panel__footer">
     <p class="footer__text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>

@@ -1,6 +1,6 @@
 import { supabase }                    from '../Api/supabaseConfig.js';
 import { getSedes }                    from '../Shared/sedesService.js';
-import { initVersionBanner, CargarHeader } from '../Shared/components.js';
+import { initVersionBanner, CargarHeader, CargarSidebar } from '../Shared/components.js';
 
 const ROLES_OK          = ['callcenter-admin', 'admin'];
 const SEDES_EXCLUIDAS   = ['planta produccion', 'gastrofusion'];
@@ -18,6 +18,7 @@ if (!ROLES_OK.includes(perfil?.rol)) {
 
 CargarHeader('CallCenter', './callcenter.html');
 initVersionBanner();
+CargarSidebar(() => _initNavScroll());
 
 // ── Estado ────────────────────────────────────────────────────
 let _periodo = '30d';
@@ -612,27 +613,30 @@ function renderCiudades(dataSede) {
         }).join('');
 }
 
-// ── Scroll-spy ────────────────────────────────────────────────
-const _navItems = document.querySelectorAll('.mc-nav-item');
+// ── Scroll-spy (inicializado tras CargarSidebar) ───────────────
+function _initNavScroll() {
+    const links = document.querySelectorAll('.mc-nav-link');
 
-const _spy = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-        if (e.isIntersecting) {
-            _navItems.forEach(a => a.classList.remove('active'));
-            document.querySelector(`.mc-nav-item[data-sec="${e.target.id}"]`)
-                ?.classList.add('active');
-        }
-    });
-}, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+    links.forEach(a => a.addEventListener('click', e => {
+        e.preventDefault();
+        const sec = document.getElementById(a.dataset.sec);
+        if (!sec) return;
+        const y = sec.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }));
 
-document.querySelectorAll('section[id]').forEach(s => _spy.observe(s));
+    const spy = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                links.forEach(a => a.classList.remove('mc-nav-active'));
+                document.querySelector(`.mc-nav-link[data-sec="${e.target.id}"]`)
+                    ?.classList.add('mc-nav-active');
+            }
+        });
+    }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
 
-_navItems.forEach(a => a.addEventListener('click', () => {
-    const sec = document.getElementById(a.dataset.sec);
-    if (!sec) return;
-    const y = sec.getBoundingClientRect().top + window.scrollY - 90;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-}));
+    document.querySelectorAll('section[id]').forEach(s => spy.observe(s));
+}
 
 // ── Inicio ────────────────────────────────────────────────────
 cargar();
