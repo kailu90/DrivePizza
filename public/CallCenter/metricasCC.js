@@ -19,11 +19,12 @@ if (!ROLES_OK.includes(perfil?.rol)) {
 
 CargarHeader('CallCenter', './callcenter.html');
 initVersionBanner();
-CargarSidebar(() => _initNavScroll());
+CargarSidebar(() => _initNavSwitch());
 
 // ── Estado ────────────────────────────────────────────────────
-let _periodo = '30d';
-let _sede    = '';
+let _periodo       = '30d';
+let _sede          = '';
+let _seccionActiva = 'sec-kpis';
 
 // ── Sedes / Ciudad ────────────────────────────────────────────
 const sedes = await getSedes();
@@ -177,21 +178,30 @@ function _sedeParam() {
     return null;
 }
 
-// ── Carga ─────────────────────────────────────────────────────
+// ── Carga (selectiva por sección activa) ──────────────────────
 async function cargar() {
-    setEsqueleto();
     const { ini, fin } = getRango(_periodo);
     const sedeP = _sedeParam();
 
-    const [resumen] = await Promise.all([
-        supabase.rpc('metricas_cc_resumen', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP }),
-        cargarGraficas(ini, fin, sedeP),
-        cargarTablas(ini, fin, sedeP),
-        cargarPromos(ini, fin, sedeP),
-    ]);
+    if (_seccionActiva === 'sec-kpis') {
+        setEsqueleto();
+        const { data, error } = await supabase.rpc('metricas_cc_resumen',
+            { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP });
+        if (error) { console.error(error); return; }
+        renderKpis(data);
 
-    if (resumen.error) { console.error(resumen.error); return; }
-    renderKpis(resumen.data);
+    } else if (_seccionActiva === 'sec-graficas') {
+        await cargarGraficas(ini, fin, sedeP);
+
+    } else if (_seccionActiva === 'sec-geo') {
+        await cargarGeo(ini, fin);
+
+    } else if (_seccionActiva === 'sec-productos') {
+        await cargarProductos(ini, fin, sedeP);
+
+    } else if (_seccionActiva === 'sec-promos') {
+        await cargarPromos(ini, fin, sedeP);
+    }
 }
 
 // ── SVGs ──────────────────────────────────────────────────────
@@ -468,17 +478,19 @@ async function cargarGraficas(ini, fin, sedeP) {
 // ── Tablas ────────────────────────────────────────────────────
 const RANK_COLOR = ['#f39c12', '#95a5a6', '#cd7f32'];
 
-async function cargarTablas(ini, fin, sedeP) {
-    const [{ data: dataProds, error: e1 }, { data: dataSede, error: e2 }] = await Promise.all([
-        supabase.rpc('metricas_cc_top_productos', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP }),
-        supabase.rpc('metricas_cc_por_sede',      { p_fecha_ini: ini, p_fecha_fin: fin }),
-    ]);
-    if (e1) console.error(e1);
-    if (e2) console.error(e2);
-    if (dataProds) renderTablaProductos(dataProds);
-    if (dataSede) {
-        // Filtrar por ciudad si aplica
-        const filtrada = !_ciudad ? dataSede : dataSede.filter(r => {
+async function cargarProductos(ini, fin, sedeP) {
+    const { data, error } = await supabase.rpc('metricas_cc_top_productos',
+        { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: sedeP });
+    if (error) { console.error(error); return; }
+    if (data) renderTablaProductos(data);
+}
+
+async function cargarGeo(ini, fin) {
+    const { data, error } = await supabase.rpc('metricas_cc_por_sede',
+        { p_fecha_ini: ini, p_fecha_fin: fin });
+    if (error) { console.error(error); return; }
+    if (data) {
+        const filtrada = !_ciudad ? data : data.filter(r => {
             const esCtg = SEDES_CTG.has((r.sede || '').toLowerCase());
             return _ciudad === 'ctg' ? esCtg : !esCtg;
         });
@@ -653,30 +665,27 @@ function renderCiudades(dataSede) {
         }).join('');
 }
 
-// ── Scroll-spy (inicializado tras CargarSidebar) ───────────────
-function _initNavScroll() {
+// ── Nav por tabs (inicializado tras CargarSidebar) ────────────
+function _initNavSwitch() {
     const links = document.querySelectorAll('.mc-nav-link');
+
+    function activar(link) {
+        links.forEach(a => a.classList.remove('mc-nav-active'));
+        link.classList.add('mc-nav-active');
+        _seccionActiva = link.dataset.sec;
+        document.querySelectorAll('section[id]').forEach(s =>
+            s.classList.remove('mc-section-active'));
+        document.getElementById(_seccionActiva)?.classList.add('mc-section-active');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        cargar();
+    }
 
     links.forEach(a => a.addEventListener('click', e => {
         e.preventDefault();
-        const sec = document.getElementById(a.dataset.sec);
-        if (!sec) return;
-        const y = sec.getBoundingClientRect().top + window.scrollY - 90;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        activar(a);
     }));
 
-    const spy = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-            if (e.isIntersecting) {
-                links.forEach(a => a.classList.remove('mc-nav-active'));
-                document.querySelector(`.mc-nav-link[data-sec="${e.target.id}"]`)
-                    ?.classList.add('mc-nav-active');
-            }
-        });
-    }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
-
-    document.querySelectorAll('section[id]').forEach(s => spy.observe(s));
+    // Sección inicial
+    const inicial = document.querySelector('.mc-nav-link[data-sec="sec-kpis"]');
+    if (inicial) activar(inicial);
 }
-
-// ── Inicio ────────────────────────────────────────────────────
-cargar();

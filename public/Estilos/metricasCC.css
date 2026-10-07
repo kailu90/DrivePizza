@@ -12,7 +12,8 @@
 
 .mc-main.margin-hidden { margin-left: 0; }
 
-section[id] { scroll-margin-top: 90px; }
+section[id]          { display: none; }
+.mc-section-active   { display: block !important; }
 
 .sidebar__link.mc-nav-active {
     background-color: var(--color-quinto);
