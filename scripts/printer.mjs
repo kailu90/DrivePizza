@@ -230,11 +230,69 @@ async function convertirHTMLaPDF(html, rutaPDF) {
     }
 }
 
-async function imprimirPDF(rutaPDF) {
-    await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
-    log('Copia 1 impresa correctamente');
-    await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
-    log('Copia 2 impresa correctamente');
+async function imprimirPDF(rutaPDF, copias = 2) {
+    for (let i = 1; i <= copias; i++) {
+        await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
+        log(`Copia ${i}/${copias} impresa correctamente`);
+    }
+}
+
+async function procesarReimpresion(rawPedido) {
+    const pedido = {
+        ...rawPedido,
+        nPedido:          rawPedido.n_pedido,
+        fechaReserva:     rawPedido.fecha_reserva,
+        horaReserva:      rawPedido.hora_reserva,
+        cantidadPersonas: rawPedido.cantidad_personas,
+    };
+
+    const id = rawPedido.id;
+    const esReserva = pedido.tipo === 'reserva';
+
+    log(`Reimpresión solicitada: #${pedido.nPedido} (${id})`);
+
+    notifier.notify({
+        title: 'Reimpresión',
+        message: `Reimprimiendo #${pedido.nPedido} — ${pedido.nombre}`,
+        sound: false,
+    });
+
+    const resetFlag = async () => {
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ reprint_requested: false })
+            .eq('id', id);
+        if (error) log(`Advertencia: error reseteando reprint_requested #${pedido.nPedido}: ${error.message}`);
+    };
+
+    try {
+        const html = esReserva ? generarHTMLReserva(pedido) : generarHTML(pedido);
+        const rutaPDF = `reprint_${id}.pdf`;
+
+        await convertirHTMLaPDF(html, rutaPDF);
+
+        try {
+            await imprimirPDF(rutaPDF, 1);
+        } catch (error) {
+            log(`Error al reimprimir #${pedido.nPedido}: ${error.message}`);
+            notifier.notify({
+                title: 'ERROR REIMPRESIÓN',
+                message: `No se pudo reimprimir #${pedido.nPedido}. Revisar impresora.`,
+                sound: true,
+            });
+            if (fs.existsSync(rutaPDF)) fs.unlinkSync(rutaPDF);
+            await resetFlag();
+            return;
+        }
+
+        await resetFlag();
+        log(`Reimpresión #${pedido.nPedido} completada`);
+        if (fs.existsSync(rutaPDF)) fs.unlinkSync(rutaPDF);
+
+    } catch (error) {
+        log(`Error en reimpresión ${id}: ${error.message}`);
+        await resetFlag();
+    }
 }
 
 async function procesarPedido(rawPedido) {
@@ -351,7 +409,7 @@ let procesandoCola = false;
 function encolar(rawPedido) {
     const id = rawPedido.id;
     // Evitar duplicados en cola (ej: Realtime + arranque coinciden)
-    if (colaPedidos.some(p => p.id === id)) {
+    if (colaPedidos.some(p => p.id === id && !p._esReimpresion)) {
         log(`Pedido ${id} ya está en cola — ignorado`);
         return;
     }
@@ -360,12 +418,27 @@ function encolar(rawPedido) {
     procesarCola();
 }
 
+function encolarReimpresion(rawPedido) {
+    const id = rawPedido.id;
+    if (colaPedidos.some(p => p.id === id && p._esReimpresion)) {
+        log(`Reimpresión ${id} ya está en cola — ignorada`);
+        return;
+    }
+    colaPedidos.push({ ...rawPedido, _esReimpresion: true });
+    log(`Reimpresión ${id} encolada (cola: ${colaPedidos.length})`);
+    procesarCola();
+}
+
 async function procesarCola() {
     if (procesandoCola) return;
     procesandoCola = true;
     while (colaPedidos.length > 0) {
-        const pedido = colaPedidos.shift();
-        await procesarPedido(pedido);
+        const item = colaPedidos.shift();
+        if (item._esReimpresion) {
+            await procesarReimpresion(item);
+        } else {
+            await procesarPedido(item);
+        }
     }
     procesandoCola = false;
 }
@@ -391,6 +464,20 @@ async function iniciar() {
         }
     }
 
+    // Procesar reimpresiones pendientes (solicitadas mientras el script estaba detenido)
+    const { data: reprints, error: errReprint } = await supabase
+        .from('pedidos_callcenter')
+        .select('*')
+        .eq('sede', MI_SEDE)
+        .eq('reprint_requested', true);
+    if (errReprint) {
+        log(`Error cargando reimpresiones pendientes: ${errReprint.message}`);
+    } else {
+        for (const pedido of (reprints || [])) {
+            encolarReimpresion(pedido);
+        }
+    }
+
     // Escuchar nuevos pedidos en tiempo real
     supabase.channel(`printer-${MI_SEDE}`)
         .on('postgres_changes', {
@@ -404,7 +491,23 @@ async function iniciar() {
             }
         })
         .subscribe((status) => {
-            log(`Realtime: ${status}`);
+            log(`Realtime INSERT: ${status}`);
+        });
+
+    // Escuchar solicitudes de reimpresión en tiempo real
+    supabase.channel(`printer-reprint-${MI_SEDE}`)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'pedidos_callcenter',
+            filter: `sede=eq.${MI_SEDE}`,
+        }, (payload) => {
+            if (payload.new.reprint_requested === true) {
+                encolarReimpresion(payload.new);
+            }
+        })
+        .subscribe((status) => {
+            log(`Realtime UPDATE: ${status}`);
         });
 }
 

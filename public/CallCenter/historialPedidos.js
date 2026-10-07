@@ -709,13 +709,41 @@ function _buildComandaHtml(p) {
 </body></html>`;
 }
 
-window.imprimirComanda = (id) => {
+function _toastReimpresion(msg, color = '#2980b9') {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);pointer-events:none;white-space:nowrap;`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+window.imprimirComanda = async (id) => {
     const p = pedidosCargados.find(x => x.id === id);
     if (!p) return;
-    const win = window.open('', '_blank', 'width=420,height=700');
-    if (!win) { alert('Activa los pop-ups para imprimir.'); return; }
-    win.document.write(_buildComandaHtml(p));
-    win.document.close();
+
+    if (['callcenter', 'callcenter-admin', 'admin'].includes(rolUsuario)) {
+        const btn = document.querySelector('button.btn-imprimir-comanda');
+        if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ reprint_requested: true })
+            .eq('id', id);
+
+        if (btn) { btn.disabled = false; btn.textContent = '🖨 Reimprimir en sede'; }
+
+        if (error) {
+            alert('Error al enviar solicitud. Intenta de nuevo.');
+        } else {
+            _toastReimpresion(`Solicitud enviada — imprimiendo en ${p.sede}`);
+        }
+    } else {
+        // Pizzería → popup en el navegador
+        const win = window.open('', '_blank', 'width=420,height=700');
+        if (!win) { alert('Activa los pop-ups para imprimir.'); return; }
+        win.document.write(_buildComandaHtml(p));
+        win.document.close();
+    }
 };
 
 // ── MODAL DETALLE ──────────────────────────────────────────────────────
@@ -850,8 +878,12 @@ function abrirDetalle(p) {
         cancelArea += `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`;
     if (p.estado === "pendiente" && esAdmin)
         cancelArea += `<button class="btn-marcar-recibido" onclick="marcarRecibido('${p.id}', ${impreso})">✓ Marcar como recibido</button>`;
-    if (!esTaller)
-        cancelArea += `<button class="btn-imprimir-comanda" onclick="imprimirComanda('${p.id}')">🖨 Reimprimir comanda</button>`;
+    if (!esTaller) {
+        const lblImprimir = ['callcenter', 'callcenter-admin', 'admin'].includes(rolUsuario)
+            ? '🖨 Reimprimir en sede'
+            : '🖨 Reimprimir comanda';
+        cancelArea += `<button class="btn-imprimir-comanda" onclick="imprimirComanda('${p.id}')">${lblImprimir}</button>`;
+    }
     document.getElementById("modal-cancel-area").innerHTML = cancelArea;
 
     document.getElementById("modal-detalle").style.display = "flex";
