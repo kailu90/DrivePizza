@@ -161,6 +161,56 @@ function generarHTML(pedido) {
 </html>`;
 }
 
+function generarHTMLReservaPizzeritos(pedido) {
+    const fechaFmt = pedido.fechaReserva ? pedido.fechaReserva.split('-').reverse().join('/') : '—';
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    html, body { margin: 0; padding: 0; }
+</style>
+</head>
+<body>
+        <div style="width:280px; font-family:'Courier New',monospace; color:black; background:white; padding:5px; margin:0 auto; font-weight:700;">
+            <div style="text-align:center; margin-bottom:4px;">
+                <img src="${logoBase64}" style="max-width:180px; height:auto; filter:invert(1);" />
+            </div>
+            <p style="text-align:center; margin:5px 0; font-size:12pt; font-weight:bold;">${pedido.sede.toUpperCase()}</p>
+
+            <div style="border:4px solid black; display:flex; align-items:center; justify-content:center; gap:10px; padding:6px 10px; margin:10px 0; background:#fff3e0;">
+                <span style="font-size:13pt; font-weight:bold;">🍕 PIZZERITOS N°</span>
+                <span style="font-size:24pt; font-weight:900;">#${pedido.nPedido || '---'}</span>
+            </div>
+
+            <div style="border-top:2px dashed black; margin:10px 0;"></div>
+
+            <div style="text-align:center; padding:8px 0;">
+                <div style="font-size:13pt; font-weight:900; margin-bottom:6px;">📅 FECHA: ${fechaFmt}</div>
+                <div style="font-size:16pt; font-weight:900; margin-bottom:4px;">🕐 ${formatearHora12(pedido.horaReserva)}</div>
+                <div style="font-size:18pt; font-weight:900;">🍕 ${pedido.cantidadPersonas ?? '—'} KIT(S)</div>
+            </div>
+
+            <div style="border-top:3px solid black; margin-top:10px; padding-top:5px; text-align:right;">
+                <span style="font-size:16pt; font-weight:bold;">TOTAL: $${formatearPrecio(pedido.total)}</span>
+            </div>
+
+            ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
+
+            <div style="border-top:2px dashed black; margin:10px 0;"></div>
+
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CLIENTE:</strong> ${pedido.nombre}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA PEDIDO:</strong> ${formatearFecha(pedido.fecha)}</p>
+
+            <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** TALLER PIZZERITOS ***</p>
+        </div>
+</body>
+</html>`;
+}
+
 function generarHTMLReserva(pedido) {
     return `<!DOCTYPE html>
 <html>
@@ -247,7 +297,8 @@ async function procesarReimpresion(rawPedido) {
     };
 
     const id = rawPedido.id;
-    const esReserva = pedido.tipo === 'reserva';
+    const esReserva    = pedido.tipo === 'reserva';
+    const esPizzeritos = pedido.tipo === 'reserva_pizzeritos';
 
     log(`Reimpresión solicitada: #${pedido.nPedido} (${id})`);
 
@@ -266,7 +317,9 @@ async function procesarReimpresion(rawPedido) {
     };
 
     try {
-        const html = esReserva ? generarHTMLReserva(pedido) : generarHTML(pedido);
+        const html = esReserva    ? generarHTMLReserva(pedido)
+                   : esPizzeritos ? generarHTMLReservaPizzeritos(pedido)
+                   :                generarHTML(pedido);
         const rutaPDF = `reprint_${id}.pdf`;
 
         await convertirHTMLaPDF(html, rutaPDF);
@@ -317,18 +370,22 @@ async function procesarPedido(rawPedido) {
     }
 
     const id = rawPedido.id;
-    const esReserva = pedido.tipo === 'reserva';
+    const esReserva      = pedido.tipo === 'reserva';
+    const esPizzeritos   = pedido.tipo === 'reserva_pizzeritos';
+    const tipoLabel      = esReserva ? 'Reserva' : esPizzeritos ? 'Pizzeritos' : 'Pedido';
 
-    log(`${esReserva ? 'Nueva reserva' : 'Nuevo pedido'} detectado: #${pedido.nPedido} (${id})`);
+    log(`${tipoLabel} detectado: #${pedido.nPedido} (${id})`);
 
     notifier.notify({
-        title: esReserva ? 'Nueva Reserva' : 'Nuevo Pedido',
-        message: `${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} - ${pedido.nombre}`,
+        title: `Nuevo ${tipoLabel}`,
+        message: `${tipoLabel} #${pedido.nPedido} - ${pedido.nombre}`,
         sound: true,
     });
 
     try {
-        const html = esReserva ? generarHTMLReserva(pedido) : generarHTML(pedido);
+        const html = esReserva    ? generarHTMLReserva(pedido)
+                   : esPizzeritos ? generarHTMLReservaPizzeritos(pedido)
+                   :                generarHTML(pedido);
         const rutaPDF = `ticket_${id}.pdf`;
 
         await convertirHTMLaPDF(html, rutaPDF);
@@ -373,10 +430,10 @@ async function procesarPedido(rawPedido) {
         }
         if (!updateOk) log(`Error crítico: pedido #${pedido.nPedido} impreso físicamente pero NO pudo marcarse en Supabase tras ${MAX_INTENTOS_UPDATE} intentos.`);
         else {
-            log(`${esReserva ? 'Reserva' : 'Pedido'} #${pedido.nPedido} marcado como recibido`);
+            log(`${tipoLabel} #${pedido.nPedido} marcado como recibido`);
 
-            // Auto-avance a "en preparacion" después de 2 minutos (solo pedidos, no reservas)
-            if (esReserva) return;
+            // Auto-avance a "en preparacion" después de 2 minutos (solo pedidos normales)
+            if (esReserva || esPizzeritos) return;
             setTimeout(async () => {
                 const { data: actual } = await supabase
                     .from('pedidos_callcenter')
