@@ -98,6 +98,7 @@ async function cargar() {
     const [resumen] = await Promise.all([
         supabase.rpc('metricas_cc_resumen', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
         cargarGraficas(ini, fin),
+        cargarTablas(ini, fin),
     ]);
 
     if (resumen.error) { console.error(resumen.error); return; }
@@ -371,6 +372,57 @@ async function cargarGraficas(ini, fin) {
             },
         });
     }
+}
+
+// ── Tablas ────────────────────────────────────────────────────
+const RANK_COLOR = ['#f39c12', '#95a5a6', '#cd7f32'];
+
+async function cargarTablas(ini, fin) {
+    const [{ data: dataProds, error: e1 }, { data: dataSede, error: e2 }] = await Promise.all([
+        supabase.rpc('metricas_cc_top_productos', { p_fecha_ini: ini, p_fecha_fin: fin, p_sede: _sede || null }),
+        supabase.rpc('metricas_cc_por_sede',      { p_fecha_ini: ini, p_fecha_fin: fin }),
+    ]);
+    if (e1) console.error(e1);
+    if (e2) console.error(e2);
+    if (dataProds) renderTablaProductos(dataProds);
+    if (dataSede)  renderTablaSede(dataSede);
+}
+
+function renderTablaProductos(data) {
+    const filaUni = (r, i) => `
+        <tr>
+            <td class="mc-rank" style="${i < 3 ? `color:${RANK_COLOR[i]}` : ''}">${i + 1}</td>
+            <td class="mc-nombre">${r.nombre}</td>
+            <td class="num">${fmtNum(r.unidades)}</td>
+            <td class="num mc-dim">${fmtPeso(r.valor)}</td>
+        </tr>`;
+
+    const filaVal = (r, i) => `
+        <tr>
+            <td class="mc-rank" style="${i < 3 ? `color:${RANK_COLOR[i]}` : ''}">${i + 1}</td>
+            <td class="mc-nombre">${r.nombre}</td>
+            <td class="num">${fmtPeso(r.valor)}</td>
+            <td class="num mc-dim">${fmtNum(r.unidades)} uds.</td>
+        </tr>`;
+
+    document.querySelector('#tbl-unidades tbody').innerHTML =
+        (data.por_unidades || []).map(filaUni).join('') || '<tr><td colspan="4" class="mc-dim" style="text-align:center;padding:16px">Sin datos</td></tr>';
+    document.querySelector('#tbl-valor tbody').innerHTML =
+        (data.por_valor || []).map(filaVal).join('') || '<tr><td colspan="4" class="mc-dim" style="text-align:center;padding:16px">Sin datos</td></tr>';
+}
+
+function renderTablaSede(data) {
+    document.querySelector('#tbl-sede tbody').innerHTML = data.length
+        ? data.map(r => `
+            <tr>
+                <td class="mc-nombre">${r.sede}</td>
+                <td class="num">${fmtNum(r.pedidos)}</td>
+                <td class="num mc-pct-bar" data-pct="${r.pct_pedidos}">${r.pct_pedidos}%</td>
+                <td class="num">${fmtNum(r.domicilios)}</td>
+                <td class="num">${fmtPeso(r.ventas)}</td>
+                <td class="num mc-pct-bar" data-pct="${r.pct_ventas}">${r.pct_ventas}%</td>
+            </tr>`).join('')
+        : '<tr><td colspan="6" class="mc-dim" style="text-align:center;padding:16px">Sin datos</td></tr>';
 }
 
 // ── Inicio ────────────────────────────────────────────────────

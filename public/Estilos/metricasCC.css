@@ -193,6 +193,64 @@
     max-height: 210px;
 }
 
+/* ── Sección tablas ──────────────────────────────────── */
+.mc-tables {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.mc-table-card,
+.mc-sede-wrap {
+    background: white;
+    border-radius: 16px;
+    padding: 16px 18px 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow-x: auto;
+}
+
+.mc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.mc-table th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0 8px 10px;
+    border-bottom: 1.5px solid #f0f0f0;
+    white-space: nowrap;
+}
+
+.mc-table td {
+    padding: 8px;
+    border-bottom: 1px solid #f8f8f8;
+    color: #333;
+    vertical-align: middle;
+}
+
+.mc-table tr:last-child td { border-bottom: none; }
+.mc-table tr:hover td      { background: #fafafa; }
+.mc-table .num             { text-align: right; }
+
+.mc-table th:first-child,
+.mc-table td:first-child { padding-left: 0; }
+
+.mc-rank {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #ddd;
+    width: 22px;
+    text-align: center;
+}
+
+.mc-nombre { font-weight: 600; color: #333; }
+.mc-dim    { color: #bbb; font-size: 0.75rem; }
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 900px) {
     .mc-charts {
@@ -209,7 +267,8 @@
         font-size: 1.3rem;
     }
 
-    .mc-charts {
+    .mc-charts,
+    .mc-tables {
         grid-template-columns: 1fr;
     }
 }
