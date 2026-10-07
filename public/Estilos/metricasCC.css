@@ -8,6 +8,7 @@
     margin-left: 230px;
     padding: 24px 24px 40px;
     transition: margin-left 0.3s ease;
+    min-height: calc(100vh - 100px);
 }
 
 .mc-main.margin-hidden { margin-left: 0; }
