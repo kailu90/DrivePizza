@@ -29,7 +29,7 @@ section[id]          { display: none; }
 }
 
 .mc-title {
-    font-size: 1.15rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: #222;
     margin: 0 0 14px;
@@ -57,7 +57,7 @@ section[id]          { display: none; }
     border: 1.5px solid #e0e0e0;
     background: white;
     color: #666;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -80,7 +80,7 @@ section[id]          { display: none; }
     border: 1.5px solid #e0e0e0;
     background: white;
     color: #444;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
@@ -91,7 +91,7 @@ section[id]          { display: none; }
 .mc-date-input:focus { border-color: #e67e22; }
 
 .mc-date-sep {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: #bbb;
     font-weight: 600;
     flex-shrink: 0;
@@ -104,7 +104,7 @@ section[id]          { display: none; }
     border: 1.5px solid #e0e0e0;
     background: white;
     color: #444;
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
@@ -155,7 +155,7 @@ section[id]          { display: none; }
 }
 
 .mc-card-label {
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #888;
     text-transform: uppercase;
@@ -163,7 +163,7 @@ section[id]          { display: none; }
 }
 
 .mc-card-value {
-    font-size: 1.6rem;
+    font-size: 2rem;
     font-weight: 900;
     color: #1a1a1a;
     line-height: 1.1;
@@ -175,7 +175,7 @@ section[id]          { display: none; }
 }
 
 .mc-change {
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -187,7 +187,7 @@ section[id]          { display: none; }
 .mc-change.neutral  { color: #bbb; font-weight: 400; }
 
 .mc-card-sub {
-    font-size: 0.75rem;
+    font-size: 0.95rem;
     color: #bbb;
     margin-top: 3px;
 }
@@ -206,7 +206,7 @@ section[id]          { display: none; }
 
 /* ── Sección gráficas ────────────────────────────────── */
 .mc-section-title {
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #aaa;
     text-transform: uppercase;
@@ -230,7 +230,7 @@ section[id]          { display: none; }
 }
 
 .mc-chart-title {
-    font-size: 0.8rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #555;
     margin-bottom: 14px;
@@ -260,11 +260,11 @@ section[id]          { display: none; }
 .mc-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .mc-table th {
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: #aaa;
     text-transform: uppercase;
@@ -289,7 +289,7 @@ section[id]          { display: none; }
 .mc-table td:first-child { padding-left: 0; }
 
 .mc-rank {
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     font-weight: 800;
     color: #ddd;
     width: 22px;
@@ -297,7 +297,7 @@ section[id]          { display: none; }
 }
 
 .mc-nombre { font-weight: 600; color: #333; }
-.mc-dim    { color: #bbb; font-size: 0.75rem; }
+.mc-dim    { color: #bbb; font-size: 0.95rem; }
 
 .mc-promo-group td          { background: #fdf8f3; border-top: 1.5px solid #f0f0f0; padding-top: 10px; }
 .mc-promo-group:first-child td { border-top: none; }
@@ -326,7 +326,7 @@ section[id]          { display: none; }
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .mc-ciudad-dot {
@@ -348,7 +348,7 @@ section[id]          { display: none; }
 
 @media (max-width: 680px) {
     .mc-card-value {
-        font-size: 1.3rem;
+        font-size: 1.6rem;
     }
 
     .mc-charts,
