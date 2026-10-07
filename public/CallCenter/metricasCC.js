@@ -2,9 +2,21 @@ import { supabase }                    from '../Api/supabaseConfig.js';
 import { getSedes }                    from '../Shared/sedesService.js';
 import { initVersionBanner, CargarHeader, CargarSidebar } from '../Shared/components.js';
 
-const ROLES_OK          = ['callcenter-admin', 'admin'];
-const SEDES_EXCLUIDAS   = ['planta produccion', 'gastrofusion'];
-const SEDES_CTG         = new Set(['nuestro', 'el prado']);
+const ROLES_OK        = ['callcenter-admin', 'admin'];
+const SEDES_EXCLUIDAS = ['planta produccion', 'gastrofusion'];
+
+// Mapeo sede → ciudad. Todo lo que no esté aquí = Bucaramanga.
+// Para agregar una ciudad nueva: añadir las sedes correspondientes.
+const CIUDAD_MAP = {
+    'nuestro':  'Cartago',
+    'el prado': 'Cartago',
+};
+
+const CIUDAD_COLORS = ['#e67e22', '#2980b9', '#27ae60', '#8e44ad', '#16a085', '#c0392b'];
+
+function getCiudadDeSede(sedeName) {
+    return CIUDAD_MAP[(sedeName || '').toLowerCase()] || 'Bucaramanga';
+}
 
 // ── Auth ──────────────────────────────────────────────────────
 const { data: { user } } = await supabase.auth.getUser();
@@ -33,15 +45,21 @@ const $sede   = document.getElementById('mc-sede');
 
 let _ciudad = '';
 
+// Derivar ciudades únicas desde la lista de sedes
+const _sedesFiltradas = sedes.filter(s => !SEDES_EXCLUIDAS.includes(s.name.toLowerCase()));
+const _ciudadesUnicas = [...new Set(_sedesFiltradas.map(s => getCiudadDeSede(s.name)))].sort();
+
+_ciudadesUnicas.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    $ciudad.appendChild(o);
+});
+
 function _poblarSedes(ciudadFiltro) {
     $sede.innerHTML = '<option value="">Todas las sedes</option>';
-    sedes
-        .filter(s => !SEDES_EXCLUIDAS.includes(s.name.toLowerCase()))
-        .filter(s => {
-            if (!ciudadFiltro) return true;
-            const esCtg = SEDES_CTG.has(s.name.toLowerCase());
-            return ciudadFiltro === 'ctg' ? esCtg : !esCtg;
-        })
+    _sedesFiltradas
+        .filter(s => !ciudadFiltro || getCiudadDeSede(s.name) === ciudadFiltro)
         .forEach(s => {
             const o = document.createElement('option');
             o.value       = s.name.toLowerCase();
@@ -55,6 +73,7 @@ _poblarSedes('');
 $ciudad.addEventListener('change', () => {
     _ciudad = $ciudad.value;
     _sede   = '';
+    $sede.value = '';
     _poblarSedes(_ciudad);
     cargar();
 });
@@ -489,10 +508,8 @@ async function cargarGeo(ini, fin) {
         { p_fecha_ini: ini, p_fecha_fin: fin });
     if (error) { console.error(error); return; }
     if (data) {
-        const filtrada = !_ciudad ? data : data.filter(r => {
-            const esCtg = SEDES_CTG.has((r.sede || '').toLowerCase());
-            return _ciudad === 'ctg' ? esCtg : !esCtg;
-        });
+        const filtrada = !_ciudad ? data
+            : data.filter(r => getCiudadDeSede(r.sede) === _ciudad);
         renderTablaSede(filtrada);
         renderCiudades(filtrada);
     }
@@ -590,31 +607,29 @@ function renderPromos(data) {
 }
 
 // ── Donut por ciudad ──────────────────────────────────────────
-const SEDES_CARTAGO  = new Set(['nuestro', 'el prado']);
-const COLOR_CIUDAD   = { Bucaramanga: '#e67e22', Cartago: '#2980b9' };
-
 function renderCiudades(dataSede) {
-    const acum = {
-        Bucaramanga: { domicilios: 0, pedidos: 0, ventas: 0 },
-        Cartago:     { domicilios: 0, pedidos: 0, ventas: 0 },
-    };
+    // Acumular dinámicamente por ciudad
+    const acum = {};
     dataSede.forEach(r => {
-        const c = SEDES_CARTAGO.has((r.sede || '').toLowerCase()) ? 'Cartago' : 'Bucaramanga';
-        acum[c].domicilios += r.domicilios || 0;
-        acum[c].pedidos    += r.pedidos    || 0;
+        const c = getCiudadDeSede(r.sede);
+        if (!acum[c]) acum[c] = { domicilios: 0, pedidos: 0, ventas: 0 };
+        acum[c].domicilios += r.domicilios    || 0;
+        acum[c].pedidos    += r.pedidos       || 0;
         acum[c].ventas     += Number(r.ventas) || 0;
     });
 
-    const total = acum.Bucaramanga.domicilios + acum.Cartago.domicilios;
+    const ciudades = Object.keys(acum);
+    const colores  = ciudades.map((_, i) => CIUDAD_COLORS[i % CIUDAD_COLORS.length]);
+    const total    = ciudades.reduce((s, c) => s + acum[c].domicilios, 0);
 
     _chartCiudades?.destroy();
     _chartCiudades = new Chart(document.getElementById('chart-ciudades'), {
         type: 'doughnut',
         data: {
-            labels: ['Bucaramanga', 'Cartago'],
+            labels: ciudades,
             datasets: [{
-                data: [acum.Bucaramanga.domicilios, acum.Cartago.domicilios],
-                backgroundColor: [COLOR_CIUDAD.Bucaramanga, COLOR_CIUDAD.Cartago],
+                data: ciudades.map(c => acum[c].domicilios),
+                backgroundColor: colores,
                 borderWidth: 0,
                 hoverOffset: 6,
             }],
@@ -651,17 +666,17 @@ function renderCiudades(dataSede) {
         },
     });
 
-    document.getElementById('mc-ciudad-leyenda').innerHTML =
-        Object.entries(acum).map(([nombre, d]) => {
-            const pct = total > 0 ? (d.domicilios / total * 100).toFixed(1) : '0.0';
-            return `
-                <div class="mc-ciudad-item">
-                    <span class="mc-ciudad-dot" style="background:${COLOR_CIUDAD[nombre]}"></span>
-                    <span class="mc-ciudad-label">${nombre}</span>
-                    <span class="mc-ciudad-val">${fmtNum(d.domicilios)}</span>
-                    <span class="mc-dim">${pct}%</span>
-                </div>`;
-        }).join('');
+    document.getElementById('mc-ciudad-leyenda').innerHTML = ciudades.map((nombre, i) => {
+        const d   = acum[nombre];
+        const pct = total > 0 ? (d.domicilios / total * 100).toFixed(1) : '0.0';
+        return `
+            <div class="mc-ciudad-item">
+                <span class="mc-ciudad-dot" style="background:${colores[i]}"></span>
+                <span class="mc-ciudad-label">${nombre}</span>
+                <span class="mc-ciudad-val">${fmtNum(d.domicilios)}</span>
+                <span class="mc-dim">${pct}%</span>
+            </div>`;
+    }).join('');
 }
 
 // ── Nav por tabs (inicializado tras CargarSidebar) ────────────
