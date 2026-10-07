@@ -36,8 +36,26 @@
         <div class="mc-card mc-skel"></div>
     </div>
 
+    <p class="mc-section-title">Comportamiento de pedidos</p>
+
+    <div class="mc-charts" id="mc-charts">
+        <div class="mc-chart-card">
+            <div class="mc-chart-title">Domicilios por día de la semana</div>
+            <canvas id="chart-dias"></canvas>
+        </div>
+        <div class="mc-chart-card">
+            <div class="mc-chart-title">Domicilios y pedidos por período</div>
+            <canvas id="chart-evolucion"></canvas>
+        </div>
+        <div class="mc-chart-card">
+            <div class="mc-chart-title">Evolución de ventas</div>
+            <canvas id="chart-ventas"></canvas>
+        </div>
+    </div>
+
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script type="module" src="../Auth/authCheck.js"></script>
 <script type="module" src="metricasCC.js"></script>
 </body>
