@@ -497,6 +497,24 @@ html, body {
     padding: 18px 20px 0;
 }
 
+.mpedido-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+#modal-fecha-header {
+    font-size: 0.78rem;
+    color: #bbb;
+    white-space: nowrap;
+}
+
+#modal-fecha-header strong {
+    color: #555;
+    font-weight: 800;
+}
+
 .mpedido-npedido {
     font-size: 1.6rem;
     font-weight: 900;

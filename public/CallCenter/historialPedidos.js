@@ -766,11 +766,21 @@ function abrirDetalle(p) {
     const canalLabel = { whatsapp: _waIcon, ivr: '📞 IVR', web: '🌐 Web' }[p.canal]
         ?? (p.canal ? p.canal : '—');
 
+    // Fecha y hora en el header, junto al número de pedido
+    if (p.fecha) {
+        const _d = new Date(p.fecha);
+        const _fechaPart = new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(_d);
+        const _horaPart  = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true }).format(_d);
+        document.getElementById('modal-fecha-header').innerHTML = `${_fechaPart} <strong>${_horaPart}</strong>`;
+    } else {
+        document.getElementById('modal-fecha-header').textContent = '';
+    }
+
     document.getElementById("modal-meta").innerHTML = (esReserva || esTaller)
         ? `${p.telefono ?? "—"} &nbsp;·&nbsp; 🏬 ${p.sede ?? "—"} &nbsp;·&nbsp; 👤 ${p.asesor ?? "—"}` +
-          `<br><small>${formatFecha(p.fecha)} &nbsp;·&nbsp; ${canalLabel}</small>`
+          `<br><small>${canalLabel}</small>`
         : `${p.telefono ?? "—"} &nbsp;·&nbsp; 🏬 ${p.sede ?? "—"} &nbsp;·&nbsp; 👤 ${p.asesor ?? "—"}` +
-          `<br><small>${formatFecha(p.fecha)} &nbsp;·&nbsp; Pago: ${p.pago ?? "—"} &nbsp;·&nbsp; ${canalLabel}</small>`;
+          `<br><small>Pago: ${p.pago ?? "—"} &nbsp;·&nbsp; ${canalLabel}</small>`;
 
     document.getElementById("modal-entrega").innerHTML = (esReserva || esTaller)
         ? ""
