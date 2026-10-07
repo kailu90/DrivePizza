@@ -114,7 +114,7 @@ section[id]          { display: none; }
 /* ── Grid KPIs ───────────────────────────────────────── */
 .mc-kpis {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 14px;
 }
 
@@ -346,22 +346,12 @@ section[id]          { display: none; }
 }
 
 @media (max-width: 680px) {
-    .mc-kpis {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
     .mc-card-value {
         font-size: 1.3rem;
     }
 
     .mc-charts,
     .mc-tables {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 380px) {
-    .mc-kpis {
         grid-template-columns: 1fr;
     }
 }
