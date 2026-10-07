@@ -9,6 +9,8 @@
     padding: 24px 24px 40px;
     transition: margin-left 0.3s ease;
     min-height: calc(100vh - 100px);
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 .mc-main.margin-hidden { margin-left: 0; }
@@ -114,7 +116,7 @@ section[id]          { display: none; }
 /* ── Grid KPIs ───────────────────────────────────────── */
 .mc-kpis {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
     gap: 14px;
 }
 
