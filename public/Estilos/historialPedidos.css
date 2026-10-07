@@ -772,20 +772,19 @@ html, body {
 }
 .btn-marcar-recibido:hover { background: #27ae60; color: white; }
 .btn-marcar-recibido:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-imprimir-comanda {
-    width: 100%;
-    padding: 11px;
-    border: 1.5px solid #7f8c8d;
+.btn-imprimir-header {
     background: none;
-    color: #7f8c8d;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 700;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: #bbb;
     cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
     transition: background 0.15s, color 0.15s;
-    margin-top: 8px;
 }
-.btn-imprimir-comanda:hover { background: #7f8c8d; color: white; }
+.btn-imprimir-header:hover { background: #f0f0f0; color: #2980b9; }
 
 /* Indicador de impresión en modal */
 .badge-impreso {

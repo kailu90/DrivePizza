@@ -722,15 +722,15 @@ window.imprimirComanda = async (id) => {
     if (!p) return;
 
     if (['callcenter', 'callcenter-admin', 'admin'].includes(rolUsuario)) {
-        const btn = document.querySelector('button.btn-imprimir-comanda');
-        if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+        const btn = document.querySelector('button.btn-imprimir-header');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
 
         const { error } = await supabase
             .from('pedidos_callcenter')
             .update({ reprint_requested: true })
             .eq('id', id);
 
-        if (btn) { btn.disabled = false; btn.textContent = '🖨 Reimprimir en sede'; }
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
 
         if (error) {
             alert('Error al enviar solicitud. Intenta de nuevo.');
@@ -878,13 +878,23 @@ function abrirDetalle(p) {
         cancelArea += `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`;
     if (p.estado === "pendiente" && esAdmin)
         cancelArea += `<button class="btn-marcar-recibido" onclick="marcarRecibido('${p.id}', ${impreso})">✓ Marcar como recibido</button>`;
-    if (!esTaller) {
-        const lblImprimir = ['callcenter', 'callcenter-admin', 'admin'].includes(rolUsuario)
-            ? '🖨 Reimprimir en sede'
-            : '🖨 Reimprimir comanda';
-        cancelArea += `<button class="btn-imprimir-comanda" onclick="imprimirComanda('${p.id}')">${lblImprimir}</button>`;
-    }
     document.getElementById("modal-cancel-area").innerHTML = cancelArea;
+
+    // Botón imprimir en el header
+    const tooltipImprimir = ['callcenter', 'callcenter-admin', 'admin'].includes(rolUsuario)
+        ? 'Reimprimir en sede'
+        : 'Reimprimir comanda';
+    document.getElementById('modal-print-btn').innerHTML = !esTaller
+        ? `<button class="btn-imprimir-header with-tooltip" data-tooltip="${tooltipImprimir}" onclick="imprimirComanda('${p.id}')">
+               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                   <polyline points="6 9 6 2 18 2 18 9"/>
+                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                   <rect x="6" y="14" width="12" height="8"/>
+               </svg>
+           </button>`
+        : '';
 
     document.getElementById("modal-detalle").style.display = "flex";
 }
