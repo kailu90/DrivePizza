@@ -17,7 +17,7 @@ scripts/supabaseKey.json
 KeysOracle/ 
 
 # Carpeta de impresión automática (contiene serviceAccountKey)
-impresiónAutomática/
+ImpresionAutomaticaV1/
 
 
 # Firebase config
