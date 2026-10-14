@@ -123,6 +123,15 @@ async function _enriquecerConversaciones(convs) {
   })
 }
 
+async function verificarAdmin(req, reply) {
+  const token = req.headers.authorization?.replace(/^Bearer /, '')
+  if (!token) return reply.code(401).send({ error: 'No autorizado' })
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  if (error || !user) return reply.code(401).send({ error: 'Token invalido' })
+  const { data: u } = await supabase.from('usuarios').select('rol').eq('id', user.id).single()
+  if (!['admin', 'callcenter-admin'].includes(u?.rol)) return reply.code(403).send({ error: 'Acceso denegado' })
+}
+
 export async function whatsappRoutes(fastify, options) {
   const { wsClients } = options
   initWsClients(wsClients)
@@ -349,7 +358,7 @@ export async function whatsappRoutes(fastify, options) {
   })
 
   // POST /wa/sesiones — conectar nuevo número
-  fastify.post('/wa/sesiones', async (req, reply) => {
+  fastify.post('/wa/sesiones', { preHandler: [verificarAdmin] }, async (req, reply) => {
     const { numero, sede } = req.body ?? {}
     if (!numero || !sede) {
       return reply.code(400).send({ error: 'numero y sede son requeridos' })
@@ -359,7 +368,7 @@ export async function whatsappRoutes(fastify, options) {
   })
 
   // PATCH /wa/sesiones/:numero/config — actualizar color y/o respuesta_inicial (solo admin)
-  fastify.patch('/wa/sesiones/:numero/config', async (req, reply) => {
+  fastify.patch('/wa/sesiones/:numero/config', { preHandler: [verificarAdmin] }, async (req, reply) => {
     const { numero } = req.params
     const { color, respuesta_inicial } = req.body ?? {}
     if (!supabase) return reply.code(503).send({ error: 'Supabase no disponible' })
@@ -377,7 +386,7 @@ export async function whatsappRoutes(fastify, options) {
   })
 
   // DELETE /wa/sesiones/:numero — cerrar sesión
-  fastify.delete('/wa/sesiones/:numero', async (req, reply) => {
+  fastify.delete('/wa/sesiones/:numero', { preHandler: [verificarAdmin] }, async (req, reply) => {
     const numero = req.params.numero
     await cerrarSesion(numero)
     if (req.query.eliminar === 'true' && supabase) {
