@@ -342,6 +342,37 @@ async function procesarReimpresion(rawPedido) {
         log(`Reimpresión #${pedido.nPedido} completada`);
         if (fs.existsSync(rutaPDF)) fs.unlinkSync(rutaPDF);
 
+        // Si el pedido sigue en pendiente (nunca se procesó correctamente),
+        // avanzarlo igual que una impresión normal
+        if (pedido.estado === 'pendiente') {
+            const ahora = new Date().toISOString();
+            const { error: errUpdate } = await supabase
+                .from('pedidos_callcenter')
+                .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
+                .eq('id', id);
+            if (errUpdate) {
+                log(`Advertencia: error avanzando pedido pendiente #${pedido.nPedido}: ${errUpdate.message}`);
+            } else {
+                log(`Pedido #${pedido.nPedido} avanzado a recibido (estaba pendiente)`);
+                if (!esReserva && !esPizzeritos) {
+                    setTimeout(async () => {
+                        const { data: actual } = await supabase
+                            .from('pedidos_callcenter')
+                            .select('estado')
+                            .eq('id', id)
+                            .single();
+                        if (actual?.estado === 'recibido') {
+                            await supabase
+                                .from('pedidos_callcenter')
+                                .update({ estado: 'en preparacion', ts_preparacion: new Date().toISOString() })
+                                .eq('id', id);
+                            log(`Pedido #${pedido.nPedido} → en preparacion (auto-avance)`);
+                        }
+                    }, 2 * 60 * 1000);
+                }
+            }
+        }
+
     } catch (error) {
         log(`Error en reimpresión ${id}: ${error.message}`);
         await resetFlag();
