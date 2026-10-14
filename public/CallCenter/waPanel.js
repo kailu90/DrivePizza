@@ -186,6 +186,10 @@ export function resetWaView() {
     _showListView();
 }
 
+export function updateAuthToken(token) {
+    if (token) _authToken = token;
+}
+
 export function initWaPanel(bodyId, { rol = '', asesor = '', authToken = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;

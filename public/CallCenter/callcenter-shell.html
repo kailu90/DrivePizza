@@ -244,6 +244,7 @@
     // ── WA Panel toggle y visibilidad ─────────────────────────────────────────
     let _resetWaView    = null; // se asigna al importar waPanel.js
     let _destroyWaPanel = null; // se asigna al importar waPanel.js
+    let _updateWaToken  = null; // se asigna al importar waPanel.js
     let _historialFrame         = null;  // iframe para historialPedidos
     let _historialFrameReady    = false; // true cuando el iframe ya cargó por primera vez
     let _historialPendingParams = null;  // params guardados si el usuario llega antes de que preload termine
@@ -538,9 +539,10 @@
             if (['admin', 'callcenter-admin'].includes(data.rol))
                 document.getElementById('btn-wa-monitor').style.display = 'flex';
             // Inicializar WA panel en el drawer persistente
-            const { initWaPanel, resetWaView, destroyWaPanel } = await import('./waPanel.js');
+            const { initWaPanel, resetWaView, destroyWaPanel, updateAuthToken } = await import('./waPanel.js');
             _resetWaView    = resetWaView;
             _destroyWaPanel = destroyWaPanel;
+            _updateWaToken  = updateAuthToken;
             initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email, authToken: session?.access_token || '' });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
             // Precargar historial en background — 1.5s para que pedidos cargue primero
@@ -552,6 +554,13 @@
             document.body.classList.add('loaded');
         }
     })();
+
+    // ── Refresh automático del token de Supabase en waPanel ──────────────────
+    // El access_token expira en ~1h. Supabase lo renueva automáticamente;
+    // aquí propagamos el nuevo token al waPanel para que las llamadas al backend no fallen.
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.access_token) _updateWaToken?.(session.access_token);
+    });
 
     // ── Desconexión al cerrar el navegador ───────────────────────────────────
     window.addEventListener('pagehide', () => {
