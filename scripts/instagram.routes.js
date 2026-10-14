@@ -289,13 +289,18 @@ export async function instagramRoutes(fastify, options) {
 
   // ── GET /ig/conversaciones ───────────────────────────────────────────────
   // Lista conversaciones activas (waiting + assigned). Incluye datos de contacto.
+  // Convs en 'waiting' con más de 72h sin actividad se excluyen automáticamente
+  // (nadie las tomó — se consideran abandonadas). Las 'assigned' siempre se incluyen.
   fastify.get('/ig/conversaciones', async (request, reply) => {
     if (!supabase) return reply.code(503).send({ ok: false, error: 'BD no disponible' })
+
+    const ESPERA_TTL_MS = 72 * 60 * 60 * 1000
+    const cutoff = new Date(Date.now() - ESPERA_TTL_MS).toISOString()
 
     const { data, error } = await supabase
       .from('ig_conversations')
       .select('account_id, status, assigned_agent, ultimo_mensaje, last_message_at, ig_contacts(igsid, nombre, username), channel_accounts(ciudad)')
-      .in('status', ['waiting', 'assigned'])
+      .or(`status.eq.assigned,and(status.eq.waiting,last_message_at.gte.${cutoff})`)
       .order('last_message_at', { ascending: false, nullsFirst: false })
 
     if (error) {
