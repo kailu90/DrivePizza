@@ -4332,7 +4332,8 @@ async function _loadConversaciones(suppressRender = false) {
 // Carga conversaciones Instagram y las mezcla en _state.conv bajo scope 'ig:{accountId}'.
 // Modelo de entrada esperado: [{ account_id, igsid, nombre, ultimo_mensaje, ultimo_ts }]
 // ── IG Conversaciones ────────────────────────────────────────────────────────
-// Carga conversaciones Instagram (waiting + assigned) y las upserta en _state.conv.
+// Carga conversaciones Instagram (waiting + assigned) y sincroniza _state.conv:
+// upserta las activas y elimina las que ya no están en la respuesta (resueltas/stale).
 // Solo toca claves ig:* — nunca modifica entradas WA existentes.
 // Scope key: _scopeKey('instagram', account_id) → 'ig:{account_id}'
 // Conv entry: { canal:'instagram', accountId, msgs, unread, nombre, lastMsg, lastTs }
@@ -4341,7 +4342,32 @@ async function _loadIgConversaciones() {
         const r = await fetch(`${HETZNER_URL}/ig/conversaciones`);
         if (!r.ok) return;
         const data = await r.json();
-        if (!Array.isArray(data) || !data.length) return;
+        if (!Array.isArray(data)) return;
+
+        // Construir set de igsids activos por scope para poder limpiar las stale
+        const activeByScope = {};
+        for (const conv of data) {
+            if (!conv.account_id || !conv.igsid) continue;
+            const sk = _scopeKey('instagram', conv.account_id);
+            if (!activeByScope[sk]) activeByScope[sk] = new Set();
+            activeByScope[sk].add(conv.igsid);
+        }
+
+        // Eliminar entradas ig:* que ya no son activas (resueltas o muy antiguas)
+        // Guard: no cerrar el chat que el asesor tiene abierto en este momento
+        let changed = false;
+        for (const [scopeKey, convs] of Object.entries(_state.conv)) {
+            if (!scopeKey.startsWith('ig:')) continue;
+            for (const igsid of Object.keys(convs)) {
+                if (activeByScope[scopeKey]?.has(igsid)) continue;
+                const isActive = _state.activeNum === scopeKey && _state.activeContact === igsid;
+                if (isActive) continue;
+                delete _state.conv[scopeKey][igsid];
+                changed = true;
+            }
+        }
+
+        // Upsert convs activas
         for (const conv of data) {
             const { account_id, igsid, nombre, username, ultimo_mensaje, ultimo_ts, ciudad } = conv;
             if (!account_id || !igsid) continue;
@@ -4358,8 +4384,10 @@ async function _loadIgConversaciones() {
                 lastMsg:   ultimo_mensaje || '',
                 lastTs:    ultimo_ts || 0,
             };
+            changed = true;
         }
-        _saveConv();
+
+        if (changed || data.length > 0) _saveConv();
     } catch { /* sin conexión — no interrumpe init */ }
 }
 
