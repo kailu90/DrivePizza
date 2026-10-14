@@ -89,7 +89,7 @@ const preciosBebidas = {
     // Jugos Naturales
     jugoEnAgua:         { "Mango": 9000 , "Fresa": 9000 , "Mora": 9000 , "Mandarina": 9000 , "naranja": 9000 , "lulo": 9000 , "Guanabana": 9000 , "Maracuyá": 9000 },
     jugoEnLeche:        { "Mango": 10000 , "Fresa": 10000 , "Mora": 10000  , "Mandarina": 10000 , "naranja": 10000 , "lulo": 10000 , "Guanabana": 10000 , "Maracuyá": 10000 },
-    granizada:          { "Limon": 9000 , "Maracuyá": 9000 , "Naranja": 9000  , "Mora": 9000 , "lulo": 9000 , "Guanabana": 9000 , "mandarina": 9000 },
+    granizada:          { "Limon": 9000 , "Maracuyá": 10000 , "Naranja": 9000  , "Mora": 9000 , "lulo": 9000 , "Guanabana": 9000 , "mandarina": 9000 },
     granizadaEspecial:  { "MaracuMango": 10000 , "Frutos Rojos": 10000 , "Fresa": 10000  , "Frutos Blancos": 10000 , "Frutos Amarillos": 10000 },
 
     // Limonadas
@@ -337,7 +337,7 @@ const menuData = {
         { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado, noNuestro: true }
     ],
     "Otros": [
-        { nombre: "Porta pizzas", opciones: { "Unidad": 300 }, descripcion: "Caja porta pizzas." },
+        { nombre: "Porta pizzas", opciones: { "Unidad": 400 }, descripcion: "Caja porta pizzas." },
     ],
     };
 
