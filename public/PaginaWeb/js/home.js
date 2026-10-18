@@ -16,6 +16,7 @@ let userLng            = null;
 let barrioSeleccionado = '';
 let initialized        = false;
 let _onSedeSelected    = null;
+let _sedeDesdeGoogle   = null; // Sede preseleccionada cuando el cliente llega desde ficha de Google
 
 // ── ÍNDICE DE BARRIOS ─────────────────────────────────────────
 let barrioIndex     = {};
@@ -180,6 +181,16 @@ function _sedeParaCoordenadas(lat, lng, ciudad) {
 // ── RENDER: PASO 1 — TIPO ────────────────────────────────────
 function _renderTipoSelector() {
   _tipoEntrega = null;
+  // Mostrar u ocultar el indicador de sede cuando viene desde ficha de Google
+  const sub = document.getElementById('home-google-sede-sub');
+  if (sub) {
+    if (_sedeDesdeGoogle) {
+      sub.textContent = `Sede ${_sedeDesdeGoogle.nombre_display || _sedeDesdeGoogle.name}`;
+      sub.hidden = false;
+    } else {
+      sub.hidden = true;
+    }
+  }
   _showPanels('home-tipo-wrapper');
 }
 
@@ -510,6 +521,30 @@ function _setupTipoSelector() {
     pill.addEventListener('click', () => {
       _tipoEntrega = pill.dataset.tipo;
       _setActivePill(_tipoEntrega);
+
+      // ── Flujo Google: sede ya conocida, no necesita buscar ubicación ──
+      if (_sedeDesdeGoogle) {
+        if (_tipoEntrega === 'domicilio') {
+          // Mostrar card de la sede directamente (la dirección se pide en el checkout)
+          _ciudadActual = _sedeDesdeGoogle.ciudad || null;
+          _renderCardDomicilio(_sedeDesdeGoogle, {});
+        } else {
+          // Recoger: ir directo al menú con la sede preseleccionada
+          const actual = getSedeActual();
+          if (!actual || actual.id !== _sedeDesdeGoogle.id) vaciarCarrito();
+          localStorage.setItem('dp_direccion', JSON.stringify({
+            tipoEntrega: 'recoger',
+            ciudad:      _sedeDesdeGoogle.ciudad || null,
+            sedeId:      _sedeDesdeGoogle.id,
+            sedeNombre:  displayNombre(_sedeDesdeGoogle),
+          }));
+          setSedeActual(_sedeDesdeGoogle);
+          _onSedeSelected?.(_sedeDesdeGoogle);
+        }
+        return;
+      }
+
+      // ── Flujo normal ──
       if (_tipoEntrega === 'domicilio') {
         _renderDomicilioInput();
       } else {
@@ -695,9 +730,24 @@ export async function initHomeView({ onSedeSelected } = {}) {
     }
 
     document.querySelectorAll('#home-tipo-pills .pw-tipo-pill').forEach(p => { p.disabled = false; });
+
+    // ── Detectar sede desde parámetro URL (ficha de Google) ──
+    // Ejemplo de URL: /PaginaWeb/index.html?sede=megamall
+    const urlParams = new URLSearchParams(window.location.search);
+    const sedeParam = urlParams.get('sede');
+    if (sedeParam) {
+      const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const encontrada = sedesData.find(s => s.name === sedeParam.toLowerCase())
+                      || sedesData.find(s => norm(s.name) === norm(sedeParam)); // tolera sin tildes (ej: canaveral = cañaveral)
+      if (encontrada) {
+        _sedeDesdeGoogle = encontrada;
+        sessionStorage.setItem('dp_origen', 'google'); // Se usa en checkout para poner canal = google
+      }
+    }
   }
 
-  if (!_restoreState()) {
+  // Si viene de Google con sede preseleccionada, ignorar estado guardado y mostrar selector de tipo
+  if (_sedeDesdeGoogle || !_restoreState()) {
     _renderTipoSelector();
   }
 }
