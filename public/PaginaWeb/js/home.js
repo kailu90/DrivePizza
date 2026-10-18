@@ -734,14 +734,15 @@ export async function initHomeView({ onSedeSelected } = {}) {
     // ── Detectar sede desde parámetro URL (ficha de Google) ──
     // Ejemplo de URL: /PaginaWeb/index.html?sede=megamall
     const urlParams = new URLSearchParams(window.location.search);
-    const sedeParam = urlParams.get('sede');
+    const sedeParam   = urlParams.get('sede');
+    const origenParam = urlParams.get('origen'); // ej: 'google' — solo presente en links de fichas
     if (sedeParam) {
       const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const encontrada = sedesData.find(s => s.name === sedeParam.toLowerCase())
                       || sedesData.find(s => norm(s.name) === norm(sedeParam)); // tolera sin tildes (ej: canaveral = cañaveral)
       if (encontrada) {
         _sedeDesdeGoogle = encontrada;
-        sessionStorage.setItem('dp_origen', 'google'); // Se usa en checkout para poner canal = google
+        if (origenParam) sessionStorage.setItem('dp_origen', origenParam); // 'google' u otro canal futuro
       }
     }
   }
