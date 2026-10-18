@@ -746,8 +746,13 @@ export async function initHomeView({ onSedeSelected } = {}) {
     }
   }
 
-  // Si viene de Google con sede preseleccionada, ignorar estado guardado y mostrar selector de tipo
-  if (_sedeDesdeGoogle || !_restoreState()) {
+  // Si viene de Google con sede preseleccionada, ir directo al menú sin mostrar el selector de tipo
+  if (_sedeDesdeGoogle) {
+    const actual = getSedeActual();
+    if (!actual || actual.id !== _sedeDesdeGoogle.id) vaciarCarrito();
+    setSedeActual(_sedeDesdeGoogle);
+    _onSedeSelected?.(_sedeDesdeGoogle);
+  } else if (!_restoreState()) {
     _renderTipoSelector();
   }
 }
