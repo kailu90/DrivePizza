@@ -256,7 +256,10 @@ function iniciarListener(sede) {
     cargarPedidosActivos();
 
     supabase.channel('pizzeria-pedidos')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_callcenter' }, () => {
+        .on('postgres_changes', {
+            event: '*', schema: 'public', table: 'pedidos_callcenter',
+            filter: `sede=eq.${sedeActual}`,
+        }, () => {
             cargarPedidosActivos();
         })
         .subscribe();
