@@ -2,6 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 import { initVersionBanner } from '../Shared/components.js';
+import { badgeEstado, badgeCanal } from '../Shared/badges.js';
 initVersionBanner();
 const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparacion', 'despachado']);
 
@@ -9,6 +10,20 @@ let sedeActual = '';
 let pedidosActuales = {};       // id → objeto pedido
 let pedidoEnModal   = null;     // id del pedido abierto en el modal
 let pedidoPendienteCancelar = null;
+let filtrosActivos  = {};       // { desde, hasta, estado }
+let paginaActual    = 1;
+
+// Igual que historial pero dinámico según altura de pantalla
+function calcularPageSize() {
+    const thead = document.querySelector('.inventory-management__thead');
+    const card  = document.querySelector('.ped-table-card');
+    if (!thead || !card) return 20;
+    const cardTop  = card.getBoundingClientRect().top;
+    const theadH   = thead.offsetHeight;
+    const pagH     = 56; // altura aprox de la barra de paginación
+    const available = window.innerHeight - cardTop - theadH - pagH - 8;
+    return Math.max(5, Math.floor(available / 46)); // ~46px por fila
+}
 
 const MINUTOS_AUTO_PREPARACION = 5;
 const timersPreparacion = new Map(); // pedidoId → timeoutId
@@ -17,8 +32,49 @@ function toDate(ts) {
     return ts ? new Date(ts) : null;
 }
 
+// Igual que historialPedidos.js
+function normalizarPedido(row) {
+    return {
+        id:               String(row.id),
+        nPedido:          row.n_pedido,
+        nombre:           row.nombre,
+        telefono:         row.telefono,
+        direccion:        row.direccion,
+        sede:             row.sede,
+        pago:             row.pago,
+        obs:              row.obs,
+        acompanamientos:  row.acompanamientos || null,
+        productos:        row.productos || [],
+        total:            row.total,
+        asesor:           row.asesor,
+        fecha:            row.fecha,
+        estado:           row.estado,
+        canal:            row.canal,
+        domicilio:        row.domicilio || null,
+        tipo:             row.tipo || null,
+        tsRecibido:       row.ts_recibido,
+        tsPreparacion:    row.ts_preparacion,
+        tsDespachado:     row.ts_despachado,
+        cantidadPersonas: row.cantidad_personas,
+        fechaReserva:     row.fecha_reserva,
+        horaReserva:      row.hora_reserva,
+    };
+}
+
+// Igual que historialPedidos.js
+function formatFecha(timestamp) {
+    if (!timestamp) return '—';
+    return new Intl.DateTimeFormat('es-CO', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+    }).format(new Date(timestamp));
+}
+
+function formatPrecio(v) {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
+}
+
 function _formatFechaReservaLocal(fechaStr) {
-    // fechaStr = 'YYYY-MM-DD' — construir como local para evitar desfase UTC
     const [y, m, d] = fechaStr.split('-').map(Number);
     return new Date(y, m - 1, d).toLocaleDateString('es-CO', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
@@ -96,16 +152,26 @@ const STEPS_RESERVA = [
     },
 ];
 
+const EN_SHELL = window.self !== window.top;
+
+// Ocultar header propio cuando se carga dentro del shell de pizzerías
+if (EN_SHELL) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const h = document.querySelector('.main-header');
+        if (h) h.style.display = 'none';
+    });
+}
+
 mostrarSkeleton('callcenter');
 
 // ── AUTH ───────────────────────────────────────────────────────────
 (async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = '../index.html'; return; }
+    if (!user) { window.top.location.href = '../index.html'; return; }
 
     const { data, error } = await supabase.from('usuarios').select('username, sede, rol, active').eq('id', user.id).single();
     if (error || !data?.active || !['pizzeria', 'planta', 'admin'].includes(data.rol)) {
-        window.location.href = '../index.html';
+        window.top.location.href = '../index.html';
         return;
     }
 
@@ -117,61 +183,63 @@ mostrarSkeleton('callcenter');
     document.getElementById('username').textContent   = `Hola ${username}`;
     document.getElementById('sede-label').textContent = sedeLabel;
 
+    const hoy = hoyLocal();
+    document.getElementById('filtro-desde').value = hoy;
+    document.getElementById('filtro-hasta').value = hoy;
+
+    document.body.classList.add('loaded');
     ocultarSkeleton('contenido-principal');
     iniciarListener(sede);
 })();
 
 // ── LOGOUT ────────────────────────────────────────────────────────
-document.getElementById('btn-logout').addEventListener('click', async () => {
-    if (confirm('¿Cerrar sesión?')) {
-        await supabase.auth.signOut();
-        window.location.href = '../index.html';
-    }
-});
+if (!EN_SHELL) {
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        if (confirm('¿Cerrar sesión?')) {
+            await supabase.auth.signOut();
+            window.top.location.href = '../index.html';
+        }
+    });
 
-document.getElementById('btn-home').addEventListener('click', () => {
-    window.location.href = '../Pizzerias/pizzerias.html';
-});
+    document.getElementById('btn-home').addEventListener('click', () => {
+        window.location.href = '../Pizzerias/pizzerias.html';
+    });
+}
 
 // ── CARGA DESDE SUPABASE ──────────────────────────────────────────
+function hoyLocal() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+}
+
 async function cargarPedidosActivos() {
-    const hoy = new Date().toISOString().split('T')[0];
+    const desde  = filtrosActivos.desde  || hoyLocal();
+    const hasta  = filtrosActivos.hasta  || hoyLocal();
+    const estado = filtrosActivos.estado || null;
+
     try {
-        const estadosStr = [...ESTADOS_ACTIVOS].join(',');
-        const { data: rawPedidos, error } = await supabase
+        let q = supabase
             .from('pedidos_callcenter')
-            .select('id, n_pedido, nombre, telefono, direccion, productos, total, domicilio, estado, ts_recibido, tipo, fecha_reserva, hora_reserva, cantidad_personas, obs, acompanamientos')
+            .select('*')
             .eq('sede', sedeActual)
-            .in('estado', [...ESTADOS_ACTIVOS])
-            .or(`and(fecha.gte.${colFechaToUTC(hoy, 'inicio')},fecha.lte.${colFechaToUTC(hoy, 'fin')}),tipo.eq.reserva`);
+            .in('estado', estado ? [estado] : [...ESTADOS_ACTIVOS])
+            .gte('fecha', colFechaToUTC(desde, 'inicio'))
+            .lte('fecha', colFechaToUTC(hasta, 'fin'))
+            .or('tipo.is.null,tipo.eq.pedido')
+            .order('fecha', { ascending: false });
+
+        const { data: rawPedidos, error } = await q;
 
         if (error) throw error;
 
         pedidosActuales = {};
         (rawPedidos || []).forEach(r => {
-            const id = String(r.id);
-            pedidosActuales[id] = {
-                id:               id,
-                nPedido:          r.n_pedido,
-                nombre:           r.nombre,
-                telefono:         r.telefono,
-                direccion:        r.direccion,
-                productos:        r.productos,
-                total:            r.total,
-                domicilio:        r.domicilio,
-                estado:           r.estado,
-                tsRecibido:       r.ts_recibido,
-                obs:              r.obs,
-                acompanamientos:  r.acompanamientos,
-                tipo:             r.tipo,
-                fechaReserva:     r.fecha_reserva,
-                horaReserva:      r.hora_reserva,
-                cantidadPersonas: r.cantidad_personas,
-            };
+            const p = normalizarPedido(r);
+            pedidosActuales[p.id] = p;
         });
 
         gestionarAutoPreparacion(Object.values(pedidosActuales));
-        renderLista(Object.values(pedidosActuales));
+        poblarSelectAsesores();
+        filtrarColumnas();
 
         if (pedidoEnModal) {
             const actualizado = pedidosActuales[pedidoEnModal];
@@ -231,67 +299,137 @@ function gestionarAutoPreparacion(pedidos) {
 
 // ── LISTA PRINCIPAL ───────────────────────────────────────────────
 function renderLista(pedidos) {
-    const recibidos   = pedidos.filter(p => p.estado === 'recibido');
-    const preparacion = pedidos.filter(p => p.estado === 'en preparacion');
-    const despachado  = pedidos.filter(p => p.estado === 'despachado');
+    const todos = pedidos.slice().sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
+    const preparacion = todos.filter(p => p.estado === 'en preparacion');
+    const despachado  = todos.filter(p => p.estado === 'despachado');
     document.getElementById('count-preparacion').textContent =
         `${preparacion.length} preparando`;
     document.getElementById('count-despachado').textContent =
         `${despachado.length} despachado${despachado.length !== 1 ? 's' : ''}`;
 
-    const ordenados = [...recibidos, ...preparacion, ...despachado];
-    const list      = document.getElementById('orders-list');
-    const empty     = document.getElementById('empty-state');
+    const tbody = document.getElementById('orders-tbody');
+    const empty = document.getElementById('empty-state');
 
-    if (ordenados.length === 0) {
-        list.innerHTML = '';
+    if (todos.length === 0) {
+        tbody.innerHTML = '';
         empty.style.display = 'block';
+        renderPaginacion(0);
         return;
     }
 
     empty.style.display = 'none';
-    list.innerHTML = ordenados.map(renderFila).join('');
+
+    const pageSize    = calcularPageSize();
+    const totalPaginas = Math.ceil(todos.length / pageSize);
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    const inicio = (paginaActual - 1) * pageSize;
+    const pagina = todos.slice(inicio, inicio + pageSize);
+
+    tbody.innerHTML = pagina.map(renderFila).join('');
+    tbody.querySelectorAll('tr[data-id]').forEach(fila => {
+        fila.addEventListener('click', () => {
+            const pedido = pedidosActuales[fila.dataset.id];
+            if (pedido) { pedidoEnModal = pedido.id; poblarModal(pedido); document.getElementById('modal-pedido').style.display = 'flex'; }
+        });
+    });
+
+    renderPaginacion(todos.length, pageSize);
+}
+
+// ── PAGINACIÓN — igual que historialPedidos.js ────────────────────
+function renderPaginacion(total, pageSize) {
+    const contenedor  = document.getElementById('paginacion');
+    const size        = pageSize || calcularPageSize();
+    const totalPaginas = Math.ceil(total / size);
+    if (totalPaginas <= 1) { contenedor.innerHTML = ''; return; }
+
+    contenedor.innerHTML = `
+        <button class="pag-btn" id="pag-prev" ${paginaActual === 1 ? 'disabled' : ''}>← Anterior</button>
+        <span class="pag-info">Página ${paginaActual} de ${totalPaginas} &nbsp;·&nbsp; ${total} pedidos</span>
+        <button class="pag-btn" id="pag-next" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente →</button>
+    `;
+    document.getElementById('pag-prev').addEventListener('click', () => { if (paginaActual > 1) { paginaActual--; filtrarColumnas(); } });
+    document.getElementById('pag-next').addEventListener('click', () => { if (paginaActual < totalPaginas) { paginaActual++; filtrarColumnas(); } });
+}
+
+// ── POBLAR SELECT ASESORES — igual que historialPedidos.js ────────
+function poblarSelectAsesores() {
+    const select = document.getElementById('cf-asesor');
+    if (!select) return;
+    const valorActual = select.value;
+    const asesores = [...new Set(Object.values(pedidosActuales).map(p => p.asesor).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">Todos</option>' +
+        asesores.map(a => `<option value="${a}">${a}</option>`).join('');
+    if (asesores.includes(valorActual)) select.value = valorActual;
+}
+
+// ── FILTRAR COLUMNAS — igual que historialPedidos.js ─────────────
+function filtrarColumnas(reiniciarPagina = false) {
+    if (reiniciarPagina) paginaActual = 1;
+    const npedido   = document.getElementById('cf-npedido').value.toLowerCase();
+    const fecha     = document.getElementById('cf-fecha').value.toLowerCase();
+    const telefono  = document.getElementById('cf-telefono').value.toLowerCase();
+    const cliente   = document.getElementById('cf-cliente').value.toLowerCase();
+    const direccion = document.getElementById('cf-direccion').value.toLowerCase();
+    const canal     = document.getElementById('cf-canal').value.toLowerCase();
+    const pago      = document.getElementById('cf-pago').value.toLowerCase();
+    const asesor    = document.getElementById('cf-asesor').value.toLowerCase();
+    const estado    = document.getElementById('cf-estado').value.toLowerCase();
+    const obs       = document.getElementById('cf-obs').value.toLowerCase();
+
+    const filtrados = Object.values(pedidosActuales).filter(p =>
+        (!npedido   || String(p.nPedido ?? '').includes(npedido)) &&
+        (!fecha     || formatFecha(p.fecha).toLowerCase().includes(fecha)) &&
+        (!telefono  || (p.telefono ?? '').toLowerCase().includes(telefono)) &&
+        (!cliente   || (p.nombre   ?? '').toLowerCase().includes(cliente)) &&
+        (!direccion || (p.direccion ?? '').toLowerCase().includes(direccion)) &&
+        (!canal     || (p.canal    ?? '').toLowerCase() === canal) &&
+        (!pago      || (p.pago     ?? '').toLowerCase().includes(pago)) &&
+        (!asesor    || (p.asesor   ?? '').toLowerCase() === asesor) &&
+        (!estado    || (p.estado   ?? '').toLowerCase() === estado) &&
+        (!obs       || (p.obs      ?? '').toLowerCase().includes(obs))
+    );
+
+    renderLista(filtrados);
 }
 
 function renderFila(p) {
-    const estadoClass  = p.estado === 'recibido' ? 'estado-recibido'
-                       : p.estado === 'en preparacion' ? 'estado-preparacion' : 'estado-despachado';
-    const badgeClass   = p.estado === 'recibido' ? 'badge-recibido'
-                       : p.estado === 'en preparacion' ? 'badge-preparacion'  : 'badge-despachado';
-    const badgeLabel   = p.estado === 'recibido' ? '⏳ Recibido'
-                       : p.estado === 'en preparacion' ? 'Preparando'         : 'Despachado';
+    const esRecoger  = p.domicilio?.tipo === 'recoger';
+    const dirDisplay = esRecoger
+        ? `<span style="font-weight:700;">RECOGER</span>`
+        : p.direccion
+            ? p.direccion.substring(0, 25) + (p.direccion.length > 25 ? '…' : '')
+            : '—';
 
-    const esReserva   = p.tipo === 'reserva';
-    const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
-    const sublinea    = esReserva
-        ? infoReserva(p)
-        : esDomicilio
-            ? `📍 ${p.domicilio?.barrio || p.direccion || ''}`
-            : `🏪 Recoge en tienda`;
+    const canalLabel = p.canal === 'whatsapp' ? '📱 WhatsApp'
+                     : p.canal === 'ivr'       ? '📞 IVR'
+                     : p.canal === 'web'        ? '🌐 Web'
+                     : p.canal === 'google'     ? '🌐 Google'
+                     : p.canal ?? '—';
+
+    const obsDisplay = p.obs
+        ? p.obs.substring(0, 30) + (p.obs.length > 30 ? '…' : '')
+        : '—';
 
     return `
-        <div class="order-row ${estadoClass}${esReserva ? ' orden-reserva' : ''}" onclick="abrirModalPedido('${p.id}')">
-            <div class="order-row-info">
-                <div class="order-row-top">
-                    <span class="order-npedido">#${p.nPedido}</span>
-                    <span class="order-cliente">${p.nombre}</span>
-                    ${esReserva ? '<span class="badge-reserva">📅 Reserva</span>' : `<span class="order-estado-badge ${badgeClass}">${badgeLabel}</span>`}
-                </div>
-                <div class="order-row-sub">${sublinea}</div>
-            </div>
-            <span class="order-row-chevron">›</span>
-        </div>`;
+        <tr class="inventory-management__row fila-activa" data-id="${p.id}">
+            <td class="inventory-management__cell">#${p.nPedido ?? '—'}</td>
+            <td class="inventory-management__cell">${formatFecha(p.fecha)}</td>
+            <td class="inventory-management__cell">${p.telefono ?? '—'}</td>
+            <td class="inventory-management__cell">${p.nombre ?? '—'}</td>
+            <td class="inventory-management__cell" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esRecoger ? 'Recoger en tienda' : (p.direccion ?? '')}">${dirDisplay}</td>
+            <td class="inventory-management__cell">${canalLabel}</td>
+            <td class="inventory-management__cell" style="text-transform:capitalize;">${p.pago ?? '—'}</td>
+            <td class="inventory-management__cell" style="text-transform:capitalize;">${p.sede ?? '—'}</td>
+            <td class="inventory-management__cell">${p.asesor ?? '—'}</td>
+            <td class="inventory-management__cell">${badgeEstado(p.estado)}</td>
+            <td class="inventory-management__cell" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.obs ?? ''}">${obsDisplay}</td>
+            <td class="inventory-management__cell" style="font-weight:bold;">${p.total ? '$' + p.total.toLocaleString('es-CO') : '—'}</td>
+        </tr>`;
 }
 
 // ── MODAL DETALLE ─────────────────────────────────────────────────
-window.abrirModalPedido = (id) => {
-    const p = pedidosActuales[id];
-    if (!p) return;
-    pedidoEnModal = id;
-    poblarModal(p);
-    document.getElementById('modal-pedido').style.display = 'flex';
-};
 
 function infoReserva(p) {
     const partes = [];
@@ -302,58 +440,62 @@ function infoReserva(p) {
 }
 
 function poblarModal(p) {
-    const esReserva   = p.tipo === 'reserva';
-    const esDomicilio = !esReserva && p.domicilio?.tipo !== 'recoger';
+    const esDomicilio = p.domicilio?.tipo !== 'recoger';
 
-    document.getElementById('mp-npedido').textContent = `#${p.nPedido}`;
-    document.getElementById('mp-cliente').textContent = p.nombre;
-    document.getElementById('mp-tel').textContent     = `📞 ${p.telefono}`;
+    // Header: N° pedido + fecha/hora
+    document.getElementById('modal-npedido').textContent = `#${p.nPedido}`;
+    if (p.fecha) {
+        const _d = new Date(p.fecha);
+        const _fechaPart = new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(_d);
+        const _horaPart  = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true }).format(_d);
+        document.getElementById('modal-fecha-header').innerHTML = `${_fechaPart} <strong>${_horaPart}</strong>`;
+    }
 
-    // Entrega / info reserva
-    if (esReserva) {
-        const fechaFmt = p.fechaReserva ? _formatFechaReservaLocal(p.fechaReserva) : '—';
-        const pers     = p.cantidadPersonas;
-        document.getElementById('mp-entrega').innerHTML =
-            `<div class="reserva-detail-card">` +
-            `<div class="reserva-detail-row"><span class="reserva-detail-icon">📅</span>${fechaFmt}</div>` +
-            (p.horaReserva ? `<div class="reserva-detail-row"><span class="reserva-detail-icon">🕐</span>${p.horaReserva}</div>` : '') +
-            (pers ? `<div class="reserva-detail-row reserva-detail-pers"><span class="reserva-detail-icon">👥</span><strong>${pers} persona${pers !== 1 ? 's' : ''}</strong></div>` : '') +
-            `</div>`;
+    // Cliente
+    document.getElementById('modal-cliente').textContent = p.nombre ?? '—';
+
+    // Meta: teléfono · sede · asesor + pago + canal
+    const canalLabel = badgeCanal(p.canal);
+    document.getElementById('modal-meta').innerHTML =
+        `${p.telefono ?? '—'} &nbsp;·&nbsp; 🏬 ${p.sede ?? '—'} &nbsp;·&nbsp; 👤 ${p.asesor ?? '—'}` +
+        `<br><small>Pago: ${p.pago ?? '—'} &nbsp;·&nbsp; ${canalLabel}</small>`;
+
+    // Entrega
+    document.getElementById('modal-entrega').innerHTML = esDomicilio
+        ? `📍 ${p.direccion ?? ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
+        : `🏪 Recoge en tienda`;
+
+    // Productos
+    document.getElementById('modal-productos').innerHTML =
+        (p.productos || [])
+        .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
+        .map(prod => `<li><strong>${prod.qty || 1}×</strong> ${prod.nombre}${prod.obs ? ` <span style="color:#888;font-size:0.85em;">— ${prod.obs}</span>` : ''}</li>`)
+        .join('');
+
+    // Totals
+    document.getElementById('modal-totals-box').style.display = '';
+    document.getElementById('modal-total').textContent = formatPrecio(p.total || 0);
+    const domRow = document.getElementById('modal-domicilio-row');
+    if (esDomicilio && p.domicilio?.valor) {
+        domRow.style.display = 'flex';
+        document.getElementById('modal-domicilio').textContent = formatPrecio(p.domicilio.valor);
     } else {
-        document.getElementById('mp-entrega').textContent = esDomicilio
-            ? `📍 ${p.direccion || ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
-            : `🏪 Recoge en tienda`;
+        domRow.style.display = 'none';
     }
+    document.getElementById('modal-total-final').textContent = formatPrecio((p.total || 0) + (esDomicilio ? (p.domicilio?.valor || 0) : 0));
 
-    // Mostrar/ocultar sección productos y totales
-    const dNone = esReserva ? 'none' : '';
-    document.querySelector('.mpedido-productos-title').style.display = dNone;
-    document.getElementById('mp-productos').style.display            = dNone;
-    document.querySelector('.mpedido-totals').style.display          = dNone;
-    document.querySelector('.mpedido-sep').style.display             = dNone;
-
-    if (!esReserva) {
-        document.getElementById('mp-productos').innerHTML =
-            (p.productos || [])
-            .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
-            .map(prod => `<li><strong>${prod.qty || 1}×</strong> ${prod.nombre}</li>`)
-            .join('');
-        document.getElementById('mp-total').textContent    = `$${(p.total || 0).toLocaleString()}`;
-        document.getElementById('mp-domicilio').textContent =
-            esDomicilio && p.domicilio?.valor ? `+ Dom $${p.domicilio.valor.toLocaleString()}` : '';
-    }
-
-    document.getElementById('mp-obs').innerHTML =
+    // Obs
+    document.getElementById('modal-obs').innerHTML =
         (p.acompanamientos ? `<div class="mpedido-obs">🥗 <strong>Acompañamientos:</strong> ${p.acompanamientos}</div>` : '') +
         (p.obs ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : '');
 
-    document.getElementById('mp-stepper').innerHTML = renderStepper(p);
+    // Stepper
+    document.getElementById('modal-stepper').innerHTML = renderStepper(p);
 
-    const puedeCancel = esReserva
-        ? ['recibido', 'en preparacion'].includes(p.estado)
-        : p.estado === 'en preparacion';
-    document.getElementById('mp-cancel-area').innerHTML = puedeCancel
-        ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar reserva</button>`
+    // Cancelar
+    const puedeCancel = p.estado === 'en preparacion';
+    document.getElementById('modal-cancel-area').innerHTML = puedeCancel
+        ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`
         : '';
 }
 
@@ -362,7 +504,51 @@ function cerrarModalPedido() {
     document.getElementById('modal-pedido').style.display = 'none';
 }
 
-document.getElementById('btn-cerrar-pedido').addEventListener('click', cerrarModalPedido);
+// ── PANEL LATERAL — igual que historialPedidos.js ─────────────────
+function abrirPanel() {
+    document.getElementById('filtros-panel').classList.add('open');
+    document.getElementById('filtros-overlay').classList.add('open');
+}
+function cerrarPanel() {
+    document.getElementById('filtros-panel').classList.remove('open');
+    document.getElementById('filtros-overlay').classList.remove('open');
+}
+
+document.getElementById('btn-abrir-panel').addEventListener('click', abrirPanel);
+document.getElementById('btn-cerrar-panel').addEventListener('click', cerrarPanel);
+document.getElementById('filtros-overlay').addEventListener('click', cerrarPanel);
+
+document.getElementById('btn-actualizar').addEventListener('click', () => cargarPedidosActivos());
+
+document.getElementById('btn-filtrar').addEventListener('click', () => {
+    const desde  = document.getElementById('filtro-desde').value;
+    const hasta  = document.getElementById('filtro-hasta').value;
+    const estado = document.getElementById('filtro-estado-panel').value;
+    filtrosActivos = { desde: desde || hoyLocal(), hasta: hasta || hoyLocal(), estado };
+    cargarPedidosActivos();
+    cerrarPanel();
+});
+
+document.getElementById('btn-limpiar').addEventListener('click', () => {
+    const hoy = hoyLocal();
+    document.getElementById('filtro-desde').value         = hoy;
+    document.getElementById('filtro-hasta').value         = hoy;
+    document.getElementById('filtro-estado-panel').value  = '';
+    filtrosActivos = {};
+    cargarPedidosActivos();
+    cerrarPanel();
+});
+
+// ── EVENTOS FILTROS COLUMNA — igual que historialPedidos.js ──────
+['cf-npedido','cf-fecha','cf-telefono','cf-cliente','cf-direccion',
+ 'cf-canal','cf-pago','cf-asesor','cf-estado','cf-obs'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => filtrarColumnas(true));
+});
+
+// Recalcular página al redimensionar ventana
+window.addEventListener('resize', () => filtrarColumnas());
+
+document.getElementById('cerrar-detalle').addEventListener('click', cerrarModalPedido);
 
 document.getElementById('modal-pedido').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-pedido')) cerrarModalPedido();

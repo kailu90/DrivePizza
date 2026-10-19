@@ -415,6 +415,41 @@
 }
 .btn-cancelar-pedido:hover { background: #e74c3c; color: white; }
 
+/* ── FONT SIZE — igualar historialPedidos (1.4rem = 14px con base 62.5%) */
+#contenido-principal {
+    font-size: 1.4rem;
+}
+
+/* ── TABLA DE PEDIDOS ACTIVOS ─────────────────────────────────── */
+.ped-table-card {
+    margin: 0 20px 32px;
+    overflow-x: auto;
+}
+
+/* Forzar tabla sin ancho fijo para que el scroll horizontal funcione */
+.ped-table-card .inventory-management__table {
+    table-layout: auto !important;
+    min-width: 900px;
+}
+
+/* Fila de filtros: siempre visible, misma altura mínima */
+.ped-table-card .filtros-columna th {
+    padding: 4px 6px !important;
+    min-width: 60px;
+}
+
+.ped-table-card .col-filter {
+    font-size: 1.1rem !important;
+    padding: 4px 6px !important;
+    min-width: 50px;
+    width: 100%;
+}
+
+/* Reservas: sin fondo morado (igual que fila normal) */
+#contenido-principal .fila-reserva {
+    background: #fffbf5 !important;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
 

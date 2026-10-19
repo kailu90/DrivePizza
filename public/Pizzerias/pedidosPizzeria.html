@@ -7,12 +7,43 @@
     <title>Pedidos en Curso - DrivePizza</title>
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
     <link rel="stylesheet" href="../CallCenter/pedidosCallCenter.css">
     <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
 </head>
 <body>
 
 <div id="skeleton" class="sk-page"></div>
+
+<!-- Panel lateral de filtros — mismo que historialPedidos -->
+<div id="filtros-overlay" class="filtros-overlay"></div>
+<aside id="filtros-panel" class="filtros-panel">
+    <div class="filtros-panel__header">
+        <span>Filtros</span>
+        <button id="btn-cerrar-panel" class="btn-cerrar-panel">&times;</button>
+    </div>
+    <div class="filtros-panel__body">
+        <div class="filtro-grupo">
+            <label>Desde</label>
+            <input type="date" id="filtro-desde">
+        </div>
+        <div class="filtro-grupo">
+            <label>Hasta</label>
+            <input type="date" id="filtro-hasta">
+        </div>
+        <div class="filtro-grupo">
+            <label>Estado</label>
+            <select id="filtro-estado-panel">
+                <option value="">Todos activos</option>
+                <option value="recibido">Recibido</option>
+                <option value="en preparacion">En preparación</option>
+                <option value="despachado">Despachado</option>
+            </select>
+        </div>
+        <button class="btn-filtrar" id="btn-filtrar">Filtrar</button>
+        <button class="btn-limpiar" id="btn-limpiar">Limpiar</button>
+    </div>
+</aside>
 
 <div id="contenido-principal" style="display:none;">
 
@@ -44,40 +75,120 @@
         </div>
     </div>
 
-    <div class="orders-list" id="orders-list"></div>
-
-    <div class="empty-state" id="empty-state" style="display:none;">
-        <div class="empty-icon">🍕</div>
-        <p>Sin pedidos activos por ahora</p>
+    <div class="historial__topbar" style="padding: 0 20px 10px;">
+        <div class="topbar-actions">
+            <button class="btn-filtros-toggle" id="btn-abrir-panel">⚙ Filtros</button>
+            <button class="btn-actualizar" id="btn-actualizar">↺ Actualizar</button>
+        </div>
     </div>
+
+    <div class="ped-table-card inventory-management">
+        <table class="inventory-management__table">
+            <thead class="inventory-management__thead">
+                <tr>
+                    <th class="inventory-management__heading">N°</th>
+                    <th class="inventory-management__heading">Fecha / Hora</th>
+                    <th class="inventory-management__heading">Teléfono</th>
+                    <th class="inventory-management__heading">Cliente</th>
+                    <th class="inventory-management__heading">Dirección</th>
+                    <th class="inventory-management__heading">Canal</th>
+                    <th class="inventory-management__heading">Pago</th>
+                    <th class="inventory-management__heading">Sede</th>
+                    <th class="inventory-management__heading">Asesor</th>
+                    <th class="inventory-management__heading">Estado</th>
+                    <th class="inventory-management__heading">Obs.</th>
+                    <th class="inventory-management__heading">Total</th>
+                </tr>
+                <tr class="filtros-columna">
+                    <th><input type="text" class="col-filter" id="cf-npedido" placeholder="N° pedido"></th>
+                    <th><input type="text" class="col-filter" id="cf-fecha" placeholder="dd/mm/aa"></th>
+                    <th><input type="text" class="col-filter" id="cf-telefono" placeholder="Teléfono"></th>
+                    <th><input type="text" class="col-filter" id="cf-cliente" placeholder="Nombre cliente"></th>
+                    <th><input type="text" class="col-filter" id="cf-direccion" placeholder="Dirección"></th>
+                    <th>
+                        <select class="col-filter" id="cf-canal">
+                            <option value="">Todos</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="ivr">IVR</option>
+                            <option value="web">Web</option>
+                        </select>
+                    </th>
+                    <th>
+                        <select class="col-filter" id="cf-pago">
+                            <option value="">Todos</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="datafono">Datáfono</option>
+                        </select>
+                    </th>
+                    <th></th>
+                    <th>
+                        <select class="col-filter" id="cf-asesor">
+                            <option value="">Todos</option>
+                        </select>
+                    </th>
+                    <th>
+                        <select class="col-filter" id="cf-estado">
+                            <option value="">Todos</option>
+                            <option value="recibido">Recibido</option>
+                            <option value="en preparacion">En preparación</option>
+                            <option value="despachado">Despachado</option>
+                        </select>
+                    </th>
+                    <th><input type="text" class="col-filter" id="cf-obs" placeholder="Obs."></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">
+            <div class="empty-icon">🍕</div>
+            <p>Sin pedidos activos por ahora</p>
+        </div>
+    </div>
+
+    <div id="paginacion" class="paginacion"></div>
 
 </div><!-- /contenido-principal -->
 
-<!-- Modal detalle del pedido -->
+<!-- Modal detalle del pedido — misma estructura que historialPedidos.html -->
 <div id="modal-pedido" class="modal-overlay" style="display:none;">
     <div class="modal-pedido-content">
 
         <div class="mpedido-header">
-            <span class="mpedido-npedido" id="mp-npedido"></span>
-            <button class="mpedido-close" id="btn-cerrar-pedido">✕</button>
+            <div class="mpedido-header-left">
+                <span class="mpedido-npedido" id="modal-npedido"></span>
+                <span id="modal-fecha-header"></span>
+            </div>
+            <button class="mpedido-close" id="cerrar-detalle">&times;</button>
         </div>
 
         <div class="mpedido-body">
-            <div class="mpedido-cliente" id="mp-cliente"></div>
-            <div class="mpedido-tel" id="mp-tel"></div>
-            <div class="mpedido-entrega" id="mp-entrega"></div>
+            <div class="mpedido-cliente" id="modal-cliente"></div>
+            <div class="mpedido-meta" id="modal-meta"></div>
+            <div class="mpedido-entrega" id="modal-entrega"></div>
             <hr class="mpedido-sep">
             <div class="mpedido-productos-title">Productos</div>
-            <ul class="mpedido-productos" id="mp-productos"></ul>
-            <div class="mpedido-totals">
-                <span class="mpedido-total" id="mp-total"></span>
-                <span class="mpedido-domicilio" id="mp-domicilio"></span>
+            <ul class="mpedido-productos" id="modal-productos"></ul>
+            <div class="mpedido-totals-box" id="modal-totals-box" style="display:none;">
+                <div style="display:flex; justify-content:space-between; font-size:1.3rem; color:#555; margin-bottom:4px;">
+                    <span>Productos:</span>
+                    <span id="modal-total"></span>
+                </div>
+                <div id="modal-domicilio-row" style="display:none; justify-content:space-between; font-size:1.3rem; color:#555; margin-bottom:6px;">
+                    <span>Domicilio:</span>
+                    <span id="modal-domicilio"></span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.5rem; border-top:1px solid #ddd; padding-top:6px;">
+                    <span>TOTAL:</span>
+                    <span id="modal-total-final" style="color:#e67e22;"></span>
+                </div>
             </div>
-            <div id="mp-obs"></div>
+            <div id="modal-obs"></div>
         </div>
 
-        <div id="mp-stepper"></div>
-        <div class="mpedido-cancel-area" id="mp-cancel-area"></div>
+        <div id="modal-stepper"></div>
+        <div class="mpedido-cancel-area" id="modal-cancel-area"></div>
 
     </div>
 </div>
