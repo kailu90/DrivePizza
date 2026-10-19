@@ -442,6 +442,18 @@ function infoReserva(p) {
 function poblarModal(p) {
     const esDomicilio = p.domicilio?.tipo !== 'recoger';
 
+    // Botón imprimir en header
+    document.getElementById('modal-print-btn').innerHTML =
+        `<button class="btn-imprimir-header with-tooltip" data-tooltip="Reimprimir comanda" onclick="imprimirComanda('${p.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+        </button>`;
+
     // Header: N° pedido + fecha/hora
     document.getElementById('modal-npedido').textContent = `#${p.nPedido}`;
     if (p.fecha) {
@@ -503,6 +515,35 @@ function cerrarModalPedido() {
     pedidoEnModal = null;
     document.getElementById('modal-pedido').style.display = 'none';
 }
+
+// ── REIMPRIMIR COMANDA ────────────────────────────────────────────
+function _toastReimpresion(msg, color = '#2980b9') {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.2);pointer-events:none;white-space:nowrap;`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+window.imprimirComanda = async (id) => {
+    const p = pedidosActuales[id];
+    if (!p) return;
+    const btn = document.querySelector('#modal-print-btn button');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+
+    const { error } = await supabase
+        .from('pedidos_callcenter')
+        .update({ reprint_requested: true })
+        .eq('id', id);
+
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+
+    if (error) {
+        alert('Error al enviar solicitud. Intenta de nuevo.');
+    } else {
+        _toastReimpresion(`Reimprimir #${p.nPedido} — solicitud enviada`);
+    }
+};
 
 // ── PANEL LATERAL — igual que historialPedidos.js ─────────────────
 function abrirPanel() {
