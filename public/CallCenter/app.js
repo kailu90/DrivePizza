@@ -379,7 +379,7 @@ function renderProducts(categoria) {
             return;
         }
         // ── BUCARAMANGA ─────────────────────────────────────────────────────
-        const esMartes = new Date().getDay() === 2;
+        const esMartes = true;
         const _hoyB = new Date();
         const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
         grid.innerHTML = `
