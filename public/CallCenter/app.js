@@ -28,7 +28,7 @@ function _renderAcomps(ciudad) {
 const SEDES_PROMO_ESPECIAL  = new Set(['acropolis', 'megamall', 'unico']);
 // Sedes donde aplica la promo 2×1 Cartago
 const SEDES_PROMO_2X1_CTG   = new Set(['nuestro']);
-// Sedes donde aplica la promo Pizzeta Carbonara + Gaseosa 19.9K
+// Sedes donde aplica la promo Duelo de Sabores 19.9K
 const SEDES_PROMO_PIZZETA_CARB = new Set(['unico']);
 // Sedes donde aplican pizzetas (en vez de porción triangular)
 const SEDES_PIZZETA      = new Set(['megamall', 'acropolis', 'piedecuesta', 'unico']);
@@ -175,7 +175,7 @@ function _aplicarFiltroPizzetaCarbUnico() {
             const aviso = document.createElement('p');
             aviso.id = 'sede-restriccion-pizzeta-carb-aviso';
             aviso.className = 'sede-restriccion-aviso';
-            aviso.textContent = '⚠️ Promo Pizzeta Carbonara 19.9K aplica solo en sede Único.';
+            aviso.textContent = '⚠️ Promo Duelo de Sabores 19.9K aplica solo en sede Único.';
             toggle.insertAdjacentElement('afterend', aviso);
         }
     }
@@ -442,7 +442,7 @@ function renderProducts(categoria) {
             <div class="card card-promo" onclick="abrirPromoPizzetaCarb()">
                 <div class="promo-badge">PROMO</div>
                 <h4>19.9K</h4>
-                <p class="product-desc">Pizzeta Carbonara<br>+ Gaseosa 250ml</p>
+                <p class="product-desc">Duelo de Sabores<br>Pizzeta Carbonara + Gaseosa</p>
                 <p class="promo-elegibles">Solo sede Único</p>
             </div>
         `;
@@ -1173,7 +1173,7 @@ function actualizarComanda() {
             : item.esPromo2x1Ctg
             ? `<span class="promo-tag">PROMO 2×1</span>`
             : item.esPromoPizzetaCarb
-            ? `<span class="promo-tag">PROMO 19.9K</span>`
+            ? `<span class="promo-tag">DUELO DE SABORES</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
             ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
@@ -2129,7 +2129,7 @@ async function procesarPedidoFinal() {
         const label = 'PROMO BERRIONDA 35K';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoPizzetaCarb)) {
-        const label = 'PROMO PIZZETA CARBONARA 19.9K - SOLO ÚNICO';
+        const label = 'PROMO DUELO DE SABORES 19.9K - SOLO ÚNICO';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     }
 
@@ -3315,18 +3315,43 @@ window.abrirPromoBerrionda = function () {
     actualizarComanda();
 };
 
-// ── PROMO PIZZETA CARBONARA + GASEOSA 19.9K (Solo sede Único) ─────────────
+// ── PROMO DUELO DE SABORES 19.9K (Solo sede Único) ────────────────────────
 
 window.abrirPromoPizzetaCarb = function () {
+    const modal        = document.getElementById('modal-seleccion');
+    const titulo       = document.getElementById('modal-titulo');
+    const gridOpciones = document.getElementById('opciones-tamano');
+
+    modal.querySelector('.modal-content').classList.remove('modal-sabor2');
+    titulo.innerHTML = `Duelo de Sabores · $19.900<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Pizzeta Carbonara + Gaseosa 250ml · Solo sede Único</small>`;
+    gridOpciones.className = 'opciones-grid';
+
+    // Leer sedes visibles del toggle principal y mostrarlas, solo Único habilitado
+    const sedesBtns = [...document.querySelectorAll('.sede-toggle .sede-btn')]
+        .filter(b => b.style.display !== 'none');
+
+    gridOpciones.innerHTML = sedesBtns.length
+        ? sedesBtns.map(b => {
+            const esUnico = b.dataset.sede === 'unico';
+            return `<button class="btn-tamano" ${esUnico ? 'onclick="_confirmarDueloSabores()"' : 'disabled'}
+                        style="${esUnico ? '' : 'opacity:0.3;cursor:not-allowed;'}">${b.textContent.trim()}</button>`;
+          }).join('')
+        : `<button class="btn-tamano" onclick="_confirmarDueloSabores()">Único</button>`;
+
+    modal.style.display = 'flex';
+};
+
+window._confirmarDueloSabores = function () {
     carrito.push({
         id: Date.now(),
-        nombre: 'Pizzeta Carbonara + Gaseosa 250ml',
+        nombre: 'Duelo de Sabores - Pizzeta Carbonara + Gaseosa 250ml',
         precio: 19900,
         qty: 1,
         esPromoPizzetaCarb: true,
     });
-    localStorage.setItem('dp_promoPizzetaCarb_obs', 'PROMO PIZZETA CARBONARA 19.9K - SOLO ÚNICO');
+    localStorage.setItem('dp_promoPizzetaCarb_obs', 'PROMO DUELO DE SABORES 19.9K - SOLO ÚNICO');
     _aplicarFiltroPizzetaCarbUnico();
+    cerrarModal();
     actualizarComanda();
 };
 
