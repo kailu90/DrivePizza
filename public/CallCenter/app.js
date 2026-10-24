@@ -28,6 +28,8 @@ function _renderAcomps(ciudad) {
 const SEDES_PROMO_ESPECIAL  = new Set(['acropolis', 'megamall', 'unico']);
 // Sedes donde aplica la promo 2×1 Cartago
 const SEDES_PROMO_2X1_CTG   = new Set(['nuestro']);
+// Sedes donde aplica la promo Pizzeta Carbonara + Gaseosa 19.9K
+const SEDES_PROMO_PIZZETA_CARB = new Set(['unico']);
 // Sedes donde aplican pizzetas (en vez de porción triangular)
 const SEDES_PIZZETA      = new Set(['megamall', 'acropolis', 'piedecuesta', 'unico']);
 const SEDES_PORCION_PIZZA = new Set(['cañaveral', 'cabecera', 'prado', 'nuestro']);
@@ -59,7 +61,7 @@ function _resolverOpciones(p, base, ciudad, sede) {
 }
 
 function _limpiarFiltroSedes() {
-    const tienePromoRestringida = carrito.some(i => i.esPromo65k);
+    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb);
     if (tienePromoRestringida) return;
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         btn.disabled = false;
@@ -159,6 +161,32 @@ function _limpiarFiltro2x1Ctg() {
     _limpiarFiltroSedes();
 }
 
+function _aplicarFiltroPizzetaCarbUnico() {
+    const sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
+    if (sedeActiva && !SEDES_PROMO_PIZZETA_CARB.has(sedeActiva.dataset.sede)) {
+        sedeActiva.classList.remove('active');
+    }
+    document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
+        if (!SEDES_PROMO_PIZZETA_CARB.has(btn.dataset.sede)) btn.disabled = true;
+    });
+    if (!document.getElementById('sede-restriccion-pizzeta-carb-aviso')) {
+        const toggle = document.querySelector('.sede-toggle');
+        if (toggle) {
+            const aviso = document.createElement('p');
+            aviso.id = 'sede-restriccion-pizzeta-carb-aviso';
+            aviso.className = 'sede-restriccion-aviso';
+            aviso.textContent = '⚠️ Promo Pizzeta Carbonara 19.9K aplica solo en sede Único.';
+            toggle.insertAdjacentElement('afterend', aviso);
+        }
+    }
+}
+
+function _limpiarFiltroPizzetaCarbUnico() {
+    if (carrito.some(i => i.esPromoPizzetaCarb)) return;
+    document.getElementById('sede-restriccion-pizzeta-carb-aviso')?.remove();
+    _limpiarFiltroSedes();
+}
+
 // ── SALA (Jitsi Meet) ─────────────────────────────────────────────────────
 const SALA_ROOM = 'DrivePizzaCallCenter';
 let salaWindow = null;
@@ -237,6 +265,7 @@ function init() {
     localStorage.removeItem('dp_promo2x1Ctg_obs');
     localStorage.removeItem('dp_promoPepperoni_obs');
     localStorage.removeItem('dp_promoKit_obs');
+    localStorage.removeItem('dp_promoPizzetaCarb_obs');
 
     renderCategories();
     crearBuscador();
@@ -379,7 +408,7 @@ function renderProducts(categoria) {
             return;
         }
         // ── BUCARAMANGA ─────────────────────────────────────────────────────
-        const esMartes = true;
+        const esMartes = new Date().getDay() === 2;
         const _hoyB = new Date();
         const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
         grid.innerHTML = `
@@ -409,6 +438,12 @@ function renderProducts(categoria) {
                 <div class="promo-badge">PROMO</div>
                 <h4>25K</h4>
                 <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
+            </div>
+            <div class="card card-promo" onclick="abrirPromoPizzetaCarb()">
+                <div class="promo-badge">PROMO</div>
+                <h4>19.9K</h4>
+                <p class="product-desc">Pizzeta Carbonara<br>+ Gaseosa 250ml</p>
+                <p class="promo-elegibles">Solo sede Único</p>
             </div>
         `;
         return;
@@ -1137,6 +1172,8 @@ function actualizarComanda() {
             ? `<span class="promo-tag">PROMO 35K</span>`
             : item.esPromo2x1Ctg
             ? `<span class="promo-tag">PROMO 2×1</span>`
+            : item.esPromoPizzetaCarb
+            ? `<span class="promo-tag">PROMO 19.9K</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
             ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
@@ -1153,7 +1190,7 @@ function actualizarComanda() {
                     <div class="item-controls">
                         ${botonAdicion}
                         ${(item.esObsequio3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
-                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg) ? '' : `<div class="qty-control">
+                        ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg || item.esPromoPizzetaCarb) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
                             <button class="btn-qty" onclick="incrementarQty(${item.id})">+</button>
@@ -1384,8 +1421,9 @@ function eliminarItem(id) {
 
     setTimeout(() => {
         carrito = carrito.filter(item => item.id !== id && item.pizzaId !== id);
-        if (!carrito.some(i => i.esPromoPepperoni)) localStorage.removeItem('dp_promoPepperoni_obs');
-        if (!carrito.some(i => i.esPromoKit))       localStorage.removeItem('dp_promoKit_obs');
+        if (!carrito.some(i => i.esPromoPepperoni))    localStorage.removeItem('dp_promoPepperoni_obs');
+        if (!carrito.some(i => i.esPromoKit))           localStorage.removeItem('dp_promoKit_obs');
+        if (!carrito.some(i => i.esPromoPizzetaCarb))   { localStorage.removeItem('dp_promoPizzetaCarb_obs'); _limpiarFiltroPizzetaCarbUnico(); }
         actualizarComanda();
     }, 300);
 }
@@ -1489,13 +1527,24 @@ function abrirCheckout() {
 
 const SEDES_RESERVA = new Set(['cabecera', 'cañaveral', 'piedecuesta']);
 
-// Capacidad máxima de personas por franja horaria (por sede)
-const CAPACIDAD_SLOT_RESERVA = {
-    cabecera:    30,
-    cañaveral:   50,
-    piedecuesta: 30,
-};
+// Capacidad por franja horaria — cargada desde Supabase (tabla sedes.aforo)
 const _CAP_DEFAULT = 30;
+let _aforoSedes = null; // null = no cargado aún
+
+async function _getAforo(sede) {
+    if (!_aforoSedes) {
+        const sb = window._supabase;
+        if (sb) {
+            const { data } = await sb.from('sedes').select('name, aforo');
+            _aforoSedes = Object.fromEntries(
+                (data || []).map(s => [s.name.toLowerCase(), s.aforo ?? _CAP_DEFAULT])
+            );
+        } else {
+            _aforoSedes = {};
+        }
+    }
+    return _aforoSedes[sede?.toLowerCase()] ?? _CAP_DEFAULT;
+}
 
 // Cache de ocupación: key = "sede_fecha" — se invalida al crear una reserva
 const _ocupacionCache = new Map();
@@ -1557,7 +1606,7 @@ function _actualizarInfoDia(sede, fecha, capacidad) {
 async function _refreshHorasReserva() {
     const sede  = document.querySelector('.sede-toggle .sede-btn.active')?.dataset.sede || '';
     const fecha = document.getElementById('fechaReserva')?.value || '';
-    const cap   = CAPACIDAD_SLOT_RESERVA[sede] ?? _CAP_DEFAULT;
+    const cap   = await _getAforo(sede);
     _actualizarInfoDia(sede, fecha, cap);
     if (!sede || !fecha) { renderHorariosReserva({}, cap); return; }
     const ocupacion = await _fetchOcupacionReserva(sede, fecha);
@@ -1760,7 +1809,7 @@ async function procesarReservaFinal() {
     if (!personas || personas < 1) return alert('⚠️ Ingresa la cantidad de personas (mínimo 1).');
 
     // Validar cupo disponible en el slot seleccionado
-    const _cap        = CAPACIDAD_SLOT_RESERVA[sede] ?? _CAP_DEFAULT;
+    const _cap        = await _getAforo(sede);
     const _ocupSlot   = (_ocupacionCache.get(`${sede}_${fecha}`) || {})[hora] || 0;
     const _disponibles = Math.max(0, _cap - _ocupSlot);
     if (personas > _disponibles) {
@@ -2078,6 +2127,9 @@ async function procesarPedidoFinal() {
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromoBerrionda)) {
         const label = 'PROMO BERRIONDA 35K';
+        datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
+    } else if (carrito.some(i => i.esPromoPizzetaCarb)) {
+        const label = 'PROMO PIZZETA CARBONARA 19.9K - SOLO ÚNICO';
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     }
 
@@ -3260,6 +3312,21 @@ window.abrirPromoBerrionda = function () {
         esAdicionable: true,
         tamanoRaw: 'Pequeña',
     });
+    actualizarComanda();
+};
+
+// ── PROMO PIZZETA CARBONARA + GASEOSA 19.9K (Solo sede Único) ─────────────
+
+window.abrirPromoPizzetaCarb = function () {
+    carrito.push({
+        id: Date.now(),
+        nombre: 'Pizzeta Carbonara + Gaseosa 250ml',
+        precio: 19900,
+        qty: 1,
+        esPromoPizzetaCarb: true,
+    });
+    localStorage.setItem('dp_promoPizzetaCarb_obs', 'PROMO PIZZETA CARBONARA 19.9K - SOLO ÚNICO');
+    _aplicarFiltroPizzetaCarbUnico();
     actualizarComanda();
 };
 
