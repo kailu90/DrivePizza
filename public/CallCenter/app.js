@@ -3323,7 +3323,7 @@ window.abrirPromoPizzetaCarb = function () {
     const gridOpciones = document.getElementById('opciones-tamano');
 
     modal.querySelector('.modal-content').classList.remove('modal-sabor2');
-    titulo.innerHTML = `Duelo de Sabores · $19.900<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Pizzeta Carbonara + Gaseosa 250ml · Solo sede Único</small>`;
+    titulo.innerHTML = `Duelo de Sabores · $19.900<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Pizzeta Carbonara + Gaseosa 400ml · Solo sede Único</small>`;
     gridOpciones.className = 'opciones-grid';
 
     // Leer sedes visibles del toggle principal y mostrarlas, solo Único habilitado
@@ -3344,7 +3344,7 @@ window.abrirPromoPizzetaCarb = function () {
 window._confirmarDueloSabores = function () {
     carrito.push({
         id: Date.now(),
-        nombre: 'Duelo de Sabores - Pizzeta Carbonara + Gaseosa 250ml',
+        nombre: 'Duelo de Sabores - Pizzeta Carbonara + Gaseosa 400ml',
         precio: 19900,
         qty: 1,
         esPromoPizzetaCarb: true,
