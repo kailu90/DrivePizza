@@ -3318,30 +3318,6 @@ window.abrirPromoBerrionda = function () {
 // ── PROMO DUELO DE SABORES 19.9K (Solo sede Único) ────────────────────────
 
 window.abrirPromoPizzetaCarb = function () {
-    const modal        = document.getElementById('modal-seleccion');
-    const titulo       = document.getElementById('modal-titulo');
-    const gridOpciones = document.getElementById('opciones-tamano');
-
-    modal.querySelector('.modal-content').classList.remove('modal-sabor2');
-    titulo.innerHTML = `Duelo de Sabores · $19.900<br><small style="font-size:1.3rem;color:#666;font-weight:normal;">Pizzeta Carbonara + Gaseosa 400ml · Solo sede Único</small>`;
-    gridOpciones.className = 'opciones-grid';
-
-    // Leer sedes visibles del toggle principal y mostrarlas, solo Único habilitado
-    const sedesBtns = [...document.querySelectorAll('.sede-toggle .sede-btn')]
-        .filter(b => b.style.display !== 'none');
-
-    gridOpciones.innerHTML = sedesBtns.length
-        ? sedesBtns.map(b => {
-            const esUnico = b.dataset.sede === 'unico';
-            return `<button class="btn-tamano" ${esUnico ? 'onclick="_confirmarDueloSabores()"' : 'disabled'}
-                        style="${esUnico ? '' : 'opacity:0.3;cursor:not-allowed;'}">${b.textContent.trim()}</button>`;
-          }).join('')
-        : `<button class="btn-tamano" onclick="_confirmarDueloSabores()">Único</button>`;
-
-    modal.style.display = 'flex';
-};
-
-window._confirmarDueloSabores = function () {
     carrito.push({
         id: Date.now(),
         nombre: 'Duelo de Sabores - Pizzeta Carbonara + Gaseosa 400ml',
@@ -3351,7 +3327,6 @@ window._confirmarDueloSabores = function () {
     });
     localStorage.setItem('dp_promoPizzetaCarb_obs', 'PROMO DUELO DE SABORES 19.9K - SOLO ÚNICO');
     _aplicarFiltroPizzetaCarbUnico();
-    cerrarModal();
     actualizarComanda();
 };
 
