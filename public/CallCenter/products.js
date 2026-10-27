@@ -89,8 +89,8 @@ const preciosBebidas = {
     // Jugos Naturales
     jugoEnAgua:         { "Mango": 9000 , "Fresa": 9000 , "Mora": 9000 , "Mandarina": 9000 , "naranja": 9000 , "lulo": 9000 , "Guanabana": 9000 , "Maracuyá": 9000 },
     jugoEnLeche:        { "Mango": 10000 , "Fresa": 10000 , "Mora": 10000  , "Mandarina": 10000 , "naranja": 10000 , "lulo": 10000 , "Guanabana": 10000 , "Maracuyá": 10000 },
-    granizada:          { "Limon": 9000 , "Maracuyá": 10000 , "Naranja": 9000  , "Mora": 9000 , "lulo": 9000 , "Guanabana": 9000 , "mandarina": 9000 },
-    granizadaEspecial:  { "MaracuMango": 10000 , "Frutos Rojos": 10000 , "Fresa": 10000  , "Frutos Blancos": 10000 , "Frutos Amarillos": 10000 },
+    granizada:          { "Limon": 9000 , "Naranja": 9000  , "Mora": 9000 , "lulo": 9000 , "Guanabana": 9000 , "mandarina": 9000 },
+    granizadaEspecial:  { "MaracuMango": 10000 , "Maracuyá": 10000 , "Frutos Rojos": 10000 , "Fresa": 10000  , "Frutos Blancos": 10000 , "Frutos Amarillos": 10000 },
 
     // Limonadas
     limonada:    { "Natural": 9000 , "Cerezada": 10000 , "Coco": 11000 , "Hierbabuena": 9000 , "frutos Rojos": 11000 },   
@@ -351,6 +351,6 @@ const MENU_EXCLUIR = {
     },
     cartago: {
         categorias: [],
-        productos:  ['Entrada de 7 Panes de Ajo', 'Entrada de 7 Panes Dulces', 'Salsa tártara']
+        productos:  ['Entrada de 7 Panes de Ajo', 'Entrada de 7 Panes Dulces', 'Salsa tártara', 'Granizada', 'Granizada Especial', 'Pizzeta Venecia', 'Cerveza 3 Cordilleras']
     }
 };
