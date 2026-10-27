@@ -874,7 +874,7 @@ function abrirSeleccion(producto) {
                 const tam = btn.dataset.tam;
                 const esPizzeta = tam === 'Pizzeta';
                 const prefix   = esPizzeta ? 'Pizzeta' : 'Pizza';
-                const tamRaw   = esPizzeta ? 'Porción' : tam;
+                const tamRaw   = esPizzeta ? 'Pizzeta' : tam;
                 confirmarAgregar(`${prefix} ${producto.nombre}`, esPizzeta ? '' : tam, Number(btn.dataset.pre),
                     { esPizza: true, esAdicionable: true, tamanoRaw: tamRaw,
                       ...(esPizzeta && { esPizzeta: true }),
@@ -2251,6 +2251,8 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
     const esCalzoneGrande = nombreLower.includes('calzone') && itemPadre.nombre.includes('(Grande)');
     const esStromboli     = nombreLower.includes('stromboli');
     const multiplicador   = (esCalzoneGrande || esStromboli) ? 2 : 1;
+    const _ciudadAdic = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const _sedeAdic   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
 
     const adiciones = (menuData["Adiciones"] || []).filter(a => a.opciones[tamanoRaw] !== undefined);
     const bordes    = itemPadre.esEstofada
@@ -2272,7 +2274,8 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
         }
 
         const renderBtn = (prod, esBorde) => {
-            const precio  = prod.opciones[tamanoRaw] * multiplicador;
+            const opEfectivas = _resolverOpciones(prod, prod.opciones, _ciudadAdic, _sedeAdic);
+            const precio  = opEfectivas[tamanoRaw] * multiplicador;
             const conteo  = _conteo(prod.nombre);
             const claseEx = esBorde ? ' btn-adicion--borde' : '';
             return `<button class="btn-adicion${claseEx}${conteo > 0 ? ' adicion-agregada' : ''}"
