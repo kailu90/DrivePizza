@@ -26,12 +26,11 @@ const MASAS_LABEL = { '160': 'MASA x 140gr', '2': 'MASA x 350gr', '13': 'MASA x 
 const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
 
 // ── Carnes ─────────────────────────────────────────────────────────────────
-// 55=Carne para moler · 56=Carne para desmechar · 58=Carne para hamburguesa · 59=Pechuga Pollo
+// 55=Carne para moler · 56=Carne para desmechar · 58=Carne para hamburguesa
 const CARNES_CONFIG = [
     { label: 'Carne para moler (Murillo)',   id: '55', thLabel: 'Moler<br><small>(Murillo)</small>'   },
     { label: 'Carne para desmechar (Aleta)', id: '56', thLabel: 'Desmechar<br><small>(Aleta)</small>' },
     { label: 'Carne para hamburguesa',       id: '58', thLabel: 'Hambur&shy;guesa'                    },
-    { label: 'Pechuga Pollo x 1000 Gr',     id: '59', thLabel: 'Pechuga<br><small>1000 Gr</small>'   },
 ];
 const CARNES_IDS = new Set(CARNES_CONFIG.map(c => c.id));
 
