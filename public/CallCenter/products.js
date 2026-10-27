@@ -119,7 +119,13 @@ const preciosEntradas = {
     salsaMiCuate:   { "Unidad": 4000 },
     salsaNapolitana:{ "Unidad": 4000 }
 };
-const preciosBordes= { 
+const preciosAdicionesCartago = {
+    basicas:    { ...preciosAdiciones.basicas,    "Pizzeta": 4000 },
+    intermedia: { ...preciosAdiciones.intermedia, "Pizzeta": 5000 },
+    superior:   { ...preciosAdiciones.superior,   "Pizzeta": 6000 },
+    gourmet:    { ...preciosAdiciones.gourmet,    "Pizzeta": 7000 },
+};
+const preciosBordes= {
     "Pequeña": 14000, 
     "Mediana": 18000, 
     "Grande": 21000, 
@@ -234,25 +240,25 @@ const menuData = {
     ],
     //*****Variedades de los sabores de las Adiciones********/
      "Adiciones": [
-        { nombre: "Adición Tomate", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Cebolla", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Pimentón", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Maduro", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Jalapeños", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Pimienta Roja / Pepperonchino", opciones: preciosAdiciones.basicas },
-        { nombre: "Adición Jamón", opciones: preciosAdiciones.intermedia },
-        { nombre: "Adición Ranchera", opciones: preciosAdiciones.intermedia },
-        { nombre: "Adición Maiz", opciones: preciosAdiciones.intermedia },
-        { nombre: "Adición Piña", opciones: preciosAdiciones.intermedia },
-        { nombre: "Adición Champiñon", opciones: preciosAdiciones.intermedia},
-        { nombre: "Adición Salami", opciones: preciosAdiciones.intermedia},
-        { nombre: "Adición Tocineta", opciones: preciosAdiciones.superior },
-        { nombre: "Adición Queso", opciones: preciosAdiciones.superior},
-        { nombre: "Adición Pollo", opciones: preciosAdiciones.superior},
-        { nombre: "Adición Pepperoni", opciones: preciosAdiciones.superior},
-        { nombre: "Adición Carne", opciones: preciosAdiciones.superior},
-        { nombre: "Adición Chorizo", opciones: preciosAdiciones.superior},
-        { nombre: "Adición Camarón", opciones: preciosAdiciones.gourmet},
+        { nombre: "Adición Tomate", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Cebolla", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Pimentón", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Maduro", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Jalapeños", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Pimienta Roja / Pepperonchino", opciones: preciosAdiciones.basicas, opcionesCiudad: { cartago: preciosAdicionesCartago.basicas } },
+        { nombre: "Adición Jamón", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Ranchera", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Maiz", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Piña", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Champiñon", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Salami", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
+        { nombre: "Adición Tocineta", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Queso", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Pollo", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Pepperoni", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Carne", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Chorizo", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Camarón", opciones: preciosAdiciones.gourmet, opcionesCiudad: { cartago: preciosAdicionesCartago.gourmet } },
         { nombre: "Adición Salsas (1 cup)", opciones: preciosAdiciones.salsas},
         { nombre: "Adición Filete de Pollo", opciones: preciosAdiciones.hamburguesa},
         { nombre: "Adición Carne de Res", opciones: preciosAdiciones.hamburguesa}
@@ -324,15 +330,15 @@ const menuData = {
         { nombre: "Granizada Especial", opciones: preciosBebidas.granizadaEspecial, noNuestro: true },
     ],
      "Limonadas": [
-        { nombre: "Limonada", opciones: preciosBebidas.limonada, opcionesCiudad: { cartago: { "Natural": 9000, "Cerezada": 10000, "Coco": 11000, "Hierbabuena": 9000 } } },
+        { nombre: "Limonada", opciones: preciosBebidas.limonada, opcionesCiudad: { cartago: { "Natural": 8000, "Cerezada": 10000, "Coco": 11000, "Hierbabuena": 9000 } } },
     ],
      "Sodas": [
-        { nombre: "Sodas", opciones: preciosBebidas.sodas },
-        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, noNuestro: true },
+        { nombre: "Sodas", opciones: preciosBebidas.sodas, opcionesCiudad: { cartago: { "Frutos Rojos": 12000, "Frutos Amarillos": 12000, "Lychee": 12000, "Tamarindo": 12000, "Frutos Verdes": 12000 } } },
+        { nombre: "Hatsu Soda", opciones: preciosBebidas.HatsuSoda, opcionesCiudad: { cartago: { "Frambuesa": 8000, "Sandía": 8000 } }, noNuestro: true },
         { nombre: "Soda Bretaña 300 ml(vidrio)", opciones: preciosBebidas.bretaña300ml, noNuestro: true },
     ],
     "Cervezas": [
-        { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional, noNuestro: true },
+        { nombre: "Cerveza Nacional", opciones: preciosBebidas.cervezaNacional, opcionesCiudad: { cartago: { "Club Colombia": 9000, "Aguila Light": 9000 } }, noNuestro: true },
         { nombre: "Cerveza 3 Cordilleras", opciones: preciosBebidas.cerveza3Cordilleras, noNuestro: true },
         { nombre: "Vaso Michelado", opciones: preciosBebidas.vasoMichelado, noNuestro: true }
     ],
