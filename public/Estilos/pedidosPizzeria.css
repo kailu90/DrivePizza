@@ -237,72 +237,40 @@
 }
 
 /* ── SECCIÓN PESOS VARIABLES ──────────────────────────────────── */
-.mpesos-wrap {
-    margin: 1.2rem 0 0.4rem;
-    border: 1.5px solid #f0a500;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fffdf5;
+.mpesos-simple-wrap {
+    margin: 1rem 0 0.5rem;
+    border-top: 1px solid #f0d080;
+    padding-top: 0.8rem;
 }
-.mpesos-titulo {
-    background: #fff3cd;
-    color: #7a5700;
-    font-weight: 700;
-    font-size: 1.25rem;
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid #f0d080;
-}
-.mpesos-producto {
-    padding: 0.8rem 1rem 0.4rem;
-    border-bottom: 1px solid #f5e8b0;
-}
-.mpesos-producto:last-of-type { border-bottom: none; }
-.mpesos-producto-header {
+.mpesos-simple {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
-}
-.mpesos-nombre { font-weight: 600; font-size: 1.2rem; color: #333; }
-.mpesos-precio-kg { font-size: 1.1rem; color: #888; }
-.mpesos-inputs {
-    display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    padding-bottom: 0.4rem;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
 }
-.mpesos-item { display: flex; align-items: center; gap: 0.4rem; }
-.mpesos-label { font-size: 1.15rem; color: #555; min-width: 78px; }
-.mpesos-input-wrap { display: flex; align-items: center; gap: 4px; }
+.mpesos-prod-label {
+    color: #7a5700;
+    font-weight: 600;
+    flex-shrink: 0;
+}
 .mpesos-input {
-    width: 72px !important;
-    padding: 5px 6px !important;
+    width: 80px !important;
+    padding: 4px 6px !important;
     text-align: center;
     font-size: 1.2rem !important;
 }
-.mpesos-unit { font-size: 1.1rem; color: #777; }
-.mpesos-registrado {
-    margin: 0.4rem 0 0;
-    font-size: 1.1rem;
+.mpesos-kg-label { color: #777; }
+.mpesos-precio-live {
     color: #2e7d32;
-    font-weight: 600;
+    font-weight: 700;
+    min-width: 90px;
 }
-.mpesos-footer {
+.mpesos-simple-footer {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.7rem 1rem;
-    background: #fff8e1;
-    border-top: 1px solid #f0d080;
-}
-.mpesos-resumen { font-size: 1.2rem; font-weight: 700; color: #555; }
-.mpesos-btn-guardar { font-size: 1.2rem !important; }
-.mpesos-aviso-stepper {
-    text-align: center;
-    font-size: 1.15rem;
-    color: #c07000;
-    margin: 0.5rem 0 0;
-    font-weight: 600;
+    justify-content: flex-end;
+    margin-top: 0.4rem;
 }
 
 /* ── RESPONSIVE ───────────────────────────────────────────────── */

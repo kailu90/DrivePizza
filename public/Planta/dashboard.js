@@ -66,25 +66,15 @@ const STEPS_PLANTA = [
 ];
 
 function renderStepperModal(status) {
-    const currentIdx       = STEPS_PLANTA.findIndex(s => s.key === status);
-    const bloqueadoPorPeso = pedidoEnEdicion
-        ? tienePesosIncompletos(pedidoEnEdicion.productos)
-        : false;
+    const currentIdx = STEPS_PLANTA.findIndex(s => s.key === status);
 
     let html = '<div class="stepper">';
     STEPS_PLANTA.forEach((step, i) => {
         let cls = '', onclick = '', icon = step.icon;
-        if (i < currentIdx)          { cls = 'step-done';   icon = ICON_CHECK; }
-        else if (i === currentIdx)   { cls = 'step-active'; }
-        else if (i === currentIdx + 1) {
-            // Bloquear "Entregado" si hay productos con peso pendiente
-            if (step.key === 'entregado' && bloqueadoPorPeso) {
-                cls = 'step-locked';
-            } else {
-                cls     = 'step-next';
-                onclick = `onclick="cambiarEstadoModal('${step.key}')"`;
-            }
-        } else { cls = 'step-locked'; }
+        if (i < currentIdx)            { cls = 'step-done';   icon = ICON_CHECK; }
+        else if (i === currentIdx)     { cls = 'step-active'; }
+        else if (i === currentIdx + 1) { cls = 'step-next'; onclick = `onclick="cambiarEstadoModal('${step.key}')"`;  }
+        else                           { cls = 'step-locked'; }
 
         html += `<div class="step ${cls}" ${onclick}>
             <div class="step-circle">${icon}</div>
@@ -94,10 +84,6 @@ function renderStepperModal(status) {
             html += `<div class="step-connector ${i < currentIdx ? 'active' : ''}"></div>`;
     });
     html += '</div>';
-
-    if (bloqueadoPorPeso) {
-        html += `<p class="mpesos-aviso-stepper">⚖️ Ingresa y guarda los pesos reales para continuar</p>`;
-    }
 
     document.getElementById('modal-stepper').innerHTML = html;
 }
@@ -131,52 +117,27 @@ function renderPesosSection(productos) {
     const variableProds = productos.filter(p => getProdCatalogo(p.idProduct)?.pesoVariable === true);
     if (variableProds.length === 0) { section.innerHTML = ''; return; }
 
-    let html = `<div class="mpesos-wrap">
-        <div class="mpesos-titulo">⚖️ Pesos reales — requerido para despachar</div>`;
-
+    let html = '<div class="mpesos-simple-wrap">';
     variableProds.forEach(prod => {
-        const cat       = getProdCatalogo(prod.idProduct);
-        const precioPkg = cat?.price ?? 0;
-        const registrado = prod.pesoReal > 0;
-        const pesoUnit   = registrado ? (prod.pesoReal / prod.quantity).toFixed(2) : '';
+        const cat      = getProdCatalogo(prod.idProduct);
+        const precioKg = cat?.price ?? 0;
+        const pesoVal  = prod.pesoReal > 0 ? prod.pesoReal : '';
+        const precioLive = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
 
-        html += `<div class="mpesos-producto">
-            <div class="mpesos-producto-header">
-                <span class="mpesos-nombre">${prod.name}</span>
-                <span class="mpesos-precio-kg">${fmtCOP.format(precioPkg)}/kg · ${prod.quantity} unid.</span>
-            </div>
-            <div class="mpesos-inputs">`;
-
-        for (let i = 0; i < prod.quantity; i++) {
-            html += `<div class="mpesos-item">
-                <label class="mpesos-label">${prod.name} ${i + 1}</label>
-                <div class="mpesos-input-wrap">
-                    <input type="number" class="mpesos-input ap-input"
-                        step="0.01" min="0.01" placeholder="0.00"
-                        data-prod="${prod.idProduct}"
-                        value="${pesoUnit}">
-                    <span class="mpesos-unit">kg</span>
-                </div>
-            </div>`;
-        }
-
-        html += `</div>`; // mpesos-inputs
-
-        if (registrado) {
-            html += `<p class="mpesos-registrado">✅ Guardado: ${prod.pesoReal} kg → ${fmtCOP.format(prod.totalPrice)}</p>`;
-        }
-
-        html += `</div>`; // mpesos-producto
+        html += `<div class="mpesos-simple">
+            <span class="mpesos-prod-label">⚖️ ${prod.name} (${prod.quantity} unid.) — Peso total:</span>
+            <input type="number" class="mpesos-input ap-input" step="0.01" min="0.01" placeholder="0.00"
+                data-prod="${prod.idProduct}" data-precio-kg="${precioKg}" value="${pesoVal}">
+            <span class="mpesos-kg-label">kg</span>
+            <span class="mpesos-precio-live">${precioLive}</span>
+        </div>`;
     });
-
-    html += `<div class="mpesos-footer">
-        <span class="mpesos-resumen" id="mpesos-resumen"></span>
-        <button type="button" class="ap-btn ap-btn--primary mpesos-btn-guardar" id="btn-guardar-pesos" disabled>⚖️ Guardar pesos</button>
+    html += `<div class="mpesos-simple-footer">
+        <button type="button" class="ap-btn ap-btn--primary" id="btn-guardar-pesos">Guardar peso</button>
     </div></div>`;
 
     section.innerHTML = html;
 
-    // Eventos en tiempo real
     section.querySelectorAll('.mpesos-input').forEach(inp => {
         inp.addEventListener('input', _actualizarResumenPesos);
     });
@@ -190,27 +151,19 @@ function _actualizarResumenPesos() {
     if (!section) return;
 
     const inputs = section.querySelectorAll('.mpesos-input');
-    const byProd = {};
     let allFilled = inputs.length > 0;
 
     inputs.forEach(inp => {
-        const val = parseFloat(inp.value);
-        if (!(val > 0)) { allFilled = false; return; }
-        const pid = inp.dataset.prod;
-        byProd[pid] = (byProd[pid] || 0) + val;
+        const kg       = parseFloat(inp.value);
+        const precioKg = parseFloat(inp.dataset.precioKg) || 0;
+        const liveEl   = inp.closest('.mpesos-simple')?.querySelector('.mpesos-precio-live');
+        if (kg > 0) {
+            if (liveEl) liveEl.textContent = `= ${fmtCOP.format(Math.round(kg * precioKg))}`;
+        } else {
+            allFilled = false;
+            if (liveEl) liveEl.textContent = '';
+        }
     });
-
-    let totalKg = 0, totalPrecio = 0;
-    Object.entries(byProd).forEach(([pid, kg]) => {
-        totalKg += kg;
-        const cat = getProdCatalogo(pid);
-        totalPrecio += kg * (cat?.price ?? 0);
-    });
-
-    const resEl = document.getElementById('mpesos-resumen');
-    if (resEl) resEl.textContent = totalKg > 0
-        ? `${totalKg.toFixed(2)} kg → ${fmtCOP.format(Math.round(totalPrecio))}`
-        : '';
 
     const btn = document.getElementById('btn-guardar-pesos');
     if (btn) btn.disabled = !allFilled;
