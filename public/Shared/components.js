@@ -209,6 +209,15 @@ export function CargarSidebar(onReady = null) {
         });
 }
 
+export function CargarFooter() {
+    const container = document.getElementById('footer-container');
+    if (!container) return;
+    container.innerHTML = `
+        <footer class="dashboard__footer">
+            <p class="dashboard__footer-text">&copy; 2025 DrivePizza. Todos los derechos reservados.</p>
+        </footer>`;
+}
+
 export function revelarSplash(minMs = 1000) {
     const splash = document.getElementById('pw-page-transition');
     if (!splash) return;
