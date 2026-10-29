@@ -236,41 +236,29 @@
     background: #fffbf5 !important;
 }
 
-/* ── SECCIÓN PESOS VARIABLES ──────────────────────────────────── */
-.mpesos-simple-wrap {
-    margin: 1rem 0 0.5rem;
-    border-top: 1px solid #f0d080;
-    padding-top: 0.8rem;
-}
-.mpesos-simple {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-}
-.mpesos-prod-label {
+/* ── PESOS VARIABLES — input inline en fila de producto ──────────── */
+.mpesos-inline {
+    white-space: nowrap;
+    font-size: 0.85em;
     color: #7a5700;
-    font-weight: 600;
-    flex-shrink: 0;
 }
-.mpesos-input {
-    width: 80px !important;
-    padding: 4px 6px !important;
+.mpesos-inline .mpesos-input {
+    width: 60px !important;
+    padding: 2px 4px !important;
     text-align: center;
-    font-size: 1.2rem !important;
+    font-size: 0.9em !important;
+    margin: 0 2px;
+    vertical-align: middle;
 }
-.mpesos-kg-label { color: #777; }
 .mpesos-precio-live {
     color: #2e7d32;
-    font-weight: 700;
-    min-width: 90px;
+    font-weight: 600;
+    margin-left: 3px;
 }
 .mpesos-simple-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 0.4rem;
+    padding: 6px 0 2px;
 }
 
 /* ── RESPONSIVE ───────────────────────────────────────────────── */

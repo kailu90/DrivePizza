@@ -114,49 +114,28 @@ function renderPesosSection(productos) {
     const section = document.getElementById('modal-pesos-section');
     if (!section) return;
 
-    const variableProds = productos.filter(p => getProdCatalogo(p.idProduct)?.pesoVariable === true);
-    if (variableProds.length === 0) { section.innerHTML = ''; return; }
+    const hasVariable = productos.some(p => getProdCatalogo(p.idProduct)?.pesoVariable === true);
+    if (!hasVariable) { section.innerHTML = ''; return; }
 
-    let html = '<div class="mpesos-simple-wrap">';
-    variableProds.forEach(prod => {
-        const cat      = getProdCatalogo(prod.idProduct);
-        const precioKg = cat?.price ?? 0;
-        const pesoVal  = prod.pesoReal > 0 ? prod.pesoReal : '';
-        const precioLive = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
+    section.innerHTML = `<div class="mpesos-simple-footer">
+        <button type="button" class="ap-btn ap-btn--primary" id="btn-guardar-pesos" disabled>Guardar peso</button>
+    </div>`;
 
-        html += `<div class="mpesos-simple">
-            <span class="mpesos-prod-label">⚖️ ${prod.name} (${prod.quantity} unid.) — Peso total:</span>
-            <input type="number" class="mpesos-input ap-input" step="0.01" min="0.01" placeholder="0.00"
-                data-prod="${prod.idProduct}" data-precio-kg="${precioKg}" value="${pesoVal}">
-            <span class="mpesos-kg-label">kg</span>
-            <span class="mpesos-precio-live">${precioLive}</span>
-        </div>`;
-    });
-    html += `<div class="mpesos-simple-footer">
-        <button type="button" class="ap-btn ap-btn--primary" id="btn-guardar-pesos">Guardar peso</button>
-    </div></div>`;
-
-    section.innerHTML = html;
-
-    section.querySelectorAll('.mpesos-input').forEach(inp => {
+    document.querySelectorAll('#modal-table-body .mpesos-input').forEach(inp => {
         inp.addEventListener('input', _actualizarResumenPesos);
     });
     document.getElementById('btn-guardar-pesos')?.addEventListener('click', _guardarPesos);
-
     _actualizarResumenPesos();
 }
 
 function _actualizarResumenPesos() {
-    const section = document.getElementById('modal-pesos-section');
-    if (!section) return;
-
-    const inputs = section.querySelectorAll('.mpesos-input');
+    const inputs = document.querySelectorAll('#modal-table-body .mpesos-input');
     let allFilled = inputs.length > 0;
 
     inputs.forEach(inp => {
         const kg       = parseFloat(inp.value);
         const precioKg = parseFloat(inp.dataset.precioKg) || 0;
-        const liveEl   = inp.closest('.mpesos-simple')?.querySelector('.mpesos-precio-live');
+        const liveEl   = inp.closest('td')?.querySelector('.mpesos-precio-live');
         if (kg > 0) {
             if (liveEl) liveEl.textContent = `= ${fmtCOP.format(Math.round(kg * precioKg))}`;
         } else {
@@ -171,12 +150,10 @@ function _actualizarResumenPesos() {
 
 async function _guardarPesos() {
     if (!pedidoEnEdicion) return;
-    const section = document.getElementById('modal-pesos-section');
-    if (!section) return;
 
     // Agrupar pesos por producto
     const byProd = {};
-    section.querySelectorAll('.mpesos-input').forEach(inp => {
+    document.querySelectorAll('#modal-table-body .mpesos-input').forEach(inp => {
         const val = parseFloat(inp.value) || 0;
         const pid = inp.dataset.prod;
         byProd[pid] = (byProd[pid] || 0) + val;
@@ -709,6 +686,7 @@ async function abrirModalPedido(docId, esEdicion = false) {
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
 
     pedidoEnEdicion = { docId, data: pedido, productos };
+    await cargarCatalogoPesos();
     renderTablaModal(productos, esEdicion);
     actualizarTotalesModal(productos);
 
@@ -720,16 +698,9 @@ async function abrirModalPedido(docId, esEdicion = false) {
     }
     document.getElementById('modal-stepper').style.display = esEdicion ? 'none' : 'block';
 
-    // Sección de pesos variables (solo en vista, no en edición)
-    if (!esEdicion) {
-        cargarCatalogoPesos().then(() => {
-            renderPesosSection(productos);
-            renderStepperModal(pedido.status);
-        });
-    } else {
-        document.getElementById('modal-pesos-section').innerHTML = '';
-        renderStepperModal(pedido.status);
-    }
+    if (!esEdicion) renderPesosSection(productos);
+    else document.getElementById('modal-pesos-section').innerHTML = '';
+    renderStepperModal(pedido.status);
 
     cerrarModalAgregarProducto(true);
     if (esEdicion) cargarProductosDisponibles();
@@ -769,13 +740,26 @@ function renderTablaModal(productos, esEdicion) {
     const tbody = document.getElementById('modal-table-body');
     let html = '';
     productos.forEach((prod, idx) => {
+        const cat       = getProdCatalogo(prod.idProduct);
+        const esPesoVar = !esEdicion && cat?.pesoVariable === true;
+        const pesoVal   = prod.pesoReal > 0 ? prod.pesoReal : '';
+        const precioVivo = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
+
+        const pesoInline = esPesoVar ? `<span class="mpesos-inline">
+                &nbsp;·&nbsp; ⚖️ <input type="number" class="mpesos-input ap-input"
+                    step="0.01" min="0.01" placeholder="kg"
+                    data-prod="${prod.idProduct}" data-precio-kg="${cat?.price ?? 0}"
+                    value="${pesoVal}"> kg
+                <span class="mpesos-precio-live">${precioVivo}</span>
+            </span>` : '';
+
         const cantCell = esEdicion
             ? `<td style="text-align:center;"><input type="number" class="input-cant-modal" min="1" value="${prod.quantity}" data-idx="${idx}" style="width:55px;text-align:center;padding:2px 4px;border:1px solid #ccc;border-radius:4px;"></td>`
             : `<td style="text-align:center;">${prod.quantity}</td>`;
         const accionCell = esEdicion
             ? `<td style="text-align:center;"><button class="btn-del-prod" data-idx="${idx}" title="Quitar producto" style="background:none;border:none;cursor:pointer;font-size:16px;padding:0;">🗑️</button></td>`
             : '';
-        html += `<tr><td>${prod.name}</td>${cantCell}<td>${fmtCOP.format(prod.totalPrice)}</td>${accionCell}</tr>`;
+        html += `<tr><td>${prod.name}${pesoInline}</td>${cantCell}<td>${fmtCOP.format(prod.totalPrice)}</td>${accionCell}</tr>`;
     });
     tbody.innerHTML = html;
 }
