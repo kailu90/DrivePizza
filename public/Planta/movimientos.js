@@ -1,12 +1,13 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 
 // ── Auth guard ─────────────────────────────────────────────────────────────
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
+    CargarFooter();
     CargarSidebar();
     setTimeout(() => {
         supabase.channel('mv-movimientos-ext')
@@ -116,6 +117,7 @@ function getTipoDisplay(m) {
     if (m.tipo === 'AJUSTE')      return 'Ajuste';
     if (m.tipo === 'CREACION')    return 'Creación';
     if (m.tipo === 'ELIMINACION') return 'Eliminación';
+    if (m.tipo === 'Devolución')  return 'Devolución';
     return m.tipo;
 }
 
@@ -378,33 +380,49 @@ function getProductoId() {
 }
 
 // ── Cargar datos ───────────────────────────────────────────────────────────
+const PAGE_SIZE = 1000;
+
 async function cargarMovimientos() {
     tbody.innerHTML = '<tr><td colspan="6" class="mv-loading">Cargando...</td></tr>';
     document.getElementById('mv-btn-resumen').style.display = 'none';
 
-    const productoId    = getProductoId();
+    const productoId     = getProductoId();
     const productoNombre = productoInput.value.trim();
     const desde = desdeEl.value;
     const hasta = hastaEl.value;
 
     try {
-        let query = supabase
-            .from('movimientos')
-            .select('*')
-            .order('fecha', { ascending: false });
+        // Paginar en servidor para superar el límite de 1000 filas de PostgREST
+        let allRows = [];
+        let offset  = 0;
 
-        if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
-        if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
+        while (true) {
+            let query = supabase
+                .from('movimientos')
+                .select('*')
+                .order('fecha', { ascending: false })
+                .range(offset, offset + PAGE_SIZE - 1);
 
-        // Filtra por nombre exacto (case-insensitive) cuando el usuario eligió un producto del datalist
-        if (productoId && productoNombre) {
-            query = query.ilike('producto_nombre', productoNombre);
+            if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
+            if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
+
+            // Filtra por nombre exacto (case-insensitive) cuando el usuario eligió un producto del datalist
+            if (productoId && productoNombre) {
+                query = query.ilike('producto_nombre', productoNombre);
+            }
+
+            const { data: page, error } = await query;
+            if (error) throw error;
+
+            allRows = allRows.concat(page || []);
+            if (!page || page.length < PAGE_SIZE) break;
+
+            // Actualizar indicador si hay más de una página
+            tbody.innerHTML = `<tr><td colspan="6" class="mv-loading">Cargando... (${allRows.length} registros)</td></tr>`;
+            offset += PAGE_SIZE;
         }
 
-        const { data: rows, error } = await query;
-        if (error) throw error;
-
-        allMovimientos = (rows || []).map(normalizarMovimiento);
+        allMovimientos = allRows.map(normalizarMovimiento);
 
         // Resumen de salidas por día: solo cuando hay producto exacto + rango de fechas
         if (productoId && desde && hasta) {

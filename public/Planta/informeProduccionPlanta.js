@@ -1,38 +1,20 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { SEDES_MASA } from './planta.config.js';
+import { SEDES_MASA, INFORME_PROD_CATEGORIAS, INFORME_PROD_SIROPES,
+         INFORME_PROD_MASAS, INFORME_PROD_CARNES } from './planta.config.js';
 let offsetDias = 0;
 
-// ── Producción — productos a reportar (idProduct = String(id_product)) ────
-const CATEGORIAS = [
-    { label: 'Pollo Desmechado',      ids: new Set(['46']),       factor: 5, unidad: 'libras'     },
-    { label: 'Salami Zenú',           ids: new Set(['89', '186']), factor: 2, unidad: 'barras'     },
-    { label: 'Tártara',               ids: new Set(['144']),      factor: 1, unidad: 'frascos'    },
-];
+// ── Producción — constantes desde planta.config.js ────────────────────────
+const CATEGORIAS     = INFORME_PROD_CATEGORIAS;
+const SIROPES_CONFIG = INFORME_PROD_SIROPES;
+const MASAS_LABEL    = INFORME_PROD_MASAS;
+const CARNES_CONFIG  = INFORME_PROD_CARNES;
+
 const IDS_RELEVANTES = new Set(CATEGORIAS.flatMap(c => [...c.ids]));
-
-// ── Siropes Artesanales ────────────────────────────────────────────────────
-const SIROPES_CONFIG = [
-    { label: 'Frutos Rojos',    id: '154', thLabel: 'Frutos<br><small>Rojos</small>'    },
-    { label: 'Frutos Amarillos',id: '155', thLabel: 'Frutos<br><small>Amarillos</small>'},
-    { label: 'Tamarindo',       id: '156', thLabel: 'Tama&shy;rindo'                    },
-];
-const SIROPES_IDS = new Set(SIROPES_CONFIG.map(s => s.id));
-
-// ── Masas CC ───────────────────────────────────────────────────────────────
-// Agrupado por idProduct para evitar inconsistencias de nombre entre pedidos
-const MASAS_LABEL = { '160': 'MASA x 140gr', '2': 'MASA x 350gr', '13': 'MASA x 450gr', '24': 'MASA x 700gr' };
-const MASAS_IDS   = new Set(Object.keys(MASAS_LABEL));
-
-// ── Carnes ─────────────────────────────────────────────────────────────────
-// 55=Carne para moler · 56=Carne para desmechar · 58=Carne para hamburguesa
-const CARNES_CONFIG = [
-    { label: 'Carne para moler (Murillo)',   id: '55', thLabel: 'Moler<br><small>(Murillo)</small>'   },
-    { label: 'Carne para desmechar (Aleta)', id: '56', thLabel: 'Desmechar<br><small>(Aleta)</small>' },
-    { label: 'Carne para hamburguesa',       id: '58', thLabel: 'Hambur&shy;guesa'                    },
-];
-const CARNES_IDS = new Set(CARNES_CONFIG.map(c => c.id));
+const SIROPES_IDS    = new Set(SIROPES_CONFIG.map(s => s.id));
+const MASAS_IDS      = new Set(Object.keys(MASAS_LABEL));
+const CARNES_IDS     = new Set(CARNES_CONFIG.map(c => c.id));
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function getFecha(offset = 0) {
@@ -288,6 +270,7 @@ if (sedesOrdenadasSirope.length === 0) {
 // ── Init ───────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ sede }) => {
     CargarHeader(capitalizarSede(sede));
+    CargarFooter();
     CargarSidebar();
     await cargarInforme();
 
