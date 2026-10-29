@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { ejecutarSalidaPedido, registrarMovimiento, ejecutarTransaccionStock } from './inventoryService.js'
-import { CargarHeader, CargarSidebar } from '../Shared/components.js'
+import { CargarHeader, CargarSidebar, CargarFooter } from '../Shared/components.js'
 import { RECARGO_SERVICIO } from './planta.config.js'
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js'
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js'
@@ -66,15 +66,24 @@ const STEPS_PLANTA = [
 ];
 
 function renderStepperModal(status) {
-    const currentIdx = STEPS_PLANTA.findIndex(s => s.key === status);
+    const currentIdx       = STEPS_PLANTA.findIndex(s => s.key === status);
+    const bloqueadoPorPeso = pedidoEnEdicion
+        ? tienePesosIncompletos(pedidoEnEdicion.productos)
+        : false;
+
     let html = '<div class="stepper">';
     STEPS_PLANTA.forEach((step, i) => {
         let cls = '', onclick = '', icon = step.icon;
         if (i < currentIdx)          { cls = 'step-done';   icon = ICON_CHECK; }
         else if (i === currentIdx)   { cls = 'step-active'; }
         else if (i === currentIdx + 1) {
-            cls     = 'step-next';
-            onclick = `onclick="cambiarEstadoModal('${step.key}')"`;
+            // Bloquear "Entregado" si hay productos con peso pendiente
+            if (step.key === 'entregado' && bloqueadoPorPeso) {
+                cls = 'step-locked';
+            } else {
+                cls     = 'step-next';
+                onclick = `onclick="cambiarEstadoModal('${step.key}')"`;
+            }
         } else { cls = 'step-locked'; }
 
         html += `<div class="step ${cls}" ${onclick}>
@@ -85,8 +94,196 @@ function renderStepperModal(status) {
             html += `<div class="step-connector ${i < currentIdx ? 'active' : ''}"></div>`;
     });
     html += '</div>';
+
+    if (bloqueadoPorPeso) {
+        html += `<p class="mpesos-aviso-stepper">⚖️ Ingresa y guarda los pesos reales para continuar</p>`;
+    }
+
     document.getElementById('modal-stepper').innerHTML = html;
 }
+
+// ════════════════════════════════════════════════════════════
+// PESOS VARIABLES — productos con precio por kg (ej: pechuga)
+// ════════════════════════════════════════════════════════════
+
+let _catalogoPesos = null; // caché local del catálogo completo de productos
+
+async function cargarCatalogoPesos() {
+    if (!_catalogoPesos) _catalogoPesos = await getProductos();
+    return _catalogoPesos;
+}
+
+function getProdCatalogo(idProduct) {
+    return (_catalogoPesos || []).find(c => String(c.id) === String(idProduct));
+}
+
+function tienePesosIncompletos(productos) {
+    return productos.some(p => {
+        const cat = getProdCatalogo(p.idProduct);
+        return cat?.pesoVariable === true && !(p.pesoReal > 0);
+    });
+}
+
+function renderPesosSection(productos) {
+    const section = document.getElementById('modal-pesos-section');
+    if (!section) return;
+
+    const variableProds = productos.filter(p => getProdCatalogo(p.idProduct)?.pesoVariable === true);
+    if (variableProds.length === 0) { section.innerHTML = ''; return; }
+
+    let html = `<div class="mpesos-wrap">
+        <div class="mpesos-titulo">⚖️ Pesos reales — requerido para despachar</div>`;
+
+    variableProds.forEach(prod => {
+        const cat       = getProdCatalogo(prod.idProduct);
+        const precioPkg = cat?.price ?? 0;
+        const registrado = prod.pesoReal > 0;
+        const pesoUnit   = registrado ? (prod.pesoReal / prod.quantity).toFixed(2) : '';
+
+        html += `<div class="mpesos-producto">
+            <div class="mpesos-producto-header">
+                <span class="mpesos-nombre">${prod.name}</span>
+                <span class="mpesos-precio-kg">${fmtCOP.format(precioPkg)}/kg · ${prod.quantity} unid.</span>
+            </div>
+            <div class="mpesos-inputs">`;
+
+        for (let i = 0; i < prod.quantity; i++) {
+            html += `<div class="mpesos-item">
+                <label class="mpesos-label">${prod.name} ${i + 1}</label>
+                <div class="mpesos-input-wrap">
+                    <input type="number" class="mpesos-input ap-input"
+                        step="0.01" min="0.01" placeholder="0.00"
+                        data-prod="${prod.idProduct}"
+                        value="${pesoUnit}">
+                    <span class="mpesos-unit">kg</span>
+                </div>
+            </div>`;
+        }
+
+        html += `</div>`; // mpesos-inputs
+
+        if (registrado) {
+            html += `<p class="mpesos-registrado">✅ Guardado: ${prod.pesoReal} kg → ${fmtCOP.format(prod.totalPrice)}</p>`;
+        }
+
+        html += `</div>`; // mpesos-producto
+    });
+
+    html += `<div class="mpesos-footer">
+        <span class="mpesos-resumen" id="mpesos-resumen"></span>
+        <button type="button" class="ap-btn ap-btn--primary mpesos-btn-guardar" id="btn-guardar-pesos" disabled>⚖️ Guardar pesos</button>
+    </div></div>`;
+
+    section.innerHTML = html;
+
+    // Eventos en tiempo real
+    section.querySelectorAll('.mpesos-input').forEach(inp => {
+        inp.addEventListener('input', _actualizarResumenPesos);
+    });
+    document.getElementById('btn-guardar-pesos')?.addEventListener('click', _guardarPesos);
+
+    _actualizarResumenPesos();
+}
+
+function _actualizarResumenPesos() {
+    const section = document.getElementById('modal-pesos-section');
+    if (!section) return;
+
+    const inputs = section.querySelectorAll('.mpesos-input');
+    const byProd = {};
+    let allFilled = inputs.length > 0;
+
+    inputs.forEach(inp => {
+        const val = parseFloat(inp.value);
+        if (!(val > 0)) { allFilled = false; return; }
+        const pid = inp.dataset.prod;
+        byProd[pid] = (byProd[pid] || 0) + val;
+    });
+
+    let totalKg = 0, totalPrecio = 0;
+    Object.entries(byProd).forEach(([pid, kg]) => {
+        totalKg += kg;
+        const cat = getProdCatalogo(pid);
+        totalPrecio += kg * (cat?.price ?? 0);
+    });
+
+    const resEl = document.getElementById('mpesos-resumen');
+    if (resEl) resEl.textContent = totalKg > 0
+        ? `${totalKg.toFixed(2)} kg → ${fmtCOP.format(Math.round(totalPrecio))}`
+        : '';
+
+    const btn = document.getElementById('btn-guardar-pesos');
+    if (btn) btn.disabled = !allFilled;
+}
+
+async function _guardarPesos() {
+    if (!pedidoEnEdicion) return;
+    const section = document.getElementById('modal-pesos-section');
+    if (!section) return;
+
+    // Agrupar pesos por producto
+    const byProd = {};
+    section.querySelectorAll('.mpesos-input').forEach(inp => {
+        const val = parseFloat(inp.value) || 0;
+        const pid = inp.dataset.prod;
+        byProd[pid] = (byProd[pid] || 0) + val;
+    });
+
+    // Recalcular productos
+    const productosActualizados = pedidoEnEdicion.productos.map(p => {
+        const totalKg = byProd[String(p.idProduct)];
+        if (totalKg === undefined) return p;
+        const cat = getProdCatalogo(p.idProduct);
+        const newTotalPrice = Math.round(totalKg * (cat?.price ?? 0));
+        return { ...p, pesoReal: parseFloat(totalKg.toFixed(2)), totalPrice: newTotalPrice };
+    });
+
+    const newNetCost = productosActualizados.reduce((s, p) => s + p.totalPrice, 0);
+    const newRecargo = Math.round(newNetCost * RECARGO_SERVICIO);
+    const newTotal   = newNetCost + newRecargo;
+
+    const productosFS = productosActualizados.map(
+        ({ idProduct, name, quantity, totalPrice, pesoReal }) =>
+            ({ idProduct, name, quantity, totalPrice, ...(pesoReal != null ? { pesoReal } : {}) })
+    );
+
+    const btn = document.getElementById('btn-guardar-pesos');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+    try {
+        const { error } = await supabase
+            .from('pedidos_planta')
+            .update({
+                products:   productosFS,
+                net_cost:   newNetCost,
+                recargo:    newRecargo,
+                total:      newTotal,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', pedidoEnEdicion.docId);
+
+        if (error) throw error;
+
+        // Actualizar estado local
+        pedidoEnEdicion.productos           = productosActualizados;
+        pedidoEnEdicion.data.products       = productosFS;
+        pedidoEnEdicion.data.netCost        = newNetCost;
+        pedidoEnEdicion.data.recargo        = newRecargo;
+        pedidoEnEdicion.data.total          = newTotal;
+
+        renderTablaModal(productosActualizados, false);
+        actualizarTotalesModal(productosActualizados);
+        renderPesosSection(productosActualizados);
+        renderStepperModal(pedidoEnEdicion.data.status);
+
+    } catch (err) {
+        console.error('Error guardando pesos:', err);
+        alert('Error al guardar los pesos. Intenta de nuevo.');
+        if (btn) { btn.disabled = false; btn.textContent = '⚖️ Guardar pesos'; }
+    }
+}
+
+// ════════════════════════════════════════════════════════════
 
 let _cambioEstadoEnProceso = false;
 window.cambiarEstadoModal = async (nuevoEstado) => {
@@ -569,7 +766,17 @@ async function abrirModalPedido(docId, esEdicion = false) {
         setModoVistaDashboard(editable);
     }
     document.getElementById('modal-stepper').style.display = esEdicion ? 'none' : 'block';
-    if (!esEdicion) renderStepperModal(pedido.status);
+
+    // Sección de pesos variables (solo en vista, no en edición)
+    if (!esEdicion) {
+        cargarCatalogoPesos().then(() => {
+            renderPesosSection(productos);
+            renderStepperModal(pedido.status);
+        });
+    } else {
+        document.getElementById('modal-pesos-section').innerHTML = '';
+        renderStepperModal(pedido.status);
+    }
 
     cerrarModalAgregarProducto(true);
     if (esEdicion) cargarProductosDisponibles();
@@ -1436,6 +1643,7 @@ verificarAccesoPlanta(({ username, sede, rol }) => {
     usuarioActual = username;
     rolUsuario = rol;
     CargarHeader(sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta');
+    CargarFooter();
     if (['admin', 'planta-admin'].includes(rol)) {
     }
 });

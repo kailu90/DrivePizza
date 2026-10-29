@@ -190,240 +190,26 @@
     margin: 0;
 }
 
-/* ── MODAL DETALLE PEDIDO ────────────────────────────── */
-.modal-pedido-content {
-    background: white;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 460px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-}
-
-.mpedido-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 20px 0;
-}
-
-.mpedido-npedido {
-    font-size: 1.4rem;
-    font-weight: 900;
-    color: #e67e22;
-}
-
-.mpedido-close {
-    background: none;
-    border: none;
-    font-size: 1.3rem;
-    color: #aaa;
-    cursor: pointer;
-    line-height: 1;
-    padding: 4px 8px;
-    border-radius: 8px;
-    transition: background 0.15s, color 0.15s;
-}
-.mpedido-close:hover { background: #f0f0f0; color: #555; }
-
-.mpedido-body {
-    padding: 12px 20px 0;
-}
-
-.mpedido-cliente {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 3px;
-}
-
-.mpedido-tel {
-    font-size: 0.88rem;
-    color: #888;
-    margin-bottom: 10px;
-}
-
-.mpedido-entrega {
-    font-size: 0.88rem;
-    background: #f7f7f7;
-    border-radius: 8px;
-    padding: 7px 10px;
-    color: #444;
-    margin-bottom: 14px;
-}
-
-.mpedido-sep {
-    border: none;
-    border-top: 1px solid #f0f0f0;
-    margin: 0 0 12px;
-}
-
-.mpedido-productos-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #999;
-    margin-bottom: 8px;
-}
-
-.mpedido-productos {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 14px;
-}
-
-.mpedido-productos li {
-    font-size: 0.93rem;
-    color: #333;
-    padding: 4px 0;
-    border-bottom: 1px solid #f5f5f5;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.mpedido-productos li:last-child {
-    border-bottom: none;
-}
-
-.mpedido-totals {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.mpedido-total {
-    font-size: 1.05rem;
-    font-weight: 700;
-}
-
-.mpedido-domicilio {
-    font-size: 0.88rem;
-    color: #e67e22;
-    font-weight: 600;
-}
-
-/* ── STEPPER (en modal) ──────────────────────────────── */
-.stepper {
-    display: flex;
-    align-items: flex-start;
-    padding: 18px 20px 16px;
-    background: #f9f9f9;
-    border-top: 1px solid #eee;
-}
-
-.step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 7px;
-    flex-shrink: 0;
-    min-width: 70px;
-}
-
-.step-circle {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.step-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-align: center;
-    line-height: 1.2;
-    white-space: nowrap;
-}
-
-.step-connector {
-    flex: 1;
-    height: 3px;
-    border-radius: 2px;
-    margin-top: 28px;
-    min-width: 10px;
-    background: #e0e0e0;
-    transition: background 0.3s;
-}
-
-.step-connector.active { background: #27ae60; }
-
-/* Estados */
-.step-done .step-circle {
-    background: #e8f8ef;
-    border: 2px solid #27ae60;
-    color: #27ae60;
-}
-.step-done .step-label { color: #27ae60; }
-
-.step-active .step-circle {
-    background: #fdf0e0;
-    border: 2px solid #e67e22;
-    color: #e67e22;
-    box-shadow: 0 0 0 6px rgba(230,126,34,0.14);
-}
-.step-active .step-label { color: #e67e22; font-weight: 800; }
-
-.step-next {
-    cursor: pointer;
-}
-.step-next .step-circle {
-    background: #eaf4fc;
-    border: 2.5px dashed #2980b9;
-    color: #2980b9;
-}
-.step-next:hover .step-circle {
-    background: #2980b9;
-    color: white;
-    border-style: solid;
-    transform: scale(1.1);
-    box-shadow: 0 4px 14px rgba(41,128,185,0.35);
-}
-.step-next .step-label { color: #2980b9; }
-.step-next:hover .step-label { font-weight: 800; }
-
-.step-locked .step-circle {
-    background: #f2f2f2;
-    border: 2px solid #ddd;
-    color: #ccc;
-    filter: grayscale(1);
-}
-.step-locked .step-label { color: #ccc; }
-
-/* ── BOTÓN CANCELAR (en modal) ───────────────────────── */
-.mpedido-cancel-area {
-    padding: 10px 20px 20px;
-}
-
-.btn-cancelar-pedido {
-    width: 100%;
-    padding: 11px;
-    border: 1.5px solid #e74c3c;
-    background: none;
-    color: #e74c3c;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-}
-.btn-cancelar-pedido:hover { background: #e74c3c; color: white; }
-
-/* ── FONT SIZE — igualar historialPedidos (1.4rem = 14px con base 62.5%) */
+/* ── LAYOUT FIJO: paginación siempre al pie de pantalla ──────── */
 #contenido-principal {
     font-size: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ── RESUMEN CARDS ────────────────────────────────────────────── */
+#contenido-principal .historial__resumen {
+    margin: 0 20px 16px;
 }
 
 /* ── TABLA DE PEDIDOS ACTIVOS ─────────────────────────────────── */
 .ped-table-card {
-    margin: 0 20px 32px;
-    overflow-x: auto;
+    flex: 1;
+    min-height: 0;
+    margin: 0 20px;
+    overflow: auto;
 }
 
 /* Forzar tabla sin ancho fijo para que el scroll horizontal funcione */
@@ -450,40 +236,76 @@
     background: #fffbf5 !important;
 }
 
+/* ── SECCIÓN PESOS VARIABLES ──────────────────────────────────── */
+.mpesos-wrap {
+    margin: 1.2rem 0 0.4rem;
+    border: 1.5px solid #f0a500;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fffdf5;
+}
+.mpesos-titulo {
+    background: #fff3cd;
+    color: #7a5700;
+    font-weight: 700;
+    font-size: 1.25rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid #f0d080;
+}
+.mpesos-producto {
+    padding: 0.8rem 1rem 0.4rem;
+    border-bottom: 1px solid #f5e8b0;
+}
+.mpesos-producto:last-of-type { border-bottom: none; }
+.mpesos-producto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.mpesos-nombre { font-weight: 600; font-size: 1.2rem; color: #333; }
+.mpesos-precio-kg { font-size: 1.1rem; color: #888; }
+.mpesos-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding-bottom: 0.4rem;
+}
+.mpesos-item { display: flex; align-items: center; gap: 0.4rem; }
+.mpesos-label { font-size: 1.15rem; color: #555; min-width: 78px; }
+.mpesos-input-wrap { display: flex; align-items: center; gap: 4px; }
+.mpesos-input {
+    width: 72px !important;
+    padding: 5px 6px !important;
+    text-align: center;
+    font-size: 1.2rem !important;
+}
+.mpesos-unit { font-size: 1.1rem; color: #777; }
+.mpesos-registrado {
+    margin: 0.4rem 0 0;
+    font-size: 1.1rem;
+    color: #2e7d32;
+    font-weight: 600;
+}
+.mpesos-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 1rem;
+    background: #fff8e1;
+    border-top: 1px solid #f0d080;
+}
+.mpesos-resumen { font-size: 1.2rem; font-weight: 700; color: #555; }
+.mpesos-btn-guardar { font-size: 1.2rem !important; }
+.mpesos-aviso-stepper {
+    text-align: center;
+    font-size: 1.15rem;
+    color: #c07000;
+    margin: 0.5rem 0 0;
+    font-weight: 600;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
 
-    /* Stepper — contenedor con padding lateral */
-    #modal-stepper,
-    #mp-stepper {
-        padding: 0 16px;
-    }
-
-    /* Stepper — compacto en mobile */
-    .stepper {
-        padding: 12px 8px 10px;
-        gap: 0;
-    }
-    .step {
-        min-width: 0;
-        gap: 4px;
-    }
-    .step-circle {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-    }
-    .step-label {
-        font-size: 0.85rem;
-    }
-    .step-time {
-        font-size: 0.78rem;
-    }
-    .step-connector {
-        margin-top: 16px;
-        min-width: 4px;
-    }
-    .step-active .step-circle {
-        box-shadow: 0 0 0 3px rgba(230,126,34,0.18);
-    }
 }
