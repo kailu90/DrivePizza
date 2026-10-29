@@ -44,6 +44,27 @@ export function mostrarBannerRecarga() {
     if (b) b.style.display = 'block';
 }
 
+// ── Coordinación de reveal (sidebar + header deben estar listos) ──────────────
+let _sidebarDone = false;
+let _headerDone  = false;
+let _revealTimer = null;
+
+function _checkReveal() {
+    if (_sidebarDone && _headerDone) {
+        clearTimeout(_revealTimer);
+        document.body.classList.add('loaded');
+        revelarSplash();
+        return;
+    }
+    // Si el sidebar ya cargó pero el header no, armar timeout de seguridad (2.5s)
+    if (_sidebarDone && !_revealTimer) {
+        _revealTimer = setTimeout(() => {
+            document.body.classList.add('loaded');
+            revelarSplash();
+        }, 2500);
+    }
+}
+
 export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
 }
@@ -109,6 +130,9 @@ export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
                 </ul>
             </nav>
         </header>`;
+
+    _headerDone = true;
+    _checkReveal();
 
     // Lógica del botón logout
     document.getElementById("link_logout")?.addEventListener("click", async () => {
@@ -199,13 +223,13 @@ export function CargarSidebar(onReady = null) {
             });
 
             if (onReady) onReady();
-            document.body.classList.add('loaded');
-            revelarSplash();
+            _sidebarDone = true;
+            _checkReveal();
         })
         .catch(err => {
             console.error('Error al cargar sidebar:', err);
-            document.body.classList.add('loaded');
-            revelarSplash();
+            _sidebarDone = true;
+            _checkReveal();
         });
 }
 
