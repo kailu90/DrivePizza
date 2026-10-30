@@ -1135,6 +1135,33 @@ async function guardarCambiosPedido() {
 
         if (error) throw error;
 
+        // Sincronizar entregas_siropes al editar pedido
+        await cargarCatalogoPesos();
+        const esSirope = p => getProdCatalogo(p.idProduct)?.entregaDiferida === true;
+        const pedidoId = pedidoOriginal.idPedido;
+        const agregados = productosFS.filter(p => !originales.find(o => String(o.idProduct) === String(p.idProduct)) && esSirope(p));
+        const eliminados = originales.filter(p => !productosFS.find(n => String(n.idProduct) === String(p.idProduct)) && esSirope(p));
+        const cambiados  = productosFS.filter(p => {
+            const orig = originales.find(o => String(o.idProduct) === String(p.idProduct));
+            return orig && orig.quantity !== p.quantity && esSirope(p);
+        });
+        if (agregados.length > 0) {
+            await supabase.from('entregas_siropes').insert(agregados.map(p => ({
+                producto_id: String(p.idProduct), producto_nombre: p.name,
+                sede: (pedidoOriginal.user || '').toLowerCase(),
+                cantidad: p.quantity, pedido_id: pedidoId,
+                fecha_pedido: new Date().toISOString(), estado: 'pendiente',
+            })));
+        }
+        for (const p of eliminados) {
+            await supabase.from('entregas_siropes').delete()
+                .eq('pedido_id', pedidoId).eq('producto_id', String(p.idProduct)).eq('estado', 'pendiente');
+        }
+        for (const p of cambiados) {
+            await supabase.from('entregas_siropes').update({ cantidad: p.quantity })
+                .eq('pedido_id', pedidoId).eq('producto_id', String(p.idProduct)).eq('estado', 'pendiente');
+        }
+
         if (cambios.length > 0) {
             await registrarMovimiento({
                 tipo: 'MODIFICACION',
