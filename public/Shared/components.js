@@ -254,6 +254,7 @@ export function CargarSidebar(onReady = null) {
 }
 
 export function CargarFooter() {
+    if (_inPlantaShell()) return;
     const container = document.getElementById('footer-container');
     if (!container) return;
     container.innerHTML = `

@@ -2220,11 +2220,13 @@ dialog.ap-modal-dialog {
 
 /* ── Gestión Pedidos — layout fijo sin scroll de página ───────────── */
 #dashboard__main.dashboard__main--full {
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  margin-bottom: 0;
 }
 
 #dashboard__main.dashboard__main--full .inventory-management {
@@ -2235,7 +2237,8 @@ dialog.ap-modal-dialog {
   padding: 1.5rem 2rem 0;
 }
 
-#dash-tabla-wrap {
+/* título + tabla scrollean juntos; paginación queda fija al fondo */
+#dash-scroll-area {
   flex: 1;
   min-height: 0;
   overflow: auto;

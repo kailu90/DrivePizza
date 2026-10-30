@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
     <link rel="stylesheet" href="../Estilos/modalDetalle.css">
     <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+    <style>
+        /* Anclaje para layout fijo dentro del iframe del planta-shell */
+        html, body { height: 100%; overflow: hidden; }
+    </style>
 </head>
 
 <body>
@@ -32,14 +36,13 @@
         <button class="toggle-btn" id="toggle-btn"><</button>
 
                 <section class="dashboard__section inventory-management">
+                    <div id="dash-scroll-area">
                     <h2 class="inventory-management__title">
                         Gestión de Pedidos
                         <button id="btn-devoluciones" class="ap-btn ap-btn--primary" style="margin-left:auto;">↩ Devoluciones</button>
                         <button id="btn-nuevo-pedido" class="ap-btn ap-btn--primary">+ Nuevo Pedido</button>
                     </h2>
 
-
-                    <div id="dash-tabla-wrap">
                     <table class="inventory-management__table" id="table-dashboard">
                         <thead class="inventory-management__thead">
                             <tr class="inventory-management__row">
