@@ -255,6 +255,11 @@
     font-weight: 600;
     margin-left: 3px;
 }
+.mpesos-inline--saved {
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 0.85em;
+}
 .mpesos-simple-footer {
     display: flex;
     justify-content: flex-end;

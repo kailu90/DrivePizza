@@ -114,8 +114,13 @@ function renderPesosSection(productos) {
     const section = document.getElementById('modal-pesos-section');
     if (!section) return;
 
-    const hasVariable = productos.some(p => getProdCatalogo(p.idProduct)?.pesoVariable === true);
-    if (!hasVariable) { section.innerHTML = ''; return; }
+    const status         = pedidoEnEdicion?.data?.status;
+    const pendingPesos   = productos.filter(p =>
+        getProdCatalogo(p.idProduct)?.pesoVariable === true && !(p.pesoReal > 0)
+    );
+
+    // Mostrar botón solo si: status pendiente Y quedan pesos sin guardar
+    if (status !== 'pendiente' || pendingPesos.length === 0) { section.innerHTML = ''; return; }
 
     section.innerHTML = `<div class="mpesos-simple-footer">
         <button type="button" class="ap-btn ap-btn--primary" id="btn-guardar-pesos" disabled>Guardar peso</button>
@@ -742,16 +747,23 @@ function renderTablaModal(productos, esEdicion) {
     productos.forEach((prod, idx) => {
         const cat       = getProdCatalogo(prod.idProduct);
         const esPesoVar = !esEdicion && cat?.pesoVariable === true;
-        const pesoVal   = prod.pesoReal > 0 ? prod.pesoReal : '';
-        const precioVivo = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
+        const status    = pedidoEnEdicion?.data?.status;
+        const editable  = esPesoVar && status === 'pendiente';
 
-        const pesoInline = esPesoVar ? `<span class="mpesos-inline">
+        let pesoInline = '';
+        if (editable) {
+            const pesoVal   = prod.pesoReal > 0 ? prod.pesoReal : '';
+            const precioVivo = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
+            pesoInline = `<span class="mpesos-inline">
                 &nbsp;·&nbsp; ⚖️ <input type="number" class="mpesos-input ap-input"
                     step="0.01" min="0.01" placeholder="kg"
                     data-prod="${prod.idProduct}" data-precio-kg="${cat?.price ?? 0}"
                     value="${pesoVal}"> kg
                 <span class="mpesos-precio-live">${precioVivo}</span>
-            </span>` : '';
+            </span>`;
+        } else if (esPesoVar && prod.pesoReal > 0) {
+            pesoInline = `<span class="mpesos-inline mpesos-inline--saved">&nbsp;· ⚖️ ${prod.pesoReal} kg</span>`;
+        }
 
         const cantCell = esEdicion
             ? `<td style="text-align:center;"><input type="number" class="input-cant-modal" min="1" value="${prod.quantity}" data-idx="${idx}" style="width:55px;text-align:center;padding:2px 4px;border:1px solid #ccc;border-radius:4px;"></td>`
@@ -792,13 +804,14 @@ async function imprimirDirecto(docId) {
             reader.readAsDataURL(logoBlob);
         });
 
-        const productosHTML = (pedido.products || []).map(p => `
-          <div class="product-row">
-            <span class="p-qty">${p.quantity}×</span>
-            <span class="p-name">${p.name}</span>
-            <span class="p-price">$${fmtNum(p.totalPrice)}</span>
-          </div>`
-        ).join('');
+        const productosHTML = (pedido.products || []).map(p => {
+            const pesoInfo = p.pesoReal > 0 ? `<span class="p-peso"> ⚖️ ${p.pesoReal} kg</span>` : '';
+            return `<div class="product-row">
+              <span class="p-qty">${p.quantity}×</span>
+              <span class="p-name">${p.name}${pesoInfo}</span>
+              <span class="p-price">$${fmtNum(p.totalPrice)}</span>
+            </div>`;
+        }).join('');
 
         const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
@@ -902,6 +915,7 @@ hr.dashed { border: none; border-top: 1.5px dashed #000; margin: 6px 0; }
 .product-row:last-child { border-bottom: none; }
 .p-qty   { font-weight: 900; white-space: nowrap; }
 .p-name  { line-height: 1.3; word-break: break-word; padding-right: 8px; }
+.p-peso  { font-size: 10px; font-style: italic; }
 .p-price { text-align: right; white-space: nowrap; }
 
 /* Totales */
