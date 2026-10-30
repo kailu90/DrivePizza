@@ -358,16 +358,22 @@
             /* Alertas: altura automática */
             .piz-dash__alertas { height: auto; max-height: 160px; }
 
+            /* Footer: sin desplazamiento lateral cuando el sidebar está oculto */
+            .dashboard__footer, .inventory__footer {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
             /* Iframe subpáginas (pedidos, historial, etc.) */
             #dashboard__main.frame-activo {
                 margin-left: 0 !important;
                 margin-top: 58px;
-                height: calc(100vh - 58px);
+                height: calc(100vh - 100px);
                 padding-bottom: 0;
                 overflow: hidden;
             }
             #dashboard__main.frame-activo #main-frame {
-                height: calc(100vh - 90px) !important;
+                height: calc(100vh - 108px) !important;
             }
         }
     </style>
