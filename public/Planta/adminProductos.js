@@ -4,6 +4,7 @@ import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/componen
 import { UNIDADES_MEDIDA } from './planta.config.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
+CargarSidebar();
 
 
 let usuarioActual = 'Admin';
@@ -37,7 +38,6 @@ let _proveedorSeleccionado = null; // { id, name }
 verificarAccesoPlanta(async ({ username, sede }) => {
   usuarioActual = username;
   CargarHeader(capitalizarSede(sede));
-  CargarSidebar();
   await Promise.all([loadCategorias(), loadProducts(), loadProveedores()]);
   buildCatFilter();
   renderTable();

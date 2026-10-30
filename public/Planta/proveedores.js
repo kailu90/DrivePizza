@@ -2,6 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { registrarMovimiento } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
+CargarSidebar();
 
 let usuarioActual = 'Admin';
 
@@ -35,7 +36,6 @@ let editingDocId = null;
 verificarAccesoPlanta(async ({ username, sede }) => {
     usuarioActual = username;
     CargarHeader(capitalizarSede(sede));
-    CargarSidebar();
     await loadProveedores();
     renderTable();
     document.body.classList.add('loaded');

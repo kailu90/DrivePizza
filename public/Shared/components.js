@@ -161,7 +161,13 @@ export function MostrarBotonMonitor() {
 export function CargarSidebar(onReady = null) {
     if (_inPlantaShell()) {
         const main = document.querySelector('.dashboard__main, .inventory__main, .ap-main, .inf-main, .mc-main');
-        if (main) main.classList.add('dashboard__main--full', 'iframe-content');
+        if (main) {
+            main.classList.add('dashboard__main--full', 'iframe-content');
+            // Inline style gana sobre cualquier CSS externo (ap-main, inf-main, etc.
+            // se cargan después de styles.css y sobreescriben margin-left:0 de la clase)
+            main.style.marginLeft = '0';
+            main.style.marginTop  = '0';
+        }
         document.getElementById('toggle-btn')?.style.setProperty('display', 'none');
         if (onReady) onReady();
         _sidebarDone = true;

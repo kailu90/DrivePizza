@@ -4,11 +4,11 @@ import { getProductos } from '../Shared/productosService.js';
 
 import { supabase } from '../Api/supabaseConfig.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
+CargarSidebar();
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarFooter();
-    CargarSidebar();
 });
 
 // ── Helpers de fecha ──────────────────────────────────────────────────────────

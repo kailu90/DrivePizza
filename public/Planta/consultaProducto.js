@@ -3,11 +3,11 @@ import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../S
 import { getProductos } from '../Shared/productosService.js';
 
 import { supabase } from '../Api/supabaseConfig.js';
+CargarSidebar();
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarFooter();
-    CargarSidebar();
     document.body.classList.add('loaded');
 });
 

@@ -3,12 +3,12 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
+CargarSidebar();
 
 // ── Auth guard ─────────────────────────────────────────────────────────────
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarFooter();
-    CargarSidebar();
     setTimeout(() => {
         supabase.channel('mv-movimientos-ext')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'movimientos' }, mostrarBannerRecarga)

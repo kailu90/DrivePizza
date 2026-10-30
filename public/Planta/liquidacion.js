@@ -1,6 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
+CargarSidebar();
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 
 let offsetSemanas = 0;
@@ -204,7 +205,7 @@ async function cargarInforme() {
 // ── Auth + init ────────────────────────────────────────────────────────────
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
-    CargarSidebar(() => cargarInforme());
+    cargarInforme();
 });
 
 document.getElementById('liq-prev').addEventListener('click', () => { offsetSemanas--; cargarInforme(); });

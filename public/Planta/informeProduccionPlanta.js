@@ -3,6 +3,7 @@ import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../S
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { SEDES_MASA, INFORME_PROD_CATEGORIAS, INFORME_PROD_SIROPES,
          INFORME_PROD_MASAS, INFORME_PROD_CARNES } from './planta.config.js';
+CargarSidebar();
 let offsetDias = 0;
 
 // ── Producción — constantes desde planta.config.js ────────────────────────
@@ -271,7 +272,6 @@ if (sedesOrdenadasSirope.length === 0) {
 verificarAccesoPlanta(async ({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarFooter();
-    CargarSidebar();
     await cargarInforme();
 
     document.getElementById('iprod-prev').addEventListener('click', () => { offsetDias--; cargarInforme(); });
