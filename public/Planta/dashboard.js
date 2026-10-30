@@ -241,13 +241,6 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
         actualizarBadgeFila(docId, nuevoEstado);
         ocultarOverlay(nuevoEstado === 'entregado');
         if (nuevoEstado === 'entregado') {
-            // Crear registros de siropes con entrega diferida
-            await crearRegistrosSiropes(
-                pedidoEnEdicion.productos,
-                pedidoEnEdicion.data.idPedido,
-                pedidoEnEdicion.data.user,
-                new Date().toISOString()
-            );
             setTimeout(() => {
                 cerrarListenerModal();
                 modalDetalle.style.display = 'none';
@@ -633,6 +626,13 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
                 .eq('id', docId);
 
             if (updateErr) throw updateErr;
+
+            // Borrar siropes pendientes del pedido eliminado
+            await supabase
+                .from('entregas_siropes')
+                .delete()
+                .eq('pedido_id', pedidoData.idPedido)
+                .eq('estado', 'pendiente');
 
             pedidosMap.delete(docId);
             todosPedidosSup = todosPedidosSup.filter(p => String(p.id) !== docId);

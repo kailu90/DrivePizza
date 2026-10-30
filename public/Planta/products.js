@@ -534,6 +534,25 @@ document.getElementById('mc-enviar').addEventListener('click', async () => {
 
     const { nuevoId, docId } = await saveOrderWithConsecutiveId(pedidoData);
 
+    // Crear registros de siropes pendientes al momento de crear el pedido
+    const siropesItems = selectedProducts.filter(p => {
+      const cat = productsData.find(c => String(c.docId || c.id) === String(p.idProduct));
+      return cat?.entregaDiferida === true;
+    });
+    if (siropesItems.length > 0) {
+      const registros = siropesItems.map(p => ({
+        producto_id:     String(p.idProduct),
+        producto_nombre: p.name,
+        sede:            (sedeAsignada || '').toLowerCase(),
+        cantidad:        p.quantity,
+        pedido_id:       nuevoId,
+        fecha_pedido:    pedidoData.orderDate,
+        estado:          'pendiente',
+      }));
+      const { error: siropErr } = await supabase.from('entregas_siropes').insert(registros);
+      if (siropErr) console.error('Error creando registros siropes:', siropErr);
+    }
+
     await registrarMovimiento({
       tipo: 'CREACION',
       entidad: 'Pedido',
