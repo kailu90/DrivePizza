@@ -39,7 +39,7 @@ async function _poblarSedes() {
 async function cargarSiropes() {
     const tbody = document.getElementById('siropes-tbody');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#888;">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">Cargando...</td></tr>`;
 
     let query = supabase
         .from('entregas_siropes')
@@ -60,7 +60,7 @@ function _renderTabla(data) {
     if (!tbody) return;
 
     if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888;font-size:1.3rem;">Sin registros</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;font-size:1.3rem;">Sin registros</td></tr>`;
         return;
     }
 
@@ -68,25 +68,29 @@ function _renderTabla(data) {
         const badgeCls = r.estado === 'pendiente' ? 'badge-preparacion' : 'badge-despachado';
         const badgeTxt = r.estado === 'pendiente' ? 'Pendiente'         : 'Entregado';
 
-        const accion = r.estado === 'pendiente'
+        const entregaCell = r.estado === 'pendiente'
             ? `<button class="ap-btn ap-btn--primary btn-entregar-sirope"
                    data-id="${r.id}" style="font-size:1.1rem;padding:4px 12px;">
                    Entregar
                </button>`
-            : `<span style="color:#555;font-size:1.1rem;">
-                   ${fmtFecha(r.fecha_entrega)}${r.observacion ? ` · <em>${r.observacion}</em>` : ''}
-               </span>`;
+            : `<span style="color:#555;font-size:1.1rem;">${fmtFecha(r.fecha_entrega)}</span>`;
+
+        const obsCell = r.observacion
+            ? `<span style="font-size:1.1rem;color:#555;">${r.observacion}</span>`
+            : '—';
 
         return `<tr class="inventory-management__row">
-            <td class="inventory-management__cell">${r.producto_nombre}</td>
-            <td class="inventory-management__cell">${capitalizarSede(r.sede)}</td>
-            <td class="inventory-management__cell" style="text-align:center;">${r.cantidad}</td>
-            <td class="inventory-management__cell">#${r.pedido_id ?? '—'}</td>
+            <td class="inventory-management__cell">
+                #${r.pedido_id ?? '—'}
+                <div style="font-size:1.1rem;color:#888;">${r.producto_nombre} · ${r.cantidad} uds.</div>
+            </td>
             <td class="inventory-management__cell">${fmtFecha(r.fecha_pedido)}</td>
+            <td class="inventory-management__cell">${capitalizarSede(r.sede)}</td>
             <td class="inventory-management__cell">
                 <span class="order-estado-badge ${badgeCls}">${badgeTxt}</span>
             </td>
-            <td class="inventory-management__cell">${accion}</td>
+            <td class="inventory-management__cell">${entregaCell}</td>
+            <td class="inventory-management__cell">${obsCell}</td>
         </tr>`;
     }).join('');
 }
