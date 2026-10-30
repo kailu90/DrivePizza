@@ -47,16 +47,43 @@
         </div>
 
         <!-- Tabla -->
-        <table class="inventory-management__table">
+        <style>
+            .siropes-table { table-layout: fixed; }
+            .siropes-table col.sc-id            { width: 70px; }
+            .siropes-table col.sc-sirope        { width: auto; }
+            .siropes-table col.sc-fecha-pedido  { width: 120px; }
+            .siropes-table col.sc-sede          { width: 110px; }
+            .siropes-table col.sc-estado        { width: 110px; }
+            .siropes-table col.sc-fecha-entrega { width: 130px; }
+            .siropes-table col.sc-obs           { width: 180px; }
+
+            .siropes-table .inventory-management__heading,
+            .siropes-table .inventory-management__cell { text-align: center; }
+
+            .siropes-table th.sh-sirope,
+            .siropes-table td.sc-sirope,
+            .siropes-table th.sh-obs,
+            .siropes-table td.sc-obs { text-align: left; }
+        </style>
+        <table class="inventory-management__table siropes-table">
+            <colgroup>
+                <col class="sc-id">
+                <col class="sc-sirope">
+                <col class="sc-fecha-pedido">
+                <col class="sc-sede">
+                <col class="sc-estado">
+                <col class="sc-fecha-entrega">
+                <col class="sc-obs">
+            </colgroup>
             <thead class="inventory-management__thead">
                 <tr class="inventory-management__row">
                     <th class="inventory-management__heading">ID</th>
-                    <th class="inventory-management__heading">SIROPE</th>
-                    <th class="inventory-management__heading">FECHA DE ENTREGA</th>
+                    <th class="inventory-management__heading sh-sirope">SIROPE</th>
+                    <th class="inventory-management__heading">FECHA PEDIDO</th>
                     <th class="inventory-management__heading">SEDE</th>
                     <th class="inventory-management__heading">ESTADO</th>
-                    <th class="inventory-management__heading">ENTREGA</th>
-                    <th class="inventory-management__heading">OBSERVACIÓN</th>
+                    <th class="inventory-management__heading">FECHA ENTREGA</th>
+                    <th class="inventory-management__heading sh-obs">OBSERVACIÓN</th>
                 </tr>
             </thead>
             <tbody class="inventory-management__tbody" id="siropes-tbody"></tbody>

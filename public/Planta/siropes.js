@@ -81,7 +81,7 @@ function _renderTabla(data) {
 
         return `<tr class="inventory-management__row">
             <td class="inventory-management__cell">#${r.pedido_id ?? '—'}</td>
-            <td class="inventory-management__cell">
+            <td class="inventory-management__cell sc-sirope">
                 ${r.producto_nombre}
                 <div style="font-size:1.1rem;color:#888;">${r.cantidad} uds.</div>
             </td>
@@ -91,7 +91,7 @@ function _renderTabla(data) {
                 <span class="order-estado-badge ${badgeCls}">${badgeTxt}</span>
             </td>
             <td class="inventory-management__cell">${entregaCell}</td>
-            <td class="inventory-management__cell">${obsCell}</td>
+            <td class="inventory-management__cell sc-obs">${obsCell}</td>
         </tr>`;
     }).join('');
 }
