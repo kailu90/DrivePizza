@@ -69,8 +69,13 @@ export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
 }
 
+// True solo cuando la página corre dentro del planta-shell (mismo origen)
+function _inPlantaShell() {
+    try { return window.parent.location.pathname.includes('planta-shell'); } catch { return false; }
+}
+
 export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
-    if (window.self !== window.top) { _headerDone = true; _checkReveal(); return; }
+    if (_inPlantaShell()) { _headerDone = true; _checkReveal(); return; }
     const headerContainer = document.getElementById('header-container');
     if (!headerContainer) return;
 
@@ -154,7 +159,7 @@ export function MostrarBotonMonitor() {
 }
 
 export function CargarSidebar(onReady = null) {
-    if (window.self !== window.top) {
+    if (_inPlantaShell()) {
         const main = document.querySelector('.dashboard__main, .inventory__main, .ap-main, .inf-main, .mc-main');
         if (main) main.classList.add('dashboard__main--full', 'iframe-content');
         document.getElementById('toggle-btn')?.style.setProperty('display', 'none');
@@ -254,8 +259,8 @@ export function CargarFooter() {
 export function revelarSplash(minMs = 1000) {
     const splash = document.getElementById('pw-page-transition');
     if (!splash) return;
-    // Dentro del shell iframe el nav-overlay del shell ya cubre la transición
-    if (window.parent !== window) {
+    // Dentro del planta-shell el nav-overlay ya cubre la transición
+    if (_inPlantaShell()) {
         splash.remove();
         return;
     }
