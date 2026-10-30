@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siropes — DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+
+    <section class="dashboard__section inventory-management">
+        <h2 class="inventory-management__title">
+            Siropes — Historial de entregas
+        </h2>
+
+        <!-- Filtros -->
+        <div class="dashboard__filters">
+            <div class="dashboard__filters-quick">
+                <button class="btn-quick siropes-filtro-btn active" data-estado="pendiente">Pendiente</button>
+                <button class="btn-quick siropes-filtro-btn" data-estado="entregado">Entregado</button>
+                <button class="btn-quick siropes-filtro-btn" data-estado="todos">Todos</button>
+            </div>
+            <div class="dashboard__filters-dates">
+                <div class="dashboard__filter-group">
+                    <label for="siropes-filtro-sede">Sede</label>
+                    <select id="siropes-filtro-sede" class="btn_orderBy btn-primary">
+                        <option value="">Todas las sedes</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <table class="inventory-management__table">
+            <thead class="inventory-management__thead">
+                <tr class="inventory-management__row">
+                    <th class="inventory-management__heading">PRODUCTO</th>
+                    <th class="inventory-management__heading">SEDE</th>
+                    <th class="inventory-management__heading" style="text-align:center;">CANT.</th>
+                    <th class="inventory-management__heading">PEDIDO</th>
+                    <th class="inventory-management__heading">FECHA PEDIDO</th>
+                    <th class="inventory-management__heading">ESTADO</th>
+                    <th class="inventory-management__heading">ENTREGA / ACCIÓN</th>
+                </tr>
+            </thead>
+            <tbody class="inventory-management__tbody" id="siropes-tbody"></tbody>
+        </table>
+    </section>
+</main>
+
+<div id="footer-container"></div>
+
+<!-- Dialog confirmar entrega -->
+<dialog id="modal-sirope-entrega" class="ap-modal-dialog">
+    <div class="ap-modal__form">
+        <h2 class="ap-modal__title">Confirmar entrega de sirope</h2>
+        <p id="sirope-entrega-info" style="font-weight:600; margin-bottom:1rem; font-size:1.3rem; color:#333;"></p>
+        <div class="ap-modal__grid">
+            <div class="ap-field ap-field--full">
+                <label class="ap-label" for="sirope-obs">Observación (opcional)</label>
+                <textarea id="sirope-obs" class="ap-input" rows="3"
+                    placeholder="Ej: entregado junto al pedido #145..."
+                    style="resize:vertical;"></textarea>
+            </div>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="sirope-cancelar">Cancelar</button>
+            <button type="button" class="ap-btn ap-btn--primary" id="sirope-confirmar">Marcar entregado</button>
+        </div>
+    </div>
+</dialog>
+
+<script type="module" src="siropes.js"></script>
+</body>
+</html>

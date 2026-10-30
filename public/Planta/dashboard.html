@@ -35,7 +35,7 @@
                     <h2 class="inventory-management__title">
                         Gestión de Pedidos
                         <button id="btn-devoluciones" class="ap-btn ap-btn--primary" style="margin-left:auto;">↩ Devoluciones</button>
-                        <button id="btn-siropes" class="ap-btn ap-btn--primary">Siropes</button>
+                        <button id="btn-siropes" class="ap-btn ap-btn--primary" onclick="location.href='./siropes.html'">Siropes</button>
                         <button id="btn-nuevo-pedido" class="ap-btn ap-btn--primary">+ Nuevo Pedido</button>
                     </h2>
 
@@ -107,56 +107,9 @@
                         <button class="btn-quick" id="btn-next-page">Siguiente →</button>
                     </div>
                 </section>
-        <!-- Sección Siropes -->
-        <section class="dashboard__section inventory-management" id="siropes-section" style="display:none; margin-top:16px;">
-            <h2 class="inventory-management__title">
-                Siropes — historial de entregas
-                <div style="display:flex; gap:6px; align-items:center; margin-left:auto; flex-wrap:wrap;">
-                    <button class="btn-quick siropes-filtro-btn active" data-estado="pendiente">Pendiente</button>
-                    <button class="btn-quick siropes-filtro-btn" data-estado="entregado">Entregado</button>
-                    <button class="btn-quick siropes-filtro-btn" data-estado="todos">Todos</button>
-                    <select id="siropes-filtro-sede" class="btn_orderBy btn-primary">
-                        <option value="">Todas las sedes</option>
-                    </select>
-                    <button id="btn-cerrar-siropes" class="ap-btn ap-btn--ghost">✕ Cerrar</button>
-                </div>
-            </h2>
-            <table class="inventory-management__table" id="siropes-table">
-                <thead class="inventory-management__thead">
-                    <tr class="inventory-management__row">
-                        <th class="inventory-management__heading">PRODUCTO</th>
-                        <th class="inventory-management__heading">SEDE</th>
-                        <th class="inventory-management__heading" style="text-align:center;">CANT.</th>
-                        <th class="inventory-management__heading">PEDIDO</th>
-                        <th class="inventory-management__heading">FECHA PEDIDO</th>
-                        <th class="inventory-management__heading">ESTADO</th>
-                        <th class="inventory-management__heading">ENTREGA / ACCIÓN</th>
-                    </tr>
-                </thead>
-                <tbody class="inventory-management__tbody" id="siropes-tbody"></tbody>
-            </table>
-        </section>
     </main>
 
     <div id="footer-container"></div>
-
-    <!-- Dialog confirmar entrega sirope -->
-    <dialog id="modal-sirope-entrega" class="ap-modal-dialog">
-        <div class="ap-modal__form">
-            <h2 class="ap-modal__title">Confirmar entrega de sirope</h2>
-            <p id="sirope-entrega-info" style="font-weight:600; margin-bottom:1rem; font-size:1.3rem; color:#333;"></p>
-            <div class="ap-modal__grid">
-                <div class="ap-field ap-field--full">
-                    <label class="ap-label" for="sirope-obs">Observación (opcional)</label>
-                    <textarea id="sirope-obs" class="ap-input" rows="3" placeholder="Ej: entregado junto al pedido #145..." style="resize:vertical;"></textarea>
-                </div>
-            </div>
-            <div class="ap-modal__actions">
-                <button type="button" class="ap-btn ap-btn--ghost" id="sirope-cancelar">Cancelar</button>
-                <button type="button" class="ap-btn ap-btn--primary" id="sirope-confirmar">✓ Marcar entregado</button>
-            </div>
-        </div>
-    </dialog>
 
 
     <!--*****************Modal Vista previa de pedido****************-->
