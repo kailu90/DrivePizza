@@ -755,14 +755,14 @@ function renderTablaModal(productos, esEdicion) {
             const pesoVal   = prod.pesoReal > 0 ? prod.pesoReal : '';
             const precioVivo = prod.pesoReal > 0 ? `= ${fmtCOP.format(prod.totalPrice)}` : '';
             pesoInline = `<span class="mpesos-inline">
-                &nbsp;·&nbsp; ⚖️ <input type="number" class="mpesos-input ap-input"
+                &nbsp;(<input type="number" class="mpesos-input ap-input"
                     step="0.01" min="0.01" placeholder="kg"
                     data-prod="${prod.idProduct}" data-precio-kg="${cat?.price ?? 0}"
                     value="${pesoVal}"> kg
-                <span class="mpesos-precio-live">${precioVivo}</span>
+                <span class="mpesos-precio-live">${precioVivo}</span>)
             </span>`;
         } else if (esPesoVar && prod.pesoReal > 0) {
-            pesoInline = `<span class="mpesos-inline mpesos-inline--saved">&nbsp;· ⚖️ ${prod.pesoReal} kg</span>`;
+            pesoInline = `<span class="mpesos-inline mpesos-inline--saved">&nbsp;(${prod.pesoReal} kg)</span>`;
         }
 
         const cantCell = esEdicion
@@ -805,7 +805,7 @@ async function imprimirDirecto(docId) {
         });
 
         const productosHTML = (pedido.products || []).map(p => {
-            const pesoInfo = p.pesoReal > 0 ? `<span class="p-peso"> ⚖️ ${p.pesoReal} kg</span>` : '';
+            const pesoInfo = p.pesoReal > 0 ? `<span class="p-peso"> (${p.pesoReal} kg)</span>` : '';
             return `<div class="product-row">
               <span class="p-qty">${p.quantity}×</span>
               <span class="p-name">${p.name}${pesoInfo}</span>
