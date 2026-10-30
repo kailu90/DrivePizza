@@ -266,6 +266,10 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
 
 
 
+let pedidosMap = new Map();   // docId → data — caché en memoria para merge incremental
+let sortOrderActual = 'desc'; // sort activo al momento del último render
+let _realtimeStarted = false;
+
 CargarSidebar(() => {
     setQuickActive('btn-recientes');
     listenForOrders();
@@ -388,9 +392,6 @@ function renderRows(querySnapshot, ordersContainer, sortOrder) {
 
 }
 
-let pedidosMap = new Map();   // docId → data — caché en memoria para merge incremental
-let sortOrderActual = 'desc'; // sort activo al momento del último render
-
 // Fake snapshot compatible con renderRows
 function crearFakeSnapshot(entries) {
     return {
@@ -400,8 +401,6 @@ function crearFakeSnapshot(entries) {
 }
 
 // Realtime: se inicia una sola vez y persiste durante toda la sesión
-let _realtimeStarted = false;
-
 function iniciarPoll() {
     // Supabase Realtime: recarga la vista al detectar cambios en pedidos_planta
     supabase
