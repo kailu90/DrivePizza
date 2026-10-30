@@ -21,16 +21,33 @@
             display: block;
             background: #fff;
         }
-        #shell-nav-overlay {
-            display: none;
+        /* Barra de progreso delgada — reemplaza el overlay de pantalla completa */
+        #shell-nav-bar {
             position: absolute;
-            inset: 0;
-            background: rgba(255,255,255,0.82);
+            top: 0; left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, #e67e22, #f39c12);
             z-index: 200;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            color: #888;
+            transition: width 0.25s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #shell-nav-bar.loading {
+            opacity: 1;
+            animation: shell-bar-grow 1.8s ease-out forwards;
+        }
+        #shell-nav-bar.done {
+            width: 100% !important;
+            opacity: 0;
+            transition: width 0.15s ease, opacity 0.3s ease 0.15s;
+            animation: none;
+        }
+        @keyframes shell-bar-grow {
+            0%   { width: 0% }
+            40%  { width: 65% }
+            80%  { width: 85% }
+            100% { width: 92% }
         }
     </style>
 </head>
@@ -49,7 +66,7 @@
 
 <main class="dashboard__main" id="dashboard__main">
     <button class="toggle-btn" id="toggle-btn"><</button>
-    <div id="shell-nav-overlay">Cargando...</div>
+    <div id="shell-nav-bar"></div>
     <iframe id="planta-frame" src="./dashboard.html" title="Planta"></iframe>
 </main>
 

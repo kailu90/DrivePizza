@@ -2,9 +2,21 @@ import { supabase }                                                   from '../A
 import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta }                                      from '../Auth/plantaAuth.js';
 
-const frame   = document.getElementById('planta-frame');
-const overlay = document.getElementById('shell-nav-overlay');
+const frame  = document.getElementById('planta-frame');
+const navBar = document.getElementById('shell-nav-bar');
 let _currentPage = './dashboard.html';
+let _barTimer = null;
+
+function _barStart() {
+    clearTimeout(_barTimer);
+    navBar.classList.remove('done');
+    navBar.classList.add('loading');
+}
+function _barDone() {
+    navBar.classList.remove('loading');
+    navBar.classList.add('done');
+    _barTimer = setTimeout(() => navBar.classList.remove('done'), 500);
+}
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ sede }) => {
@@ -22,7 +34,7 @@ function _navTo(page) {
     if (!page || page === _currentPage) return;
     _currentPage = page;
     _setActiveLink(page);
-    overlay.style.display = 'flex';
+    _barStart();
     frame.src = page;
 }
 
@@ -53,7 +65,7 @@ frame?.addEventListener('load', () => {
         }
     } catch {}
 
-    overlay.style.display = 'none';
+    _barDone();
 
     // Sincronizar active link si el iframe navegó internamente
     try {
