@@ -95,6 +95,41 @@
 
 <div id="footer-container"></div>
 
+<!-- Dialog detalle sirope -->
+<dialog id="modal-sirope-detalle" class="ap-modal-dialog">
+    <div class="ap-modal__form">
+        <h2 class="ap-modal__title" id="msd-titulo"></h2>
+        <div class="ap-modal__grid">
+            <div class="ap-field">
+                <label class="ap-label">Sede</label>
+                <p id="msd-sede" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+            <div class="ap-field">
+                <label class="ap-label">Cantidad</label>
+                <p id="msd-cantidad" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+            <div class="ap-field">
+                <label class="ap-label">Fecha pedido</label>
+                <p id="msd-fecha-pedido" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+            <div class="ap-field">
+                <label class="ap-label">Estado</label>
+                <p id="msd-estado" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+            <div class="ap-field ap-field--full" id="msd-entrega-row" style="display:none;">
+                <label class="ap-label">Fecha entrega</label>
+                <p id="msd-fecha-entrega" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+            <div class="ap-field ap-field--full" id="msd-obs-row" style="display:none;">
+                <label class="ap-label">Observación</label>
+                <p id="msd-obs" class="ap-input" style="margin:0;background:#f5f5f5;"></p>
+            </div>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="msd-cerrar">Cerrar</button>
+        </div>
+    </div>
+</dialog>
 
 <script type="module" src="siropes.js"></script>
 </body>

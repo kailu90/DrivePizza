@@ -115,21 +115,47 @@ document.getElementById('siropes-tbody')?.addEventListener('click', e => {
     if (!row) return;
 
     const btn = e.target.closest('.btn-entregar-sirope');
-    const id  = parseInt(btn ? btn.dataset.id : row.dataset.id);
-    const sr  = _siropesData.find(r => r.id === id);
-    if (!sr || !sr.pedido_id) return;
+    const sr  = _siropesData.find(r => r.id === parseInt(row.dataset.id));
+    if (!sr) return;
 
     if (btn) {
-        // Botón Entregar: abre modal con contexto de entrega
+        // Botón Entregar: navegar al dashboard con contexto de entrega
+        if (!sr.pedido_id) return;
         sessionStorage.setItem('sirope_pendiente', JSON.stringify({
             id:              sr.id,
             producto_nombre: sr.producto_nombre,
             cantidad:        sr.cantidad,
             sede:            sr.sede,
         }));
-    } else {
-        // Click en fila: solo abrir modal del pedido (sin contexto entrega)
-        sessionStorage.removeItem('sirope_pendiente');
+        window.location.href = `./dashboard.html?pedido=${sr.pedido_id}`;
+        return;
     }
-    window.location.href = `./dashboard.html?pedido=${sr.pedido_id}`;
+
+    // Click en fila: abrir modal con info del sirope
+    document.getElementById('msd-titulo').textContent   = sr.producto_nombre;
+    document.getElementById('msd-sede').textContent     = capitalizarSede(sr.sede);
+    document.getElementById('msd-cantidad').textContent = `${sr.cantidad} uds.`;
+    document.getElementById('msd-fecha-pedido').textContent = fmtFecha(sr.fecha_pedido);
+    document.getElementById('msd-estado').textContent   = sr.estado === 'pendiente' ? 'Pendiente' : 'Entregado';
+
+    const entregaRow = document.getElementById('msd-entrega-row');
+    const obsRow     = document.getElementById('msd-obs-row');
+    if (sr.fecha_entrega) {
+        document.getElementById('msd-fecha-entrega').textContent = fmtFecha(sr.fecha_entrega);
+        entregaRow.style.display = '';
+    } else {
+        entregaRow.style.display = 'none';
+    }
+    if (sr.observacion) {
+        document.getElementById('msd-obs').textContent = sr.observacion;
+        obsRow.style.display = '';
+    } else {
+        obsRow.style.display = 'none';
+    }
+
+    document.getElementById('modal-sirope-detalle').showModal();
+});
+
+document.getElementById('msd-cerrar')?.addEventListener('click', () => {
+    document.getElementById('modal-sirope-detalle').close();
 });
