@@ -12,11 +12,23 @@
             padding: 0 !important;
             overflow: hidden;
             margin-bottom: 0 !important;
+            margin-left: 220px;
+            margin-top: 80px;
             position: relative;
+        }
+        /* Sidebar colapsado: achicar el main igual que el toggle */
+        .dashboard__main.margin-hidden {
+            margin-left: 12px !important;
+        }
+        .toggle-btn, .inventory-toggle {
+            left: 220px !important;
+        }
+        .toggle-btn.left-hidden {
+            left: 10px !important;
         }
         #planta-frame {
             width: 100%;
-            height: calc(100vh - 100px);
+            height: calc(100vh - 80px);
             border: none;
             display: block;
             background: #fff;
