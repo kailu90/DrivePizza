@@ -459,9 +459,10 @@ function listenForOrders(sortOrder = 'desc') {
         } else {
             supabase
                 .from('pedidos_planta')
-                .select('*')
+                .select('id, id_pedido, user_sede, delivery_date, net_cost, total, recargo, order_notes, status, order_date, updated_at, eliminado')
                 .eq('eliminado', false)
                 .order('id_pedido', { ascending: false })
+                .limit(300)
                 .then(({ data: pedidos, error }) => {
                     if (error) { console.error('Error cargando pedidos:', error); return; }
                     todosPedidosSup = pedidos || [];
@@ -470,7 +471,7 @@ function listenForOrders(sortOrder = 'desc') {
         }
     } else {
         // Modo fecha: consulta filtrada, sin paginación
-        let query = supabase.from('pedidos_planta').select('*').eq('eliminado', false);
+        let query = supabase.from('pedidos_planta').select('id, id_pedido, user_sede, delivery_date, net_cost, total, recargo, order_notes, status, order_date, updated_at, eliminado').eq('eliminado', false);
         if (desde === hasta && desde) {
             query = query.eq('delivery_date', desde);
         } else {
@@ -1731,13 +1732,11 @@ async function actualizarBadgeSiropes() {
         const link = document.getElementById('sidebar-siropes-link');
         if (!link) return false;
         link.querySelector('.siropes-badge')?.remove();
-        if (count > 0) {
-            const b = document.createElement('span');
-            b.className = 'siropes-badge';
-            b.textContent = count;
-            b.style.cssText = 'background:#e67e22;color:#fff;border-radius:10px;padding:1px 7px;font-size:1.1rem;font-weight:700;margin-left:6px;vertical-align:middle;';
-            link.appendChild(b);
-        }
+        const b = document.createElement('span');
+        b.className = 'siropes-badge';
+        b.textContent = count ?? 0;
+        b.style.cssText = `background:${count > 0 ? '#e67e22' : '#aaa'};color:#fff;border-radius:10px;padding:1px 7px;font-size:1.1rem;font-weight:700;margin-left:6px;vertical-align:middle;`;
+        link.appendChild(b);
         return true;
     };
     if (!_apply()) setTimeout(_apply, 1200);

@@ -26,13 +26,11 @@ verificarAccesoPlanta(async ({ sede }) => {
         const link = document.getElementById('sidebar-siropes-link');
         if (!link) return false;
         link.querySelector('.siropes-badge')?.remove();
-        if (count > 0) {
-            const b = document.createElement('span');
-            b.className = 'siropes-badge';
-            b.textContent = count;
-            b.style.cssText = 'background:#e67e22;color:#fff;border-radius:10px;padding:1px 7px;font-size:1.1rem;font-weight:700;margin-left:6px;vertical-align:middle;';
-            link.appendChild(b);
-        }
+        const b = document.createElement('span');
+        b.className = 'siropes-badge';
+        b.textContent = count ?? 0;
+        b.style.cssText = `background:${count > 0 ? '#e67e22' : '#aaa'};color:#fff;border-radius:10px;padding:1px 7px;font-size:1.1rem;font-weight:700;margin-left:6px;vertical-align:middle;`;
+        link.appendChild(b);
         return true;
     };
     if (!_apply()) setTimeout(_apply, 1200);
