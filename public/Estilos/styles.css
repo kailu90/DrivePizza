@@ -2218,6 +2218,35 @@ dialog.ap-modal-dialog {
   width: 100%;
 }
 
+/* ── Gestión Pedidos — layout fijo sin scroll de página ───────────── */
+#dashboard__main.dashboard__main--full {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+#dashboard__main.dashboard__main--full .inventory-management {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.5rem 2rem 0;
+}
+
+#dash-tabla-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+#dashboard__main.dashboard__main--full .pagination-controls {
+  flex-shrink: 0;
+  padding: 0.8rem 0;
+}
+
 /* Dentro de iframe: sin márgenes del shell */
 .iframe-content {
     margin-top: 0 !important;
