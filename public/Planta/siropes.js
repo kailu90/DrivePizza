@@ -82,8 +82,7 @@ function _renderTabla(data) {
         return `<tr class="inventory-management__row">
             <td class="inventory-management__cell">#${r.pedido_id ?? '—'}</td>
             <td class="inventory-management__cell sc-sirope">
-                ${r.producto_nombre}
-                <div style="font-size:1.1rem;color:#888;">${r.cantidad} uds.</div>
+                ${r.producto_nombre} <span style="color:#888;font-size:1.1rem;">· ${r.cantidad} uds.</span>
             </td>
             <td class="inventory-management__cell">${fmtFecha(r.fecha_pedido)}</td>
             <td class="inventory-management__cell">${capitalizarSede(r.sede)}</td>
