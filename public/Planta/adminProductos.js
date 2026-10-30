@@ -247,7 +247,8 @@ async function openModal(product = null) {
   document.getElementById('f-activo').checked         = product?.active          ?? true;
   document.getElementById('f-sin-limite').checked     = product?.sinLimiteStock   ?? false;
   document.getElementById('f-solo-produccion').checked= product?.soloProduccion   ?? false;
-  document.getElementById('f-peso-variable').checked  = product?.pesoVariable     ?? false;
+  document.getElementById('f-peso-variable').checked   = product?.pesoVariable     ?? false;
+  document.getElementById('f-entrega-diferida').checked = product?.entregaDiferida ?? false;
   document.getElementById('f-rotacion').value         = product?.rotacion         ?? '';
 
   // Proveedor
@@ -348,6 +349,7 @@ form.addEventListener('submit', async (e) => {
   const sinLimiteStock  = document.getElementById('f-sin-limite').checked;
   const soloProduccion  = document.getElementById('f-solo-produccion').checked;
   const pesoVariable    = document.getElementById('f-peso-variable').checked;
+  const entregaDiferida = document.getElementById('f-entrega-diferida').checked;
   const rotacion        = document.getElementById('f-rotacion').value;
   const isEdit         = !!editingDocId;
 
@@ -373,6 +375,7 @@ form.addEventListener('submit', async (e) => {
     sinLimiteStock,
     soloProduccion,
     pesoVariable,
+    entregaDiferida,
     rotacion,
     ...(_proveedorSeleccionado ? { proveedorId: _proveedorSeleccionado.id, proveedorNombre: _proveedorSeleccionado.name } : {})
   };
@@ -384,7 +387,7 @@ form.addEventListener('submit', async (e) => {
         name: nombre, id_category: idCategory, measurement_unit: unidad,
         price: precio, active: activo, quantities: presentaciones,
         sin_limite_stock: sinLimiteStock, solo_produccion: soloProduccion,
-        peso_variable: pesoVariable,
+        peso_variable: pesoVariable, entrega_diferida: entregaDiferida,
         rotacion: rotacion || null,
         proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
         proveedor_nombre: _proveedorSeleccionado?.name || null,
@@ -397,7 +400,7 @@ form.addEventListener('submit', async (e) => {
       invalidarProductos();
 
       // Registrar un único documento con todos los campos que cambiaron
-      const camposAuditables = ['name', 'price', 'measurementUnit', 'idCategory', 'quantities', 'active', 'sinLimiteStock', 'pesoVariable', 'rotacion', 'proveedorNombre'];
+      const camposAuditables = ['name', 'price', 'measurementUnit', 'idCategory', 'quantities', 'active', 'sinLimiteStock', 'pesoVariable', 'entregaDiferida', 'rotacion', 'proveedorNombre'];
       const cambios = camposAuditables
         .filter(campo => String(antes?.[campo] ?? '') !== String(data[campo] ?? ''))
         .map(campo => ({
@@ -420,7 +423,7 @@ form.addEventListener('submit', async (e) => {
         name: nombre, id_category: idCategory, measurement_unit: unidad,
         price: precio, stock, active: activo, quantities: presentaciones,
         sin_limite_stock: sinLimiteStock, solo_produccion: soloProduccion,
-        peso_variable: pesoVariable,
+        peso_variable: pesoVariable, entrega_diferida: entregaDiferida,
         rotacion: rotacion || null,
         proveedor_id:     _proveedorSeleccionado ? parseInt(_proveedorSeleccionado.id) : null,
         proveedor_nombre: _proveedorSeleccionado?.name || null,

@@ -23,7 +23,8 @@ function _normalizar(row) {
         proveedorId:     row.proveedor_id ? String(row.proveedor_id) : null,
         proveedorNombre: row.proveedor_nombre || null,
         soloProduccion:  row.solo_produccion ?? false,
-        pesoVariable:    row.peso_variable   ?? false,
+        pesoVariable:    row.peso_variable    ?? false,
+        entregaDiferida: row.entrega_diferida ?? false,
         updated_at:      row.updated_at,
     }
 }
