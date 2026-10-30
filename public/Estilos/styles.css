@@ -2232,7 +2232,6 @@ dialog.ap-modal-dialog {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   padding: 1.5rem 2rem 0;
 }
 
