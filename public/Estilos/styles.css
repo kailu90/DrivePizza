@@ -1726,11 +1726,32 @@ li.product.is-selected label {
     letter-spacing: 0.5px;
 }
 
-/* Encabezados alineados igual que sus celdas */
-.inventory-management__thead th:nth-child(2) { text-align: left; }
-.inventory-management__thead th:nth-child(4),
-.inventory-management__thead th:nth-child(5),
-.inventory-management__thead th:nth-child(6) { text-align: right; }
+/* ── Filtros de columna (initColumnFilters) ── */
+.cf-filter-row th {
+    padding: 4px 8px 8px;
+    background-color: var(--color-secundario);
+}
+.col-filter {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    background-color: #fff;
+    color: var(--color-terciario);
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.col-filter:focus {
+    outline: none;
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.15);
+}
+.col-filter[type="date"] {
+    min-width: 110px;
+    padding: 3px 6px;
+}
 
 /* Estilos para las celdas de datos */
 .inventory-management__cell {
@@ -1746,12 +1767,6 @@ li.product.is-selected label {
     max-width: 0;
     font-variant-numeric: tabular-nums;
 }
-
-/* Alineación por tipo de columna: texto izquierda, números derecha */
-.inventory-management__cell:nth-child(2) { text-align: left; }   /* Nombre */
-.inventory-management__cell:nth-child(4),
-.inventory-management__cell:nth-child(5),
-.inventory-management__cell:nth-child(6) { text-align: right; }  /* Stock, Precio, Total */
 
 .inventory-management__link {
     cursor: pointer;

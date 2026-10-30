@@ -216,12 +216,15 @@ export async function ejecutarOrdenProduccion({
     ordenNumero,
     materiales,
     productoSalida,
-    usuario = 'Admin'
+    usuario = 'Admin',
+    deducirIngredientes = true,
 }) {
     try {
-        for (const m of materiales) {
-            if (m.soloProduccion) continue;
-            await _incrementStock(m.productoId, -m.cantidad);
+        if (deducirIngredientes) {
+            for (const m of materiales) {
+                if (m.soloProduccion) continue;
+                await _incrementStock(m.productoId, -m.cantidad);
+            }
         }
         await _incrementStock(productoSalida.productoId, productoSalida.cantidad);
 

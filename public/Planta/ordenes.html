@@ -24,6 +24,25 @@
     <main class="ap-main">
         <button class="toggle-btn" id="toggle-btn"><</button>
 
+        <!-- Tarjetas de produccion rapida -->
+        <section class="ord-tipos-section">
+            <h2 class="ord-tipos-title">Registrar Produccion</h2>
+            <div class="ord-tipos-cards" id="ord-tipos-cards">
+                <button class="ord-tipo-card" data-tipo="napolitana">
+                    <span class="ord-tipo-card__label">Napolitana</span>
+                </button>
+                <button class="ord-tipo-card" data-tipo="piña">
+                    <span class="ord-tipo-card__label">Piña Calada</span>
+                </button>
+                <button class="ord-tipo-card" data-tipo="pollo">
+                    <span class="ord-tipo-card__label">Pollo Desmechado</span>
+                </button>
+                <button class="ord-tipo-card" data-tipo="masa">
+                    <span class="ord-tipo-card__label">Masa</span>
+                </button>
+            </div>
+        </section>
+
         <!-- Toolbar -->
         <div class="ap-toolbar">
             <div class="ap-toolbar__filters">
@@ -36,8 +55,7 @@
                 </select>
                 <input type="date" id="ord-filter-fecha" class="ap-input">
             </div>
-            <button class="ap-btn ap-btn--ghost" id="ord-btn-plantilla">📋 Plantilla Napolitana</button>
-            <button class="ap-btn ap-btn--primary" id="ord-btn-nuevo">+ Nueva Orden</button>
+            <button class="ap-btn ap-btn--ghost" id="ord-btn-nuevo">+ Orden personalizada</button>
         </div>
 
         <p class="ap-count" id="ord-count"></p>
@@ -154,6 +172,83 @@
             <div id="ord-det-body"></div>
             <div class="ap-modal__actions" style="justify-content:flex-end;margin-top:2rem">
                 <button type="button" class="ap-btn ap-btn--ghost" id="ord-det-cerrar">Cerrar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal produccion rapida -->
+    <dialog id="prod-modal-rapido" class="ap-modal-dialog ord-modal-dialog">
+        <div class="ap-modal__form">
+            <h2 class="ap-modal__title" id="prd-title">Produccion</h2>
+
+            <div class="ap-modal__grid">
+                <div class="ap-field">
+                    <label class="ap-label" for="prd-fecha">Fecha *</label>
+                    <input class="ap-input" id="prd-fecha" type="date" required>
+                </div>
+                <div class="ap-field" id="prd-cant-wrap">
+                    <label class="ap-label" for="prd-cant" id="prd-cant-label">Cantidad producida *</label>
+                    <input class="ap-input" id="prd-cant" type="number" min="1" step="1" placeholder="0">
+                </div>
+            </div>
+
+            <!-- Referencias multi (ej: masas) -->
+            <div id="prd-multi-section" style="display:none; margin-top:1.2rem">
+                <table class="ord-mat-table">
+                    <thead>
+                        <tr>
+                            <th style="width:65%">Referencia</th>
+                            <th style="width:35%">Cantidad producida</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prd-multi-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Ingredientes fijos -->
+            <div class="ord-section" id="prd-fixed-section">
+                <div class="ord-section__header">
+                    <span class="ord-section__title">Ingredientes</span>
+                </div>
+                <table class="ord-mat-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50%">Ingrediente</th>
+                            <th style="width:25%">Cantidad</th>
+                            <th style="width:25%">Costo unit.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prd-fixed-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Ingredientes extra (usuario) -->
+            <div style="margin-top:.6rem">
+                <table class="ord-mat-table" id="prd-extra-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th style="width:38%">Producto extra</th>
+                            <th style="width:16%">Cantidad</th>
+                            <th style="width:20%">Costo unit.</th>
+                            <th style="width:16%">Subtotal</th>
+                            <th style="width:10%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="prd-extra-tbody"></tbody>
+                </table>
+                <button type="button" class="ap-btn ap-btn--ghost" id="prd-btn-agregar-extra" style="margin-top:.6rem">+ Agregar ingrediente</button>
+            </div>
+
+            <div class="ord-costos" style="margin-top:1.2rem">
+                <span>Costo total materiales: <strong id="prd-costo-total">$0</strong></span>
+                <span>Costo por unidad: <strong id="prd-costo-unidad">$0</strong></span>
+            </div>
+
+            <p class="ap-modal__error" id="prd-error"></p>
+
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="prd-btn-cancelar">Cancelar</button>
+                <button type="button" class="ap-btn ap-btn--primary" id="prd-btn-guardar">Registrar Produccion</button>
             </div>
         </div>
     </dialog>

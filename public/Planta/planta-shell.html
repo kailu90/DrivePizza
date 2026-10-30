@@ -8,58 +8,76 @@
     <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
     <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
     <style>
+        /* ── Sidebar: empieza bajo el header, sin padding de logo ── */
+        .sidebar {
+            top: 80px !important;
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+            width: 240px !important;
+        }
+        /* ── Main: margen = ancho del sidebar ── */
         .dashboard__main {
             padding: 0 !important;
             overflow: hidden;
             margin-bottom: 0 !important;
-            margin-left: 220px;
+            margin-left: 240px;
             margin-top: 80px;
             position: relative;
         }
-        /* Sidebar colapsado: achicar el main igual que el toggle */
         .dashboard__main.margin-hidden {
             margin-left: 12px !important;
         }
+        /* ── Toggle: centrado en el borde derecho del sidebar (240 - 18) ── */
         .toggle-btn, .inventory-toggle {
-            left: 220px !important;
+            left: 222px !important;
+            z-index: 1300 !important;
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 1.2rem !important;
         }
         .toggle-btn.left-hidden {
-            left: 10px !important;
+            left: 0px !important;
         }
+        /* ── Nav bar: parte desde el borde del sidebar ── */
+        #shell-nav-bar { left: 240px !important; }
         #planta-frame {
             width: 100%;
             height: calc(100vh - 80px);
             border: none;
             display: block;
-            background: #fff;
+            background: #f4ecdf;
         }
-        /* Barra de progreso delgada — reemplaza el overlay de pantalla completa */
+        /* Barra de progreso — fija debajo del header, a la derecha del sidebar */
         #shell-nav-bar {
-            position: absolute;
-            top: 0; left: 0;
+            position: fixed;
+            top: 80px; /* sobreescrito por JS con altura real del header */
+            left: 240px; /* sobreescrito por regla de arriba */
+            right: 0;
             height: 3px;
-            width: 0%;
+            width: auto;
             background: linear-gradient(90deg, #e67e22, #f39c12);
-            z-index: 200;
-            transition: width 0.25s ease, opacity 0.3s ease;
+            z-index: 1200;
+            transition: opacity 0.3s ease;
             opacity: 0;
             pointer-events: none;
+            transform-origin: left;
+            transform: scaleX(0);
         }
         #shell-nav-bar.loading {
             opacity: 1;
             animation: shell-bar-grow 1.8s ease-out forwards;
         }
         #shell-nav-bar.done {
-            width: 100% !important;
+            transform: scaleX(1) !important;
             opacity: 0;
-            transition: width 0.15s ease, opacity 0.3s ease 0.15s;
+            transition: opacity 0.3s ease 0.15s;
             animation: none;
         }
         @keyframes shell-bar-grow {
-            0%   { width: 0% }
-            40%  { width: 65% }
-            80%  { width: 85% }
-            100% { width: 92% }
+            0%   { transform: scaleX(0) }
+            40%  { transform: scaleX(0.65) }
+            80%  { transform: scaleX(0.85) }
+            100% { transform: scaleX(0.92) }
         }
     </style>
 </head>
@@ -76,9 +94,10 @@
 <div id="header-container"></div>
 <div id="sidebar-container"></div>
 
+<div id="shell-nav-bar"></div>
+
 <main class="dashboard__main" id="dashboard__main">
     <button class="toggle-btn" id="toggle-btn"><</button>
-    <div id="shell-nav-bar"></div>
     <iframe id="planta-frame" src="./dashboard.html" title="Planta"></iframe>
 </main>
 

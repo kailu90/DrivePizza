@@ -2,6 +2,16 @@ import { supabase }                                         from '../Api/supabas
 import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
 import { verificarAccesoPlanta }                            from '../Auth/plantaAuth.js';
 import { getSedes }                                         from '../Shared/sedesService.js';
+import { initColumnFilters }                                from '../Shared/tableFilters.js';
+CargarSidebar();
+
+const _applyColFilters = initColumnFilters('siropes-tbody', {
+    0: 'N° pedido',
+    1: 'Sirope...',
+    2: { type: 'date' },
+    3: 'Sede...',
+    5: { type: 'date' },
+});
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 let _siropesData       = [];
@@ -16,7 +26,6 @@ const fmtFecha = iso => iso
 verificarAccesoPlanta(async ({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     CargarFooter();
-    CargarSidebar();
     await _poblarSedes();
     cargarSiropes();
     // Badge pendientes en sidebar
@@ -71,6 +80,7 @@ async function cargarSiropes() {
     if (error) { console.error(error); return; }
     _siropesData = data || [];
     _renderTabla(_siropesData);
+    _applyColFilters();
 }
 
 function _renderTabla(data) {
@@ -112,6 +122,7 @@ function _renderTabla(data) {
         </tr>`;
     }).join('');
 }
+
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 document.querySelectorAll('.siropes-filtro-btn').forEach(btn => {

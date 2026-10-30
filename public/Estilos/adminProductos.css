@@ -375,6 +375,50 @@
   padding: .8rem 0 .2rem;
 }
 
+/* ── Produccion rapida — cards de tipo ───────────────────────────────────── */
+.ord-tipos-section {
+  margin-bottom: 2rem;
+}
+.ord-tipos-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-terciario);
+  margin-bottom: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.ord-tipos-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.ord-tipo-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.8rem;
+  min-width: 110px;
+  border: 2px solid var(--color-primario);
+  border-radius: 1.2rem;
+  background: var(--color-secundario);
+  cursor: pointer;
+  transition: background .15s ease, transform .12s ease, color .15s ease, box-shadow .15s ease;
+  font-family: inherit;
+  color: var(--color-terciario);
+}
+.ord-tipo-card:hover {
+  background: var(--color-primario);
+  color: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(230,126,34,.25);
+}
+.ord-tipo-card__label {
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .ap-main {

@@ -6,6 +6,7 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js'
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js'
 import { getProductos, invalidarProductos } from '../Shared/productosService.js'
 import { getSedes } from '../Shared/sedesService.js'
+import { initColumnFilters } from '../Shared/tableFilters.js'
 
 const ordersContainer = document.getElementById('ordersContainer');
 
@@ -266,12 +267,17 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
 
 
 
-let pedidosMap = new Map();   // docId → data — caché en memoria para merge incremental
-let sortOrderActual = 'desc'; // sort activo al momento del último render
+let pedidosMap = new Map();
 let _realtimeStarted = false;
 
+const _applyDashFilters = initColumnFilters('ordersContainer', {
+    0: 'N° pedido',
+    1: { type: 'date' },
+    2: 'Sede...',
+    3: 'Estado...',
+});
+
 CargarSidebar(() => {
-    setQuickActive('btn-recientes');
     listenForOrders();
 });
 
@@ -283,17 +289,7 @@ CargarSidebar(() => {
 // ── Paginación ──────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
 let paginaActual = 1;
-let cursorActual = null;          // (mantenido por compatibilidad con UI)
-let paginaCursorHistory = [];
 let ultimoDocPagina = null;
-
-function resetPaginacion() {
-  paginaActual = 1;
-  cursorActual = null;
-  paginaCursorHistory = [];
-  ultimoDocPagina = null;
-  todosPedidosSup = [];
-}
 
 function actualizarBotonesPaginacion(cantDocs) {
   const btnPrev = document.getElementById('btn-prev-page');
@@ -304,67 +300,35 @@ function actualizarBotonesPaginacion(cantDocs) {
   if (info)    info.textContent = `Página ${paginaActual}`;
 }
 
-function getFechas() {
-  const desde = document.getElementById('filter-date-desde')?.value || '';
-  const hasta  = document.getElementById('filter-date-hasta')?.value || '';
-  return { desde, hasta };
-}
 
-function renderRows(querySnapshot, ordersContainer, sortOrder) {
+function renderRows(querySnapshot, ordersContainer) {
   ordersContainer.innerHTML = '';
 
-  const { desde, hasta } = getFechas();
-  const modoFecha  = !!(desde || hasta);
-  const mismaFecha = desde === hasta;
-
-  // Mostrar/ocultar paginación
   const paginationEl = document.getElementById('pagination-controls');
-  if (paginationEl) paginationEl.style.display = modoFecha ? 'none' : 'flex';
+  if (paginationEl) paginationEl.style.display = 'flex';
 
   if (querySnapshot.empty) {
-    let msg;
-    if (!modoFecha)          msg = 'Sin pedidos registrados';
-    else if (mismaFecha)     msg = `Sin pedidos para el ${desde} · Usa el filtro de fecha para consultar otro día`;
-    else                     msg = `Sin pedidos entre el ${desde} y el ${hasta}`;
     ordersContainer.innerHTML = `
       <tr>
         <td colspan="7" style="text-align:center; padding:40px; color:#666; font-size:16px; font-weight:bold;">
-          ${msg}
+          Sin pedidos registrados
         </td>
       </tr>`;
-
-    if (!modoFecha) actualizarBotonesPaginacion(0);
+    actualizarBotonesPaginacion(0);
     return;
   }
 
   const formatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
-  let totalPedidos = 0, pedidosPendientes = 0, pedidosEnviados = 0, pedidosPagados = 0;
 
   const docs = [...querySnapshot.docs];
-
-  // Guardar cursor para paginación (solo en modo sin fecha)
-  if (!modoFecha) {
-    ultimoDocPagina = docs[docs.length - 1];
-    actualizarBotonesPaginacion(docs.length);
-  }
-
-  // Ordenar en memoria solo para rango de fechas
-  if (modoFecha && !mismaFecha) {
-    docs.sort((a, b) => {
-      const diff = b.data().idPedido - a.data().idPedido;
-      return sortOrder === 'asc' ? -diff : diff;
-    });
-  }
+  ultimoDocPagina = docs[docs.length - 1];
+  actualizarBotonesPaginacion(docs.length);
 
   docs.forEach((docSnap) => {
     const pedido = docSnap.data();
     const docId = docSnap.id;
 
     if (pedido.eliminado) return;
-
-    if (pedido.status === 'pendiente') pedidosPendientes++;
-    else if (pedido.status === 'entregado') pedidosEnviados++;
-    else if (pedido.status === 'pagado') pedidosPagados++;
 
     const badgeClass = { pendiente: 'badge-pendiente', entregado: 'badge-entregado', pagado: 'badge-pagado' }[pedido.status] || '';
 
@@ -387,9 +351,9 @@ function renderRows(querySnapshot, ordersContainer, sortOrder) {
         <a class="inventory-management__link btn-print" title="Imprimir Comanda">🖨️</a>
       </td>`;
     ordersContainer.appendChild(row);
-    totalPedidos++;
   });
 
+  _applyDashFilters();
 }
 
 // Fake snapshot compatible con renderRows
@@ -407,7 +371,7 @@ function iniciarPoll() {
         .channel('planta-pedidos')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_planta' }, () => {
             todosPedidosSup = [];
-            listenForOrders(sortOrderActual);
+            listenForOrders();
         })
         .subscribe();
 
@@ -415,160 +379,67 @@ function iniciarPoll() {
     setInterval(() => {
         if (document.visibilityState === 'visible') {
             todosPedidosSup = [];
-            listenForOrders(sortOrderActual);
+            listenForOrders();
         }
     }, 5 * 60 * 1000);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             todosPedidosSup = [];
-            listenForOrders(sortOrderActual);
+            listenForOrders();
         }
     });
 }
 
-function listenForOrders(sortOrder = 'desc') {
+function listenForOrders() {
     if (!ordersContainer) return;
-    sortOrderActual = sortOrder;
     pedidosMap.clear();
 
-    // Inicia Realtime una sola vez
     if (!_realtimeStarted) {
         _realtimeStarted = true;
         iniciarPoll();
     }
 
-    const { desde, hasta } = getFechas();
+    const cargarYPaginar = (pedidos) => {
+        pedidosMap.clear();
+        pedidos.forEach(p => pedidosMap.set(String(p.id), normalizarPedido(p)));
+        const entries = [...pedidosMap.entries()].map(([id, data]) => ({ id, data }));
+        const inicio = (paginaActual - 1) * PAGE_SIZE;
+        const slice = entries.slice(inicio, inicio + PAGE_SIZE);
+        ultimoDocPagina = slice[slice.length - 1];
+        actualizarBotonesPaginacion(slice.length);
+        renderRows(crearFakeSnapshot(slice), ordersContainer);
+    };
 
-    if (!desde && !hasta) {
-        // Modo recientes: carga todo y pagina en memoria
-        const cargarYPaginar = (pedidos) => {
-            pedidosMap.clear();
-            pedidos.forEach(p => pedidosMap.set(String(p.id), normalizarPedido(p)));
-            const entries = [...pedidosMap.entries()].map(([id, data]) => ({ id, data }));
-            const inicio = (paginaActual - 1) * PAGE_SIZE;
-            const slice = entries.slice(inicio, inicio + PAGE_SIZE);
-            ultimoDocPagina = slice[slice.length - 1];
-            actualizarBotonesPaginacion(slice.length);
-            renderRows(crearFakeSnapshot(slice), ordersContainer, sortOrder);
-        };
-
-        if (todosPedidosSup.length > 0) {
-            cargarYPaginar(todosPedidosSup);
-        } else {
-            supabase
-                .from('pedidos_planta')
-                .select('id, id_pedido, user_sede, delivery_date, net_cost, total, recargo, order_notes, status, order_date, updated_at, eliminado')
-                .eq('eliminado', false)
-                .order('id_pedido', { ascending: false })
-                .limit(300)
-                .then(({ data: pedidos, error }) => {
-                    if (error) { console.error('Error cargando pedidos:', error); return; }
-                    todosPedidosSup = pedidos || [];
-                    cargarYPaginar(todosPedidosSup);
-                });
-        }
+    if (todosPedidosSup.length > 0) {
+        cargarYPaginar(todosPedidosSup);
     } else {
-        // Modo fecha: consulta filtrada, sin paginación
-        let query = supabase.from('pedidos_planta').select('id, id_pedido, user_sede, delivery_date, net_cost, total, recargo, order_notes, status, order_date, updated_at, eliminado').eq('eliminado', false);
-        if (desde === hasta && desde) {
-            query = query.eq('delivery_date', desde);
-        } else {
-            if (desde) query = query.gte('delivery_date', desde);
-            if (hasta) query = query.lte('delivery_date', hasta);
-        }
-        query
-            .order('id_pedido', { ascending: sortOrder === 'asc' })
+        supabase
+            .from('pedidos_planta')
+            .select('id, id_pedido, user_sede, delivery_date, net_cost, total, recargo, order_notes, status, order_date, updated_at, eliminado')
+            .eq('eliminado', false)
+            .order('id_pedido', { ascending: false })
+            .limit(300)
             .then(({ data: pedidos, error }) => {
-                if (error) { console.error('Error cargando pedidos por fecha:', error); return; }
-                pedidosMap.clear();
-                const all = pedidos || [];
-                const entries = all.map(p => {
-                    const data = normalizarPedido(p);
-                    pedidosMap.set(String(p.id), data);
-                    return { id: String(p.id), data };
-                });
-                renderRows(crearFakeSnapshot(entries), ordersContainer, sortOrder);
+                if (error) { console.error('Error cargando pedidos:', error); return; }
+                todosPedidosSup = pedidos || [];
+                cargarYPaginar(todosPedidosSup);
             });
     }
 }
 
 
-/****************FILTROS DE FECHA Y ORDEN***********/
-function getOrder() {
-  return document.getElementById('sort')?.value.split('-')[1] || 'desc';
-}
-
-function setQuickActive(id) {
-  ['btn-hoy', 'btn-ayer', 'btn-semana'].forEach(btnId => {
-    document.getElementById(btnId)?.classList.remove('active');
-  });
-  document.getElementById(id)?.classList.add('active');
-}
-
-const desdeInput = document.getElementById('filter-date-desde');
-const hastaInput = document.getElementById('filter-date-hasta');
-
-if (desdeInput) desdeInput.addEventListener('change', () => { resetPaginacion(); setQuickActive(null); listenForOrders(getOrder()); });
-if (hastaInput) hastaInput.addEventListener('change', () => { resetPaginacion(); setQuickActive(null); listenForOrders(getOrder()); });
-
-const sortSelect = document.getElementById('sort');
-if (sortSelect) sortSelect.addEventListener('change', () => listenForOrders(getOrder()));
-
-// ── Botones rápidos ───────────────────────────────────────────────────
-function toISO(date) { return date.toISOString().slice(0, 10); }
-
-document.getElementById('btn-hoy')?.addEventListener('click', () => {
-  const hoy = toISO(new Date());
-  if (desdeInput) desdeInput.value = hoy;
-  if (hastaInput) hastaInput.value = hoy;
-  resetPaginacion();
-  setQuickActive('btn-hoy');
-  listenForOrders(getOrder());
-});
-
-document.getElementById('btn-ayer')?.addEventListener('click', () => {
-  const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
-  const ayerISO = toISO(ayer);
-  if (desdeInput) desdeInput.value = ayerISO;
-  if (hastaInput) hastaInput.value = ayerISO;
-  resetPaginacion();
-  setQuickActive('btn-ayer');
-  listenForOrders(getOrder());
-});
-
-document.getElementById('btn-semana')?.addEventListener('click', () => {
-  const hoy = new Date();
-  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - hoy.getDay() + 1);
-  if (desdeInput) desdeInput.value = toISO(lunes);
-  if (hastaInput) hastaInput.value = toISO(hoy);
-  setQuickActive('btn-semana');
-  listenForOrders(getOrder());
-});
-
-// Botón "Recientes" → limpia fechas y vuelve al modo paginación
-document.getElementById('btn-recientes')?.addEventListener('click', () => {
-  if (desdeInput) desdeInput.value = '';
-  if (hastaInput) hastaInput.value = '';
-  resetPaginacion();
-  setQuickActive('btn-recientes');
-  listenForOrders(getOrder());
-});
-
 // ── Paginación ─────────────────────────────────────────────────────────────
 document.getElementById('btn-next-page')?.addEventListener('click', () => {
   if (!ultimoDocPagina) return;
-  paginaCursorHistory.push(cursorActual);
-  cursorActual = ultimoDocPagina;
   paginaActual++;
-  listenForOrders(getOrder());
+  listenForOrders();
 });
 
 document.getElementById('btn-prev-page')?.addEventListener('click', () => {
   if (paginaActual <= 1) return;
-  cursorActual = paginaCursorHistory.pop();
   paginaActual--;
-  listenForOrders(getOrder());
+  listenForOrders();
 });
 
 

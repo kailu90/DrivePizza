@@ -18,9 +18,17 @@ function _barDone() {
     _barTimer = setTimeout(() => navBar.classList.remove('done'), 500);
 }
 
+// ── Posicionar nav bar justo debajo del header real ───────────────────────────
+function _alinearNavBar() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    navBar.style.top = header.getBoundingClientRect().height + 'px';
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ sede }) => {
     CargarHeader(capitalizarSede(sede));
+    requestAnimationFrame(_alinearNavBar);
     CargarFooter();
     CargarSidebar(() => {
         _interceptarSidebar();
