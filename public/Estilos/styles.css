@@ -1529,6 +1529,7 @@ li.product.is-selected label {
     z-index: 1050;
 }
 .header-title { font-size: 1.3rem !important; }
+.header .sidebar_img { display: none; }
 .header .sidebar_img img { width: 38px; height: 38px; object-fit: contain; }
 .header .header-center { flex: 1; justify-content: center; }
 .header-home-btn { padding: 4px 6px; }
@@ -1537,9 +1538,9 @@ li.product.is-selected label {
 .header-logout-btn { gap: 0; }
 .header-logout-icon { width: 18px; height: 18px; }
 
-/* Sidebar como drawer overlay (no full width), arranca debajo del header */
+/* Sidebar como drawer overlay full-width en mobile, arranca debajo del header */
 .sidebar {
-    width: 220px;
+    width: 100% !important;
     top: 58px;
     z-index: 1000;
 }
@@ -1552,20 +1553,43 @@ li.product.is-selected label {
     display: flex !important;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    font-size: 16px;
-    top: 41px;
+    width: 38px;
+    height: 38px;
+    font-size: 0;           /* oculta el < > que pone el JS */
+    top: 10px;
     left: 10px !important;
     z-index: 1100;
+    border-radius: 8px;
+}
+/* Hamburger cuando sidebar está cerrado */
+.toggle-btn.rotate::before {
+    content: '☰';
+    font-size: 22px;
+    line-height: 1;
+}
+/* X cuando sidebar está abierto */
+.toggle-btn::before {
+    content: '✕';
+    font-size: 20px;
+    line-height: 1;
 }
 /* En mobile el toggle no se mueve — siempre en la misma posición */
 .toggle-btn.left-hidden { left: 10px !important; }
-.sidebar--collapsed { width: 8px !important; }
+.sidebar--collapsed { width: 0 !important; overflow: hidden; transform: translateX(-100%); }
 .sidebar--collapsed * { opacity: 0; }
 
 .sidebar .sidebar__nav .sidebar__list .sidebar__item .sidebar__link {
     font-size: 1.4rem;
+    justify-content: center;
+    text-align: center;
+}
+
+.sidebar .sb-section-header {
+    justify-content: center;
+}
+
+.sidebar .sb-chevron {
+    display: none;
 }
 
 }
@@ -2301,18 +2325,20 @@ dialog.ap-modal-dialog {
   left: -5px;
 }
 
-/* Sidebar colapsado — franja visible */
-.sidebar--collapsed {
-  width: 12px !important;
-  overflow: hidden;
-  transition: width 0.3s ease;
-}
-.sidebar--collapsed * {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-.sidebar {
-  transition: width 0.3s ease;
+/* Sidebar colapsado — franja visible (solo escritorio) */
+@media (min-width: 769px) {
+  .sidebar--collapsed {
+    width: 12px !important;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+  .sidebar--collapsed * {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .sidebar {
+    transition: width 0.3s ease;
+  }
 }
 
 @media (max-width: 600px) {

@@ -269,4 +269,44 @@
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
 
+    /* ── Contenedor ── */
+    .ped-table-card { margin: 0 4px; }
+
+    /* ── Tabla: ancho fijo al contenedor ── */
+    .ped-table-card .inventory-management__table {
+        min-width: 0 !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    /* ── Ocultar fila de filtros ── */
+    .ped-table-card .filtros-columna { display: none !important; }
+
+    /* ── Ocultar TODAS las celdas primero ── */
+    .ped-table-card th,
+    .ped-table-card td { display: none !important; }
+
+    /* ── Mostrar solo: N°(1), Cliente(4), Estado(10), Total(12) ── */
+    .ped-table-card th:nth-child(1),  .ped-table-card td:nth-child(1),
+    .ped-table-card th:nth-child(4),  .ped-table-card td:nth-child(4),
+    .ped-table-card th:nth-child(10), .ped-table-card td:nth-child(10),
+    .ped-table-card th:nth-child(12), .ped-table-card td:nth-child(12) {
+        display: table-cell !important;
+    }
+
+    /* ── Anchos de columnas visibles ── */
+    .ped-table-card th:nth-child(1),
+    .ped-table-card td:nth-child(1)  { width: 50px; }
+    .ped-table-card th:nth-child(12),
+    .ped-table-card td:nth-child(12) { width: 80px; }
+
+    /* ── Ajuste de celdas ── */
+    .ped-table-card .inventory-management__heading { font-size: 1rem; padding: 6px 8px; }
+    .ped-table-card .inventory-management__cell    { font-size: 1rem; padding: 8px 8px; }
+
+    /* ── Estado: no cortar el badge ── */
+    .ped-table-card td:nth-child(10) { white-space: nowrap; }
+
+    /* ── Resumen de stats: más compacto ── */
+    #contenido-principal .historial__resumen { margin: 0 8px 8px; gap: 6px; }
 }

@@ -323,6 +323,53 @@
             .piz-kpis { grid-template-columns: 1fr; }
             .piz-dash { padding: 1.4rem; }
         }
+
+        /* ── Mobile: sidebar es drawer, main ocupa toda la pantalla ── */
+        @media (max-width: 768px) {
+            #dashboard__main {
+                margin-left: 0 !important;
+                margin-top: 58px;
+                height: auto;
+                min-height: calc(100vh - 58px);
+                overflow-x: hidden;
+                overflow-y: auto;
+                padding-bottom: 50px;
+            }
+            .toggle-btn { left: 10px !important; }
+
+            /* Dashboard: flujo libre, sin alturas fijas */
+            #piz-welcome { overflow: visible; height: auto; }
+            .piz-dash { padding: 0.8rem 1rem; }
+            .piz-dash__title { font-size: 1.6rem; }
+            .piz-dash__sub { font-size: 1.1rem; margin-bottom: 0.8rem; }
+            .piz-dash__body {
+                max-height: none !important;
+                overflow: visible;
+                grid-template-columns: 1fr;
+                padding-bottom: 0;
+            }
+            .piz-dash__left { overflow: visible; }
+            /* Kanban: columnas apiladas verticalmente en mobile */
+            .piz-vivo { max-height: none; overflow: visible; }
+            .piz-kanban { grid-template-columns: 1fr; gap: 0.5rem; padding: 0.5rem; overflow: visible; }
+            .piz-kanban__col { max-height: none; }
+            .piz-kanban__items { max-height: 200px; }
+            .piz-dash { max-width: 100%; box-sizing: border-box; }
+            /* Alertas: altura automática */
+            .piz-dash__alertas { height: auto; max-height: 160px; }
+
+            /* Iframe subpáginas (pedidos, historial, etc.) */
+            #dashboard__main.frame-activo {
+                margin-left: 0 !important;
+                margin-top: 58px;
+                height: calc(100vh - 58px);
+                padding-bottom: 0;
+                overflow: hidden;
+            }
+            #dashboard__main.frame-activo #main-frame {
+                height: calc(100vh - 90px) !important;
+            }
+        }
     </style>
 </head>
 <body>
