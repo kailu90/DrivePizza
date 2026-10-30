@@ -717,6 +717,50 @@ async function abrirModalPedido(docId, esEdicion = false) {
     cerrarModalAgregarProducto(true);
     if (esEdicion) cargarProductosDisponibles();
 
+    // Contexto sirope: inyectar bloque de entrega si viene desde siropes.html
+    const siropeSect = document.getElementById('modal-sirope-entrega-section');
+    const siropePendRaw = sessionStorage.getItem('sirope_pendiente');
+    if (siropeSect) {
+        if (siropePendRaw && !esEdicion) {
+            const sr = JSON.parse(siropePendRaw);
+            siropeSect.innerHTML = `
+                <div style="border-top:1px solid #eee;margin-top:14px;padding-top:14px;">
+                    <p style="font-weight:600;margin-bottom:8px;font-size:1.3rem;">
+                        Entrega pendiente: ${sr.producto_nombre} · ${sr.cantidad} uds.
+                    </p>
+                    <label style="font-size:1.2rem;color:#555;display:block;margin-bottom:4px;">Observación (opcional)</label>
+                    <textarea id="sirope-obs-modal" class="ap-input" rows="2"
+                        style="width:100%;resize:vertical;margin-bottom:10px;box-sizing:border-box;"
+                        placeholder="Ej: entregado junto al pedido..."></textarea>
+                    <button id="sirope-confirmar-modal" class="ap-btn ap-btn--primary" style="width:100%;">
+                        Marcar sirope entregado
+                    </button>
+                </div>`;
+            document.getElementById('sirope-confirmar-modal').addEventListener('click', async () => {
+                const btn = document.getElementById('sirope-confirmar-modal');
+                btn.disabled = true;
+                btn.textContent = 'Guardando...';
+                const obs = document.getElementById('sirope-obs-modal').value.trim();
+                const { error } = await supabase.from('entregas_siropes')
+                    .update({ estado: 'entregado', fecha_entrega: new Date().toISOString(), observacion: obs || null })
+                    .eq('id', sr.id);
+                if (error) {
+                    alert('Error al registrar la entrega.');
+                    btn.disabled = false;
+                    btn.textContent = 'Marcar sirope entregado';
+                    return;
+                }
+                sessionStorage.removeItem('sirope_pendiente');
+                cerrarListenerModal();
+                modalDetalle.style.display = 'none';
+                document.body.classList.remove('no-scroll');
+                window.location.href = './siropes.html';
+            });
+        } else {
+            siropeSect.innerHTML = '';
+        }
+    }
+
     if (modalDetalle) {
         modalDetalle.style.display = 'flex';
         document.body.classList.add('no-scroll');
@@ -1624,12 +1668,24 @@ async function descontarInventario(pedidoId, usuario = 'Admin') {
 let usuarioActual = 'Admin';
 let rolUsuario = '';
 
-verificarAccesoPlanta(({ username, sede, rol }) => {
+verificarAccesoPlanta(async ({ username, sede, rol }) => {
     usuarioActual = username;
     rolUsuario = rol;
     CargarHeader(sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta');
     CargarFooter();
     actualizarBadgeSiropes();
+
+    // Auto-abrir modal si viene desde siropes.html (?pedido=<id_pedido>)
+    const pedidoParam = new URLSearchParams(location.search).get('pedido');
+    if (pedidoParam) {
+        const { data } = await supabase
+            .from('pedidos_planta')
+            .select('id')
+            .eq('id_pedido', pedidoParam)
+            .eq('eliminado', false)
+            .single();
+        if (data) abrirModalPedido(String(data.id));
+    }
 });
 
 
