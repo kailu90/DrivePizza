@@ -1567,7 +1567,7 @@ li.product.is-selected label {
   margin-left: 170px;
   margin-top: 100px;
   margin-bottom: 50px;
-  padding: 2rem;
+  padding: 3rem 2rem 2rem;
   flex: 1;
   font-size: 1.4rem;
   transition: margin-left 0.3s ease;
@@ -2219,7 +2219,8 @@ dialog.ap-modal-dialog {
 }
 
 /* ── Gestión Pedidos — layout fijo sin scroll de página ───────────── */
-#dashboard__main.dashboard__main--full {
+/* Scoped a .dash-pedidos para no afectar otras páginas con mismo ID */
+#dashboard__main.dash-pedidos.dashboard__main--full {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -2229,12 +2230,12 @@ dialog.ap-modal-dialog {
   margin-bottom: 0;
 }
 
-#dashboard__main.dashboard__main--full .inventory-management {
+#dashboard__main.dash-pedidos.dashboard__main--full .inventory-management {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 2rem 0;
+  padding: 3rem 2rem 0;
 }
 
 /* título + tabla scrollean juntos; paginación queda fija al fondo */
@@ -2244,7 +2245,7 @@ dialog.ap-modal-dialog {
   overflow: auto;
 }
 
-#dashboard__main.dashboard__main--full .pagination-controls {
+#dashboard__main.dash-pedidos.dashboard__main--full .pagination-controls {
   flex-shrink: 0;
   padding: 0.8rem 0;
 }

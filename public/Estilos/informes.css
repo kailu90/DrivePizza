@@ -6,7 +6,7 @@
 .inf-main {
     margin-top: 100px;
     margin-left: 230px;
-    padding: 2rem 2rem 4rem;
+    padding: 3rem 2rem 4rem;
     transition: margin-left 0.3s ease;
 }
 .inf-main.margin-hidden { margin-left: 0; }

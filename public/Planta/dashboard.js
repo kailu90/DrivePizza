@@ -498,12 +498,11 @@ async function confirmarEliminacion(docId, idPedidoVisual, rowElement) {
 
             if (updateErr) throw updateErr;
 
-            // Borrar siropes pendientes del pedido eliminado
+            // Borrar todos los siropes del pedido eliminado (pendientes e historial)
             await supabase
                 .from('entregas_siropes')
                 .delete()
-                .eq('pedido_id', pedidoData.idPedido)
-                .eq('estado', 'pendiente');
+                .eq('pedido_id', pedidoData.idPedido);
 
             pedidosMap.delete(docId);
             todosPedidosSup = todosPedidosSup.filter(p => String(p.id) !== docId);
