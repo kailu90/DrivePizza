@@ -8,11 +8,7 @@
     <link rel="stylesheet" href="../Estilos/informes.css">
     <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
     <style>
-        .pizz-liq-main {
-            margin-top: 100px;
-            padding: 2rem 2rem 4rem;
-        }
-        .liq-card {
+.liq-card {
             border: 1px solid #ddd;
             border-radius: 8px;
             overflow: hidden;
@@ -92,7 +88,7 @@
         }
         @media print {
             #header-container, .inf-actions, .inf-nav { display: none !important; }
-            .pizz-liq-main { margin: 0; padding: 0.5rem; }
+            .dashboard__main { margin: 0; padding: 0.5rem; }
         }
     </style>
 </head>
@@ -107,8 +103,10 @@
 </div>
 
     <div id="header-container"></div>
+    <div id="sidebar-container"></div>
 
-    <main class="pizz-liq-main">
+    <main class="dashboard__main" id="dashboard__main">
+        <button class="toggle-btn" id="toggle-btn">&lt;</button>
         <div class="inf-toolbar">
             <div class="inf-nav-group">
                 <button class="inf-nav" id="liq-prev">‹</button>

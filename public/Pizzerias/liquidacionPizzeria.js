@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
 initVersionBanner();
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 
@@ -161,10 +161,15 @@ async function cargarInforme() {
     }
 
     sedeUsuario = data.sede.toLowerCase();
-    CargarHeader(capitalizarSede(sedeUsuario), './pizzerias.html');
+
+    const enShell = window.self !== window.top;
+    if (enShell) {
+        document.body.classList.add('loaded');
+    } else {
+        CargarHeader(capitalizarSede(sedeUsuario), './pizzerias.html');
+    }
     await cargarInforme();
-    document.body.classList.add('loaded');
-    revelarSplash();
+    if (!enShell) CargarSidebar();
 
     document.getElementById('liq-prev').addEventListener('click', () => { offsetSemanas--; cargarInforme(); });
     document.getElementById('liq-next').addEventListener('click', () => { offsetSemanas++; cargarInforme(); });

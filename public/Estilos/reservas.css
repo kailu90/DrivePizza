@@ -1,0 +1,450 @@
+/* ═══════════════════════════════════════════════════════════
+   reservas.css — Módulo de Reservas (Pizzerías)
+   Base: 62.5% → 1rem = 10px
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Contenedor principal ──────────────────────────────────── */
+.rsv-wrap {
+    padding: 2.4rem 2.8rem;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Encabezado de página ──────────────────────────────────── */
+.rsv-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+.rsv-page-title {
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+.rsv-page-sub {
+    font-size: 1.3rem;
+    color: #999;
+    margin: 0.3rem 0 0;
+}
+.rsv-fecha-hoy {
+    font-size: 1.3rem;
+    color: #777;
+    padding-top: 0.6rem;
+}
+
+/* ── KPI cards ─────────────────────────────────────────────── */
+.rsv-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.4rem;
+    margin-bottom: 2rem;
+}
+.rsv-kpi {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid #f0f0f0;
+}
+.rsv-kpi__icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.rsv-kpi__icon--blue   { background: #e3f2fd; color: #1976d2; }
+.rsv-kpi__icon--green  { background: #e8f5e9; color: #2e7d32; }
+.rsv-kpi__icon--orange { background: #fff3e0; color: #e65100; }
+.rsv-kpi__icon--purple { background: #f3e5f5; color: #6a1b9a; }
+
+.rsv-kpi__value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1;
+}
+.rsv-kpi__value--lg { font-size: 2.2rem; }
+.rsv-kpi__label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #555;
+    margin-top: 0.3rem;
+}
+.rsv-kpi__sub {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-top: 0.3rem;
+}
+
+/* Barra de progreso */
+.rsv-progreso {
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.6rem;
+    width: 100%;
+    max-width: 140px;
+}
+.rsv-progreso__fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    background: var(--color-primario);
+}
+
+/* ── Cuerpo: calendario + panel ────────────────────────────── */
+.rsv-body {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.6rem;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+/* ── Card base ─────────────────────────────────────────────── */
+.rsv-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+}
+.rsv-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 1.6rem 1rem;
+    border-bottom: 1px solid #f5f5f5;
+}
+.rsv-card__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+.rsv-card__sub {
+    font-size: 1.2rem;
+    color: #999;
+    margin: 0.2rem 0 0;
+}
+
+/* ── Calendario ────────────────────────────────────────────── */
+.rsv-calendario { padding-bottom: 1.2rem; }
+
+.rsv-cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.6rem;
+    border-bottom: 1px solid #f5f5f5;
+}
+.rsv-cal-mes {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+.rsv-cal-btn {
+    background: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+    transition: background 0.15s;
+}
+.rsv-cal-btn:hover { background: #f5f5f5; }
+
+.rsv-cal-legend {
+    display: flex;
+    gap: 1.4rem;
+    padding: 0.8rem 1.6rem;
+    border-bottom: 1px solid #f5f5f5;
+    flex-wrap: wrap;
+}
+.rsv-leg {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    color: #777;
+}
+
+/* Dots de estado */
+.rsv-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.rsv-dot--green  { background: #27ae60; }
+.rsv-dot--orange { background: #e67e22; }
+.rsv-dot--red    { background: #e74c3c; }
+.rsv-dot--gray   { background: #bbb; }
+
+/* Cabecera días */
+.rsv-cal-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0.6rem 1rem 0;
+}
+.rsv-cal-header span {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #aaa;
+    padding: 0.4rem 0;
+}
+
+/* Grid de días */
+.rsv-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-left: 1px solid #f0f0f0;
+    border-top: 1px solid #f0f0f0;
+}
+.rsv-cal-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #aaa;
+    font-size: 1.3rem;
+    border-right: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.rsv-cal-day {
+    min-height: 88px;
+    padding: 0.7rem 0.9rem 0.6rem;
+    border-right: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.12s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+.rsv-cal-day:hover { background: #fafafa; }
+.rsv-cal-day--outside {
+    cursor: default;
+    background: #fafafa;
+}
+.rsv-cal-day--outside:hover { background: #fafafa; }
+
+.rsv-cal-day--today { background: #f0faf3; }
+.rsv-cal-day--today .rsv-cal-day__num {
+    background: var(--color-primario);
+    color: #fff;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rsv-cal-day--selected {
+    background: #e8f5e9;
+    outline: 2px solid var(--color-primario);
+    outline-offset: -2px;
+}
+.rsv-cal-day--selected:hover { background: #ddf0e4; }
+
+.rsv-cal-day__num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+.rsv-cal-day__count {
+    font-size: 1.05rem;
+    color: #555;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.rsv-cal-day__personas {
+    font-size: 1rem;
+    color: #999;
+    white-space: nowrap;
+}
+.rsv-cal-day__dots {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+/* ── Panel derecho ─────────────────────────────────────────── */
+.rsv-panel-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+.rsv-card--panel { }
+
+.rsv-badge-count {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    min-width: 24px;
+    text-align: center;
+}
+.rsv-badge-count--red {
+    background: #fdecea;
+    color: #c62828;
+}
+
+.rsv-panel-lista { padding: 0.4rem 0; }
+
+.rsv-panel-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.9rem 1.6rem;
+    border-bottom: 1px solid #f7f7f7;
+}
+.rsv-panel-item:last-child { border-bottom: none; }
+
+.rsv-panel-item__hora {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-primario);
+    min-width: 72px;
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+.rsv-panel-item__info { flex: 1; min-width: 0; }
+.rsv-panel-item__nombre {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.rsv-panel-item__meta {
+    font-size: 1.1rem;
+    color: #999;
+    margin-top: 1px;
+}
+.rsv-panel-item__obs {
+    font-size: 1.1rem;
+    color: #777;
+    margin-top: 2px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rsv-empty {
+    text-align: center;
+    color: #bbb;
+    font-size: 1.2rem;
+    padding: 1.6rem;
+    margin: 0;
+}
+
+.rsv-ver-todas {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.9rem;
+    background: none;
+    border: none;
+    border-top: 1px solid #f5f5f5;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-primario);
+    cursor: pointer;
+}
+.rsv-ver-todas:hover { background: #f9f9f9; }
+
+/* ── Alertas ───────────────────────────────────────────────── */
+.rsv-alerta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.9rem 1.6rem;
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid #f7f7f7;
+}
+.rsv-alerta:last-child { border-bottom: none; }
+.rsv-alerta--red    { border-left-color: #e74c3c; background: #fff9f9; }
+.rsv-alerta--orange { border-left-color: #e67e22; background: #fffaf5; }
+.rsv-alerta--purple { border-left-color: #9b59b6; background: #fdf8ff; }
+
+.rsv-alerta__texto {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.rsv-alerta__sub {
+    font-size: 1.1rem;
+    color: #888;
+}
+
+/* ── Badges de estado ──────────────────────────────────────── */
+.rsv-estado {
+    display: inline-block;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.rsv-estado--green  { background: #e8f5e9; color: #2e7d32; }
+.rsv-estado--orange { background: #fff3e0; color: #e65100; }
+.rsv-estado--red    { background: #fdecea; color: #c62828; }
+.rsv-estado--gray   { background: #f5f5f5; color: #777; }
+.rsv-estado--dark   { background: #eeeeee; color: #555; }
+
+/* ── Badges de canal ───────────────────────────────────────── */
+.rsv-canal {
+    display: inline-block;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+}
+.rsv-canal--wa  { background: #e8f5e9; color: #1b5e20; }
+.rsv-canal--ivr { background: #e3f2fd; color: #0d47a1; }
+
+/* ── Tabla próximas reservas ───────────────────────────────── */
+.rsv-tabla-wrap { margin-bottom: 2rem; }
+
+/* ── Tabla y panel clicables ───────────────────────────────── */
+.rsv-fila-link { cursor: pointer; }
+.rsv-fila-link:hover td { background: #f5f8f5 !important; }
+.rsv-panel-item--link { cursor: pointer; }
+.rsv-panel-item--link:hover { background: #f9f9f9; }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .rsv-kpis { grid-template-columns: repeat(2, 1fr); }
+    .rsv-body  { grid-template-columns: 1fr; }
+    .rsv-panel-right { flex-direction: row; flex-wrap: wrap; }
+    .rsv-card--panel { flex: 1; min-width: 260px; }
+}
+@media (max-width: 600px) {
+    .rsv-wrap { padding: 1.2rem; }
+    .rsv-kpis { grid-template-columns: 1fr; }
+}

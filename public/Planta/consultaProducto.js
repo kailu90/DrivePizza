@@ -1,11 +1,12 @@
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 
 import { supabase } from '../Api/supabaseConfig.js';
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
+    CargarFooter();
     CargarSidebar();
     document.body.classList.add('loaded');
 });

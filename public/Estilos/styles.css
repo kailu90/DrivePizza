@@ -2203,6 +2203,18 @@ dialog.ap-modal-dialog {
   width: 100%;
 }
 
+/* Dentro de iframe: sin márgenes del shell */
+.iframe-content {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Link activo en sidebar */
+.sidebar__link--active {
+    background: rgba(255,255,255,0.18) !important;
+    font-weight: 700 !important;
+}
+
 .dashboard__footer , .inventory__footer {
   background-color: var(--color-primario);
   color: var(--color-secundario);

@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════
+   PAGINACIÓN — Estilos compartidos
+   Usado por: historialPedidos, pedidosPizzeria, pizzerias
+   Base: 62.5% → 1rem = 10px
+   ═══════════════════════════════════════════════════════ */
+
+.paginacion {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background-color: var(--color-secundario);
+    border-top: 1px solid #ddd;
+}
+
+.pag-btn {
+    background-color: var(--color-primario);
+    color: var(--color-secundario);
+    border: none;
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pag-btn:hover:not(:disabled) {
+    background-color: var(--color-quinto);
+}
+
+.pag-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.pag-info {
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 768px) {
+    .paginacion {
+        position: static;
+        gap: 0.6rem;
+        padding: 0.8rem 1rem;
+        border-top: 1px solid #ddd;
+        box-shadow: none;
+        margin-top: 0;
+    }
+
+    .pag-btn {
+        padding: 5px 20px;
+        font-size: 0.95rem;
+    }
+
+    .pag-info {
+        font-size: 0.9rem;
+        text-align: center;
+        flex: 1;
+    }
+}

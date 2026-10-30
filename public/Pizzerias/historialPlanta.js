@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
 initVersionBanner();
 import { RECARGO_SERVICIO } from '../Planta/planta.config.js';
 import { registrarMovimiento } from '../Planta/inventoryService.js';
@@ -52,11 +52,17 @@ const totalCount       = document.getElementById('total-orders');
 
     sedeUsuario   = data.sede;
     usuarioActual = data.username || data.sede;
-    CargarHeader(capitalizarSede(data.sede), '../Pizzerias/pizzerias.html');
+
+    const enShell = window.self !== window.top;
+    if (enShell) {
+        // Dentro del iframe del shell: no cargar header ni sidebar propios
+        document.body.classList.add('loaded');
+    } else {
+        CargarHeader(capitalizarSede(data.sede), '../Pizzerias/pizzerias.html');
+        CargarSidebar();
+    }
     setQuickActive('btn-recientes');
     listenForOrders();
-    document.body.classList.add('loaded');
-    revelarSplash();
 })();
 
 // ── Paginación ────────────────────────────────────────────────────────────────

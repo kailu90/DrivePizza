@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planta — DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+    <style>
+        .dashboard__main {
+            padding: 0 !important;
+            overflow: hidden;
+            margin-bottom: 0 !important;
+            position: relative;
+        }
+        #planta-frame {
+            width: 100%;
+            height: calc(100vh - 100px);
+            border: none;
+            display: block;
+            background: #fff;
+        }
+        #shell-nav-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.82);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+    <div id="shell-nav-overlay">Cargando...</div>
+    <iframe id="planta-frame" src="./dashboard.html" title="Planta"></iframe>
+</main>
+
+<div id="footer-container"></div>
+
+<script type="module" src="planta-shell.js"></script>
+</body>
+</html>

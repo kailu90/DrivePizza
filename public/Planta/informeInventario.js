@@ -1,5 +1,5 @@
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 
 import { supabase } from '../Api/supabaseConfig.js';
@@ -7,6 +7,7 @@ import { colFechaToUTC } from '../Shared/semanas.js';
 
 verificarAccesoPlanta(({ sede }) => {
     CargarHeader(capitalizarSede(sede));
+    CargarFooter();
     CargarSidebar();
 });
 

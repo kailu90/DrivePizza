@@ -1728,6 +1728,10 @@ async function actualizarBadgeSiropes() {
         .from('entregas_siropes')
         .select('*', { count: 'exact', head: true })
         .eq('estado', 'pendiente');
+    if (window.self !== window.top) {
+        window.parent.postMessage({ type: 'badge-siropes', count: count ?? 0 }, '*');
+        return;
+    }
     const _apply = () => {
         const link = document.getElementById('sidebar-siropes-link');
         if (!link) return false;

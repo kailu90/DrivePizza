@@ -3,6 +3,9 @@ import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 import { initVersionBanner } from '../Shared/components.js';
 import { badgeEstado, badgeCanal } from '../Shared/badges.js';
+import { normalizarPedido, poblarModal, cerrarModal } from '../Shared/modalDetalle.js';
+import { calcularPageSize, crearPaginacion } from '../Shared/paginacion.js';
+import { renderStepper, cambiarEstado as _cambiarEstado } from '../Shared/stepper.js';
 initVersionBanner();
 const ESTADOS_ACTIVOS = new Set(['recibido', 'en preparacion', 'despachado']);
 
@@ -11,19 +14,9 @@ let pedidosActuales = {};       // id → objeto pedido
 let pedidoEnModal   = null;     // id del pedido abierto en el modal
 let pedidoPendienteCancelar = null;
 let filtrosActivos  = {};       // { desde, hasta, estado }
-let paginaActual    = 1;
 
-// Igual que historial pero dinámico según altura de pantalla
-function calcularPageSize() {
-    const thead = document.querySelector('.inventory-management__thead');
-    const card  = document.querySelector('.ped-table-card');
-    if (!thead || !card) return 20;
-    const cardTop  = card.getBoundingClientRect().top;
-    const theadH   = thead.offsetHeight;
-    const pagH     = 56; // altura aprox de la barra de paginación
-    const available = window.innerHeight - cardTop - theadH - pagH - 8;
-    return Math.max(5, Math.floor(available / 46)); // ~46px por fila
-}
+const _pag = crearPaginacion('paginacion', () => filtrarColumnas());
+const _calcPS = () => calcularPageSize('.ped-table-card', '.inventory-management__thead', 46, 64);
 
 const MINUTOS_AUTO_PREPARACION = 5;
 const timersPreparacion = new Map(); // pedidoId → timeoutId
@@ -32,34 +25,6 @@ function toDate(ts) {
     return ts ? new Date(ts) : null;
 }
 
-// Igual que historialPedidos.js
-function normalizarPedido(row) {
-    return {
-        id:               String(row.id),
-        nPedido:          row.n_pedido,
-        nombre:           row.nombre,
-        telefono:         row.telefono,
-        direccion:        row.direccion,
-        sede:             row.sede,
-        pago:             row.pago,
-        obs:              row.obs,
-        acompanamientos:  row.acompanamientos || null,
-        productos:        row.productos || [],
-        total:            row.total,
-        asesor:           row.asesor,
-        fecha:            row.fecha,
-        estado:           row.estado,
-        canal:            row.canal,
-        domicilio:        row.domicilio || null,
-        tipo:             row.tipo || null,
-        tsRecibido:       row.ts_recibido,
-        tsPreparacion:    row.ts_preparacion,
-        tsDespachado:     row.ts_despachado,
-        cantidadPersonas: row.cantidad_personas,
-        fechaReserva:     row.fecha_reserva,
-        horaReserva:      row.hora_reserva,
-    };
-}
 
 // Igual que historialPedidos.js
 function formatFecha(timestamp) {
@@ -74,12 +39,27 @@ function formatPrecio(v) {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v);
 }
 
+// ── TIMER DE DEMORA — igual que historialPedidos.js ───────────────
+function calcularMinutos(tsRecibido) {
+    if (!tsRecibido) return 0;
+    return Math.floor((Date.now() - new Date(tsRecibido).getTime()) / 60000);
+}
+
+function formatTimer(minutos) {
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 function _formatFechaReservaLocal(fechaStr) {
     const [y, m, d] = fechaStr.split('-').map(Number);
     return new Date(y, m - 1, d).toLocaleDateString('es-CO', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
     });
 }
+
+// ── STEPPER global (desde Shared/stepper.js) ──────────────────────
+window.cambiarEstado = (id, estado) => _cambiarEstado(supabase, id, estado);
 
 // ── ICONOS SVG ────────────────────────────────────────────────────
 const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
@@ -180,8 +160,7 @@ mostrarSkeleton('callcenter');
     const { data: sedeData } = await supabase.from('sedes').select('nombre_display').eq('name', sede).single();
     const sedeLabel = sedeData?.nombre_display || sede.toUpperCase();
 
-    document.getElementById('username').textContent   = `Hola ${username}`;
-    document.getElementById('sede-label').textContent = sedeLabel;
+    document.getElementById('username').textContent = `Hola ${username}`;
 
     const hoy = hoyLocal();
     document.getElementById('filtro-desde').value = hoy;
@@ -190,6 +169,7 @@ mostrarSkeleton('callcenter');
     document.body.classList.add('loaded');
     ocultarSkeleton('contenido-principal');
     iniciarListener(sede);
+    iniciarTimerDemora();
 })();
 
 // ── LOGOUT ────────────────────────────────────────────────────────
@@ -221,7 +201,7 @@ async function cargarPedidosActivos() {
             .from('pedidos_callcenter')
             .select('*')
             .eq('sede', sedeActual)
-            .in('estado', estado ? [estado] : [...ESTADOS_ACTIVOS])
+            .in('estado', estado ? [estado] : [...ESTADOS_ACTIVOS, 'entregado'])
             .gte('fecha', colFechaToUTC(desde, 'inicio'))
             .lte('fecha', colFechaToUTC(hasta, 'fin'))
             .or('tipo.is.null,tipo.eq.pedido')
@@ -243,7 +223,7 @@ async function cargarPedidosActivos() {
 
         if (pedidoEnModal) {
             const actualizado = pedidosActuales[pedidoEnModal];
-            if (actualizado) poblarModal(actualizado);
+            if (actualizado) abrirDetalle(actualizado);
             else cerrarModalPedido();
         }
     } catch (err) {
@@ -304,12 +284,9 @@ function gestionarAutoPreparacion(pedidos) {
 function renderLista(pedidos) {
     const todos = pedidos.slice().sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-    const preparacion = todos.filter(p => p.estado === 'en preparacion');
-    const despachado  = todos.filter(p => p.estado === 'despachado');
-    document.getElementById('count-preparacion').textContent =
-        `${preparacion.length} preparando`;
-    document.getElementById('count-despachado').textContent =
-        `${despachado.length} despachado${despachado.length !== 1 ? 's' : ''}`;
+    document.getElementById('stat-total').textContent    = todos.length;
+    document.getElementById('stat-whatsapp').textContent = todos.filter(p => p.canal === 'whatsapp').length;
+    document.getElementById('stat-ivr').textContent      = todos.filter(p => p.canal === 'ivr').length;
 
     const tbody = document.getElementById('orders-tbody');
     const empty = document.getElementById('empty-state');
@@ -323,38 +300,23 @@ function renderLista(pedidos) {
 
     empty.style.display = 'none';
 
-    const pageSize    = calcularPageSize();
+    const pageSize     = _calcPS();
     const totalPaginas = Math.ceil(todos.length / pageSize);
-    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
-    const inicio = (paginaActual - 1) * pageSize;
-    const pagina = todos.slice(inicio, inicio + pageSize);
+    if (_pag.pagina > totalPaginas) _pag.pagina = Math.max(1, totalPaginas);
+    const inicio = (_pag.pagina - 1) * pageSize;
+    const slice  = todos.slice(inicio, inicio + pageSize);
 
-    tbody.innerHTML = pagina.map(renderFila).join('');
+    tbody.innerHTML = slice.map(renderFila).join('');
     tbody.querySelectorAll('tr[data-id]').forEach(fila => {
         fila.addEventListener('click', () => {
             const pedido = pedidosActuales[fila.dataset.id];
-            if (pedido) { pedidoEnModal = pedido.id; poblarModal(pedido); document.getElementById('modal-pedido').style.display = 'flex'; }
+            if (pedido) { pedidoEnModal = pedido.id; abrirDetalle(pedido); }
         });
     });
 
-    renderPaginacion(todos.length, pageSize);
+    _pag.render(todos.length, pageSize);
 }
 
-// ── PAGINACIÓN — igual que historialPedidos.js ────────────────────
-function renderPaginacion(total, pageSize) {
-    const contenedor  = document.getElementById('paginacion');
-    const size        = pageSize || calcularPageSize();
-    const totalPaginas = Math.ceil(total / size);
-    if (totalPaginas <= 1) { contenedor.innerHTML = ''; return; }
-
-    contenedor.innerHTML = `
-        <button class="pag-btn" id="pag-prev" ${paginaActual === 1 ? 'disabled' : ''}>← Anterior</button>
-        <span class="pag-info">Página ${paginaActual} de ${totalPaginas} &nbsp;·&nbsp; ${total} pedidos</span>
-        <button class="pag-btn" id="pag-next" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente →</button>
-    `;
-    document.getElementById('pag-prev').addEventListener('click', () => { if (paginaActual > 1) { paginaActual--; filtrarColumnas(); } });
-    document.getElementById('pag-next').addEventListener('click', () => { if (paginaActual < totalPaginas) { paginaActual++; filtrarColumnas(); } });
-}
 
 // ── POBLAR SELECT ASESORES — igual que historialPedidos.js ────────
 function poblarSelectAsesores() {
@@ -369,7 +331,7 @@ function poblarSelectAsesores() {
 
 // ── FILTRAR COLUMNAS — igual que historialPedidos.js ─────────────
 function filtrarColumnas(reiniciarPagina = false) {
-    if (reiniciarPagina) paginaActual = 1;
+    if (reiniciarPagina) _pag.reiniciar();
     const npedido   = document.getElementById('cf-npedido').value.toLowerCase();
     const fecha     = document.getElementById('cf-fecha').value.toLowerCase();
     const telefono  = document.getElementById('cf-telefono').value.toLowerCase();
@@ -405,19 +367,26 @@ function renderFila(p) {
             ? p.direccion.substring(0, 25) + (p.direccion.length > 25 ? '…' : '')
             : '—';
 
-    const canalLabel = p.canal === 'whatsapp' ? '📱 WhatsApp'
-                     : p.canal === 'ivr'       ? '📞 IVR'
-                     : p.canal === 'web'        ? '🌐 Web'
-                     : p.canal === 'google'     ? '🌐 Google'
-                     : p.canal ?? '—';
+    const canalLabel = badgeCanal(p.canal);
 
     const obsDisplay = p.obs
         ? p.obs.substring(0, 30) + (p.obs.length > 30 ? '…' : '')
         : '—';
 
+    const enPreparacion = p.estado === 'en preparacion';
+    const minutos       = enPreparacion ? calcularMinutos(p.tsRecibido || p.fecha) : 0;
+    const esHoy         = new Date(p.fecha).toDateString() === new Date().toDateString();
+    const puntoCelda    = enPreparacion && !esHoy
+        ? `<span class="punto-rojo-fijo" title="Pendiente de días anteriores"></span>`
+        : enPreparacion && esHoy && minutos >= 30
+            ? `<span class="punto-demora ${minutos >= 40 ? 'punto-rojo' : 'punto-naranja'}" title="⏱ ${formatTimer(minutos)} esperando"></span>`
+            : p.estado === 'despachado'
+                ? `<span class="punto-despachado" title="Despachado ✓"></span>`
+                : '';
+
     return `
         <tr class="inventory-management__row fila-activa" data-id="${p.id}">
-            <td class="inventory-management__cell">#${p.nPedido ?? '—'}</td>
+            <td class="inventory-management__cell">#${p.nPedido ?? '—'}${puntoCelda}</td>
             <td class="inventory-management__cell">${formatFecha(p.fecha)}</td>
             <td class="inventory-management__cell">${p.telefono ?? '—'}</td>
             <td class="inventory-management__cell">${p.nombre ?? '—'}</td>
@@ -434,20 +403,8 @@ function renderFila(p) {
 
 // ── MODAL DETALLE ─────────────────────────────────────────────────
 
-function infoReserva(p) {
-    const partes = [];
-    if (p.fechaReserva) partes.push(`📅 ${_formatFechaReservaLocal(p.fechaReserva)}`);
-    if (p.horaReserva)  partes.push(`🕐 ${p.horaReserva}`);
-    if (p.cantidadPersonas) partes.push(`👥 ${p.cantidadPersonas} pers.`);
-    return partes.length ? partes.join(' · ') : '📅 Reserva';
-}
-
-function poblarModal(p) {
-    const esDomicilio = p.domicilio?.tipo !== 'recoger';
-
-    // Botón imprimir en header
-    document.getElementById('modal-print-btn').innerHTML =
-        `<button class="btn-imprimir-header with-tooltip" data-tooltip="Reimprimir comanda" onclick="imprimirComanda('${p.id}')">
+function abrirDetalle(p) {
+    const printHtml = `<button class="btn-imprimir-header with-tooltip" data-tooltip="Reimprimir comanda" onclick="imprimirComanda('${p.id}')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -456,67 +413,45 @@ function poblarModal(p) {
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
         </button>`;
-
-    // Header: N° pedido + fecha/hora
-    document.getElementById('modal-npedido').textContent = `#${p.nPedido}`;
-    if (p.fecha) {
-        const _d = new Date(p.fecha);
-        const _fechaPart = new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(_d);
-        const _horaPart  = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true }).format(_d);
-        document.getElementById('modal-fecha-header').innerHTML = `${_fechaPart} <strong>${_horaPart}</strong>`;
-    }
-
-    // Cliente
-    document.getElementById('modal-cliente').textContent = p.nombre ?? '—';
-
-    // Meta: teléfono · sede · asesor + pago + canal
-    const canalLabel = badgeCanal(p.canal);
-    document.getElementById('modal-meta').innerHTML =
-        `${p.telefono ?? '—'} &nbsp;·&nbsp; 🏬 ${p.sede ?? '—'} &nbsp;·&nbsp; 👤 ${p.asesor ?? '—'}` +
-        `<br><small>Pago: ${p.pago ?? '—'} &nbsp;·&nbsp; ${canalLabel}</small>`;
-
-    // Entrega
-    document.getElementById('modal-entrega').innerHTML = esDomicilio
-        ? `📍 ${p.direccion ?? ''}${p.domicilio?.barrio ? ` · ${p.domicilio.barrio}` : ''}`
-        : `🏪 Recoge en tienda`;
-
-    // Productos
-    document.getElementById('modal-productos').innerHTML =
-        (p.productos || [])
-        .slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
-        .map(prod => `<li><strong>${prod.qty || 1}×</strong> ${prod.nombre}${prod.obs ? ` <span style="color:#888;font-size:0.85em;">— ${prod.obs}</span>` : ''}</li>`)
-        .join('');
-
-    // Totals
-    document.getElementById('modal-totals-box').style.display = '';
-    document.getElementById('modal-total').textContent = formatPrecio(p.total || 0);
-    const domRow = document.getElementById('modal-domicilio-row');
-    if (esDomicilio && p.domicilio?.valor) {
-        domRow.style.display = 'flex';
-        document.getElementById('modal-domicilio').textContent = formatPrecio(p.domicilio.valor);
-    } else {
-        domRow.style.display = 'none';
-    }
-    document.getElementById('modal-total-final').textContent = formatPrecio((p.total || 0) + (esDomicilio ? (p.domicilio?.valor || 0) : 0));
-
-    // Obs
-    document.getElementById('modal-obs').innerHTML =
-        (p.acompanamientos ? `<div class="mpedido-obs">🥗 <strong>Acompañamientos:</strong> ${p.acompanamientos}</div>` : '') +
-        (p.obs ? `<div class="mpedido-obs">💬 ${p.obs}</div>` : '');
-
-    // Stepper
-    document.getElementById('modal-stepper').innerHTML = renderStepper(p);
-
-    // Cancelar
-    const puedeCancel = p.estado === 'en preparacion';
-    document.getElementById('modal-cancel-area').innerHTML = puedeCancel
+    const cancelHtml = p.estado === 'en preparacion'
         ? `<button class="btn-cancelar-pedido" onclick="abrirModalCancelar('${p.id}', '${p.nPedido}')">✕ Cancelar pedido</button>`
         : '';
+    poblarModal(p, { stepperHtml: renderStepper(p), cancelHtml, printHtml });
 }
 
 function cerrarModalPedido() {
     pedidoEnModal = null;
-    document.getElementById('modal-pedido').style.display = 'none';
+    cerrarModal();
+}
+
+// ── TIMER DE DEMORA EN VIVO — igual que historialPedidos.js ──────
+let timerDemoraInterval = null;
+
+function actualizarTimers() {
+    document.querySelectorAll('tr[data-id]').forEach(fila => {
+        const p = pedidosActuales[fila.dataset.id];
+        if (!p || p.estado !== 'en preparacion') return;
+        const minutos = calcularMinutos(p.tsRecibido || p.fecha);
+        const esHoy   = new Date(p.fecha).toDateString() === new Date().toDateString();
+        let puntoEl   = fila.querySelector('.punto-demora, .punto-rojo-fijo');
+        if (!puntoEl) {
+            puntoEl = document.createElement('span');
+            const celda = fila.querySelector('td:nth-child(1)');
+            if (celda) celda.appendChild(puntoEl);
+        }
+        if (!esHoy) {
+            puntoEl.className = 'punto-rojo-fijo';
+            puntoEl.title = 'Pendiente de días anteriores';
+        } else if (minutos >= 30) {
+            puntoEl.className = `punto-demora ${minutos >= 40 ? 'punto-rojo' : 'punto-naranja'}`;
+            puntoEl.title = `⏱ ${formatTimer(minutos)} esperando`;
+        }
+    });
+}
+
+function iniciarTimerDemora() {
+    if (timerDemoraInterval) clearInterval(timerDemoraInterval);
+    timerDemoraInterval = setInterval(actualizarTimers, 10000);
 }
 
 // ── REIMPRIMIR COMANDA ────────────────────────────────────────────
@@ -598,64 +533,6 @@ document.getElementById('modal-pedido').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-pedido')) cerrarModalPedido();
 });
 
-// ── STEPPER ───────────────────────────────────────────────────────
-function renderStepper(p) {
-    const steps      = p.tipo === 'reserva' ? STEPS_RESERVA : STEPS;
-    const currentIdx = steps.findIndex(s => s.key === p.estado);
-    let html = '<div class="stepper">';
-
-    steps.forEach((step, i) => {
-        let cls = '', onclick = '', icon = step.icon;
-
-        if (i < currentIdx) {
-            cls  = 'step-done';
-            icon = ICON_CHECK;
-        } else if (i === currentIdx) {
-            cls = 'step-active';
-        } else if (i === currentIdx + 1) {
-            cls    = 'step-next';
-            onclick = `onclick="cambiarEstado('${p.id}', '${step.key}')"`;
-        } else {
-            cls = 'step-locked';
-        }
-
-        html += `<div class="step ${cls}" ${onclick}>
-            <div class="step-circle">${icon}</div>
-            <span class="step-label">${step.label}</span>
-        </div>`;
-
-        if (i < steps.length - 1) {
-            html += `<div class="step-connector ${i < currentIdx ? 'active' : ''}"></div>`;
-        }
-    });
-
-    html += '</div>';
-    return html;
-}
-
-// ── CAMBIAR ESTADO ────────────────────────────────────────────────
-const TS_MAP = {
-    'en preparacion': 'ts_preparacion',
-    'despachado':     'ts_despachado',
-    'entregado':      'ts_entregado',
-};
-
-window.cambiarEstado = async (pedidoId, nuevoEstado) => {
-    try {
-        const campos = { estado: nuevoEstado };
-        if (TS_MAP[nuevoEstado]) campos[TS_MAP[nuevoEstado]] = new Date().toISOString();
-
-        const { error } = await supabase
-            .from('pedidos_callcenter')
-            .update(campos)
-            .eq('id', pedidoId);
-
-        if (error) throw error;
-    } catch (e) {
-        alert('Error al actualizar el estado. Intenta de nuevo.');
-        console.error(e);
-    }
-};
 
 // ── CANCELAR ──────────────────────────────────────────────────────
 window.abrirModalCancelar = (pedidoId, nPedido) => {

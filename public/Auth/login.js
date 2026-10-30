@@ -19,8 +19,8 @@ const confirmationForgotModal = document.getElementById("confirmation_forgot_mod
 
 const REDIRECT_ROL = {
     admin:            'selector.html',
-    planta:           'Planta/dashboard.html',
-    'planta-admin':   'Planta/dashboard.html',
+    planta:           'Planta/planta-shell.html',
+    'planta-admin':   'Planta/planta-shell.html',
     callcenter:       'CallCenter/callcenter-shell.html',
     'callcenter-admin': 'CallCenter/callcenter-shell.html',
     pizzeria:         'Pizzerias/pizzerias.html',

@@ -13,7 +13,7 @@ const LOGIN_URL    = '../index.html'
  */
 export function verificarAccesoPlanta(onSuccess, roles = ROLES_PLANTA) {
     supabase.auth.getUser().then(async ({ data: { user }, error }) => {
-        if (error || !user) { window.location.href = LOGIN_URL; return }
+        if (error || !user) { window.top.location.href = LOGIN_URL; return }
         try {
             const { data: perfil, error: perfilError } = await supabase
                 .from('usuarios')
@@ -21,14 +21,14 @@ export function verificarAccesoPlanta(onSuccess, roles = ROLES_PLANTA) {
                 .eq('id', user.id)
                 .single()
 
-            if (perfilError || !perfil)     { window.location.href = LOGIN_URL; return }
-            if (!roles.includes(perfil.rol)) { window.location.href = LOGIN_URL; return }
+            if (perfilError || !perfil)     { window.top.location.href = LOGIN_URL; return }
+            if (!roles.includes(perfil.rol)) { window.top.location.href = LOGIN_URL; return }
 
             onSuccess({ uid: user.id, username: perfil.username, sede: perfil.sede, rol: perfil.rol })
             if (perfil.rol === 'admin') MostrarBotonSelector()
         } catch (err) {
             console.error('plantaAuth — error verificando acceso:', err)
-            window.location.href = LOGIN_URL
+            window.top.location.href = LOGIN_URL
         }
     })
 }

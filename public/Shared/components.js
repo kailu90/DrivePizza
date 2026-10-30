@@ -70,7 +70,7 @@ export function capitalizarSede(sede) {
 }
 
 export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
-    console.log("ingresé a CargarHeader");
+    if (window.self !== window.top) { _headerDone = true; _checkReveal(); return; }
     const headerContainer = document.getElementById('header-container');
     if (!headerContainer) return;
 
@@ -154,6 +154,15 @@ export function MostrarBotonMonitor() {
 }
 
 export function CargarSidebar(onReady = null) {
+    if (window.self !== window.top) {
+        const main = document.querySelector('.dashboard__main, .inventory__main, .ap-main, .inf-main, .mc-main');
+        if (main) main.classList.add('dashboard__main--full', 'iframe-content');
+        document.getElementById('toggle-btn')?.style.setProperty('display', 'none');
+        if (onReady) onReady();
+        _sidebarDone = true;
+        _checkReveal();
+        return;
+    }
     const container = document.getElementById('sidebar-container');
     if (!container) return;
 

@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="../Estilos/historialPedidos.css">
     <link rel="stylesheet" href="../CallCenter/pedidosCallCenter.css">
     <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="stylesheet" href="../Estilos/modalDetalle.css">
+    <link rel="stylesheet" href="../Estilos/paginacion.css">
 </head>
 <body>
 
@@ -38,6 +40,7 @@
                 <option value="recibido">Recibido</option>
                 <option value="en preparacion">En preparación</option>
                 <option value="despachado">Despachado</option>
+                <option value="entregado">Entregado</option>
             </select>
         </div>
         <button class="btn-filtrar" id="btn-filtrar">Filtrar</button>
@@ -67,20 +70,27 @@
         </div>
     </header>
 
-    <div class="page-header">
-        <h2>Pedidos en Curso &mdash; <span id="sede-label"></span></h2>
-        <div class="stat-badges">
-            <span class="stat-badge preparacion" id="count-preparacion">0 preparando</span>
-            <span class="stat-badge despachado" id="count-despachado">0 despachados</span>
-        </div>
-    </div>
-
-    <div class="historial__topbar" style="padding: 0 20px 10px;">
+    <div class="historial__topbar" style="padding: 14px 20px 10px;">
         <div class="topbar-actions">
             <button class="btn-filtros-toggle" id="btn-abrir-panel">⚙ Filtros</button>
             <button class="btn-actualizar" id="btn-actualizar">↺ Actualizar</button>
         </div>
     </div>
+
+    <section class="historial__resumen">
+        <div class="resumen-card">
+            <span class="resumen-label">Total pedidos</span>
+            <span class="resumen-valor" id="stat-total">0</span>
+        </div>
+        <div class="resumen-card">
+            <span class="resumen-label">📱 WhatsApp</span>
+            <span class="resumen-valor" id="stat-whatsapp">0</span>
+        </div>
+        <div class="resumen-card">
+            <span class="resumen-label">📞 IVR</span>
+            <span class="resumen-valor" id="stat-ivr">0</span>
+        </div>
+    </section>
 
     <div class="ped-table-card inventory-management">
         <table class="inventory-management__table">
@@ -133,6 +143,7 @@
                             <option value="recibido">Recibido</option>
                             <option value="en preparacion">En preparación</option>
                             <option value="despachado">Despachado</option>
+                            <option value="entregado">Entregado</option>
                         </select>
                     </th>
                     <th><input type="text" class="col-filter" id="cf-obs" placeholder="Obs."></th>

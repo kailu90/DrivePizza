@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - DrivePizza</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/pedidosPizzeria.css">
+    <link rel="stylesheet" href="../Estilos/historialPedidos.css">
+    <link rel="stylesheet" href="../Estilos/modalDetalle.css">
+    <link rel="stylesheet" href="../Estilos/reservas.css">
+    <link rel="shortcut icon" href="../Imagenes/Isotipo.png" type="image/x-icon">
+</head>
+<body>
+
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn">&lt;</button>
+
+    <div class="rsv-wrap">
+
+        <!-- Encabezado de página -->
+        <div class="rsv-page-header">
+            <div>
+                <h1 class="rsv-page-title">Reservas</h1>
+                <p class="rsv-page-sub">Vista visual del mes y reservas del día</p>
+            </div>
+            <span class="rsv-fecha-hoy" id="rsv-fecha-hoy"></span>
+        </div>
+
+        <!-- KPI cards -->
+        <div class="rsv-kpis">
+
+            <div class="rsv-kpi">
+                <div class="rsv-kpi__icon rsv-kpi__icon--blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+                </div>
+                <div>
+                    <div class="rsv-kpi__value" id="kpi-reservas-hoy">—</div>
+                    <div class="rsv-kpi__label">Reservas de hoy</div>
+                    <div class="rsv-kpi__sub" id="kpi-reservas-sub">—</div>
+                </div>
+            </div>
+
+            <div class="rsv-kpi">
+                <div class="rsv-kpi__icon rsv-kpi__icon--green">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                    <div class="rsv-kpi__value rsv-kpi__value--lg" id="kpi-proxima-hora">—</div>
+                    <div class="rsv-kpi__label">Próxima reserva</div>
+                    <div class="rsv-kpi__sub" id="kpi-proxima-info">—</div>
+                </div>
+            </div>
+
+            <div class="rsv-kpi">
+                <div class="rsv-kpi__icon rsv-kpi__icon--orange">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div>
+                    <div class="rsv-kpi__value" id="kpi-ocupacion">—</div>
+                    <div class="rsv-kpi__label">Ocupación estimada hoy</div>
+                    <div class="rsv-kpi__sub">
+                        <div class="rsv-progreso">
+                            <div class="rsv-progreso__fill" id="rsv-progreso-fill" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rsv-kpi">
+                <div class="rsv-kpi__icon rsv-kpi__icon--purple">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </div>
+                <div>
+                    <div class="rsv-kpi__value" id="kpi-mes">—</div>
+                    <div class="rsv-kpi__label">Reservas este mes</div>
+                    <div class="rsv-kpi__sub" id="kpi-mes-sub">—</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Cuerpo: calendario + panel derecho -->
+        <div class="rsv-body">
+
+            <!-- Calendario mensual -->
+            <div class="rsv-card rsv-calendario">
+                <div class="rsv-cal-nav">
+                    <button class="rsv-cal-btn" id="rsv-mes-prev">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="rsv-cal-mes" id="rsv-cal-mes"></span>
+                    <button class="rsv-cal-btn" id="rsv-mes-next">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+                <div class="rsv-cal-legend">
+                    <span class="rsv-leg"><span class="rsv-dot rsv-dot--green"></span>Confirmada</span>
+                    <span class="rsv-leg"><span class="rsv-dot rsv-dot--orange"></span>Pendiente</span>
+                    <span class="rsv-leg"><span class="rsv-dot rsv-dot--red"></span>En espera</span>
+                    <span class="rsv-leg"><span class="rsv-dot rsv-dot--gray"></span>Cancelada</span>
+                </div>
+                <div class="rsv-cal-header">
+                    <span>Dom</span><span>Lun</span><span>Mar</span>
+                    <span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+                </div>
+                <div class="rsv-cal-grid" id="rsv-cal-grid">
+                    <div class="rsv-cal-loading">Cargando calendario...</div>
+                </div>
+            </div>
+
+            <!-- Panel derecho -->
+            <div class="rsv-panel-right">
+
+                <!-- Reservas del día seleccionado -->
+                <div class="rsv-card rsv-card--panel">
+                    <div class="rsv-card__head">
+                        <h3 class="rsv-card__title" id="rsv-panel-titulo">Reservas de hoy</h3>
+                        <span class="rsv-badge-count" id="rsv-panel-count" style="display:none"></span>
+                    </div>
+                    <div id="rsv-panel-lista" class="rsv-panel-lista">
+                        <p class="rsv-empty">Cargando...</p>
+                    </div>
+                    <button class="rsv-ver-todas" id="rsv-ver-todas" style="display:none">
+                        Ver todas →
+                    </button>
+                </div>
+
+                <!-- Alertas del día -->
+                <div class="rsv-card rsv-card--panel">
+                    <div class="rsv-card__head">
+                        <h3 class="rsv-card__title">Alertas del día</h3>
+                        <span class="rsv-badge-count rsv-badge-count--red" id="rsv-alertas-count" style="display:none"></span>
+                    </div>
+                    <div id="rsv-alertas-lista" class="rsv-panel-lista">
+                        <p class="rsv-empty">Cargando...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Tabla próximas reservas -->
+        <div class="rsv-card rsv-tabla-wrap">
+            <div class="rsv-card__head">
+                <div>
+                    <h3 class="rsv-card__title">Próximas reservas</h3>
+                    <p class="rsv-card__sub">Desde hoy en adelante</p>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="inventory-management__table">
+                    <thead class="inventory-management__thead">
+                        <tr>
+                            <th class="inventory-management__heading">Fecha / Hora</th>
+                            <th class="inventory-management__heading" style="text-align:left;">Cliente</th>
+                            <th class="inventory-management__heading">Personas</th>
+                            <th class="inventory-management__heading">Teléfono</th>
+                            <th class="inventory-management__heading">Canal</th>
+                            <th class="inventory-management__heading">Estado</th>
+                            <th class="inventory-management__heading" style="text-align:left;">Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rsv-tabla-body">
+                        <tr>
+                            <td colspan="7" class="inventory-management__cell" style="text-align:center;padding:2rem;">
+                                Cargando...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /rsv-wrap -->
+</main>
+
+<div id="footer-container"></div>
+
+<!-- Modal detalle de reserva -->
+<div id="modal-pedido" class="modal-overlay" style="display:none;">
+    <div class="modal-pedido-content">
+
+        <div class="mpedido-header">
+            <div class="mpedido-header-left">
+                <span class="mpedido-npedido" id="modal-npedido"></span>
+                <span id="modal-fecha-header"></span>
+            </div>
+            <button class="mpedido-close" id="cerrar-detalle">&times;</button>
+        </div>
+
+        <div class="mpedido-body">
+            <div class="mpedido-cliente" id="modal-cliente"></div>
+            <div class="mpedido-meta" id="modal-meta"></div>
+            <div class="mpedido-entrega" id="modal-entrega"></div>
+            <hr class="mpedido-sep">
+            <div class="mpedido-productos-title" id="modal-productos-title">INFORMACIÓN RESERVA</div>
+            <ul class="mpedido-productos" id="modal-productos"></ul>
+            <div id="modal-obs"></div>
+        </div>
+
+        <div id="modal-stepper"></div>
+
+    </div>
+</div>
+
+<script type="module" src="reservas.js"></script>
+</body>
+</html>

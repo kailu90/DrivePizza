@@ -9,6 +9,9 @@ import { PBX_URL, WS_URL } from "../Api/config.js";
 import { getSedes } from "../Shared/sedesService.js";
 import { revelarSplash, initVersionBanner } from '../Shared/components.js';
 initVersionBanner();
+import { crearPaginacion } from '../Shared/paginacion.js';
+import { badgeEstado, badgeCanal } from '../Shared/badges.js';
+import { normalizarPedido } from '../Shared/modalDetalle.js';
 import { initCiudadToggle, getCiudadActual } from '../Shared/ciudadToggle.js';
 
 let pedidosCargados = [];
@@ -67,53 +70,8 @@ function hoyLocal() {
 
 // ── PAGINACIÓN ─────────────────────────────────────────────────────────
 const PAGINA_SIZE = 20;
-let paginaActual = 1;
+const _pag = crearPaginacion('paginacion', () => filtrarColumnas());
 
-// ── ESTADO COLORES ─────────────────────────────────────────────────────
-const ESTADO_BADGE = {
-    "pendiente":      { bg: "#e53935", color: "#fff" },
-    "recibido":       { bg: "#1565c0", color: "#fff" },
-    "en preparacion": { bg: "#7b1fa2", color: "#fff" },
-    "despachado":     { bg: "#0288d1", color: "#fff" },
-    "entregado":      { bg: "#284c22", color: "#fff" },
-    "cancelado":      { bg: "#757575", color: "#fff" },
-};
-
-function badgeEstado(estado) {
-    const e = ESTADO_BADGE[estado] || { bg: "#aaa", color: "#fff" };
-    return `<span style="background:${e.bg};color:${e.color};padding:3px 8px;border-radius:4px;font-size:1.1rem;font-weight:bold;white-space:nowrap;">${estado}</span>`;
-}
-
-// ── NORMALIZAR FILA SUPABASE ───────────────────────────────────────────
-function normalizarPedido(row) {
-    return {
-        id:               String(row.id),
-        nPedido:          row.n_pedido,
-        nombre:           row.nombre,
-        telefono:         row.telefono,
-        direccion:        row.direccion,
-        sede:             row.sede,
-        pago:             row.pago,
-        obs:              row.obs,
-        acompanamientos:  row.acompanamientos || null,
-        productos:        row.productos || [],
-        total:            row.total,
-        impreso:          row.impreso,
-        asesor:           row.asesor,
-        fecha:            row.fecha,
-        estado:           row.estado,
-        canal:            row.canal,
-        domicilio:        row.domicilio || null,
-        tipo:             row.tipo || null,
-        tsRecibido:       row.ts_recibido,
-        tsPreparacion:    row.ts_preparacion,
-        tsDespachado:     row.ts_despachado,
-        motivoCancelacion: row.motivo_cancelacion,
-        cantidadPersonas:  row.cantidad_personas,
-        fechaReserva:     row.fecha_reserva,
-        horaReserva:      row.hora_reserva,
-    };
-}
 
 // ── FORMATO ────────────────────────────────────────────────────────────
 function formatFecha(timestamp) {
@@ -300,13 +258,11 @@ function renderTabla(pedidos) {
         const hasta = document.getElementById("filtro-hasta").value;
         const rango = desde === hasta ? `el ${desde}` : `del ${desde} al ${hasta}`;
         tbody.innerHTML = `<tr><td class="inventory-management__cell" colspan="12" style="text-align:center;padding:30px;">No se encontraron pedidos para ${rango}.</td></tr>`;
-        renderPaginacion(0);
+        _pag.render(0, PAGINA_SIZE);
         return;
     }
 
-    const totalPaginas = Math.ceil(pedidos.length / PAGINA_SIZE);
-    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
-    const inicio = (paginaActual - 1) * PAGINA_SIZE;
+    const inicio = (_pag.pagina - 1) * PAGINA_SIZE;
     const pagina = pedidos.slice(inicio, inicio + PAGINA_SIZE);
 
     tbody.innerHTML = pagina.map(p => {
@@ -331,7 +287,7 @@ function renderTabla(pedidos) {
                 : esReserva
                     ? `<span style="color:#6c3d8f;font-weight:bold;">👥 ${p.cantidadPersonas ?? "—"} pers.</span>`
                     : `$${formatPrecio(p.total)}`
-        const canalLabel = p.canal === "whatsapp" ? "📱 WhatsApp" : p.canal === "ivr" ? "📞 IVR" : p.canal === "gastrofusion" ? "🎪 Gastrofusión" : p.canal === "web" ? "🌐 Web" : p.canal ?? "—"
+        const canalLabel = badgeCanal(p.canal)
 
         // Timer de demora solo para pizzería y callcenter, pedidos en preparacion
         const esPizzeria = true
@@ -381,22 +337,8 @@ function renderTabla(pedidos) {
         });
     });
 
-   renderPaginacion(pedidos.length)
-        iniciarTimerDemora()
-}
-
-function renderPaginacion(total) {
-    const contenedor = document.getElementById("paginacion");
-    const totalPaginas = Math.ceil(total / PAGINA_SIZE);
-    if (totalPaginas <= 1) { contenedor.innerHTML = ""; return; }
-
-    contenedor.innerHTML = `
-        <button class="pag-btn" id="pag-prev" ${paginaActual === 1 ? "disabled" : ""}>← Anterior</button>
-        <span class="pag-info">Página ${paginaActual} de ${totalPaginas} &nbsp;·&nbsp; ${total} pedidos</span>
-        <button class="pag-btn" id="pag-next" ${paginaActual === totalPaginas ? "disabled" : ""}>Siguiente →</button>
-    `;
-    document.getElementById("pag-prev").addEventListener("click", () => { if (paginaActual > 1) { paginaActual--; filtrarColumnas(); } });
-    document.getElementById("pag-next").addEventListener("click", () => { if (paginaActual < totalPaginas) { paginaActual++; filtrarColumnas(); } });
+    _pag.render(pedidos.length, PAGINA_SIZE);
+    iniciarTimerDemora();
 }
 
 function renderResumen(pedidos) {
@@ -494,10 +436,18 @@ const STEPS = [
                 <path d="M15 6h-4l-2 6H3l2-4h8"/><path d="M15 6l2 6h2l1-3h-5"/>
                </svg>`
     },
+    {
+        key: "entregado", label: "Entregado", tsField: "tsEntregado",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+               </svg>`
+    },
 ];
 
 function estadoAIdx(estado) {
-    return { recibido: 0, "en preparacion": 1, despachado: 2 }[estado] ?? -1;
+    return { recibido: 0, "en preparacion": 1, despachado: 2, entregado: 3 }[estado] ?? -1;
 }
 
 function renderStepper(p, esActivo) {
@@ -921,6 +871,8 @@ function cerrarDetalle() {
 const TS_MAP = {
     "en preparacion": "ts_preparacion",
     "despachado":     "ts_despachado",
+    "entregado":      "ts_entregado",
+    "entregado":      "ts_entregado",
 };
 
 window.cambiarEstado = async (pedidoId, nuevoEstado) => {
@@ -1178,7 +1130,7 @@ function poblarSelectAsesores() {
 
 // ── FILTRO EN CLIENTE ──────────────────────────────────────────────────
 function filtrarColumnas(reiniciarPagina = false) {
-    if (reiniciarPagina) paginaActual = 1;
+    if (reiniciarPagina) _pag.reiniciar();
     const npedido   = document.getElementById("cf-npedido").value.toLowerCase();
     const fecha     = document.getElementById("cf-fecha").value.toLowerCase();
     const telefono  = document.getElementById("cf-telefono").value.toLowerCase();
