@@ -39,7 +39,7 @@ async function _poblarSedes() {
 async function cargarSiropes() {
     const tbody = document.getElementById('siropes-tbody');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#888;">Cargando...</td></tr>`;
 
     let query = supabase
         .from('entregas_siropes')
@@ -60,7 +60,7 @@ function _renderTabla(data) {
     if (!tbody) return;
 
     if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;font-size:1.3rem;">Sin registros</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888;font-size:1.3rem;">Sin registros</td></tr>`;
         return;
     }
 
@@ -80,9 +80,10 @@ function _renderTabla(data) {
             : '—';
 
         return `<tr class="inventory-management__row">
+            <td class="inventory-management__cell">#${r.pedido_id ?? '—'}</td>
             <td class="inventory-management__cell">
-                #${r.pedido_id ?? '—'}
-                <div style="font-size:1.1rem;color:#888;">${r.producto_nombre} · ${r.cantidad} uds.</div>
+                ${r.producto_nombre}
+                <div style="font-size:1.1rem;color:#888;">${r.cantidad} uds.</div>
             </td>
             <td class="inventory-management__cell">${fmtFecha(r.fecha_pedido)}</td>
             <td class="inventory-management__cell">${capitalizarSede(r.sede)}</td>
