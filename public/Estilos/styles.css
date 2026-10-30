@@ -422,7 +422,9 @@ a {
 body.orders_body {
   margin: 0;
   overflow-x: hidden;
+  scrollbar-width: none;
 }
+body.orders_body::-webkit-scrollbar { display: none; }
 
 .orders_main {
   color: var(--color-primario);
@@ -1229,7 +1231,7 @@ li.product.is-selected label {
     width: 90%;
     max-width: 500px;
     position: relative;
-    max-height: 70vh; /* No permite que el modal mida más del 85% de la pantalla */
+    max-height: 90vh;
     display: flex;
     flex-direction: column; /* Alinea hijos verticalmente */
     overflow: hidden;
@@ -1343,6 +1345,14 @@ li.product.is-selected label {
     animation: pulse-save 1.2s ease-in-out infinite;
     border-radius: 4px;
 }
+
+/* ── Modal Detalle Pedido (Planta): espaciado compacto ──────────────── */
+#modal-detalle .modal-content    { padding: 10px 14px; }
+#modal-detalle .modal-body-scroll { margin-bottom: 4px; }
+#modal-detalle .info-pedido       { margin-bottom: 6px; font-size: 1.25rem; }
+#modal-detalle .info-pedido p     { margin: 2px 0; }
+#modal-detalle .table-detalle     { margin-top: 6px; }
+#modal-detalle .totales-detalle   { font-size: 1.2rem; }
 
 #btn-add-product {
     margin-left: 8px;
@@ -2248,6 +2258,16 @@ dialog.ap-modal-dialog {
 #dashboard__main.dash-pedidos.dashboard__main--full .pagination-controls {
   flex-shrink: 0;
   padding: 0.8rem 0;
+}
+
+/* ── Gestión Pedidos: filas compactas ── */
+#table-dashboard .inventory-management__heading {
+  padding: 6px 10px;
+  font-size: 1.1rem;
+}
+#table-dashboard .inventory-management__cell {
+  padding: 4px 10px;
+  font-size: 1.2rem;
 }
 
 /* Dentro de iframe: sin márgenes del shell */

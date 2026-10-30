@@ -246,6 +246,7 @@ window.cambiarEstadoModal = async (nuevoEstado) => {
                 cerrarListenerModal();
                 modalDetalle.style.display = 'none';
                 document.body.classList.remove('no-scroll');
+                _postModalState(false);
                 pedidoEnEdicion = null;
             }, 420);
         } else {
@@ -446,6 +447,11 @@ document.getElementById('btn-prev-page')?.addEventListener('click', () => {
 
 
 /*************************FUNCIÓN PARA VER DETALLES DEL PEDIDO******************/
+function _postModalState(active) {
+    if (window.parent !== window)
+        window.parent.postMessage({ type: 'frame-modal', active }, '*');
+}
+
 const modalDetalle = document.getElementById('modal-detalle');
 const closeModalDetalle = document.getElementById('close-modal-detalle');
 
@@ -590,6 +596,7 @@ async function abrirModalPedido(docId, esEdicion = false) {
     if (modalDetalle) {
         modalDetalle.style.display = 'flex';
         document.body.classList.add('no-scroll');
+        _postModalState(true);
     }
 
     // Suscripción Realtime para actualizaciones en vivo del pedido abierto
@@ -1048,6 +1055,7 @@ async function guardarCambiosPedido() {
         cerrarListenerModal();
         modalDetalle.style.display = 'none';
         document.body.classList.remove('no-scroll');
+        _postModalState(false);
         pedidoEnEdicion = null;
         mostrarToast('✅ Pedido actualizado correctamente.');
     } catch (error) {
@@ -1074,6 +1082,7 @@ window.addEventListener('click', (e) => {
         cerrarListenerModal();
         modalDetalle.style.display = 'none';
         document.body.classList.remove('no-scroll');
+        _postModalState(false);
         pedidoEnEdicion = null;
     }
 });
@@ -1091,6 +1100,7 @@ document.getElementById('btn-delete-modal')?.addEventListener('click', async () 
     cerrarListenerModal();
     modalDetalle.style.display = 'none';
     document.body.classList.remove('no-scroll');
+    _postModalState(false);
     pedidoEnEdicion = null;
     await confirmarEliminacion(docId, pedido.idPedido, null);
 });

@@ -469,6 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (link) marcarActivo(link);
     });
 
+
     // Fecha del día en header de ventas
     const fechaHoy = new Date().toLocaleDateString('es-CO', {
         day: 'numeric', month: 'long', timeZone: 'America/Bogota'

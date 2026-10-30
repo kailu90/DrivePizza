@@ -372,6 +372,14 @@
     color: #999;
 }
 
+/* ── Stepper compacto dentro del modal detalle de Planta ─────────── */
+#modal-stepper .stepper        { padding: 8px 12px 8px; }
+#modal-stepper .step-circle    { width: 40px; height: 40px; font-size: 1.1rem; }
+#modal-stepper .step-connector { margin-top: 13px; }
+#modal-stepper .step           { gap: 4px; min-width: 52px; }
+#modal-stepper .step-label     { font-size: 1.05rem; }
+#modal-stepper .step-time      { font-size: 1rem; }
+
 /* ── RESPONSIVE ──────────────────────────────────────── */
 @media (max-width: 768px) {
     #modal-stepper,

@@ -103,10 +103,20 @@ function _setBadgeSiropes(count) {
     link.appendChild(b);
 }
 
+// ── Modal pantalla completa ────────────────────────────────────────────────────
+function _setFrameModal(active) {
+    if (active) {
+        frame.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;border:none;display:block;';
+    } else {
+        frame.style.cssText = '';
+    }
+}
+
 // ── Mensajes desde iframe ─────────────────────────────────────────────────────
 window.addEventListener('message', e => {
     if (e.source !== frame?.contentWindow) return;
-    const { type, count, page } = e.data || {};
+    const { type, count, page, active } = e.data || {};
     if (type === 'badge-siropes') _setBadgeSiropes(count ?? 0);
     if (type === 'nav-to')        _navTo(page);
+    if (type === 'frame-modal')   _setFrameModal(active);
 });
