@@ -138,15 +138,7 @@ document.getElementById('siropes-tbody')?.addEventListener('click', e => {
     if (!sr) return;
 
     if (btn) {
-        // Botón Entregar: navegar al dashboard con contexto de entrega
-        if (!sr.pedido_id) return;
-        sessionStorage.setItem('sirope_pendiente', JSON.stringify({
-            id:              sr.id,
-            producto_nombre: sr.producto_nombre,
-            cantidad:        sr.cantidad,
-            sede:            sr.sede,
-        }));
-        window.location.href = `./dashboard.html?pedido=${sr.pedido_id}`;
+        _abrirModalEntrega(sr);
         return;
     }
 
@@ -177,4 +169,75 @@ document.getElementById('siropes-tbody')?.addEventListener('click', e => {
 
 document.getElementById('msd-cerrar')?.addEventListener('click', () => {
     document.getElementById('modal-sirope-detalle').close();
+});
+
+// ── Modal de entrega ──────────────────────────────────────────────────────────
+let _siropesEntrega = []; // ids pendientes del pedido actual
+
+async function _abrirModalEntrega(sr) {
+    if (!sr.pedido_id) return;
+
+    // Traer todos los siropes del mismo pedido
+    const { data, error } = await supabase
+        .from('entregas_siropes')
+        .select('id, producto_nombre, cantidad, estado')
+        .eq('pedido_id', sr.pedido_id);
+    if (error) { console.error(error); return; }
+
+    const pendientes = (data || []).filter(r => r.estado === 'pendiente');
+    _siropesEntrega  = pendientes.map(r => r.id);
+
+    document.getElementById('mes-pedido').textContent = `#${sr.pedido_id}`;
+    document.getElementById('mes-fecha').textContent  = fmtFecha(sr.fecha_pedido);
+    document.getElementById('mes-sede').textContent   = capitalizarSede(sr.sede);
+    document.getElementById('mes-obs').value          = '';
+
+    document.getElementById('mes-lista').innerHTML = (data || []).map(r => {
+        const tag = r.estado === 'pendiente'
+            ? `<span style="color:#e67e22;font-weight:600;margin-left:8px;">Pendiente</span>`
+            : `<span style="color:#27ae60;font-weight:600;margin-left:8px;">Ya entregado</span>`;
+        return `<li><strong>${r.cantidad} uds.</strong> ${r.producto_nombre}${tag}</li>`;
+    }).join('');
+
+    const btn = document.getElementById('mes-confirmar');
+    btn.disabled    = false;
+    btn.textContent = '✓ Confirmar entrega';
+
+    document.getElementById('modal-entregar-siropes').showModal();
+}
+
+document.getElementById('mes-cancelar')?.addEventListener('click', () => {
+    document.getElementById('modal-entregar-siropes').close();
+});
+
+document.getElementById('mes-confirmar')?.addEventListener('click', async () => {
+    if (_siropesEntrega.length === 0) return;
+    const btn = document.getElementById('mes-confirmar');
+    btn.disabled    = true;
+    btn.textContent = 'Guardando...';
+
+    const obs       = document.getElementById('mes-obs').value.trim();
+    const ahora     = new Date().toISOString();
+
+    const { error } = await supabase
+        .from('entregas_siropes')
+        .update({ estado: 'entregado', fecha_entrega: ahora, observacion: obs || null })
+        .in('id', _siropesEntrega);
+
+    if (error) {
+        alert('Error al registrar la entrega. Intenta de nuevo.');
+        btn.disabled    = false;
+        btn.textContent = '✓ Confirmar entrega';
+        return;
+    }
+
+    document.getElementById('modal-entregar-siropes').close();
+    await cargarSiropes();
+
+    // Actualizar badge en el shell
+    const { count } = await supabase.from('entregas_siropes')
+        .select('*', { count: 'exact', head: true }).eq('estado', 'pendiente');
+    if (window.self !== window.top) {
+        window.parent.postMessage({ type: 'badge-siropes', count: count ?? 0 }, '*');
+    }
 });

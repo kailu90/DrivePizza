@@ -95,6 +95,62 @@
 
 <div id="footer-container"></div>
 
+<!-- Dialog entregar siropes -->
+<dialog id="modal-entregar-siropes" class="ap-modal-dialog">
+    <div class="ap-modal__form">
+        <h2 class="ap-modal__title">Confirmar Entrega</h2>
+        <div class="mes-info">
+            <span class="mes-badge"><strong>Pedido&nbsp;</strong><span id="mes-pedido"></span></span>
+            <span class="mes-badge"><strong>Fecha&nbsp;</strong><span id="mes-fecha"></span></span>
+            <span class="mes-badge"><strong>Sede&nbsp;</strong><span id="mes-sede"></span></span>
+        </div>
+        <div class="ap-field ap-field--full">
+            <label class="ap-label">Siropes a entregar</label>
+            <ul id="mes-lista" class="mes-lista"></ul>
+        </div>
+        <div class="ap-field ap-field--full">
+            <label class="ap-label">Observación (opcional)</label>
+            <textarea id="mes-obs" class="ap-input" rows="3"
+                placeholder="Ej: entregado en recepción..."></textarea>
+        </div>
+        <div class="ap-modal__actions">
+            <button type="button" class="ap-btn ap-btn--ghost" id="mes-cancelar">Cancelar</button>
+            <button type="button" class="ap-btn ap-btn--primary" id="mes-confirmar">✓ Confirmar entrega</button>
+        </div>
+    </div>
+</dialog>
+
+<style>
+    .mes-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-bottom: 1.6rem;
+    }
+    .mes-badge {
+        background: #f5f5f5;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 1.25rem;
+        color: #333;
+    }
+    .mes-lista {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .mes-lista li {
+        background: #fff8f0;
+        border-left: 3px solid #e67e22;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 1.3rem;
+    }
+</style>
+
 <!-- Dialog detalle sirope -->
 <dialog id="modal-sirope-detalle" class="ap-modal-dialog">
     <div class="ap-modal__form">
