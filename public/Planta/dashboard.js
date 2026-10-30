@@ -1727,8 +1727,20 @@ async function actualizarBadgeSiropes() {
         .from('entregas_siropes')
         .select('*', { count: 'exact', head: true })
         .eq('estado', 'pendiente');
-    const btn = document.getElementById('btn-siropes');
-    if (btn) btn.textContent = count > 0 ? `Siropes (${count})` : 'Siropes';
+    const _apply = () => {
+        const link = document.getElementById('sidebar-siropes-link');
+        if (!link) return false;
+        link.querySelector('.siropes-badge')?.remove();
+        if (count > 0) {
+            const b = document.createElement('span');
+            b.className = 'siropes-badge';
+            b.textContent = count;
+            b.style.cssText = 'background:#e67e22;color:#fff;border-radius:10px;padding:1px 7px;font-size:1.1rem;font-weight:700;margin-left:6px;vertical-align:middle;';
+            link.appendChild(b);
+        }
+        return true;
+    };
+    if (!_apply()) setTimeout(_apply, 1200);
 }
 
 async function crearRegistrosSiropes(productos, pedidoId, sede, fechaPedido) {
