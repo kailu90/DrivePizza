@@ -53,6 +53,8 @@
                 </select>
             </div>
             <button class="ap-btn ap-btn--primary" id="ap-btn-nuevo">+ Nuevo producto</button>
+            <button class="ap-btn ap-btn--primary" id="btn-add-stock">+ Ingresar Stock</button>
+            <button class="ap-btn ap-btn--primary" id="btn-ajuste-stock" style="display:none">&#9878; Ajuste de Inventario</button>
         </div>
 
         <!-- Contador -->
@@ -186,6 +188,101 @@
             <div class="ap-modal__actions">
                 <button type="button" class="ap-btn ap-btn--ghost" id="ap-btn-cancelar">Cancelar</button>
                 <button type="submit" class="ap-btn ap-btn--primary" id="ap-btn-guardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal Ingreso de Stock -->
+    <dialog id="modal-stock" class="ap-modal-dialog">
+        <form class="ap-modal__form" id="form-stock" novalidate>
+            <h2 class="ap-modal__title">Ingreso de Stock</h2>
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label">Producto</label>
+                    <input type="text" id="stock-buscar-input" class="ap-input" placeholder="Busca el producto..." autocomplete="off">
+                    <div id="stock-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                    <div id="stock-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                        <p style="margin:0;font-weight:600;" id="stock-nombre-prod"></p>
+                    </div>
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="stock-quantity">Cantidad</label>
+                    <input type="number" id="stock-quantity" class="ap-input" placeholder="Cantidad a ingresar" required min="1">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label">Proveedor</label>
+                    <input type="text" id="supplier-buscar-input" class="ap-input" placeholder="Busca el proveedor..." autocomplete="off">
+                    <div id="supplier-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                    <div id="supplier-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                        <p style="margin:0;font-weight:600;" id="supplier-nombre"></p>
+                    </div>
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="stock-observation">Observacion</label>
+                    <textarea id="stock-observation" class="ap-input" rows="3" placeholder="Detalles del ingreso..."></textarea>
+                </div>
+            </div>
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="btn-stock-cancel">Cancelar</button>
+                <button type="submit" class="ap-btn ap-btn--primary" id="btn-stock-enviar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal Confirmacion de Stock -->
+    <dialog id="modal-confirm-stock" class="ap-modal-dialog">
+        <div class="ap-modal__form">
+            <h2 class="ap-modal__title">Confirmar ingreso de stock</h2>
+            <div class="ap-modal__grid" style="gap:8px;">
+                <div class="ap-field ap-field--full">
+                    <table style="width:100%;border-collapse:collapse;font-size:15px;">
+                        <tbody id="confirm-stock-tabla"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="btn-confirm-stock-cancelar">Cancelar</button>
+                <button type="button" class="ap-btn ap-btn--primary" id="btn-confirm-stock-ok">&#10003; Confirmar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal Ajuste de Inventario -->
+    <dialog id="modal-ajuste" class="ap-modal-dialog">
+        <form class="ap-modal__form" id="form-ajuste" novalidate>
+            <h2 class="ap-modal__title">Ajuste de Inventario</h2>
+            <div class="ap-modal__grid">
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label">Producto</label>
+                    <input type="text" id="ajuste-buscar-input" class="ap-input" placeholder="Busca el producto..." autocomplete="off">
+                    <div id="ajuste-resultados" style="max-height:160px;overflow-y:auto;border:1px solid #eee;border-radius:6px;background:#fff;"></div>
+                    <div id="ajuste-seleccionado" style="display:none;background:#f0faf4;border-radius:6px;padding:10px;margin-top:4px;">
+                        <p style="margin:0;font-weight:600;" id="ajuste-nombre-prod"></p>
+                    </div>
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label">Stock actual (sistema)</label>
+                    <input type="text" id="ajuste-stock-actual" class="ap-input" disabled placeholder="&#8212;">
+                </div>
+                <div class="ap-field">
+                    <label class="ap-label" for="ajuste-stock-real">Stock real contado</label>
+                    <input type="number" id="ajuste-stock-real" class="ap-input" placeholder="Ingresa el conteo real" required min="0">
+                </div>
+                <div class="ap-field ap-field--full" id="ajuste-diferencia-wrap" style="display:none">
+                    <p id="ajuste-diferencia-label" style="font-weight:600;margin:0;padding:6px 10px;border-radius:6px"></p>
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="ajuste-motivo">Motivo del ajuste <span style="color:#c0392b">*</span></label>
+                    <textarea id="ajuste-motivo" class="ap-input" rows="2" placeholder="Ej: Novedad en inventario inicio de mes" required></textarea>
+                </div>
+                <div class="ap-field ap-field--full">
+                    <label class="ap-label" for="ajuste-notas">Notas adicionales</label>
+                    <textarea id="ajuste-notas" class="ap-input" rows="2" placeholder="Observaciones opcionales..."></textarea>
+                </div>
+            </div>
+            <div class="ap-modal__actions">
+                <button type="button" class="ap-btn ap-btn--ghost" id="btn-ajuste-cancel">Cancelar</button>
+                <button type="submit" class="ap-btn ap-btn--primary" id="btn-ajuste-enviar">Guardar Ajuste</button>
             </div>
         </form>
     </dialog>

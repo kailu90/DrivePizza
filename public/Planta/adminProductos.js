@@ -1,8 +1,8 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { getProductos, invalidarProductos } from '../Shared/productosService.js'
+import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js'
 import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
 import { UNIDADES_MEDIDA } from './planta.config.js';
-import { registrarMovimiento } from './inventoryService.js';
+import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 CargarSidebar();
 
@@ -35,12 +35,17 @@ let _proveedoresList = [];
 let _proveedorSeleccionado = null; // { id, name }
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
-verificarAccesoPlanta(async ({ username, sede }) => {
+const ROLES_AJUSTE = ['admin', 'planta-admin'];
+
+verificarAccesoPlanta(async ({ username, sede, rol }) => {
   usuarioActual = username;
   CargarHeader(capitalizarSede(sede));
   await Promise.all([loadCategorias(), loadProducts(), loadProveedores()]);
   buildCatFilter();
   renderTable();
+  if (ROLES_AJUSTE.includes(rol)) {
+      document.getElementById('btn-ajuste-stock').style.display = '';
+  }
   document.body.classList.add('loaded');
 });
 
@@ -465,3 +470,302 @@ supabase.channel('admin-productos')
         renderTable();
     })
     .subscribe();
+
+// ── Modal: Ingreso de Stock ────────────────────────────────────────────────────
+let _stockProductoSeleccionado = null;
+let _proveedorStockSeleccionado = null;
+
+const modalStock      = document.getElementById('modal-stock');
+const stockForm       = document.getElementById('form-stock');
+const btnOpenStock    = document.getElementById('btn-add-stock');
+const btnStockCancel  = document.getElementById('btn-stock-cancel');
+const btnStockEnviar  = document.getElementById('btn-stock-enviar');
+const stockBuscarInput  = document.getElementById('stock-buscar-input');
+const stockResultados   = document.getElementById('stock-resultados');
+const stockSeleccionado = document.getElementById('stock-seleccionado');
+const supplierBuscarInput  = document.getElementById('supplier-buscar-input');
+const supplierResultados   = document.getElementById('supplier-resultados');
+const supplierSeleccionado = document.getElementById('supplier-seleccionado');
+
+function closeModalStock() {
+    modalStock.close();
+    stockForm.reset();
+    stockBuscarInput.value = '';
+    stockResultados.innerHTML = '';
+    stockSeleccionado.style.display = 'none';
+    _stockProductoSeleccionado = null;
+    supplierBuscarInput.value = '';
+    supplierResultados.innerHTML = '';
+    supplierSeleccionado.style.display = 'none';
+    _proveedorStockSeleccionado = null;
+}
+
+btnOpenStock.addEventListener('click', () => {
+    modalStock.showModal();
+    setTimeout(() => stockBuscarInput.focus(), 100);
+});
+btnStockCancel.addEventListener('click', closeModalStock);
+modalStock.addEventListener('click', (e) => { if (e.target === modalStock) closeModalStock(); });
+
+stockBuscarInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { stockResultados.innerHTML = ''; return; }
+    const resultados = allProducts
+        .filter(p => p.active !== false && p.name.toLowerCase().includes(q))
+        .slice(0, 8);
+    stockResultados.innerHTML = resultados.map(p =>
+        `<div class="prod-result-item" data-id="${p.id}" data-name="${p.name}" data-unit="${p.measurementUnit || ''}">
+            <span class="prod-result-item__name">${p.name}</span>
+         </div>`
+    ).join('');
+});
+
+stockResultados.addEventListener('click', (e) => {
+    const item = e.target.closest('.prod-result-item');
+    if (!item) return;
+    _stockProductoSeleccionado = { id: item.dataset.id, name: item.dataset.name, unit: item.dataset.unit };
+    stockBuscarInput.value = item.dataset.name;
+    stockResultados.innerHTML = '';
+    document.getElementById('stock-nombre-prod').textContent = item.dataset.name;
+    stockSeleccionado.style.display = 'block';
+});
+
+supplierBuscarInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { supplierResultados.innerHTML = ''; return; }
+    supplierResultados.innerHTML = _proveedoresList
+        .filter(p => p.name.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map(p => `<div class="prod-result-item" data-id="${p.id}" data-name="${p.name}">
+            <span class="prod-result-item__name">${p.name}</span>
+         </div>`)
+        .join('');
+});
+
+supplierResultados.addEventListener('click', (e) => {
+    const item = e.target.closest('.prod-result-item');
+    if (!item) return;
+    _proveedorStockSeleccionado = { id: item.dataset.id, name: item.dataset.name };
+    supplierBuscarInput.value = item.dataset.name;
+    supplierResultados.innerHTML = '';
+    document.getElementById('supplier-nombre').textContent = item.dataset.name;
+    supplierSeleccionado.style.display = 'block';
+});
+
+// ── Modal confirmacion de stock ───────────────────────────────────────────────
+const modalConfirmStock       = document.getElementById('modal-confirm-stock');
+const btnConfirmStockOk       = document.getElementById('btn-confirm-stock-ok');
+const btnConfirmStockCancelar = document.getElementById('btn-confirm-stock-cancelar');
+
+btnConfirmStockCancelar.addEventListener('click', () => modalConfirmStock.close());
+modalConfirmStock.addEventListener('click', (e) => { if (e.target === modalConfirmStock) modalConfirmStock.close(); });
+
+stockForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const productId    = _stockProductoSeleccionado?.id || '';
+    const productName  = _stockProductoSeleccionado?.name || '';
+    const unidadMedida = _stockProductoSeleccionado?.unit || '';
+    const supplierId   = _proveedorStockSeleccionado?.id || '';
+    const supplierName = _proveedorStockSeleccionado?.name || '';
+    const quantityToAdd = parseInt(document.getElementById('stock-quantity').value, 10);
+    const observations  = document.getElementById('stock-observation').value.trim();
+
+    if (!productId || !supplierId || isNaN(quantityToAdd) || quantityToAdd <= 0) {
+        alert('Completa los campos correctamente.');
+        return;
+    }
+
+    const unidad = unidadMedida || 'unidad';
+    const filas = [
+        ['Producto',  productName],
+        ['Cantidad',  `${quantityToAdd} ${quantityToAdd === 1 ? unidad : unidad + 's'}`],
+        ['Proveedor', supplierName],
+        ...(observations ? [['Observacion', observations]] : []),
+    ];
+    document.getElementById('confirm-stock-tabla').innerHTML = filas.map(([label, valor]) => `
+        <tr>
+            <td style="padding:7px 10px;color:#666;white-space:nowrap;width:110px;">${label}</td>
+            <td style="padding:7px 10px;font-weight:600;">${valor}</td>
+        </tr>
+    `).join('');
+
+    modalConfirmStock.showModal();
+
+    btnConfirmStockOk.onclick = async () => {
+        modalConfirmStock.close();
+        btnStockEnviar.disabled = true;
+        btnStockEnviar.textContent = 'Procesando...';
+
+        try {
+            const { error: errStock } = await supabase.rpc('increment_stock', {
+                p_id: parseInt(productId), p_delta: quantityToAdd
+            });
+            if (errStock) throw errStock;
+
+            await Promise.all([
+                registrarMovimiento({
+                    tipo:            'ENTRADA',
+                    productoId:      productId,
+                    productoNombre:  productName,
+                    proveedorId:     supplierId,
+                    proveedorNombre: supplierName,
+                    cantidad:        quantityToAdd,
+                    unidadMedida,
+                    motivo:          'Ingreso Manual Stock',
+                    notas:           observations || '',
+                    usuario:         usuarioActual,
+                }),
+                supabase.from('productos').update({
+                    proveedor_id:     parseInt(supplierId),
+                    proveedor_nombre: supplierName,
+                }).eq('id', parseInt(productId)),
+            ]);
+
+            alert(`Ingreso exitoso\n\n${productName}\n${quantityToAdd} ${unidad}${quantityToAdd !== 1 ? 's' : ''}`);
+
+            actualizarStockEnCache(productId, quantityToAdd);
+            // Actualizar stock en allProducts sin recargar todo
+            const p = allProducts.find(x => x._docId === productId);
+            if (p) p.stock = (p.stock ?? 0) + quantityToAdd;
+            renderTable();
+            closeModalStock();
+        } catch (error) {
+            console.error('Error en la transaccion:', error);
+            alert('Error: ' + error.message);
+        } finally {
+            btnStockEnviar.disabled = false;
+            btnStockEnviar.textContent = 'Guardar';
+        }
+    };
+});
+
+// ── Modal: Ajuste de Inventario ───────────────────────────────────────────────
+let _ajusteProductoSeleccionado = null;
+
+const modalAjuste        = document.getElementById('modal-ajuste');
+const btnAbrirAjuste     = document.getElementById('btn-ajuste-stock');
+const formAjuste         = document.getElementById('form-ajuste');
+const btnAjusteCancel    = document.getElementById('btn-ajuste-cancel');
+const btnAjusteEnviar    = document.getElementById('btn-ajuste-enviar');
+const ajusteBuscarInput  = document.getElementById('ajuste-buscar-input');
+const ajusteResultados   = document.getElementById('ajuste-resultados');
+const ajusteSeleccionadoDiv = document.getElementById('ajuste-seleccionado');
+const ajusteStockActual  = document.getElementById('ajuste-stock-actual');
+const ajusteStockReal    = document.getElementById('ajuste-stock-real');
+const ajusteDifWrap      = document.getElementById('ajuste-diferencia-wrap');
+const ajusteDifLabel     = document.getElementById('ajuste-diferencia-label');
+
+function closeModalAjuste() {
+    modalAjuste.close();
+    formAjuste.reset();
+    ajusteStockActual.value = '';
+    ajusteDifWrap.style.display = 'none';
+    ajusteBuscarInput.value = '';
+    ajusteResultados.innerHTML = '';
+    ajusteSeleccionadoDiv.style.display = 'none';
+    _ajusteProductoSeleccionado = null;
+}
+
+btnAbrirAjuste.addEventListener('click', () => {
+    modalAjuste.showModal();
+    setTimeout(() => ajusteBuscarInput.focus(), 100);
+});
+btnAjusteCancel.addEventListener('click', closeModalAjuste);
+modalAjuste.addEventListener('click', (e) => { if (e.target === modalAjuste) closeModalAjuste(); });
+
+ajusteBuscarInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { ajusteResultados.innerHTML = ''; return; }
+    ajusteResultados.innerHTML = allProducts
+        .filter(p => p.active !== false && p.name.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map(p => `<div class="prod-result-item" data-id="${p.id}" data-name="${p.name}">
+            <span class="prod-result-item__name">${p.name}</span>
+         </div>`)
+        .join('');
+});
+
+ajusteResultados.addEventListener('click', async (e) => {
+    const item = e.target.closest('.prod-result-item');
+    if (!item) return;
+    _ajusteProductoSeleccionado = { id: item.dataset.id, name: item.dataset.name };
+    ajusteBuscarInput.value = item.dataset.name;
+    ajusteResultados.innerHTML = '';
+    document.getElementById('ajuste-nombre-prod').textContent = item.dataset.name;
+    ajusteSeleccionadoDiv.style.display = 'block';
+    ajusteStockActual.value = 'Cargando...';
+    ajusteDifWrap.style.display = 'none';
+    ajusteStockReal.value = '';
+    try {
+        const { data, error } = await supabase
+            .from('productos')
+            .select('stock')
+            .eq('id', parseInt(item.dataset.id))
+            .single();
+        ajusteStockActual.value = error ? '—' : (data.stock ?? 0);
+    } catch {
+        ajusteStockActual.value = '—';
+    }
+});
+
+ajusteStockReal.addEventListener('input', () => {
+    const actual = parseFloat(ajusteStockActual.value);
+    const real   = parseFloat(ajusteStockReal.value);
+    if (isNaN(actual) || isNaN(real) || ajusteStockReal.value === '') {
+        ajusteDifWrap.style.display = 'none';
+        return;
+    }
+    const dif = real - actual;
+    ajusteDifWrap.style.display = '';
+    if (dif === 0) {
+        ajusteDifLabel.textContent = 'Sin diferencia (el stock no cambiara)';
+        ajusteDifLabel.style.background = '#e9ecef';
+        ajusteDifLabel.style.color = '#495057';
+    } else if (dif > 0) {
+        ajusteDifLabel.textContent = `\u25b2 Diferencia: +${dif} unidades (el stock aumentara)`;
+        ajusteDifLabel.style.background = '#d4edda';
+        ajusteDifLabel.style.color = '#155724';
+    } else {
+        ajusteDifLabel.textContent = `\u25bc Diferencia: ${dif} unidades (el stock disminuira)`;
+        ajusteDifLabel.style.background = '#f8d7da';
+        ajusteDifLabel.style.color = '#721c24';
+    }
+});
+
+formAjuste.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const productId   = _ajusteProductoSeleccionado?.id || '';
+    const productName = _ajusteProductoSeleccionado?.name || '';
+    const stockNuevo  = parseInt(ajusteStockReal.value, 10);
+    const motivo      = document.getElementById('ajuste-motivo').value.trim();
+    const notas       = document.getElementById('ajuste-notas').value.trim();
+
+    if (!productId || isNaN(stockNuevo) || stockNuevo < 0 || !motivo) {
+        alert('Completa todos los campos obligatorios.');
+        return;
+    }
+
+    btnAjusteEnviar.disabled = true;
+    btnAjusteEnviar.textContent = 'Procesando...';
+
+    try {
+        const { stockAnterior, diferencia } = await ejecutarAjusteStock({
+            productId, name: productName, stockNuevo, motivo, notas, usuario: usuarioActual
+        });
+
+        const signo = diferencia >= 0 ? `+${diferencia}` : `${diferencia}`;
+        alert(`Ajuste realizado\n\n${productName}\n${stockAnterior} \u2192 ${stockNuevo} (${signo})`);
+
+        invalidarProductos();
+        await loadProducts();
+        renderTable();
+        closeModalAjuste();
+    } catch (error) {
+        console.error('Error en ajuste:', error);
+        alert('Error al guardar el ajuste: ' + error.message);
+    } finally {
+        btnAjusteEnviar.disabled = false;
+        btnAjusteEnviar.textContent = 'Guardar Ajuste';
+    }
+});
