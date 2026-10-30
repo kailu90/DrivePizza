@@ -69,9 +69,9 @@ export function capitalizarSede(sede) {
     return sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : 'Planta';
 }
 
-// True solo cuando la página corre dentro del planta-shell (mismo origen)
+// True solo cuando la página corre DENTRO del planta-shell como iframe (mismo origen)
 function _inPlantaShell() {
-    try { return window.parent.location.pathname.includes('planta-shell'); } catch { return false; }
+    try { return window.parent !== window && window.parent.location.pathname.includes('planta-shell'); } catch { return false; }
 }
 
 export function CargarHeader(nombreSede, homeUrl = null, mostrarSala = false) {
