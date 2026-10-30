@@ -78,7 +78,7 @@ function _renderTabla(data) {
             ? `<span style="font-size:1.1rem;color:#555;">${r.observacion}</span>`
             : '—';
 
-        return `<tr class="inventory-management__row">
+        return `<tr class="inventory-management__row" data-id="${r.id}" style="cursor:pointer;">
             <td class="inventory-management__cell">#${r.pedido_id ?? '—'}</td>
             <td class="inventory-management__cell sc-sirope">
                 ${r.producto_nombre} <span style="color:#888;font-size:1.1rem;">· ${r.cantidad} uds.</span>
@@ -109,19 +109,27 @@ document.getElementById('siropes-filtro-sede')?.addEventListener('change', e => 
     cargarSiropes();
 });
 
-// ── Botón Entregar → navegar al dashboard con contexto sirope ─────────────────
+// ── Click en tabla siropes ────────────────────────────────────────────────────
 document.getElementById('siropes-tbody')?.addEventListener('click', e => {
-    const btn = e.target.closest('.btn-entregar-sirope');
-    if (!btn) return;
-    const id  = parseInt(btn.dataset.id);
-    const row = _siropesData.find(r => r.id === id);
-    if (!row || !row.pedido_id) return;
+    const row = e.target.closest('.inventory-management__row');
+    if (!row) return;
 
-    sessionStorage.setItem('sirope_pendiente', JSON.stringify({
-        id:              row.id,
-        producto_nombre: row.producto_nombre,
-        cantidad:        row.cantidad,
-        sede:            row.sede,
-    }));
-    window.location.href = `./dashboard.html?pedido=${row.pedido_id}`;
+    const btn = e.target.closest('.btn-entregar-sirope');
+    const id  = parseInt(btn ? btn.dataset.id : row.dataset.id);
+    const sr  = _siropesData.find(r => r.id === id);
+    if (!sr || !sr.pedido_id) return;
+
+    if (btn) {
+        // Botón Entregar: abre modal con contexto de entrega
+        sessionStorage.setItem('sirope_pendiente', JSON.stringify({
+            id:              sr.id,
+            producto_nombre: sr.producto_nombre,
+            cantidad:        sr.cantidad,
+            sede:            sr.sede,
+        }));
+    } else {
+        // Click en fila: solo abrir modal del pedido (sin contexto entrega)
+        sessionStorage.removeItem('sirope_pendiente');
+    }
+    window.location.href = `./dashboard.html?pedido=${sr.pedido_id}`;
 });
