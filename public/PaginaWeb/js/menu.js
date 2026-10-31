@@ -18,7 +18,8 @@ import { initMisFavoritosView, isFavorito, toggleFavorito } from './misFavoritos
 // ── CAMBIO DE VISTA (SPA) ─────────────────────────────────────
 const ALL_VIEWS = ['home', 'menu', 'cuenta', 'pedidos', 'direcciones', 'favoritos'];
 let currentView  = 'menu';
-let menuScrollY  = 0;
+let menuScrollY       = 0;
+let _pendingCatScroll = null;   // grupo a activar al llegar al menú desde home
 
 function switchView(toView) {
   if (toView === currentView) return;
@@ -54,6 +55,11 @@ function switchView(toView) {
       await initHomeView({ onSedeSelected: () => switchView('menu') });
     } else if (toMenu) {
       window.scrollTo(0, menuScrollY);
+      if (_pendingCatScroll) {
+        const target = _pendingCatScroll;
+        _pendingCatScroll = null;
+        setTimeout(() => activarGrupo(target, true), 50);
+      }
     } else {
       window.scrollTo(0, 0);
       if (toView === 'cuenta') {
@@ -1697,6 +1703,22 @@ function setupListeners() {
   overlay.addEventListener('click', cerrarTodo);
 
 }
+
+// ── NAVEGACIÓN CARDS HOME ─────────────────────────────────────
+const CAT_CARD_TO_GRUPO = {
+  pizzas:     'Pizzas',
+  sandwiches: 'Sandwiches',
+  lasanas:    'Lasañas',
+  promos:     'Pizzas',   // No hay grupo Promos — va al inicio del menú
+};
+
+document.querySelectorAll('.pw-cat-item[data-cat]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const grupo = CAT_CARD_TO_GRUPO[btn.dataset.cat] ?? null;
+    if (grupo) _pendingCatScroll = grupo;
+    switchView('menu');
+  });
+});
 
 // ── ARRANCAR ──────────────────────────────────────────────────
 init();
