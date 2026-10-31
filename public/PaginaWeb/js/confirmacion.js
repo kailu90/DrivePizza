@@ -31,7 +31,7 @@ async function init() {
     // Meta Pixel — Purchase
     if (typeof fbq !== 'undefined') {
       fbq('track', 'Purchase', {
-        value:        pedido.total ?? 0,
+        value:        (pedido.total ?? 0) + (pedido.domicilio?.valor || 0),
         currency:     'COP',
         content_type: 'product',
       });

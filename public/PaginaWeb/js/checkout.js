@@ -352,7 +352,7 @@ async function confirmarPedido() {
         : { valor: domicilioFee };
     }
 
-    const total = subtotal + (tipoEntrega === 'domicilio' ? domicilioFee : 0);
+    const total = subtotal;
 
     const fila = {
       n_pedido:  nPedido,
@@ -362,8 +362,8 @@ async function confirmarPedido() {
       sede:      sedeName,
       pago:      pagoActivo,
       obs,
-      asesor:    sessionStorage.getItem('dp_origen') === 'google' ? 'google' : 'web',
-      canal:     sessionStorage.getItem('dp_origen') === 'google' ? 'google' : 'web',
+      asesor:    sessionStorage.getItem('dp_origen') === 'google' ? 'Google' : 'web',
+      canal:     sessionStorage.getItem('dp_origen') === 'google' ? 'Google' : 'web',
       impreso:   false,
       estado:    'pendiente',
       fecha:     new Date().toISOString(),

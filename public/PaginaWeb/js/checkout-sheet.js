@@ -566,7 +566,7 @@ async function confirmarPedido() {
       direccion = partes.join(', ');
     }
 
-    const total = subtotal + (_tipoEntrega === 'domicilio' ? _domicilioFee : 0);
+    const total = subtotal;
 
     const obsCliente = coObs.value.trim();
 
@@ -579,8 +579,8 @@ async function confirmarPedido() {
       pago:            _pagoActivo,
       obs:             obsCliente,
       acompanamientos: _toppings.size ? [..._toppings].join(', ') : null,
-      asesor:        'web',
-      canal:         'web',
+      asesor:        sessionStorage.getItem('dp_origen') === 'google' ? 'Google' : 'web',
+      canal:         sessionStorage.getItem('dp_origen') === 'google' ? 'Google' : 'web',
       impreso:       false,
       estado:        'pendiente',
       fecha:         new Date().toISOString(),

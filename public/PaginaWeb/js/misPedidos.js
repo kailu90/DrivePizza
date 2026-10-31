@@ -29,6 +29,17 @@ const ESTADO_MOD = {
   entregado: 'verde', cancelado: 'rojo',
 };
 
+// Pedidos web anteriores al fix de 2026-10-31 guardaban total = productos + domicilio.
+// Para evitar doble suma, no agregamos domicilio.valor en esos pedidos.
+const WEB_TOTAL_FIX_DATE = '2026-10-31';
+function totalConDomicilio(p) {
+  const domVal = p.domicilio?.valor || 0;
+  if (!domVal) return p.total || 0;
+  const canalWeb = p.canal === 'web' || p.canal?.toLowerCase() === 'google';
+  const isLegacyWeb = canalWeb && (p.fecha || '') < WEB_TOTAL_FIX_DATE;
+  return (p.total || 0) + (isLegacyWeb ? 0 : domVal);
+}
+
 const CANAL_LABEL = {
   web:       'Web',
   whatsapp:  'WhatsApp',
@@ -82,7 +93,7 @@ function orderCard(p) {
       ${isActive ? progressBar(p.estado) : ''}
       <div class="pw-pedidos-card-body">
         <p class="pw-pedidos-prods">${prods}</p>
-        <span class="pw-pedidos-total">${formatPrecio(p.total || 0)}</span>
+        <span class="pw-pedidos-total">${formatPrecio(totalConDomicilio(p))}</span>
       </div>
       <div class="pw-pedidos-card-actions">
         <button class="pw-pedidos-btn-outline js-ped-detalle" data-nped="${p.n_pedido || ''}">Ver detalles</button>
@@ -161,7 +172,7 @@ export async function initMisPedidosView({ onVolver, onIrAlMenu } = {}) {
     try {
       let query = supabase
         .from('pedidos_callcenter')
-        .select('n_pedido, sede, productos, total, estado, fecha, canal')
+        .select('n_pedido, sede, productos, total, domicilio, estado, fecha, canal')
         .eq('telefono', telefono)
         .order('fecha', { ascending: false })
         .limit(50);
@@ -290,7 +301,7 @@ export async function initMisPedidosView({ onVolver, onIrAlMenu } = {}) {
       </div>
       <p class="pw-detalle-meta">${fmtFecha(p.fecha)}${p.sede ? ` \u00b7 ${p.sede}` : ''} \u00b7 ${canalTxt}</p>
       <div class="pw-detalle-lista">${items || '<p style="color:rgba(45,45,45,.5);font-size:.85rem">Sin detalle disponible</p>'}</div>
-      <div class="pw-detalle-total"><span>Total</span><strong>${formatPrecio(p.total || 0)}</strong></div>`;
+      <div class="pw-detalle-total"><span>Total</span><strong>${formatPrecio(totalConDomicilio(p))}</strong></div>`;
     overlay.style.display = '';
   }
 }
