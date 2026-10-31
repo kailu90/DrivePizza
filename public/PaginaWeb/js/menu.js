@@ -452,7 +452,7 @@ function renderProductos() {
       const imgSrc         = PRODUCT_IMAGES[p.nombre];
       const emoji          = CAT_EMOJI[cat] || '🍽️';
       const imgHTML        = imgSrc
-        ? `<img src="${imgSrc}" alt="${p.nombre}">`
+        ? `<img src="${imgSrc}" alt="${p.nombre}" loading="lazy">`
         : `<span class="pw-product-img-emoji">${emoji}</span>`;
       return `
         <div class="pw-product-card" data-p="${dataP}" tabindex="0" role="button"
@@ -1495,7 +1495,7 @@ async function abrirSedeSheet() {
       return `
         <div class="pw-sede-card-h${abierta ? '' : ' pw-sede-card-h--cerrada'}"
              data-sede='${JSON.stringify(sede).replace(/'/g, '&#39;')}'>
-          <div class="pw-sede-card-h-img"><img src="${img}" alt="${nombre}"></div>
+          <div class="pw-sede-card-h-img"><img src="${img}" alt="${nombre}" loading="lazy"></div>
           <div class="pw-sede-card-h-info">
             <span class="pw-sede-status pw-sede-status--${abierta ? 'abierta' : 'cerrada'}">
               ${abierta ? 'Abierto' : 'Cerrado'}
