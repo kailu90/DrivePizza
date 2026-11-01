@@ -1,5 +1,5 @@
 import { supabase }                                                   from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, initVersionBanner } from '../Shared/components.js';
 import { verificarAccesoPlanta }                                      from '../Auth/plantaAuth.js';
 
 const frame  = document.getElementById('planta-frame');
@@ -30,6 +30,7 @@ verificarAccesoPlanta(async ({ sede }) => {
     CargarHeader(capitalizarSede(sede));
     requestAnimationFrame(_alinearNavBar);
     CargarFooter();
+    initVersionBanner();
     CargarSidebar(() => {
         _interceptarSidebar();
         _setActiveLink(_currentPage);
