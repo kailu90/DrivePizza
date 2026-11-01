@@ -26,6 +26,7 @@ const PROD_TIPOS = {
     },
     piña: {
         label:            'Piña Calada',
+        nombreAlmacenado: 'Piña',
         productoSalidaId: '82',
         unidad:           'frascos',
         ingredientes: [
@@ -319,8 +320,8 @@ async function guardarProduccionRapida() {
     // Materiales comunes (fijos + extras)
     const materiales = leerMaterialesPrd();
 
-    const tipo    = currentTipo;
-    const fechaFmt = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const tipo        = currentTipo;
+    const tipoNombre  = `Producción ${tipo.nombreAlmacenado ?? tipo.label}`;
 
     const btn = document.getElementById('prd-btn-guardar');
     btn.disabled = true;
@@ -341,7 +342,7 @@ async function guardarProduccionRapida() {
             // Un solo pedido_planta para toda la producción de masa
             const costoTotalMasa = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
             const pedidoMasaId = await crearPedidoPlantaProduccion({
-                nombre: `Produccion ${tipo.label} — ${fechaFmt}`,
+                nombre: tipoNombre,
                 fecha,
                 materiales,
                 costoTotal: costoTotalMasa,
@@ -351,7 +352,7 @@ async function guardarProduccionRapida() {
                 const ref  = refs[i];
                 const prod = allProductos.find(p => String(p.id) === ref.prodId);
                 await _crearOrdenFinalizada({
-                    nombre:        `Produccion ${ref.prodNombre} — ${fechaFmt}`,
+                    nombre:        tipoNombre,
                     fecha,
                     materiales,
                     productoSalida: {
@@ -378,7 +379,7 @@ async function guardarProduccionRapida() {
             }
             const prodSalida = allProductos.find(p => String(p.id) === tipo.productoSalidaId);
             await _crearOrdenFinalizada({
-                nombre: `Produccion ${tipo.label} — ${fechaFmt}`,
+                nombre: tipoNombre,
                 fecha,
                 materiales,
                 productoSalida: {

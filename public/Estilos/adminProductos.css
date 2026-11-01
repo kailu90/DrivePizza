@@ -260,6 +260,9 @@
 .ord-table th:nth-child(8) { width: 10%; }
 .ord-table th:nth-child(9) { width: 15%; }
 
+.ord-table th,
+.ord-table td { text-align: center; }
+
 .ord-modal-dialog { max-width: 740px; width: 95%; }
 
 .ord-section {
