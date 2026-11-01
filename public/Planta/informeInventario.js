@@ -51,6 +51,22 @@ function formatFecha(isoStr) {
         + ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── Estilos Excel ─────────────────────────────────────────────────────────────
+function boldHeader(ws) {
+    if (!ws['!ref']) return;
+    const range = window.XLSX.utils.decode_range(ws['!ref']);
+    for (let c = range.s.c; c <= range.e.c; c++) {
+        const addr = window.XLSX.utils.encode_cell({ r: 0, c });
+        if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+        ws[addr].s = {
+            font:      { bold: true, color: { rgb: 'FFFFFF' } },
+            fill:      { patternType: 'solid', fgColor: { rgb: '8B0000' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        };
+    }
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+}
+
 // ── Inicializar fechas ────────────────────────────────────────────────────────
 const desdeEl = document.getElementById('ii-desde');
 const hastaEl = document.getElementById('ii-hasta');
@@ -145,18 +161,20 @@ async function generarInforme() {
                 'Unidad':   p.measurementUnit || '',
             }));
 
-        // Hoja 4: Todos los Productos (catálogo completo, sin filtros de stock)
-        const filasTodos = productos
+        // Hoja Conteo Físico — 100% productos para toma de inventario
+        const filasConteo = [...productos]
             .sort((a, b) => {
                 const catA = (categoriasMap[a.idCategory] || '').localeCompare(categoriasMap[b.idCategory] || '', 'es');
                 return catA !== 0 ? catA : (a.name || '').localeCompare(b.name || '', 'es');
             })
             .map(p => ({
-                'Producto':  toTitleCase(p.name),
-                'Categoria': toTitleCase(categoriasMap[p.idCategory] || '—'),
-                'Stock':     p.stock ?? 0,
-                'Precio':    p.price ?? '',
-                'Unidad':    p.measurementUnit || '',
+                'Producto':          toTitleCase(p.name),
+                'Categoria':         toTitleCase(categoriasMap[p.idCategory] || '—'),
+                'Unidad':            p.measurementUnit || '',
+                'Stock Sistema':     p.stock ?? 0,
+                'Inventario Físico': '',
+                'Diferencia':        '',
+                'Observación':       '',
             }));
 
         // ── 2. Pedidos ─────────────────────────────────────────────────────
@@ -271,29 +289,38 @@ async function generarInforme() {
         status.textContent = 'Generando archivo...';
         const wb = window.XLSX.utils.book_new();
 
+        // Hoja 1: Conteo Físico (primera hoja)
+        const wsConteo = window.XLSX.utils.json_to_sheet(
+            filasConteo.length ? filasConteo : [{ 'Producto': '(sin datos)' }]
+        );
+        const conteoRange = window.XLSX.utils.decode_range(wsConteo['!ref']);
+        for (let r = 1; r <= conteoRange.e.r; r++) {
+            wsConteo[window.XLSX.utils.encode_cell({ r, c: 5 })] = { t: 'f', f: `E${r + 1}-D${r + 1}` };
+        }
+        wsConteo['!cols'] = [{ wch: 42 }, { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 30 }];
+        boldHeader(wsConteo);
+        window.XLSX.utils.book_append_sheet(wb, wsConteo, 'Conteo Físico');
+
         const wsEmbalajes = window.XLSX.utils.json_to_sheet(
             filasEmbalajes.length ? filasEmbalajes : [{ 'Producto': '(sin datos)', 'Stock': '', 'Precio': '', 'Unidad': '' }]
         );
         wsEmbalajes['!cols'] = [{ wch: 42 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+        boldHeader(wsEmbalajes);
         window.XLSX.utils.book_append_sheet(wb, wsEmbalajes, 'Embalajes');
 
         const wsStock = window.XLSX.utils.json_to_sheet(
             filasStock.length ? filasStock : [{ 'Producto': '(sin datos)', 'Categoria': '', 'Stock': '', 'Precio': '', 'Unidad': '' }]
         );
         wsStock['!cols'] = [{ wch: 42 }, { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+        boldHeader(wsStock);
         window.XLSX.utils.book_append_sheet(wb, wsStock, 'Stock Productos');
 
         const wsMasa = window.XLSX.utils.json_to_sheet(
             filasMasa.length ? filasMasa : [{ 'Producto': '(sin datos)', 'Stock': '', 'Precio': '', 'Unidad': '' }]
         );
         wsMasa['!cols'] = [{ wch: 42 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+        boldHeader(wsMasa);
         window.XLSX.utils.book_append_sheet(wb, wsMasa, 'Masa');
-
-        const wsTodos = window.XLSX.utils.json_to_sheet(
-            filasTodos.length ? filasTodos : [{ 'Producto': '(sin datos)', 'Categoria': '', 'Stock': '', 'Precio': '', 'Unidad': '' }]
-        );
-        wsTodos['!cols'] = [{ wch: 42 }, { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
-        window.XLSX.utils.book_append_sheet(wb, wsTodos, 'Todos los Productos');
 
         const wsDetalle = window.XLSX.utils.json_to_sheet(
             filasDetalle.length ? filasDetalle : [{ 'ID Pedido': '(sin datos)' }]
@@ -302,6 +329,7 @@ async function generarInforme() {
             { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
             { wch: 36 }, { wch: 20 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 14 }
         ];
+        boldHeader(wsDetalle);
         window.XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle Pedidos');
 
         const wsMovimientos = window.XLSX.utils.json_to_sheet(
@@ -311,11 +339,12 @@ async function generarInforme() {
             { wch: 18 }, { wch: 12 }, { wch: 32 }, { wch: 10 },
             { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 14 }
         ];
+        boldHeader(wsMovimientos);
         window.XLSX.utils.book_append_sheet(wb, wsMovimientos, 'Movimientos');
 
         window.XLSX.writeFile(wb, `informe_inventario_${desde}_${hasta}.xlsx`);
 
-        status.textContent = `Informe generado · ${filasEmbalajes.length} embalajes · ${filasMasa.length} masa · ${filasStock.length} stock · ${filasTodos.length} total productos · ${filasDetalle.length} filas pedidos · ${filasMovimientos.length} movimientos`;
+        status.textContent = `Informe generado · ${filasConteo.length} productos en Conteo · ${filasEmbalajes.length} embalajes · ${filasMasa.length} masa · ${filasDetalle.length} filas pedidos · ${filasMovimientos.length} movimientos`;
 
     } catch (e) {
         console.error('Error generando informe:', e);
