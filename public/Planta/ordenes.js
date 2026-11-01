@@ -75,6 +75,8 @@ verificarAccesoPlanta(async ({ username, sede }) => {
 });
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
+const _safeNum = v => { const n = +v; return (v != null && isFinite(n)) ? n : null; };
+
 function normalizarOrden(row) {
     return {
         docId:             String(row.id),
@@ -85,8 +87,8 @@ function normalizarOrden(row) {
         fecha:             row.fecha ? new Date(row.fecha) : null,
         materiales:        row.materiales || [],
         productoSalida:    row.producto_salida || null,
-        costoTotal:        row.costo_total,
-        costoUnitario:     row.costo_unitario,
+        costoTotal:        _safeNum(row.costo_total),
+        costoUnitario:     _safeNum(row.costo_unitario),
         notas:             row.notas || '',
         creadoPor:         row.creado_por,
         fechaFinalizacion: row.fecha_finalizacion ? new Date(row.fecha_finalizacion) : null,
@@ -336,7 +338,15 @@ async function guardarProduccionRapida() {
                 btn.disabled = false;
                 return;
             }
-            // Crear una orden por referencia con cantidad > 0
+            // Un solo pedido_planta para toda la producción de masa
+            const costoTotalMasa = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
+            const pedidoMasaId = await crearPedidoPlantaProduccion({
+                nombre: `Produccion ${tipo.label} — ${fechaFmt}`,
+                fecha,
+                materiales,
+                costoTotal: costoTotalMasa,
+            });
+            // Crear una orden por referencia, sin costo unitario y enlazadas al mismo pedido
             for (let i = 0; i < refs.length; i++) {
                 const ref  = refs[i];
                 const prod = allProductos.find(p => String(p.id) === ref.prodId);
@@ -349,7 +359,9 @@ async function guardarProduccionRapida() {
                         productoNombre: prod?.name ?? ref.prodNombre,
                         cantidad:       ref.cantidad,
                     },
-                    deducirIngredientes: i === 0,  // ingredientes se descuentan solo en la primera orden
+                    deducirIngredientes:  i === 0,  // ingredientes se descuentan solo en la primera orden
+                    omitirCostoUnitario:  true,
+                    pedidoExternoId:      pedidoMasaId,
                 });
             }
         } else {
@@ -408,9 +420,10 @@ function leerMaterialesPrd() {
     return mat;
 }
 
-async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true }) {
+async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true, omitirCostoUnitario = false, pedidoExternoId = null }) {
     const costoTotal    = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
-    const costoUnitario = productoSalida.cantidad > 0 ? costoTotal / productoSalida.cantidad : 0;
+    const costoUnitario = omitirCostoUnitario ? null
+        : (productoSalida.cantidad > 0 ? costoTotal / productoSalida.cantidad : 0);
 
     const numero = await getSiguienteNumero();
     const { data: newRow, error: insertError } = await supabase
@@ -423,7 +436,7 @@ async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida
             fecha:              new Date(fecha + 'T12:00:00').toISOString(),
             materiales,
             producto_salida:    productoSalida,
-            costo_total:        costoTotal,
+            costo_total:        omitirCostoUnitario ? null : costoTotal,
             costo_unitario:     costoUnitario,
             notas:              null,
             creado_por:         usuarioActual,
@@ -443,7 +456,7 @@ async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida
         deducirIngredientes,
     });
 
-    const pedidoId = await crearPedidoPlantaProduccion({ nombre, fecha, materiales, costoTotal });
+    const pedidoId = pedidoExternoId ?? await crearPedidoPlantaProduccion({ nombre, fecha, materiales, costoTotal });
     await supabase.from('ordenes_produccion')
         .update({ pedido_planta_id: pedidoId })
         .eq('id', newRow.id);
