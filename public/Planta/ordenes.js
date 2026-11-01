@@ -41,7 +41,9 @@ const PROD_TIPOS = {
         productoSalidaId: '144',
         unidad:           'frascos',
         ingredientes: [
-            { id: '1572' },  // Vegetales Tártara
+            { id: '1572' },                              // Vegetales Tártara
+            { id: '25',  soloProduccion: true },         // Vinagre Blanco (costo sin descontar stock)
+            { id: '87',  soloProduccion: true },         // Sal Refisal (costo sin descontar stock)
         ],
     },
     pollo: {
@@ -226,11 +228,12 @@ function openModalRapido(tipoKey) {
             ? allProductos.find(p => String(p.id) === String(ing.id))
             : allProductos.find(p => p.name.toLowerCase().includes(ing.buscar.toLowerCase()));
         const tr   = document.createElement('tr');
-        tr.className          = 'prd-fixed-row';
-        tr.dataset.prodId     = prod?.id    ?? '';
-        const ingFallback     = ing.id ? `(ID ${ing.id})` : (ing.buscar ?? '?');
-        tr.dataset.prodNombre = prod?.name  ?? ingFallback;
-        tr.dataset.prodCosto  = prod?.price ?? 0;
+        tr.className               = 'prd-fixed-row';
+        tr.dataset.prodId          = prod?.id    ?? '';
+        const ingFallback          = ing.id ? `(ID ${ing.id})` : (ing.buscar ?? '?');
+        tr.dataset.prodNombre      = prod?.name  ?? ingFallback;
+        tr.dataset.prodCosto       = prod?.price ?? 0;
+        tr.dataset.soloProduccion  = ing.soloProduccion ? '1' : '';
         tr.innerHTML = `
             <td>${escHtml(prod?.name ?? ingFallback)}</td>
             <td><input class="ap-input prd-fixed-cant" type="number" min="0" step="0.001" placeholder="0" style="max-width:90px;"></td>
@@ -433,7 +436,7 @@ function leerMaterialesPrd() {
         const costo = parseFloat(row.dataset.prodCosto) || 0;
         const id    = row.dataset.prodId;
         const prod  = allProductos.find(p => String(p.id) === String(id));
-        if (cant > 0) mat.push({ productoId: id, productoNombre: row.dataset.prodNombre, cantidad: cant, costoUnitario: costo, soloProduccion: prod?.soloProduccion ?? false });
+        if (cant > 0) mat.push({ productoId: id, productoNombre: row.dataset.prodNombre, cantidad: cant, costoUnitario: costo, soloProduccion: row.dataset.soloProduccion === '1' });
     });
     document.querySelectorAll('.prd-extra-row').forEach(row => {
         const id    = row.querySelector('.prd-extra-id').value;
