@@ -22,6 +22,7 @@ const PROD_TIPOS = {
             { id: '138' },  // Ajo Pelado
             { id: '105' },  // Pasta de Tomate Heinz
             { id: '102' },  // Mantequilla la Fina
+            { id: '388' },  // Vegetales Napolitana
         ],
     },
     piña: {
@@ -30,8 +31,17 @@ const PROD_TIPOS = {
         productoSalidaId: '82',
         unidad:           'frascos',
         ingredientes: [
-            { id: '68' },  // Panela
-            { id: '92' },  // Azúcar Morena
+            { id: '68'   },  // Panela
+            { id: '92'   },  // Azúcar Morena
+            { id: '1570' },  // Piña Fresca
+        ],
+    },
+    tartara: {
+        label:            'Tártara',
+        productoSalidaId: '144',
+        unidad:           'frascos',
+        ingredientes: [
+            { id: '1572' },  // Vegetales Tártara
         ],
     },
     pollo: {
