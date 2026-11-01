@@ -209,6 +209,54 @@ export async function registrarMovimiento({
     }
 }
 
+// ── ejecutarOrdenProduccionMulti ──────────────────────────────────────────────
+// Descuenta materias primas, suma múltiples productos salida y registra 1 movimiento.
+export async function ejecutarOrdenProduccionMulti({
+    ordenId,
+    ordenNumero,
+    materiales,
+    productosSalida,
+    usuario = 'Admin',
+}) {
+    try {
+        for (const m of materiales) {
+            if (m.soloProduccion) continue;
+            await _incrementStock(m.productoId, -m.cantidad);
+        }
+        for (const ps of productosSalida) {
+            await _incrementStock(ps.productoId, ps.cantidad);
+        }
+
+        const movData = {
+            movimiento_id:    Date.now(),
+            fecha:            new Date().toISOString(),
+            tipo:             'PRODUCCION',
+            entidad:          'OrdenProduccion',
+            producto_nombre:  `Orden #${ordenNumero}`,
+            referencia_id:    ordenId,
+            orden_numero:     ordenNumero,
+            materiales:       materiales.map(m => ({
+                productoId:     m.productoId,
+                productoNombre: m.productoNombre,
+                cantidad:       m.cantidad,
+                costoUnitario:  m.costoUnitario,
+            })),
+            productos_salida: productosSalida.map(ps => ({
+                productoId:     ps.productoId,
+                productoNombre: ps.productoNombre,
+                cantidad:       ps.cantidad,
+            })),
+            usuario,
+        };
+        const { error } = await supabase.from('movimientos').insert(movData);
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.error('Error en ejecutarOrdenProduccionMulti:', e);
+        throw e;
+    }
+}
+
 // ── ejecutarOrdenProduccion ───────────────────────────────────────────────────
 // Descuenta materias primas, suma producto final y registra la orden.
 export async function ejecutarOrdenProduccion({

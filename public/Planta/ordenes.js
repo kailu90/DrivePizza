@@ -2,7 +2,7 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { getProductos } from '../Shared/productosService.js';
 import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { ejecutarOrdenProduccion } from './inventoryService.js';
+import { ejecutarOrdenProduccion, ejecutarOrdenProduccionMulti } from './inventoryService.js';
 CargarSidebar();
 
 let usuarioActual = 'Admin';
@@ -347,12 +347,18 @@ async function guardarProduccionRapida() {
                 materiales,
                 costoTotal: costoTotalMasa,
             });
-            // Crear una orden por referencia, sin costo unitario y enlazadas al mismo pedido
+            // Array de productos salida para el movimiento unificado
+            const productosSalidaMasa = refs.map(ref => {
+                const prod = allProductos.find(p => String(p.id) === ref.prodId);
+                return { productoId: String(prod?.id ?? ref.prodId), productoNombre: prod?.name ?? ref.prodNombre, cantidad: ref.cantidad };
+            });
+            // Crear una orden por referencia (sin inventario individual ni costo unitario)
+            let primeraOrdenMasa = null;
             for (let i = 0; i < refs.length; i++) {
                 const ref  = refs[i];
                 const prod = allProductos.find(p => String(p.id) === ref.prodId);
-                await _crearOrdenFinalizada({
-                    nombre:        tipoNombre,
+                const result = await _crearOrdenFinalizada({
+                    nombre:              tipoNombre,
                     fecha,
                     materiales,
                     productoSalida: {
@@ -360,11 +366,20 @@ async function guardarProduccionRapida() {
                         productoNombre: prod?.name ?? ref.prodNombre,
                         cantidad:       ref.cantidad,
                     },
-                    deducirIngredientes:  i === 0,  // ingredientes se descuentan solo en la primera orden
-                    omitirCostoUnitario:  true,
-                    pedidoExternoId:      pedidoMasaId,
+                    omitirCostoUnitario: true,
+                    pedidoExternoId:     pedidoMasaId,
+                    skipInventario:      true,
                 });
+                if (i === 0) primeraOrdenMasa = result;
             }
+            // Un solo movimiento con todas las referencias de masa
+            await ejecutarOrdenProduccionMulti({
+                ordenId:         primeraOrdenMasa.ordenId,
+                ordenNumero:     primeraOrdenMasa.ordenNumero,
+                materiales,
+                productosSalida: productosSalidaMasa,
+                usuario:         usuarioActual,
+            });
         } else {
             const cantSalida = parseFloat(document.getElementById('prd-cant').value) || 0;
             if (cantSalida <= 0) {
@@ -421,7 +436,7 @@ function leerMaterialesPrd() {
     return mat;
 }
 
-async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true, omitirCostoUnitario = false, pedidoExternoId = null }) {
+async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true, omitirCostoUnitario = false, pedidoExternoId = null, skipInventario = false }) {
     const costoTotal    = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
     const costoUnitario = omitirCostoUnitario ? null
         : (productoSalida.cantidad > 0 ? costoTotal / productoSalida.cantidad : 0);
@@ -448,19 +463,23 @@ async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida
         .single();
     if (insertError) throw insertError;
 
-    await ejecutarOrdenProduccion({
-        ordenId:             String(newRow.id),
-        ordenNumero:         numero,
-        materiales,
-        productoSalida,
-        usuario:             usuarioActual,
-        deducirIngredientes,
-    });
+    if (!skipInventario) {
+        await ejecutarOrdenProduccion({
+            ordenId:             String(newRow.id),
+            ordenNumero:         numero,
+            materiales,
+            productoSalida,
+            usuario:             usuarioActual,
+            deducirIngredientes,
+        });
+    }
 
     const pedidoId = pedidoExternoId ?? await crearPedidoPlantaProduccion({ nombre, fecha, materiales, costoTotal });
     await supabase.from('ordenes_produccion')
         .update({ pedido_planta_id: pedidoId })
         .eq('id', newRow.id);
+
+    return { ordenId: String(newRow.id), ordenNumero: numero };
 }
 
 // ── Modal nueva orden (personalizada) ─────────────────────────────────────────
