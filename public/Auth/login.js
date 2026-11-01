@@ -197,6 +197,7 @@ login_form.addEventListener("submit", async (e) => {
         ocultarOverlay()
         const msg = error.message?.includes('Invalid') ? "Usuario o contraseña incorrectos."
             : error.message?.includes('many') ? "Acceso bloqueado temporalmente."
+            : error.message?.includes('confirmed') ? "Cuenta pendiente de activación, contacta al administrador."
             : "Usuario o contraseña incorrectos."
         displayLoginError(msg)
     }
