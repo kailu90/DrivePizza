@@ -324,7 +324,7 @@ const menuData = {
         { nombre: "Tea Hatsu", opciones: preciosBebidas.Hatsu, opcionesCiudad: { cartago: { "Rojo": 10000, "Blanco": 10000, "Negro": 10000, "Rosado": 10000, "Verde": 10000 } } },
     ],
     "Jugos Naturales": [
-        { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua, opcionesCiudad: { cartago: { "Mango": 9000, "Mora": 9000, "Lulo": 9000, "Maracuyá": 9000, "Guanábana": 9000 } } },
+        { nombre: "Jugo en Agua", opciones: preciosBebidas.jugoEnAgua, opcionesCiudad: { cartago: { "Mango": 9000, "Mora": 9000, "Lulo": 9000, "Maracuyá": 9000, "Guanábana": 9000 , "Mandarina": 9000  } } },
         { nombre: "Jugo en Leche", opciones: preciosBebidas.jugoEnLeche, opcionesCiudad: { cartago: { "Mango": 10000, "Mora": 10000, "Lulo": 10000, "Maracuyá": 10000, "Guanábana": 10000 } } },
         { nombre: "Granizada", opciones: preciosBebidas.granizada, noNuestro: true },
         { nombre: "Granizada Especial", opciones: preciosBebidas.granizadaEspecial, noNuestro: true },
