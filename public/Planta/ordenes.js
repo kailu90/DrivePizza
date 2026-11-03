@@ -634,7 +634,7 @@ async function crearPedidoPlantaProduccion({ nombre, fecha, materiales, costoTot
 
     const { error } = await supabase.from('pedidos_planta').insert({
         id_pedido:     nuevoId,
-        user_sede:     'planta',
+        user_sede:     'Planta Producción',
         delivery_date: fecha,
         products,
         net_cost:      costoTotal,
