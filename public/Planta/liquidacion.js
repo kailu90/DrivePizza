@@ -83,7 +83,7 @@ async function cargarInforme() {
             eliminado:   r.eliminado,
         }))).forEach(p => {
             const sede = (p.user || 'Sin sede').toLowerCase();
-            if (sede === 'planta producción') return;
+            if (sede === 'planta producción' || sede === 'planta') return;
             if (!gruposPedidos[sede]) gruposPedidos[sede] = [];
             gruposPedidos[sede].push(p);
         });
