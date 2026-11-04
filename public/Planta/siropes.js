@@ -195,8 +195,7 @@ async function _abrirModalEntrega(sr) {
         .eq('pedido_id', sr.pedido_id);
     if (error) { console.error(error); return; }
 
-    const pendientes = (data || []).filter(r => r.estado === 'pendiente');
-    _siropesEntrega  = pendientes.map(r => r.id);
+    _siropesEntrega = [sr.id];
 
     document.getElementById('mes-pedido').textContent = `#${sr.pedido_id}`;
     document.getElementById('mes-fecha').textContent  = fmtFecha(sr.fecha_pedido);
@@ -204,10 +203,13 @@ async function _abrirModalEntrega(sr) {
     document.getElementById('mes-obs').value          = '';
 
     document.getElementById('mes-lista').innerHTML = (data || []).map(r => {
-        const tag = r.estado === 'pendiente'
-            ? `<span style="color:#e67e22;font-weight:600;margin-left:8px;">Pendiente</span>`
-            : `<span style="color:#27ae60;font-weight:600;margin-left:8px;">Ya entregado</span>`;
-        return `<li><strong>${r.cantidad} uds.</strong> ${r.producto_nombre}${tag}</li>`;
+        const esEste = r.id === sr.id;
+        const tag = r.estado !== 'pendiente'
+            ? `<span style="color:#27ae60;font-weight:600;margin-left:8px;">Ya entregado</span>`
+            : esEste
+                ? `<span style="color:#e67e22;font-weight:600;margin-left:8px;">← entregar este</span>`
+                : `<span style="color:#aaa;margin-left:8px;">Pendiente</span>`;
+        return `<li style="${esEste ? 'font-weight:700;' : 'color:#888;'}"><strong>${r.cantidad} uds.</strong> ${r.producto_nombre}${tag}</li>`;
     }).join('');
 
     const btn = document.getElementById('mes-confirmar');
