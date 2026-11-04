@@ -191,6 +191,10 @@
                     <label class="ap-label" for="prd-cant" id="prd-cant-label">Cantidad producida *</label>
                     <input class="ap-input" id="prd-cant" type="number" min="1" step="1" placeholder="0">
                 </div>
+                <div class="ap-field" id="prd-gramos-wrap" style="display:none;">
+                    <label class="ap-label" for="prd-gramos">Gramos sobrantes</label>
+                    <input class="ap-input" id="prd-gramos" type="number" min="0" max="2499" step="1" placeholder="0 g">
+                </div>
             </div>
 
             <!-- Referencias multi (ej: masas) -->
@@ -243,6 +247,10 @@
             <div class="ord-costos" style="margin-top:1.2rem">
                 <span>Costo total materiales: <strong id="prd-costo-total">$0</strong></span>
                 <span>Costo por unidad: <strong id="prd-costo-unidad">$0</strong></span>
+            </div>
+
+            <div id="prd-merma" style="display:none; margin-top:0.8rem; padding:0.8rem 1.4rem; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; font-size:1.4rem;">
+                Merma: <strong id="prd-merma-kg">0 kg</strong><span id="prd-merma-pct" style="color:#888; font-size:1.2rem; margin-left:6px;"></span>
             </div>
 
             <p class="ap-modal__error" id="prd-error"></p>

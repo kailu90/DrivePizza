@@ -55,6 +55,7 @@ const PROD_TIPOS = {
         ingredientes:     [
             { id: '1571' },  // Recorte de Pechuga
         ],
+        mermaConfig:      { pesoSalidaKg: 2.5 },
     },
     masa: {
         label:       'Masa',
@@ -228,8 +229,16 @@ function openModalRapido(tipoKey) {
         });
     } else {
         document.getElementById('prd-cant').value = '';
-        document.getElementById('prd-cant-label').textContent = `Cantidad producida (${tipo.unidad}) *`;
+        document.getElementById('prd-cant-label').textContent = tipo.mermaConfig
+            ? `Bolsas completas producidas *`
+            : `Cantidad producida (${tipo.unidad}) *`;
     }
+
+    // Gramos sobrantes y merma (solo para tipos con mermaConfig)
+    const hasGramos = !!tipo.mermaConfig;
+    document.getElementById('prd-gramos-wrap').style.display = hasGramos ? '' : 'none';
+    document.getElementById('prd-gramos').value = '';
+    document.getElementById('prd-merma').style.display = 'none';
 
     // Filas de ingredientes fijos
     const fixedTbody = document.getElementById('prd-fixed-tbody');
@@ -341,6 +350,26 @@ function calcularCostosPrd() {
     const costoPorU = cantSalida > 0 ? total / cantSalida : 0;
     document.getElementById('prd-costo-total').textContent  = '$' + total.toLocaleString('es-CO');
     document.getElementById('prd-costo-unidad').textContent = '$' + costoPorU.toFixed(2);
+
+    // Merma en tiempo real (solo para tipos con mermaConfig)
+    const mermaEl = document.getElementById('prd-merma');
+    if (currentTipo?.mermaConfig) {
+        const { pesoSalidaKg } = currentTipo.mermaConfig;
+        const inputKg  = [...document.querySelectorAll('.prd-fixed-row')]
+            .reduce((s, row) => s + (parseFloat(row.querySelector('.prd-fixed-cant').value) || 0), 0);
+        const bolsas   = parseFloat(document.getElementById('prd-cant').value)   || 0;
+        const gramos   = parseFloat(document.getElementById('prd-gramos').value) || 0;
+        const outputKg = bolsas * pesoSalidaKg + gramos / 1000;
+        const mermaKg  = inputKg - outputKg;
+        const mermaPct = inputKg > 0 ? mermaKg / inputKg * 100 : 0;
+        document.getElementById('prd-merma-kg').textContent =
+            mermaKg.toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' kg';
+        document.getElementById('prd-merma-pct').textContent =
+            inputKg > 0 ? `(${mermaPct.toFixed(1)}%)` : '';
+        mermaEl.style.display = inputKg > 0 || bolsas > 0 ? '' : 'none';
+    } else {
+        mermaEl.style.display = 'none';
+    }
 }
 
 // ── Guardar produccion rapida ─────────────────────────────────────────────────
@@ -421,7 +450,11 @@ async function guardarProduccionRapida() {
                 btn.disabled = false;
                 return;
             }
-            const prodSalida = allProductos.find(p => String(p.id) === tipo.productoSalidaId);
+            const prodSalida   = allProductos.find(p => String(p.id) === tipo.productoSalidaId);
+            const gramosExtra  = tipo.mermaConfig
+                ? (parseFloat(document.getElementById('prd-gramos').value) || 0)
+                : 0;
+            const notasOrden   = gramosExtra > 0 ? `Gramos sobrantes: ${gramosExtra}g` : null;
             await _crearOrdenFinalizada({
                 nombre: tipoNombre,
                 fecha,
@@ -431,6 +464,7 @@ async function guardarProduccionRapida() {
                     productoNombre: prodSalida?.name ?? tipo.label,
                     cantidad:       cantSalida,
                 },
+                notas: notasOrden,
             });
         }
 
@@ -465,7 +499,7 @@ function leerMaterialesPrd() {
     return mat;
 }
 
-async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true, omitirCostoUnitario = false, pedidoExternoId = null, skipInventario = false }) {
+async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida, deducirIngredientes = true, omitirCostoUnitario = false, pedidoExternoId = null, skipInventario = false, notas = null }) {
     const costoTotal    = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
     const costoUnitario = omitirCostoUnitario ? null
         : (productoSalida.cantidad > 0 ? costoTotal / productoSalida.cantidad : 0);
@@ -483,7 +517,7 @@ async function _crearOrdenFinalizada({ nombre, fecha, materiales, productoSalida
             producto_salida:    productoSalida,
             costo_total:        omitirCostoUnitario ? null : costoTotal,
             costo_unitario:     costoUnitario,
-            notas:              null,
+            notas,
             creado_por:         usuarioActual,
             creado_en:          new Date().toISOString(),
             fecha_finalizacion: new Date().toISOString(),
@@ -845,6 +879,7 @@ function setupEventListeners() {
     document.getElementById('prd-btn-guardar').addEventListener('click', guardarProduccionRapida);
     document.getElementById('prd-btn-agregar-extra').addEventListener('click', addExtraIngRow);
     document.getElementById('prd-cant').addEventListener('input', calcularCostosPrd);
+    document.getElementById('prd-gramos').addEventListener('input', calcularCostosPrd);
 
     // Modal orden personalizada
     document.getElementById('ord-btn-nuevo').addEventListener('click', openNuevaOrden);
