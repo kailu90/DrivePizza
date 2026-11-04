@@ -105,11 +105,11 @@
         <p class="sel-titulo">¿A dónde quieres entrar?</p>
 
         <div class="sel-opciones">
-            <a href="Planta/planta-shell.html" class="sel-btn sel-btn--planta">
+            <a href="Planta/planta-shell.html" class="sel-btn sel-btn--planta" id="sel-btn-planta">
                 <span class="sel-btn__icon">🏭</span>
                 Planta
             </a>
-            <a href="CallCenter/callcenter-shell.html" class="sel-btn sel-btn--callcenter">
+            <a href="CallCenter/callcenter-shell.html" class="sel-btn sel-btn--callcenter" id="sel-btn-cc">
                 <span class="sel-btn__icon">📞</span>
                 Call Center
             </a>
@@ -134,6 +134,13 @@
             document.getElementById('sel-username').textContent = data.username || user.email;
             document.body.classList.add('loaded');
         })();
+
+        document.getElementById('sel-btn-planta').addEventListener('click', () => {
+            sessionStorage.setItem('admin_via_selector', '1');
+        });
+        document.getElementById('sel-btn-cc').addEventListener('click', () => {
+            sessionStorage.setItem('admin_via_selector', '1');
+        });
 
         document.getElementById('sel-btn-logout').addEventListener('click', async () => {
             await supabase.auth.signOut();

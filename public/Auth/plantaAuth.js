@@ -24,6 +24,12 @@ export function verificarAccesoPlanta(onSuccess, roles = ROLES_PLANTA) {
             if (perfilError || !perfil)     { window.top.location.href = LOGIN_URL; return }
             if (!roles.includes(perfil.rol)) { window.top.location.href = LOGIN_URL; return }
 
+            // Admin sin pasar por selector → redirigir a selector
+            if (perfil.rol === 'admin' && !sessionStorage.getItem('admin_via_selector')) {
+                window.top.location.href = '../selector.html'; return
+            }
+            sessionStorage.removeItem('admin_via_selector')
+
             onSuccess({ uid: user.id, username: perfil.username, sede: perfil.sede, rol: perfil.rol })
             if (perfil.rol === 'admin') MostrarBotonSelector()
         } catch (err) {

@@ -523,6 +523,11 @@
             if (error || !data) { window.location.href = '../index.html'; return; }
             const ROLES_CC = ['callcenter', 'callcenter-admin', 'admin'];
             if (!ROLES_CC.includes(data.rol)) { window.location.href = '../index.html'; return; }
+            // Admin sin pasar por selector → redirigir a selector
+            if (data.rol === 'admin' && !sessionStorage.getItem('admin_via_selector')) {
+                window.location.href = '../selector.html'; return;
+            }
+            sessionStorage.removeItem('admin_via_selector');
             // Sincronizar ciudad desde perfil — una vez por sesión, antes de que los iframes la lean
             localStorage.setItem('cc_ciudad', (data.ciudad || 'bucaramanga').toLowerCase());
             window._usuarioCC = {
