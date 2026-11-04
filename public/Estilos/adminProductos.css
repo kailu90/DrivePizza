@@ -265,6 +265,16 @@
 
 .ord-modal-dialog { max-width: 740px; width: 95%; }
 
+/* Fila de filtros de columna en ord-table */
+.ap-table .cf-filter-row th {
+  background-color: #f8f4ef;
+  color: var(--color-terciario);
+  padding: 4px 6px 6px;
+}
+.ord-table .cf-filter-row .col-filter {
+  text-align: left;
+}
+
 .ord-section {
   border: 1px solid #e0d8ce;
   border-radius: 8px;
