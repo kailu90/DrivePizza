@@ -259,7 +259,7 @@ function openModalRapido(tipoKey) {
             : (prod?.price ? '$' + Number(prod.price).toLocaleString('es-CO') : '—');
         tr.innerHTML = `
             <td>${escHtml(prod?.name ?? ingFallback)}</td>
-            <td><input class="ap-input prd-fixed-cant" type="number" min="0" step="0.001" placeholder="0" style="max-width:90px;"></td>
+            <td><input class="ap-input prd-fixed-cant" type="number" min="0" step="any" placeholder="0" style="max-width:90px;"></td>
             <td class="ap-col-num">${costoCell}</td>
         `;
         tr.querySelector('.prd-fixed-cant').addEventListener('input', calcularCostosPrd);
