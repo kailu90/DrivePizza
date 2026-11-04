@@ -646,7 +646,7 @@ function renderTablaModal(productos, esEdicion) {
                 <span class="mpesos-precio-live">${precioVivo}</span>)
             </span>`;
         } else if (esPesoVar && prod.pesoReal > 0) {
-            pesoInline = `<span class="mpesos-inline mpesos-inline--saved">&nbsp;(${prod.pesoReal} kg)</span>`;
+            pesoInline = `<span class="mpesos-inline mpesos-inline--saved">&nbsp;(<strong>${prod.pesoReal} kg</strong>)</span>`;
         }
 
         const cantCell = esEdicion
