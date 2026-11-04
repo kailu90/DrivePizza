@@ -151,26 +151,29 @@ function renderTable() {
     }
 
     filtered.forEach(o => {
+        const isMulti    = Array.isArray(o.productoSalida);
+        const prodNombre = isMulti ? escHtml(o.nombre.replace('Producción ', '')) : escHtml(o.productoSalida?.productoNombre || '—');
+        const prodCant   = isMulti ? '—' : (o.productoSalida?.cantidad ?? '—');
+
         const tr = document.createElement('tr');
         tr.className = 'inventory-management__row';
         tr.innerHTML = `
             <td class="ap-col-num inventory-management__cell">${o.numero}</td>
             <td class="inventory-management__cell">${escHtml(o.nombre)}</td>
-            <td class="inventory-management__cell">${escHtml(o.productoSalida?.productoNombre || '—')}</td>
-            <td class="ap-col-num inventory-management__cell">${o.productoSalida?.cantidad ?? '—'}</td>
+            <td class="inventory-management__cell">${prodNombre}</td>
+            <td class="ap-col-num inventory-management__cell">${prodCant}</td>
             <td class="ap-col-num inventory-management__cell">${o.costoUnitario != null ? '$' + Number(o.costoUnitario).toFixed(0) : '—'}</td>
             <td class="inventory-management__cell">${escHtml(o.responsable)}</td>
             <td class="inventory-management__cell">${formatFecha(o.fecha)}<span style="display:none">${o.fecha ? toInputDate(o.fecha) : ''}</span></td>
             <td class="ap-col-center inventory-management__cell">${badgeEstado(o.estado)}</td>
             <td class="ap-col-center inventory-management__cell" style="display:flex;gap:.4rem;justify-content:center;padding:.6rem">
-                <button class="ap-btn ap-btn--ghost ord-btn-ver" title="Ver detalle">Ver</button>
                 ${o.estado === 'en_proceso' ? `
                     <button class="ap-btn ap-btn--primary ord-btn-finalizar" title="Finalizar orden">Finalizar</button>
                     <button class="ap-btn ap-btn--danger ord-btn-cancelar" title="Cancelar orden">Cancelar</button>
                 ` : ''}
             </td>
         `;
-        tr.querySelector('.ord-btn-ver').addEventListener('click', () => openDetalle(o));
+        tr.addEventListener('click', e => { if (!e.target.closest('button')) openDetalle(o); });
         tr.querySelector('.ord-btn-finalizar')?.addEventListener('click', () => confirmarFinalizar(o));
         tr.querySelector('.ord-btn-cancelar')?.addEventListener('click',  () => confirmarCancelar(o));
         tbody.appendChild(tr);
@@ -358,43 +361,38 @@ async function guardarProduccionRapida() {
                 btn.disabled = false;
                 return;
             }
-            // Un solo pedido_planta para toda la producción de masa
-            const costoTotalMasa = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
-            const pedidoMasaId = await crearPedidoPlantaProduccion({
-                nombre: tipoNombre,
-                fecha,
-                materiales,
-                costoTotal: costoTotalMasa,
-            });
-            // Array de productos salida para el movimiento unificado
+            // Array de productos salida
             const productosSalidaMasa = refs.map(ref => {
                 const prod = allProductos.find(p => String(p.id) === ref.prodId);
                 return { productoId: String(prod?.id ?? ref.prodId), productoNombre: prod?.name ?? ref.prodNombre, cantidad: ref.cantidad };
             });
-            // Crear una orden por referencia (sin inventario individual ni costo unitario)
-            let primeraOrdenMasa = null;
-            for (let i = 0; i < refs.length; i++) {
-                const ref  = refs[i];
-                const prod = allProductos.find(p => String(p.id) === ref.prodId);
-                const result = await _crearOrdenFinalizada({
-                    nombre:              tipoNombre,
-                    fecha,
+            // Una sola orden con producto_salida como array
+            const costoTotalMasa = materiales.reduce((s, m) => s + m.cantidad * m.costoUnitario, 0);
+            const pedidoMasaId   = await crearPedidoPlantaProduccion({ nombre: tipoNombre, fecha, materiales, costoTotal: costoTotalMasa });
+            const numeroMasa     = await getSiguienteNumero();
+            const { data: masaRow, error: masaErr } = await supabase
+                .from('ordenes_produccion')
+                .insert({
+                    numero:             numeroMasa,
+                    nombre:             tipoNombre,
+                    estado:             'finalizado',
+                    responsable:        usuarioActual,
+                    fecha:              new Date(fecha + 'T12:00:00').toISOString(),
                     materiales,
-                    productoSalida: {
-                        productoId:     String(prod?.id ?? ref.prodId),
-                        productoNombre: prod?.name ?? ref.prodNombre,
-                        cantidad:       ref.cantidad,
-                    },
-                    omitirCostoUnitario: true,
-                    pedidoExternoId:     pedidoMasaId,
-                    skipInventario:      true,
-                });
-                if (i === 0) primeraOrdenMasa = result;
-            }
-            // Un solo movimiento con todas las referencias de masa
+                    producto_salida:    productosSalidaMasa,
+                    costo_total:        costoTotalMasa,
+                    costo_unitario:     null,
+                    creado_por:         usuarioActual,
+                    creado_en:          new Date().toISOString(),
+                    fecha_finalizacion: new Date().toISOString(),
+                    pedido_planta_id:   pedidoMasaId,
+                })
+                .select('id').single();
+            if (masaErr) throw masaErr;
+            // Un solo movimiento con todas las referencias
             await ejecutarOrdenProduccionMulti({
-                ordenId:         primeraOrdenMasa.ordenId,
-                ordenNumero:     primeraOrdenMasa.ordenNumero,
+                ordenId:         String(masaRow.id),
+                ordenNumero:     numeroMasa,
                 materiales,
                 productosSalida: productosSalidaMasa,
                 usuario:         usuarioActual,
@@ -801,8 +799,15 @@ function openDetalle(orden) {
         <div class="ord-section" style="margin-top:1.2rem">
             <span class="ord-section__title">Producto generado</span>
             <div class="ord-det-grid" style="margin-top:.8rem">
-                <div class="ord-det-item"><span class="ord-det-label">Producto</span>${escHtml(orden.productoSalida?.productoNombre || '—')}</div>
-                <div class="ord-det-item"><span class="ord-det-label">Cantidad</span>${orden.productoSalida?.cantidad ?? '—'}</div>
+                ${Array.isArray(orden.productoSalida)
+                    ? orden.productoSalida.map(p => `
+                        <div class="ord-det-item"><span class="ord-det-label">${escHtml(p.productoNombre)}</span>${p.cantidad}</div>
+                    `).join('')
+                    : `
+                        <div class="ord-det-item"><span class="ord-det-label">Producto</span>${escHtml(orden.productoSalida?.productoNombre || '—')}</div>
+                        <div class="ord-det-item"><span class="ord-det-label">Cantidad</span>${orden.productoSalida?.cantidad ?? '—'}</div>
+                    `
+                }
             </div>
         </div>
 
