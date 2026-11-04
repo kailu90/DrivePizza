@@ -52,7 +52,9 @@ const PROD_TIPOS = {
         label:            'Pollo Desmechado',
         productoSalidaId: '46',
         unidad:           'bolsas',
-        ingredientes:     [],
+        ingredientes:     [
+            { id: '1571' },  // Recorte de Pechuga
+        ],
     },
     masa: {
         label:       'Masa',
