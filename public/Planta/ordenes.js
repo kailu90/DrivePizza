@@ -24,7 +24,7 @@ const PROD_TIPOS = {
             { id: '138' },  // Ajo Pelado
             { id: '105' },  // Pasta de Tomate Heinz
             { id: '102' },  // Mantequilla la Fina
-            { id: '388' },  // Vegetales Napolitana
+            { id: '388', editableCosto: true },  // Vegetales Napolitana
         ],
     },
     piña: {
@@ -35,7 +35,7 @@ const PROD_TIPOS = {
         ingredientes: [
             { id: '68'   },  // Panela
             { id: '92'   },  // Azúcar Morena
-            { id: '1570' },  // Piña Fresca
+            { id: '1570', editableCosto: true },  // Piña Fresca
         ],
     },
     tartara: {
@@ -43,7 +43,7 @@ const PROD_TIPOS = {
         productoSalidaId: '144',
         unidad:           'frascos',
         ingredientes: [
-            { id: '1572' },                              // Vegetales Tártara
+            { id: '1572', editableCosto: true },            // Vegetales Tártara
             { id: '25',  soloProduccion: true },         // Vinagre Blanco (costo sin descontar stock)
             { id: '87',  soloProduccion: true },         // Sal Refisal (costo sin descontar stock)
         ],
@@ -245,12 +245,22 @@ function openModalRapido(tipoKey) {
         tr.dataset.prodNombre      = prod?.name  ?? ingFallback;
         tr.dataset.prodCosto       = prod?.price ?? 0;
         tr.dataset.soloProduccion  = ing.soloProduccion ? '1' : '';
+        const costoCell = ing.editableCosto
+            ? `<input class="ap-input prd-fixed-costo" type="number" min="0" step="1" value="${prod?.price ?? ''}" placeholder="$ costo" style="max-width:110px;">`
+            : (prod?.price ? '$' + Number(prod.price).toLocaleString('es-CO') : '—');
         tr.innerHTML = `
             <td>${escHtml(prod?.name ?? ingFallback)}</td>
             <td><input class="ap-input prd-fixed-cant" type="number" min="0" step="0.001" placeholder="0" style="max-width:90px;"></td>
-            <td class="ap-col-num">${prod?.price ? '$' + Number(prod.price).toLocaleString('es-CO') : '—'}</td>
+            <td class="ap-col-num">${costoCell}</td>
         `;
         tr.querySelector('.prd-fixed-cant').addEventListener('input', calcularCostosPrd);
+        if (ing.editableCosto) {
+            const costoInput = tr.querySelector('.prd-fixed-costo');
+            costoInput.addEventListener('input', () => {
+                tr.dataset.prodCosto = parseFloat(costoInput.value) || 0;
+                calcularCostosPrd();
+            });
+        }
         fixedTbody.appendChild(tr);
     });
     document.getElementById('prd-fixed-section').style.display =
