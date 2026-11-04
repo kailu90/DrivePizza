@@ -3,12 +3,14 @@ import { getProductos } from '../Shared/productosService.js';
 import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { ejecutarOrdenProduccion, ejecutarOrdenProduccionMulti } from './inventoryService.js';
+import { initColumnFilters } from '../Shared/tableFilters.js';
 CargarSidebar();
 
-let usuarioActual = 'Admin';
-let allProductos  = [];
-let allOrdenes    = [];
-let currentTipo   = null;
+let usuarioActual    = 'Admin';
+let allProductos     = [];
+let allOrdenes       = [];
+let currentTipo      = null;
+let _applyOrdFilters = () => {};
 
 // ── Tipos de produccion rapida ─────────────────────────────────────────────────
 // multi:true → modal muestra una fila por referencia en lugar de un solo campo de cantidad
@@ -77,6 +79,12 @@ verificarAccesoPlanta(async ({ username, sede }) => {
     document.getElementById('ord-f-responsable').value = usuarioActual;
     document.getElementById('ord-f-fecha').value = toInputDate(new Date());
     [allProductos, allOrdenes] = await Promise.all([getProductos(), loadOrdenes()]);
+    _applyOrdFilters = initColumnFilters('ord-tbody', {
+        0: 'N° orden',
+        1: 'Nombre',
+        2: 'Producto',
+        6: { type: 'date' },
+    });
     renderTable();
     setupEventListeners();
     document.body.classList.add('loaded');
@@ -126,14 +134,10 @@ async function getSiguienteNumero() {
 
 // ── Render tabla ──────────────────────────────────────────────────────────────
 function renderTable() {
-    const search = document.getElementById('ord-search').value.toLowerCase().trim();
     const estado = document.getElementById('ord-filter-estado').value;
-    const fecha  = document.getElementById('ord-filter-fecha').value;
 
     const filtered = allOrdenes.filter(o => {
         if (estado && o.estado !== estado) return false;
-        if (search && !o.nombre?.toLowerCase().includes(search)) return false;
-        if (fecha && o.fecha && toInputDate(o.fecha) !== fecha) return false;
         return true;
     });
 
@@ -148,16 +152,17 @@ function renderTable() {
 
     filtered.forEach(o => {
         const tr = document.createElement('tr');
+        tr.className = 'inventory-management__row';
         tr.innerHTML = `
-            <td class="ap-col-num">${o.numero}</td>
-            <td>${escHtml(o.nombre)}</td>
-            <td>${escHtml(o.productoSalida?.productoNombre || '—')}</td>
-            <td class="ap-col-num">${o.productoSalida?.cantidad ?? '—'}</td>
-            <td class="ap-col-num">${o.costoUnitario != null ? '$' + Number(o.costoUnitario).toFixed(0) : '—'}</td>
-            <td>${escHtml(o.responsable)}</td>
-            <td>${formatFecha(o.fecha)}</td>
-            <td class="ap-col-center">${badgeEstado(o.estado)}</td>
-            <td class="ap-col-center" style="display:flex;gap:.4rem;justify-content:center;padding:.6rem">
+            <td class="ap-col-num inventory-management__cell">${o.numero}</td>
+            <td class="inventory-management__cell">${escHtml(o.nombre)}</td>
+            <td class="inventory-management__cell">${escHtml(o.productoSalida?.productoNombre || '—')}</td>
+            <td class="ap-col-num inventory-management__cell">${o.productoSalida?.cantidad ?? '—'}</td>
+            <td class="ap-col-num inventory-management__cell">${o.costoUnitario != null ? '$' + Number(o.costoUnitario).toFixed(0) : '—'}</td>
+            <td class="inventory-management__cell">${escHtml(o.responsable)}</td>
+            <td class="inventory-management__cell">${formatFecha(o.fecha)}<span style="display:none">${o.fecha ? toInputDate(o.fecha) : ''}</span></td>
+            <td class="ap-col-center inventory-management__cell">${badgeEstado(o.estado)}</td>
+            <td class="ap-col-center inventory-management__cell" style="display:flex;gap:.4rem;justify-content:center;padding:.6rem">
                 <button class="ap-btn ap-btn--ghost ord-btn-ver" title="Ver detalle">Ver</button>
                 ${o.estado === 'en_proceso' ? `
                     <button class="ap-btn ap-btn--primary ord-btn-finalizar" title="Finalizar orden">Finalizar</button>
@@ -170,6 +175,7 @@ function renderTable() {
         tr.querySelector('.ord-btn-cancelar')?.addEventListener('click',  () => confirmarCancelar(o));
         tbody.appendChild(tr);
     });
+    _applyOrdFilters();
 }
 
 function badgeEstado(estado) {
@@ -847,10 +853,8 @@ function setupEventListeners() {
     });
 
     // Filtros de tabla
-    ['ord-search', 'ord-filter-estado', 'ord-filter-fecha'].forEach(id => {
-        document.getElementById(id).addEventListener('input',  renderTable);
-        document.getElementById(id).addEventListener('change', renderTable);
-    });
+    const estadoEl = document.getElementById('ord-filter-estado');
+    estadoEl.addEventListener('change', renderTable);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
