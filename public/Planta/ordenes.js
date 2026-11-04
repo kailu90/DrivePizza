@@ -112,7 +112,8 @@ async function loadOrdenes() {
     const { data, error } = await supabase
         .from('ordenes_produccion')
         .select('*')
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .order('id', { ascending: false });
     if (error) throw error;
     allOrdenes = (data || []).map(normalizarOrden);
     return allOrdenes;

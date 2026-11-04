@@ -219,14 +219,6 @@ export async function ejecutarOrdenProduccionMulti({
     usuario = 'Admin',
 }) {
     try {
-        for (const m of materiales) {
-            if (m.soloProduccion) continue;
-            await _incrementStock(m.productoId, -m.cantidad);
-        }
-        for (const ps of productosSalida) {
-            await _incrementStock(ps.productoId, ps.cantidad);
-        }
-
         const movData = {
             movimiento_id:    Date.now(),
             fecha:            new Date().toISOString(),
@@ -250,6 +242,14 @@ export async function ejecutarOrdenProduccionMulti({
         };
         const { error } = await supabase.from('movimientos').insert(movData);
         if (error) throw error;
+
+        for (const m of materiales) {
+            if (m.soloProduccion) continue;
+            await _incrementStock(m.productoId, -m.cantidad);
+        }
+        for (const ps of productosSalida) {
+            await _incrementStock(ps.productoId, ps.cantidad);
+        }
         return true;
     } catch (e) {
         console.error('Error en ejecutarOrdenProduccionMulti:', e);
@@ -268,14 +268,6 @@ export async function ejecutarOrdenProduccion({
     deducirIngredientes = true,
 }) {
     try {
-        if (deducirIngredientes) {
-            for (const m of materiales) {
-                if (m.soloProduccion) continue;
-                await _incrementStock(m.productoId, -m.cantidad);
-            }
-        }
-        await _incrementStock(productoSalida.productoId, productoSalida.cantidad);
-
         const movData = {
             movimiento_id:   Date.now(),
             fecha:           new Date().toISOString(),
@@ -299,6 +291,14 @@ export async function ejecutarOrdenProduccion({
         };
         const { error } = await supabase.from('movimientos').insert(movData);
         if (error) throw error;
+
+        if (deducirIngredientes) {
+            for (const m of materiales) {
+                if (m.soloProduccion) continue;
+                await _incrementStock(m.productoId, -m.cantidad);
+            }
+        }
+        await _incrementStock(productoSalida.productoId, productoSalida.cantidad);
         return true;
     } catch (e) {
         console.error('Error en ejecutarOrdenProduccion:', e);
