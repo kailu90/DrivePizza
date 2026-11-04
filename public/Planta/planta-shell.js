@@ -26,7 +26,12 @@ function _alinearNavBar() {
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-verificarAccesoPlanta(async ({ sede }) => {
+verificarAccesoPlanta(async ({ sede, rol }) => {
+    // Admin sin pasar por selector → redirigir a selector
+    if (rol === 'admin' && !sessionStorage.getItem('admin_via_selector')) {
+        window.top.location.href = '../selector.html'; return;
+    }
+    sessionStorage.removeItem('admin_via_selector');
     CargarHeader(capitalizarSede(sede));
     requestAnimationFrame(_alinearNavBar);
     CargarFooter();
