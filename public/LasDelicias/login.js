@@ -1,6 +1,6 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
-import { mostrarOverlay, ocultarOverlay } from '../Shared/overlay.js'
+import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 
 mostrarSkeleton('login')
 
