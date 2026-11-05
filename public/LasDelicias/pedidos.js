@@ -49,8 +49,9 @@ async function cargarCategorias() {
 async function cargarProductos() {
     const { data } = await supabase
         .from('productos')
-        .select('id, name, precio, categoria_id, descripcion')
-        .gt('precio', 0)
+        .select('id, name, price, id_category')
+        .eq('active', true)
+        .gt('price', 0)
         .order('name')
     if (!data) return
     _productos = data
@@ -92,7 +93,7 @@ function renderProductos(busqueda = '') {
     grid.innerHTML = ''
 
     let lista = _productos
-    if (_catActiva) lista = lista.filter(p => p.categoria_id === _catActiva)
+    if (_catActiva) lista = lista.filter(p => p.id_category === _catActiva)
     if (busqueda)   lista = lista.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()))
 
     // Título
@@ -113,7 +114,7 @@ function renderProductos(busqueda = '') {
         card.className = 'ld-prod-card'
         card.innerHTML = `
             <span class="ld-prod-card__name">${prod.name}</span>
-            <span class="ld-prod-card__precio">${formatPrecio(prod.precio)}</span>
+            <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
         `
         card.addEventListener('click', () => agregarAlCarrito(prod))
         grid.appendChild(card)
@@ -126,7 +127,7 @@ function agregarAlCarrito(prod) {
     if (item) {
         item.qty++
     } else {
-        _carrito.push({ id: prod.id, name: prod.name, precio: prod.precio, qty: 1 })
+        _carrito.push({ id: prod.id, name: prod.name, precio: prod.price, qty: 1 })
     }
     renderCarrito()
 }
