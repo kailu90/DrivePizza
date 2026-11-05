@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
     <title>Las Delicias</title>
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
@@ -42,25 +43,18 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: var(--color-fondo, #f5ead0);
+            background: var(--color-fondo, #F6EBE0);
             z-index: 8000;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: .5rem;
         }
         #nav-overlay.visible { display: flex; }
-        .nav-slogan {
-            display: flex; flex-direction: column; align-items: center;
-            font-family: 'Manrope', 'Arial Black', 'Helvetica Neue', sans-serif;
-            font-size: 1.9rem; font-weight: 800;
-            letter-spacing: .06em; text-transform: uppercase;
-            line-height: 1;
+        .nav-logo {
+            width: 220px;
+            animation: nav-logo-in .5s .1s ease both;
         }
-        .nav-slogan-left  { color: var(--color-primario);  animation: nav-slide-left  .4s .25s ease both; }
-        .nav-slogan-right { color: var(--color-acento);    animation: nav-slide-right .4s .45s ease both; }
-        @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
-        @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes nav-logo-in { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
 
         /* ── WA Panel ── */
         #wa-panel {
@@ -129,10 +123,7 @@
 </div>
 
 <div id="nav-overlay" class="visible">
-    <div class="nav-slogan">
-        <span class="nav-slogan-left">LAS</span>
-        <span class="nav-slogan-right">DELICIAS</span>
-    </div>
+    <img src="./Imagenes/Logo.png" class="nav-logo" alt="Las Delicias">
 </div>
 
 <!-- WA Panel -->
