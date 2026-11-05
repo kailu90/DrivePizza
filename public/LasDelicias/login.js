@@ -67,7 +67,7 @@ if (btnCreateAccount) btnCreateAccount.addEventListener('click', async () => {
     if (!sel || !sedes?.length) return
     sedes.forEach(s => {
         const o = document.createElement('option')
-        o.value = s.id
+        o.value = s.name.toLowerCase()
         o.textContent = s.nombre_display || s.name
         sel.appendChild(o)
     })
