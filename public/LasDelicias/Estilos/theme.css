@@ -3,54 +3,32 @@
  * Importar DESPUÉS de styles.css para sobreescribir las variables globales.
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
 :root {
-    /* ── Paleta principal ─────────────────────────────────────────── */
-    --color-primario:     #5c3317;   /* café oscuro */
-    --color-secundario:   #fdf6e3;   /* crema claro */
-    --color-terciario:    #f5ead0;   /* crema medio */
-    --color-cuaternario:  #3e1f00;   /* café muy oscuro — hover */
-    --color-acento:       #c8773a;   /* café dorado / caramelo */
+    --ld-beige:   #F6EBE0;
+    --ld-marron:  #75473B;
+    --ld-negro:   #000000;
+    --ld-blanco:  #FFFFFF;
+    --ld-marron-oscuro: #4e2e24;   /* hover marron */
+    --ld-marron-suave:  #a07060;   /* texto secundario */
 
-    /* ── Texto ────────────────────────────────────────────────────── */
-    --color-texto:        #2e1a0e;   /* café casi negro */
-    --color-texto-suave:  #7a5c44;   /* café medio */
-
-    /* ── Estados ─────────────────────────────────────────────────── */
-    --color-exito:        #4a7c59;   /* verde terroso */
-    --color-alerta:       #d4902a;   /* ámbar cálido */
-    --color-error:        #b94040;   /* rojo ladrillo */
-
-    /* ── Bordes y superficies ─────────────────────────────────────── */
-    --color-borde:        #d9c4a8;   /* crema oscuro */
-    --color-superficie:   #fdf6e3;   /* crema claro */
-    --color-fondo:        #f5ead0;   /* crema medio */
+    /* Mapeo a variables globales */
+    --color-primario:     var(--ld-marron);
+    --color-secundario:   var(--ld-beige);
+    --color-terciario:    var(--ld-beige);
+    --color-cuaternario:  var(--ld-marron-oscuro);
+    --color-acento:       var(--ld-marron);
+    --color-texto:        var(--ld-negro);
+    --color-texto-suave:  var(--ld-marron-suave);
+    --color-borde:        #d9c4b0;
+    --color-superficie:   var(--ld-blanco);
+    --color-fondo:        var(--ld-beige);
+    --color-error:        #b94040;
+    --color-exito:        #4a7c59;
 }
 
-/* ── Overlay de navegación ──────────────────────────────────────── */
-.nav-slogan-left  { color: #5c3317; }
-.nav-slogan-right { color: #c8773a; }
-
-/* ── WA Panel header ────────────────────────────────────────────── */
-#wa-panel .panel-header {
-    background: var(--color-primario);
-    color: var(--color-secundario);
-}
-#wa-panel .panel-header__icon {
-    background: var(--color-primario);
-    color: var(--color-secundario);
-}
-#wa-panel .panel-header__icon:hover {
-    background: var(--color-cuaternario);
-}
-
-/* ── Login ──────────────────────────────────────────────────────── */
-body.login-page {
-    background: var(--color-fondo);
-}
-.login_btn {
-    background: var(--color-primario);
-    color: var(--color-secundario);
-}
-.login_btn:hover {
-    background: var(--color-cuaternario);
+/* Fuente global Las Delicias */
+body {
+    font-family: 'Montserrat', sans-serif;
 }
