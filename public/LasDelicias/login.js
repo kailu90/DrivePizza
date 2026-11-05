@@ -10,6 +10,7 @@ const errorMessage = document.getElementById('login_error')
 const REDIRECT_ROL = {
     callcenter:         'shell.html',
     'callcenter-admin': 'shell.html',
+    panaderias:         'panaderias.html',
     admin:              'shell.html',
 }
 
