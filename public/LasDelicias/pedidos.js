@@ -40,7 +40,7 @@ async function init() {
 // ── Cargar datos ─────────────────────────────────────────────────────────────
 async function cargarCategorias() {
     const { data } = await supabase
-        .from('categorias').select('id, name').order('name')
+        .from('categorias').select('id_category, name').order('name')
     if (!data) return
     _categorias = data
     renderCategorias()
@@ -71,10 +71,10 @@ function renderCategorias() {
 
     _categorias.forEach(cat => {
         const btn = document.createElement('button')
-        btn.className = 'ld-cats__item' + (_catActiva === cat.id ? ' active' : '')
+        btn.className = 'ld-cats__item' + (_catActiva === cat.id_category ? ' active' : '')
         btn.textContent = cat.name
-        btn.dataset.id  = cat.id
-        btn.addEventListener('click', () => seleccionarCategoria(cat.id))
+        btn.dataset.id  = cat.id_category
+        btn.addEventListener('click', () => seleccionarCategoria(cat.id_category))
         nav.appendChild(btn)
     })
 }
