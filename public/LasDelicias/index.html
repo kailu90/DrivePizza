@@ -110,9 +110,17 @@
         /* Error */
         .login_error { color: #ffb3a7; font-size: 11px; }
 
+        /* Modal — mismo ancho que el card de login */
+        .modal_content {
+            max-width: 360px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         @media (max-width: 480px) {
             .login_container { padding: 32px 24px 28px; }
             .ld-logo { width: 170px; }
+            .modal_content { max-width: calc(100vw - 32px); }
         }
     </style>
 </head>
