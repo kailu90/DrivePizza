@@ -2,36 +2,119 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Las Delicias — Pedidos</title>
+    <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
-    <style>
-        body {
-            margin: 0;
-            background: var(--color-fondo, #f5ead0);
-            font-family: sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            flex-direction: column;
-            gap: 12px;
-            color: var(--color-texto, #2e1a0e);
-        }
-        h2 { margin: 0; font-size: 1.5rem; }
-        p  { margin: 0; color: var(--color-texto-suave, #7a5c44); font-size: 0.95rem; }
-    </style>
+    <link rel="stylesheet" href="./Estilos/pedidos.css">
 </head>
 <body>
-    <h2>Pedidos</h2>
-    <p>Módulo de pedidos — en construcción</p>
 
-    <script type="module">
-        window.addEventListener('load', () => {
-            window.parent.postMessage({ type: 'frame-ready' }, '*')
-            document.body.classList.add('loaded')
-        })
-    </script>
+<div id="contenido-principal" style="display:none;">
+
+    <!-- ── Header ───────────────────────────────────────── -->
+    <header class="ld-header">
+        <img src="./Imagenes/Logo1.png" class="ld-header__logo" alt="Las Delicias">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;justify-content:center;">
+            <span class="ld-header__sede" id="hdr-sede"></span>
+            <span class="ld-header__user" id="hdr-user"></span>
+        </div>
+        <div class="ld-header__right">
+            <button class="ld-btn-logout" id="btn-logout">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <!-- ── Layout: cats + productos + orden ─────────────── -->
+    <div class="ld-layout">
+
+        <!-- Sidebar categorías -->
+        <nav class="ld-cats" id="catNav"></nav>
+
+        <!-- Grid productos -->
+        <div class="ld-productos">
+            <input type="search" class="ld-search" id="searchInput" placeholder="Buscar producto...">
+            <p class="ld-cat-titulo" id="catTitulo"></p>
+            <div class="ld-grid" id="productGrid"></div>
+        </div>
+
+        <!-- Panel orden -->
+        <aside class="ld-orden">
+            <div class="ld-orden__header">
+                <span class="ld-orden__titulo">Pedido</span>
+                <button class="ld-btn-vaciar" id="btnVaciar">🗑 Vaciar</button>
+            </div>
+            <div class="ld-orden__items" id="orderItems">
+                <p class="ld-orden__empty">Sin productos</p>
+            </div>
+            <div class="ld-orden__footer">
+                <div class="ld-total-row">
+                    <span>TOTAL</span>
+                    <span id="totalDisplay">$0</span>
+                </div>
+                <button class="ld-btn-checkout" id="btnCheckout" disabled>Datos de envío</button>
+            </div>
+        </aside>
+
+    </div><!-- /ld-layout -->
+
+</div><!-- /contenido-principal -->
+
+<!-- ── Modal Checkout ───────────────────────────────────── -->
+<div class="ld-modal-bg" id="modalCheckout">
+    <div class="ld-modal">
+        <h3>Datos del pedido</h3>
+
+        <div class="ld-field">
+            <label>Nombre del cliente</label>
+            <input type="text" id="ck-nombre" placeholder="Nombre completo" autocomplete="off">
+        </div>
+
+        <div class="ld-field">
+            <label>Teléfono</label>
+            <input type="tel" id="ck-telefono" placeholder="Ej: 3001234567" autocomplete="off">
+        </div>
+
+        <label style="font-size:11px;font-weight:600;color:#7a5c44;margin-bottom:6px;display:block;">Tipo de entrega</label>
+        <div class="ld-entrega-toggle">
+            <button class="ld-entrega-btn active" data-tipo="domicilio" id="btn-domicilio">🛵 Domicilio</button>
+            <button class="ld-entrega-btn" data-tipo="recoger" id="btn-recoger">🏪 Recoger</button>
+        </div>
+
+        <div id="campos-domicilio">
+            <div class="ld-field">
+                <label>Dirección</label>
+                <input type="text" id="ck-direccion" placeholder="Ej: Cra 15 #32-10" autocomplete="off">
+            </div>
+            <div class="ld-field">
+                <label>Barrio</label>
+                <input type="text" id="ck-barrio" placeholder="Nombre del barrio" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="ld-field">
+            <label>Observaciones</label>
+            <textarea id="ck-obs" placeholder="Sin cebolla, sin salsas, etc."></textarea>
+        </div>
+
+        <div class="ld-field">
+            <label>Método de pago</label>
+            <div class="ld-pago-toggle">
+                <button class="ld-pago-btn active" data-pago="efectivo">Efectivo</button>
+                <button class="ld-pago-btn" data-pago="transferencia">Transferencia</button>
+                <button class="ld-pago-btn" data-pago="tarjeta">Tarjeta</button>
+            </div>
+        </div>
+
+        <p class="ld-modal-error" id="ck-error"></p>
+
+        <div class="ld-modal-btns">
+            <button class="ld-btn-cancelar" id="btnCancelarCheckout">Cancelar</button>
+            <button class="ld-btn-confirmar" id="btnConfirmar">Confirmar pedido</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="./pedidos.js"></script>
 </body>
 </html>
