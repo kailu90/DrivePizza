@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Las Delicias — Inicio</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="./Estilos/theme.css">
+    <style>
+        body {
+            margin: 0;
+            background: var(--color-fondo, #f5ead0);
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--color-texto, #2e1a0e);
+        }
+        h2 { margin: 0; font-size: 1.5rem; }
+        p  { margin: 0; color: var(--color-texto-suave, #7a5c44); font-size: 0.95rem; }
+        button {
+            margin-top: 8px;
+            background: var(--color-primario, #5c3317);
+            color: #fff;
+            border: none; border-radius: 8px;
+            padding: 10px 24px; font-size: 0.95rem;
+            cursor: pointer;
+        }
+        button:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+    <h2>Las Delicias</h2>
+    <p>Módulo de agentes — en construcción</p>
+    <button onclick="window.parent.postMessage({ type: 'logout' }, '*')">Cerrar sesión</button>
+
+    <script type="module">
+        // Notifica al shell que esta página está lista
+        window.addEventListener('load', () => {
+            window.parent.postMessage({ type: 'frame-ready' }, '*')
+            document.body.classList.add('loaded')
+        })
+    </script>
+</body>
+</html>

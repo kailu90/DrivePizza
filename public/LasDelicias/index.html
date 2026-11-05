@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/skeleton.css">
+    <link rel="stylesheet" href="../Estilos/login.css">
+    <link rel="stylesheet" href="./Estilos/theme.css">
+    <title>Las Delicias — Ingresar</title>
+</head>
+<body class="login-page">
+    <div id="skeleton" class="sk-page"></div>
+    <main id="contenido-principal" class="login_main" style="display:none;">
+        <section class="login_container">
+            <h1 style="font-family:sans-serif; color:var(--color-primario); font-size:2rem; margin-bottom:4px; text-align:center;">Las Delicias</h1>
+            <p style="font-family:sans-serif; color:var(--color-texto-suave); font-size:0.9rem; text-align:center; margin-bottom:24px;">Sistema de gestión</p>
+            <form id="login_form" class="login_form">
+                <label for="login_user">Usuario</label>
+                <input type="text" name="login_user" id="login_user" placeholder="Usuario" autocomplete="username">
+                <label for="login_password">Contraseña</label>
+                <div class="input-pass-wrapper">
+                    <input type="password" name="login_password" id="login_password" placeholder="Contraseña" autocomplete="current-password">
+                    <button type="button" class="btn-toggle-pass" id="btn-toggle-pass" tabindex="-1" aria-label="Mostrar contraseña">
+                        <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="login_links">
+                    <p id="btn_create_account">Crear nueva cuenta</p>
+                    <p id="btn_forgot_pass">Olvidé mi contraseña</p>
+                </div>
+                <button class="login_btn" type="submit">Ingresar</button>
+                <p id="login_error" class="login_error"></p>
+            </form>
+        </section>
+        <section class="login_image"></section>
+
+        <!-- Modal registro -->
+        <div id="registration_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Nueva cuenta</h2>
+                <form id="register_form" class="register_form">
+                    <label for="reg_sede">Sede:</label>
+                    <select id="reg_sede" class="select_field" required>
+                        <option value="" disabled selected>Selecciona tu sede</option>
+                    </select>
+                    <label for="reg_user">Usuario:</label>
+                    <input type="text" id="reg_user" placeholder="ej: maria.garcia" required>
+                    <label for="reg_email">Correo:</label>
+                    <input type="email" id="reg_email" placeholder="correo@ejemplo.com" required>
+                    <label for="reg_pass">Contraseña:</label>
+                    <input type="password" id="reg_pass" placeholder="************" required>
+                    <label for="reg_confirm_pass">Confirmar contraseña:</label>
+                    <input type="password" id="reg_confirm_pass" placeholder="************" required>
+                    <div class="reg_buttons">
+                        <button type="submit">Solicitar acceso</button>
+                        <button type="button" class="close_registration_modal_btn">Cancelar</button>
+                    </div>
+                    <p class="small_text">Tu cuenta será revisada y aprobada por un administrador.</p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal confirmación registro -->
+        <div id="confirmation_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Solicitud enviada</h2>
+                <p class="small_text">Cuando el administrador apruebe tu cuenta podrás ingresar.</p>
+            </div>
+        </div>
+
+        <!-- Modal olvidé contraseña -->
+        <div id="forgot_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Recuperar contraseña</h2>
+                <form id="forgot_form" class="register_form">
+                    <label for="forgot_email">Correo:</label>
+                    <input type="email" id="forgot_email" placeholder="correo@ejemplo.com" required>
+                    <div class="reg_buttons">
+                        <button type="submit">Enviar enlace</button>
+                        <button type="button" class="close_forgot_modal_btn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal confirmación correo enviado -->
+        <div id="confirmation_forgot_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Correo enviado</h2>
+                <p class="small_text">Si tu correo está registrado recibirás un enlace para restablecer la contraseña.</p>
+            </div>
+        </div>
+
+        <!-- Modal nueva contraseña -->
+        <div id="reset_modal" class="modal_background">
+            <div class="modal_content">
+                <h2>Nueva contraseña</h2>
+                <form id="reset_form" class="register_form">
+                    <label for="reset_pass">Nueva contraseña:</label>
+                    <input type="password" id="reset_pass" placeholder="************" required minlength="6">
+                    <label for="reset_confirm_pass">Confirmar:</label>
+                    <input type="password" id="reset_confirm_pass" placeholder="************" required>
+                    <div class="reg_buttons">
+                        <button type="submit">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal contraseña actualizada -->
+        <div id="confirmation_reset_modal" class="modal_background modal_confirmation">
+            <div class="modal_content">
+                <h2>Contraseña actualizada</h2>
+                <p class="small_text">Ya puedes ingresar con tu nueva contraseña.</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="./login.js"></script>
+</body>
+</html>

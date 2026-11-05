@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Las Delicias</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="./Estilos/theme.css">
+    <link rel="prefetch" href="./callcenter.html">
+    <link rel="prefetch" href="./historial.html">
+    <link rel="prefetch" href="./pedidos.html">
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+
+        #cc-wrap {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+        }
+        #cc-frame { width: 100%; height: 100%; border: none; display: block; }
+
+        /* ── Banner nueva versión ── */
+        #banner-nueva-version {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--color-primario); color: var(--color-secundario);
+            padding: 10px 20px;
+            text-align: center;
+            font-family: sans-serif; font-size: 14px;
+            z-index: 99999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        #banner-nueva-version button {
+            margin-left: 16px;
+            background: var(--color-secundario); color: var(--color-primario);
+            border: none; border-radius: 6px;
+            padding: 4px 14px; font-size: 13px;
+            font-weight: 600; cursor: pointer;
+        }
+
+        /* ── Overlay de navegación ── */
+        #nav-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--color-fondo, #f5ead0);
+            z-index: 8000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+        }
+        #nav-overlay.visible { display: flex; }
+        .nav-slogan {
+            display: flex; flex-direction: column; align-items: center;
+            font-family: 'Manrope', 'Arial Black', 'Helvetica Neue', sans-serif;
+            font-size: 1.9rem; font-weight: 800;
+            letter-spacing: .06em; text-transform: uppercase;
+            line-height: 1;
+        }
+        .nav-slogan-left  { color: var(--color-primario);  animation: nav-slide-left  .4s .25s ease both; }
+        .nav-slogan-right { color: var(--color-acento);    animation: nav-slide-right .4s .45s ease both; }
+        @keyframes nav-slide-left  { from{transform:translateX(-70px);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes nav-slide-right { from{transform:translateX( 70px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+        /* ── WA Panel ── */
+        #wa-panel {
+            position: fixed;
+            top: 100px; left: 0; bottom: 0;
+            width: 420px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            background: var(--color-superficie, #fdf6e3);
+            transform: translateX(-360px);
+            transition: transform 260ms ease;
+            z-index: 7500;
+        }
+        #wa-panel.expanded { transform: translateX(0); }
+        @media (max-width: 768px) {
+            #wa-panel { width: 100%; transform: translateX(-100%); top: 54px; }
+        }
+        #wa-panel .panel-header {
+            width: 420px; height: 60px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border-radius: 0 0 30px 0;
+        }
+        #wa-panel .panel-header__title {
+            font-size: 1.6rem; font-weight: 700;
+            letter-spacing: 0.5px; white-space: nowrap;
+            flex: 1; padding-left: 16px;
+        }
+        #wa-panel .panel-header__icon {
+            width: 60px; height: 60px; border-radius: 30px;
+            flex-shrink: 0; display: flex; align-items: center;
+            justify-content: center; position: relative;
+            background: var(--color-primario);
+            color: var(--color-secundario);
+            border: none; outline: none; cursor: pointer;
+            transition: background 0.15s;
+        }
+        #wa-panel .panel-header__icon:hover { background: var(--color-cuaternario); }
+        #wa-badge-hdr {
+            position: absolute; top: 6px; right: 6px;
+            background: #ef4444; color: #fff; font-size: 10px;
+            font-weight: 700; border-radius: 8px; min-width: 16px;
+            height: 16px; padding: 0 3px; display: none;
+            align-items: center; justify-content: center;
+            font-family: sans-serif; line-height: 1;
+        }
+        #wa-body {
+            flex: 1; overflow: hidden; min-height: 0;
+            display: flex; flex-direction: column;
+        }
+        #wa-panel:not(.expanded) #wa-body { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="banner-nueva-version">
+    Hay una nueva versión disponible.
+    <button onclick="location.reload()">Recargar ahora</button>
+</div>
+
+<div id="cc-wrap">
+    <iframe id="cc-frame" src="./callcenter.html"></iframe>
+</div>
+
+<div id="nav-overlay" class="visible">
+    <div class="nav-slogan">
+        <span class="nav-slogan-left">LAS</span>
+        <span class="nav-slogan-right">DELICIAS</span>
+    </div>
+</div>
+
+<!-- WA Panel -->
+<div id="wa-panel">
+    <div class="panel-header">
+        <span class="panel-header__title">WhatsApp</span>
+        <button class="panel-header__icon" id="wa-strip" title="WhatsApp">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            </svg>
+            <span id="wa-badge-hdr"></span>
+        </button>
+    </div>
+    <div id="wa-body"></div>
+</div>
+
+<script type="module">
+    import { supabase } from './supabaseConfig.js'
+    import { WS_URL }   from '../Api/config.js'
+
+    // ── WA Panel toggle ───────────────────────────────────────────────────────
+    let _resetWaView    = null
+    let _destroyWaPanel = null
+    let _updateWaToken  = null
+    let _historialFrame      = null
+    let _historialFrameReady = false
+    let _historialPendingParams = null
+
+    function _waOffset() {
+        const panel = document.getElementById('wa-panel')
+        if (panel.style.display === 'none') return 0
+        return panel.classList.contains('expanded') ? 420 : 60
+    }
+    function _postWaOffset() {
+        const offset = _waOffset()
+        ;[document.getElementById('cc-frame'), _historialFrame]
+            .filter(Boolean)
+            .forEach(f => f.contentWindow?.postMessage({ type: 'wa-workspace-offset', offset }, '*'))
+    }
+    function _setWaVisible(show) {
+        const panel = document.getElementById('wa-panel')
+        if (!show) {
+            panel.classList.remove('expanded')
+            panel.style.display = 'none'
+        } else {
+            panel.style.display = ''
+        }
+        _postWaOffset()
+    }
+    _setWaVisible(false)
+
+    document.getElementById('wa-strip').addEventListener('click', () => {
+        const panel = document.getElementById('wa-panel')
+        panel.classList.toggle('expanded')
+        if (!panel.classList.contains('expanded')) _resetWaView?.()
+        _postWaOffset()
+    })
+
+    document.addEventListener('wa:conteos', (e) => {
+        const badge  = document.getElementById('wa-badge-hdr')
+        const espera = e.detail?.en_espera || 0
+        badge.textContent   = espera
+        badge.style.display = espera > 0 ? 'flex' : 'none'
+    })
+
+    // ── Overlay de navegación ─────────────────────────────────────────────────
+    const _overlay = document.getElementById('nav-overlay')
+    const MIN_OVERLAY_MS = 300
+    let _overlayShownAt  = performance.now()
+    let _overlayFallback = null
+    let _overlayHideTimer = null
+
+    function hideOverlay() {
+        clearTimeout(_overlayFallback)
+        clearTimeout(_overlayHideTimer)
+        _overlayFallback  = null
+        const elapsed = performance.now() - _overlayShownAt
+        const wait    = Math.max(0, MIN_OVERLAY_MS - elapsed)
+        _overlayHideTimer = setTimeout(() => {
+            _overlayHideTimer = null
+            _overlay.classList.remove('visible')
+        }, wait)
+    }
+    _overlayFallback = setTimeout(() => hideOverlay(), 3000)
+
+    function _listenForFrameNav(frame) {
+        try {
+            frame.contentWindow?.addEventListener('pagehide', () => {
+                _setWaVisible(false)
+                clearTimeout(_overlayHideTimer)
+                _overlayHideTimer = null
+                _overlayShownAt   = performance.now()
+                _overlay.classList.add('visible')
+                clearTimeout(_overlayFallback)
+                _overlayFallback  = setTimeout(() => hideOverlay(), 3000)
+            }, { once: true })
+        } catch(e) {}
+    }
+
+    document.getElementById('cc-frame').addEventListener('load', () => {
+        hideOverlay()
+        _postWaOffset()
+        _listenForFrameNav(document.getElementById('cc-frame'))
+    })
+
+    // ── postMessage desde iframes ─────────────────────────────────────────────
+    window.addEventListener('message', (e) => {
+        if (e.data?.type === 'logout') {
+            _destroyWaPanel?.()
+            window.location.href = './index.html'
+            return
+        }
+        if (e.data?.type === 'wa-visible')    _setWaVisible(e.data.show !== false)
+        if (e.data?.type === 'nav-switch')    _switchView(e.data.page, e.data.params)
+        if (e.data?.type === 'frame-ready')   _postWaOffset()
+        if (e.data?.type === 'filtros-panel') {
+            const waPanel = document.getElementById('wa-panel')
+            if (e.data.open) {
+                waPanel._filtrosWasExpanded = waPanel.classList.contains('expanded')
+                waPanel.style.display = 'none'
+                _postWaOffset()
+            } else {
+                waPanel.style.display = ''
+                if (waPanel._filtrosWasExpanded) waPanel.classList.add('expanded')
+                waPanel._filtrosWasExpanded = undefined
+                _postWaOffset()
+            }
+        }
+        if (e.data?.type === 'nueva-version') {
+            document.getElementById('banner-nueva-version').style.display = 'block'
+        }
+    })
+
+    // ── Precarga historial ────────────────────────────────────────────────────
+    function _preloadHistorialFrame() {
+        if (_historialFrame) return
+        _historialFrame = document.createElement('iframe')
+        _historialFrame.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:none;'
+        _historialFrame.addEventListener('load', () => {
+            _historialFrameReady = true
+            _postWaOffset()
+            _listenForFrameNav(_historialFrame)
+            if (_historialFrame.style.display !== 'none') {
+                hideOverlay()
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params: _historialPendingParams || {} }, '*')
+                _historialPendingParams = null
+            }
+        }, { once: true })
+        _historialFrame.src = './historial.html'
+        document.getElementById('cc-wrap').appendChild(_historialFrame)
+    }
+
+    // ── Gestión de vistas ─────────────────────────────────────────────────────
+    function _switchView(target, params = {}) {
+        const ccFrame = document.getElementById('cc-frame')
+        if (target === 'home') {
+            if (_historialFrame) {
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*')
+                _historialFrame.style.display = 'none'
+            }
+            ccFrame.style.display = 'block'
+            ccFrame.src = './callcenter.html'
+            return
+        }
+        if (target === 'historial') {
+            if (_historialFrameReady) {
+                _historialFrame.style.display = 'block'
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params }, '*')
+            } else if (_historialFrame) {
+                _historialPendingParams = params
+                _overlayShownAt = performance.now()
+                _overlay.classList.add('visible')
+                clearTimeout(_overlayFallback)
+                _overlayFallback = setTimeout(() => hideOverlay(), 3000)
+                _historialFrame.style.display = 'block'
+            } else {
+                _overlayShownAt = performance.now()
+                _overlay.classList.add('visible')
+                clearTimeout(_overlayFallback)
+                _overlayFallback = setTimeout(() => hideOverlay(), 3000)
+                _historialFrame = document.createElement('iframe')
+                _historialFrame.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:block;'
+                _historialFrame.addEventListener('load', () => {
+                    _historialFrameReady = true
+                    hideOverlay()
+                    _postWaOffset()
+                    _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params }, '*')
+                    _listenForFrameNav(_historialFrame)
+                }, { once: true })
+                _historialFrame.src = './historial.html'
+                document.getElementById('cc-wrap').appendChild(_historialFrame)
+            }
+            ccFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*')
+            ccFrame.style.display = 'none'
+            _postWaOffset()
+        } else {
+            if (_historialFrame) {
+                _historialFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*')
+                _historialFrame.style.display = 'none'
+            }
+            ccFrame.style.display = 'block'
+            const _ccPath = (() => { try { return ccFrame.contentWindow?.location?.pathname || '' } catch { return '' } })()
+            if (!_ccPath.includes('pedidos')) {
+                ccFrame.src = './pedidos.html'
+            } else {
+                ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*')
+            }
+            _postWaOffset()
+        }
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    window._usuarioLD = null
+
+    ;(async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { window.location.href = './index.html'; return }
+
+        const { data: { session } } = await supabase.auth.getSession()
+
+        try {
+            const { data, error } = await supabase.from('usuarios').select('*').eq('id', user.id).single()
+            if (error || !data) { window.location.href = './index.html'; return }
+
+            const ROLES_VALIDOS = ['callcenter', 'callcenter-admin', 'admin']
+            if (!ROLES_VALIDOS.includes(data.rol)) { window.location.href = './index.html'; return }
+
+            window._usuarioLD = {
+                uid:      user.id,
+                email:    user.email,
+                username: data.username || user.email,
+                sede:     data.sede     || '',
+                rol:      data.rol      || '',
+            }
+
+            // Inicializar WA Panel
+            // TODO: crear LasDelicias/waPanel.js que use el schema lasdelicias
+            // Por ahora se omite — se activa cuando esté listo el módulo backend LD
+            // const { initWaPanel, resetWaView, destroyWaPanel, updateAuthToken } = await import('./waPanel.js')
+            // _resetWaView    = resetWaView
+            // _destroyWaPanel = destroyWaPanel
+            // _updateWaToken  = updateAuthToken
+            // initWaPanel('wa-body', { rol: data.rol, asesor: data.username, authToken: session?.access_token || '' })
+
+            setTimeout(_preloadHistorialFrame, 1500)
+        } catch (err) {
+            console.error('[LD shell] Error cargando usuario:', err)
+        } finally {
+            document.body.classList.add('loaded')
+        }
+    })()
+
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.access_token) _updateWaToken?.(session.access_token)
+    })
+
+    window.addEventListener('pagehide', () => {
+        _destroyWaPanel?.()
+    })
+
+    // ── WS backend (nueva versión) ────────────────────────────────────────────
+    let _wsRetry = 0
+    function initWs() {
+        const ws = new WebSocket(WS_URL)
+        ws.onopen  = () => { _wsRetry = 0 }
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data)
+                if (msg.tipo === 'nueva-version') {
+                    document.getElementById('banner-nueva-version').style.display = 'block'
+                }
+            } catch {}
+        }
+        ws.onclose = () => {
+            const delay = Math.min(1000 * 2 ** _wsRetry, 30_000)
+            _wsRetry++
+            setTimeout(initWs, delay)
+        }
+    }
+    initWs()
+</script>
+
+</body>
+</html>
