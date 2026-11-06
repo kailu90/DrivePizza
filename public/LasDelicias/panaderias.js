@@ -1,5 +1,6 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
+import { mountHeader, setHeaderUser } from './Shared/ldHeader.js'
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 let _perfil   = null
@@ -44,8 +45,19 @@ async function init() {
 
     _perfil = perfil
 
-    document.getElementById('hdr-user').textContent = perfil.username
-    document.getElementById('hdr-sede').textContent = perfil.sede || ''
+    mountHeader({
+        navLabel: 'Panaderias',
+        navItems: [
+            { label: 'Pedidos',  href: './pedidos.html'  },
+            { label: 'Historial', href: './historial.html' },
+        ],
+        onLogout: async () => {
+            await supabase.auth.signOut()
+            window.location.href = './index.html'
+        },
+    })
+    setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')
 
@@ -309,10 +321,7 @@ document.getElementById('panModal').addEventListener('click', e => {
 })
 document.getElementById('mod-action').addEventListener('click', avanzarEstado)
 
-document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabase.auth.signOut()
-    window.location.href = './index.html'
-})
+// Logout ahora en el dropdown del header compartido
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
 init()

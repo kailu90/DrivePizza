@@ -1,5 +1,24 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
+import { mountHeader, setHeaderUser } from './Shared/ldHeader.js'
+
+// Icono por nombre de categoria (fallback al primero que coincida parcialmente)
+const CAT_ICONS = {
+    'panaderia': '🫓', 'panderia': '🫓',
+    'pasteleria': '🧁', 'pasteles': '🧁',
+    'cafeteria': '☕', 'cafe': '☕', 'bebidas': '🥤',
+    'hojaldres': '🥐', 'hojaldre': '🥐',
+    'fritos': '🍟', 'frito': '🍟',
+    'desayunos': '🍳', 'desayuno': '🍳',
+    'tortas': '🎂', 'ponques': '🧁', 'galletas': '🍪',
+    'empanadas': '🥟', 'arepas': '🫔',
+    'default': '🍽️',
+}
+
+function catIcon(name) {
+    const key = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    return Object.entries(CAT_ICONS).find(([k]) => key.includes(k))?.[1] ?? CAT_ICONS.default
+}
 
 // ── Estado ───────────────────────────────────────────────────────────────────
 let _user        = null
@@ -28,12 +47,25 @@ async function init() {
     _user   = user
     _perfil = perfil
 
-    document.getElementById('hdr-user').textContent  = perfil.username
-    document.getElementById('hdr-sede').textContent  = perfil.sede || ''
+    mountHeader({
+        navLabel: 'Pedidos',
+        navItems: [
+            { label: 'Panaderias', href: './panaderias.html' },
+            { label: 'Historial',  href: './historial.html'  },
+        ],
+        onLogout: async () => {
+            await supabase.auth.signOut()
+            window.parent.postMessage({ type: 'logout' }, '*')
+            window.location.href = './index.html'
+        },
+    })
+    setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')
 
     await Promise.all([cargarCategorias(), cargarProductos()])
+    renderProductos()
     window.parent.postMessage({ type: 'frame-ready' }, '*')
 }
 
@@ -57,52 +89,41 @@ async function cargarProductos() {
     _productos = data
 }
 
-// ── Render categorías ─────────────────────────────────────────────────────────
+// ── Render categorias (tabs horizontales) ─────────────────────────────────────
 function renderCategorias() {
-    const nav = document.getElementById('catNav')
-    nav.innerHTML = ''
+    const tabs = document.getElementById('catTabs')
+    tabs.innerHTML = ''
 
-    // Botón "Todos"
-    const btnTodos = document.createElement('button')
-    btnTodos.className = 'ld-cats__item' + (_catActiva === null ? ' active' : '')
-    btnTodos.textContent = 'Todos'
-    btnTodos.addEventListener('click', () => seleccionarCategoria(null))
-    nav.appendChild(btnTodos)
-
-    _categorias.forEach(cat => {
+    const mkTab = (label, ico, id) => {
         const btn = document.createElement('button')
-        btn.className = 'ld-cats__item' + (_catActiva === cat.id_category ? ' active' : '')
-        btn.textContent = cat.name
-        btn.dataset.id  = cat.id_category
-        btn.addEventListener('click', () => seleccionarCategoria(cat.id_category))
-        nav.appendChild(btn)
-    })
+        btn.className = 'ld-tab' + (_catActiva === id ? ' active' : '')
+        btn.innerHTML = `<span class="ld-tab__ico">${ico}</span><span class="ld-tab__label">${label}</span>`
+        btn.addEventListener('click', () => seleccionarCategoria(id))
+        return btn
+    }
+
+    tabs.appendChild(mkTab('Todos', '🍽️', null))
+    _categorias.forEach(cat => tabs.appendChild(mkTab(cat.name, catIcon(cat.name), cat.id_category)))
 }
 
-function seleccionarCategoria(catId) {
-    _catActiva = catId
+function seleccionarCategoria(id) {
+    _catActiva = id
     document.getElementById('searchInput').value = ''
     renderCategorias()
+    // scroll al tab activo
+    const tab = document.querySelector('#catTabs .ld-tab.active')
+    tab?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
     renderProductos()
 }
 
 // ── Render productos ──────────────────────────────────────────────────────────
 function renderProductos(busqueda = '') {
     const grid = document.getElementById('productGrid')
-    const titulo = document.getElementById('catTitulo')
     grid.innerHTML = ''
 
     let lista = _productos
     if (_catActiva) lista = lista.filter(p => p.id_category === _catActiva)
     if (busqueda)   lista = lista.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()))
-
-    // Título
-    if (_catActiva) {
-        const cat = _categorias.find(c => c.id === _catActiva)
-        titulo.textContent = cat ? cat.name : ''
-    } else {
-        titulo.textContent = busqueda ? `Resultados: "${busqueda}"` : 'Todos los productos'
-    }
 
     if (!lista.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
@@ -113,8 +134,14 @@ function renderProductos(busqueda = '') {
         const card = document.createElement('div')
         card.className = 'ld-prod-card'
         card.innerHTML = `
-            <span class="ld-prod-card__name">${prod.name}</span>
-            <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
+            <div class="ld-prod-card__img"></div>
+            <div class="ld-prod-card__body">
+                <span class="ld-prod-card__name">${prod.name}</span>
+                <div class="ld-prod-card__foot">
+                    <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
+                    <button class="ld-prod-card__add">+</button>
+                </div>
+            </div>
         `
         card.addEventListener('click', () => agregarAlCarrito(prod))
         grid.appendChild(card)
@@ -146,23 +173,26 @@ function vaciarCarrito() {
 }
 
 function renderCarrito() {
-    const container = document.getElementById('orderItems')
-    const btnVaciar = document.getElementById('btnVaciar')
+    const container   = document.getElementById('orderItems')
+    const btnVaciar   = document.getElementById('btnVaciar')
     const btnCheckout = document.getElementById('btnCheckout')
-    const totalEl  = document.getElementById('totalDisplay')
+    const totalEl     = document.getElementById('totalDisplay')
+    const countEl     = document.getElementById('orderCount')
 
     container.innerHTML = ''
 
     if (!_carrito.length) {
         container.innerHTML = '<p class="ld-orden__empty">Sin productos</p>'
-        btnVaciar.style.display   = 'none'
-        btnCheckout.disabled      = true
-        totalEl.textContent       = '$0'
+        btnVaciar.style.display = 'none'
+        btnCheckout.disabled    = true
+        totalEl.textContent     = '$0'
+        if (countEl) countEl.textContent = ''
         return
     }
 
-    btnVaciar.style.display  = ''
-    btnCheckout.disabled     = false
+    btnVaciar.style.display = ''
+    btnCheckout.disabled    = false
+    if (countEl) countEl.textContent = `(${_carrito.length})`
 
     let total = 0
     _carrito.forEach(item => {
@@ -199,7 +229,7 @@ function cerrarCheckout() {
 async function confirmarPedido() {
     const nombre   = document.getElementById('ck-nombre').value.trim()
     const telefono = document.getElementById('ck-telefono').value.trim()
-    const obs      = document.getElementById('ck-obs').value.trim()
+    const obs      = document.getElementById('ck-obs')?.value.trim() ?? ''
     const errorEl  = document.getElementById('ck-error')
 
     if (!nombre) { mostrarError('Ingresa el nombre del cliente.'); return }
@@ -259,6 +289,16 @@ async function confirmarPedido() {
             .from('pedidos_callcenter').insert(pedido)
         if (error) throw error
 
+        // Actualizar panel con info del cliente confirmado
+        const displayCliente = document.getElementById('display-cliente')
+        const displayDir     = document.getElementById('display-dir')
+        if (displayCliente) displayCliente.textContent = `${nombre} · ${telefono}`
+        if (displayDir && _tipoEntrega === 'domicilio') {
+            const barrio = document.getElementById('ck-barrio')?.value.trim()
+            const dir    = document.getElementById('ck-direccion')?.value.trim()
+            displayDir.textContent = [barrio, dir].filter(Boolean).join(', ')
+        }
+
         ocultarOverlay(true)
         cerrarCheckout()
         limpiarFormulario()
@@ -275,7 +315,10 @@ function limpiarFormulario() {
         const el = document.getElementById(id)
         if (el) el.value = ''
     })
-    // Reset toggles
+    const displayCliente = document.getElementById('display-cliente')
+    const displayDir     = document.getElementById('display-dir')
+    if (displayCliente) displayCliente.textContent = '—'
+    if (displayDir)     displayDir.textContent     = '—'
     setEntrega('domicilio')
     setPago('efectivo')
 }
@@ -291,8 +334,11 @@ function setEntrega(tipo) {
     document.querySelectorAll('.ld-entrega-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.tipo === tipo)
     })
-    document.getElementById('campos-domicilio').style.display =
-        tipo === 'domicilio' ? '' : 'none'
+    const show = tipo === 'domicilio'
+    const panelDir = document.getElementById('campos-domicilio')
+    if (panelDir) panelDir.style.display = show ? '' : 'none'
+    const modalDir = document.getElementById('campos-domicilio-modal')
+    if (modalDir) modalDir.style.display = show ? '' : 'none'
 }
 
 function setPago(pago) {
@@ -308,27 +354,33 @@ function formatPrecio(n) {
 }
 
 // ── Listeners ─────────────────────────────────────────────────────────────────
+// Panel derecho — botones principales
 document.getElementById('btnVaciar').addEventListener('click', vaciarCarrito)
 document.getElementById('btnCheckout').addEventListener('click', abrirCheckout)
+// Rows clickeables de cliente/direccion abren el mismo modal
+document.getElementById('btn-cliente')?.addEventListener('click', abrirCheckout)
+document.getElementById('btn-dir')?.addEventListener('click', abrirCheckout)
+
+// Toggle de entrega en el panel principal
+document.querySelectorAll('.ld-entrega-btn').forEach(btn => {
+    btn.addEventListener('click', () => setEntrega(btn.dataset.tipo))
+})
+
+// Modal checkout
 document.getElementById('btnConfirmar').addEventListener('click', confirmarPedido)
 document.getElementById('btnCancelarCheckout').addEventListener('click', cerrarCheckout)
 document.getElementById('modalCheckout').addEventListener('click', e => {
     if (e.target === e.currentTarget) cerrarCheckout()
 })
 
-document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabase.auth.signOut()
-    window.parent.postMessage({ type: 'logout' }, '*')
-})
-
-// Búsqueda
+// Busqueda
 document.getElementById('searchInput').addEventListener('input', e => {
     _catActiva = null
     renderCategorias()
     renderProductos(e.target.value)
 })
 
-// Carrito — delegación para botones +/−
+// Carrito — delegacion para botones +/−
 document.getElementById('orderItems').addEventListener('click', e => {
     const btn = e.target.closest('.ld-item__btn')
     if (!btn) return

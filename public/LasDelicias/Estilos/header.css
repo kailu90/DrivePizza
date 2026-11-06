@@ -1,0 +1,169 @@
+/* ═══════════════════════════════════════════════════════
+   Las Delicias — Header compartido
+   Importar en todos los módulos LD
+   ═══════════════════════════════════════════════════════ */
+
+.ld-header {
+    display: flex;
+    align-items: center;
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    padding: 0 16px;
+    height: 52px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.ld-header__logo {
+    height: 30px;
+    flex-shrink: 0;
+    margin-right: 20px;
+}
+
+/* ── NAV DROPDOWN ──────────────────────────────────────── */
+.ld-header__nav-wrap {
+    position: relative;
+}
+
+.ld-header__nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    border-radius: 8px;
+    color: var(--ld-beige, #F6EBE0);
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.ld-header__nav-btn:hover {
+    background: rgba(255,255,255,0.22);
+}
+
+.ld-header__nav-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.ld-header__nav-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    min-width: 200px;
+    z-index: 200;
+    overflow: hidden;
+    padding: 4px 0;
+}
+
+.ld-header__nav-dropdown.open {
+    display: block;
+}
+
+.ld-header__nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    color: #3a2010;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.ld-header__nav-item:hover {
+    background: #fdf4ee;
+}
+
+.ld-header__nav-item.active {
+    color: var(--ld-marron, #75473B);
+    font-weight: 600;
+}
+
+.ld-header__nav-item--logout {
+    color: #b94040;
+}
+
+.ld-header__nav-sep {
+    height: 1px;
+    background: #f0e8e0;
+    margin: 4px 0;
+}
+
+/* ── SPACER ────────────────────────────────────────────── */
+.ld-header__spacer {
+    flex: 1;
+}
+
+/* ── BOTONES DE ACCION ─────────────────────────────────── */
+.ld-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.ld-header__icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: none;
+    color: var(--ld-beige, #F6EBE0);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.ld-header__icon-btn:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+.ld-header__icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ── AVATAR ────────────────────────────────────────────── */
+.ld-header__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--ld-marron-oscuro, #4e2e24);
+    border: 2px solid rgba(246,235,224,0.4);
+    color: var(--ld-beige, #F6EBE0);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 6px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    user-select: none;
+    transition: border-color 0.15s;
+}
+
+.ld-header__avatar:hover {
+    border-color: rgba(246,235,224,0.7);
+}
