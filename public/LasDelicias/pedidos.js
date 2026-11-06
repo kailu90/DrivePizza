@@ -2,6 +2,9 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { mountHeader, setHeaderUser } from './Shared/ldHeader.js'
 
+// Modo drawer: cargado desde panaderias-shell como panel lateral
+const IS_DRAWER = new URLSearchParams(location.search).has('drawer')
+
 // Icono por nombre de categoria (fallback al primero que coincida parcialmente)
 const CAT_ICONS = {
     'panaderia': '🫓', 'panderia': '🫓',
@@ -47,19 +50,26 @@ async function init() {
     _user   = user
     _perfil = perfil
 
-    mountHeader({
-        navLabel: 'Pedidos',
-        navItems: [
-            { label: 'Panaderias', href: './panaderias.html' },
-            { label: 'Historial',  href: './historial.html'  },
-        ],
-        onLogout: async () => {
-            await supabase.auth.signOut()
-            window.parent.postMessage({ type: 'logout' }, '*')
-            window.location.href = './index.html'
-        },
-    })
-    setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    if (!IS_DRAWER) {
+        mountHeader({
+            navLabel: 'Pedidos',
+            navItems: [
+                { label: 'Panaderias', href: './panaderias.html' },
+                { label: 'Historial',  href: './historial.html'  },
+            ],
+            onLogout: async () => {
+                await supabase.auth.signOut()
+                window.parent.postMessage({ type: 'logout' }, '*')
+                window.location.href = './index.html'
+            },
+        })
+        setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    } else {
+        document.body.classList.add('drawer-mode')
+        document.getElementById('btn-drawer-close')?.addEventListener('click', () =>
+            window.parent.postMessage({ type: 'tomar-pedido-close' }, '*')
+        )
+    }
 
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')
@@ -303,6 +313,7 @@ async function confirmarPedido() {
         cerrarCheckout()
         limpiarFormulario()
         vaciarCarrito()
+        if (IS_DRAWER) window.parent.postMessage({ type: 'tomar-pedido-close' }, '*')
 
     } catch (err) {
         ocultarOverlay()
@@ -397,7 +408,7 @@ document.querySelectorAll('.ld-pago-btn').forEach(b => {
 
 // Frame visible desde shell
 window.addEventListener('message', e => {
-    if (e.data?.type === 'frame-visible') {
+    if (e.data?.type === 'frame-visible' && !IS_DRAWER) {
         window.parent.postMessage({ type: 'wa-visible', show: true }, '*')
     }
 })

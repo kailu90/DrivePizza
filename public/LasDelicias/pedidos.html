@@ -9,10 +9,52 @@
     <link rel="stylesheet" href="./Estilos/theme.css">
     <link rel="stylesheet" href="./Estilos/header.css">
     <link rel="stylesheet" href="./Estilos/pedidos.css">
+    <style>
+        /* ── Drawer mode (cargado desde panaderias-shell con ?drawer) ── */
+        .ld-drawer-hdr {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            padding: 0 16px;
+            background: var(--ld-marron, #75473B);
+            color: var(--ld-beige, #F6EBE0);
+            flex-shrink: 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .ld-drawer-hdr__title { font-size: 1.5rem; font-weight: 700; }
+        .ld-drawer-hdr__close {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--ld-beige, #F6EBE0);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .ld-drawer-hdr__close:hover { background: rgba(255,255,255,0.22); }
+        .ld-drawer-hdr__close svg { width: 20px; height: 20px; }
+
+        body.drawer-mode { display: flex; flex-direction: column; }
+        body.drawer-mode #contenido-principal { flex: 1; min-height: 0; }
+        .drawer-mode .ld-drawer-hdr { display: flex; }
+        .drawer-mode .ld-wa { display: none; }
+        .drawer-mode .ld-omni-layout { grid-template-columns: 1fr 300px; }
+    </style>
 </head>
 <body>
 
 <!-- Header: inyectado por ldHeader.js en init() -->
+
+<div class="ld-drawer-hdr">
+    <span class="ld-drawer-hdr__title">Tomar pedido</span>
+    <button id="btn-drawer-close" class="ld-drawer-hdr__close" title="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </button>
+</div>
 
 <div id="contenido-principal" style="display:none">
 

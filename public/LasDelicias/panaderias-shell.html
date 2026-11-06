@@ -13,11 +13,94 @@
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
-        #pan-wrap {
+        /* ── Layout principal: WA sidebar + contenido ── */
+        #pan-layout {
             position: fixed;
-            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            display: flex;
         }
-        #pan-frame { width: 100%; height: 100%; border: none; display: block; }
+
+        /* ── WA Sidebar (siempre visible, izquierda) ── */
+        #wa-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-right: 1px solid #e8d8cc;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .wa-sb__hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 12px; height: 50px;
+            border-bottom: 1px solid #f0e4d8; flex-shrink: 0;
+        }
+        .wa-sb__title {
+            display: flex; align-items: center; gap: 7px;
+        }
+        .wa-sb__logo { width: 20px; height: 20px; flex-shrink: 0; }
+        .wa-sb__label { font-size: 1.4rem; font-weight: 700; color: #3a2010; }
+        .wa-sb__badge {
+            background: #ef4444; color: #fff;
+            font-size: 1rem; font-weight: 700;
+            border-radius: 10px; min-width: 18px; height: 18px;
+            padding: 0 4px; display: none;
+            align-items: center; justify-content: center;
+        }
+        .wa-sb__badge.visible { display: flex; }
+        .wa-sb__chips {
+            display: flex; gap: 6px; padding: 8px 10px;
+            border-bottom: 1px solid #f0e4d8; flex-shrink: 0;
+        }
+        .wa-sb__chip {
+            flex: 1; padding: 4px 6px; border-radius: 20px;
+            border: 1.5px solid #e0cfc4; background: none;
+            font-size: 1.1rem; font-family: 'Montserrat', sans-serif;
+            color: #7a5540; cursor: pointer; transition: all 0.15s;
+        }
+        .wa-sb__chip.active {
+            background: var(--ld-marron, #75473B);
+            border-color: var(--ld-marron, #75473B);
+            color: #fff;
+        }
+        .wa-sb__list { flex: 1; overflow-y: auto; }
+        .wa-sb__placeholder {
+            display: flex; align-items: center; justify-content: center;
+            height: 120px; color: #b8a090; font-size: 1.2rem;
+        }
+
+        /* ── Marco principal (kanban, historial, etc.) ── */
+        #pan-wrap {
+            flex: 1; min-width: 0; position: relative; overflow: hidden;
+        }
+        #pan-frame {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%; border: none; display: block;
+        }
+
+        /* ── Drawer "Tomar pedido" (desliza desde la derecha) ── */
+        #pedido-bg {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.3); z-index: 7000;
+        }
+        #pedido-bg.open { display: block; }
+        #pedido-drawer {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: calc(100% - 260px);
+            transform: translateX(100%);
+            transition: transform 300ms ease;
+            z-index: 7001;
+            display: flex; flex-direction: column;
+            box-shadow: -6px 0 32px rgba(0,0,0,0.18);
+        }
+        #pedido-drawer.open { transform: translateX(0); }
+        #pedido-frame { flex: 1; border: none; min-height: 0; display: block; }
+
+        @media (max-width: 700px) {
+            #wa-sidebar { display: none; }
+            #pedido-drawer { width: 100%; }
+        }
 
         #banner-nueva-version {
             display: none;
@@ -55,8 +138,41 @@
     <button onclick="location.reload()">Recargar ahora</button>
 </div>
 
-<div id="pan-wrap">
-    <iframe id="pan-frame" src="./panaderias-home.html"></iframe>
+<div id="pan-layout">
+
+    <!-- WA Sidebar: conversaciones WhatsApp -->
+    <aside id="wa-sidebar">
+        <div class="wa-sb__hdr">
+            <div class="wa-sb__title">
+                <svg class="wa-sb__logo" viewBox="0 0 24 24">
+                    <path fill="#25D366" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9.69 9.69 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path fill="#25D366" d="M12.004 0C5.374 0 0 5.373 0 12c0 2.113.546 4.1 1.5 5.829L0 24l6.336-1.482A11.933 11.933 0 0012.004 24C18.63 24 24 18.627 24 12S18.63 0 12.004 0zm.004 21.818a9.788 9.788 0 01-5.044-1.4l-.361-.214-3.761.879.919-3.655-.235-.375A9.818 9.818 0 012.182 12C2.182 6.57 6.572 2.182 12.008 2.182S21.818 6.57 21.818 12s-4.39 9.818-9.81 9.818z"/>
+                </svg>
+                <span class="wa-sb__label">WhatsApp</span>
+                <span class="wa-sb__badge" id="wa-badge">0</span>
+            </div>
+        </div>
+        <div class="wa-sb__chips">
+            <button class="wa-sb__chip active" data-filtro="todos">Todos</button>
+            <button class="wa-sb__chip" data-filtro="pendientes">Pendientes</button>
+        </div>
+        <!-- Lista de conversaciones — waPanel.js la llenará cuando esté listo -->
+        <div class="wa-sb__list" id="waList">
+            <div class="wa-sb__placeholder">Próximamente</div>
+        </div>
+    </aside>
+
+    <!-- Marco principal -->
+    <div id="pan-wrap">
+        <iframe id="pan-frame" src="./panaderias-home.html"></iframe>
+    </div>
+
+</div>
+
+<!-- Drawer: Tomar pedido -->
+<div id="pedido-bg"></div>
+<div id="pedido-drawer">
+    <iframe id="pedido-frame"></iframe>
 </div>
 
 <div id="nav-overlay" class="visible">
@@ -112,8 +228,8 @@
     })
 
     const PAGE_SRC = {
-        home:     './panaderias-home.html',
-        pedidos:  './panaderias.html',
+        home:      './panaderias-home.html',
+        pedidos:   './panaderias.html',
         historial: './historial.html',
     }
 
@@ -124,6 +240,34 @@
         _frame.src = src
     }
 
+    // ── Drawer "Tomar pedido" ─────────────────────────────────────────────────
+    let _pedidoDrawerReady = false
+
+    function openPedidoDrawer() {
+        const frame = document.getElementById('pedido-frame')
+        if (!_pedidoDrawerReady) {
+            _pedidoDrawerReady = true
+            frame.src = './pedidos.html?drawer=1'
+        }
+        document.getElementById('pedido-bg').classList.add('open')
+        document.getElementById('pedido-drawer').classList.add('open')
+    }
+
+    function closePedidoDrawer() {
+        document.getElementById('pedido-bg').classList.remove('open')
+        document.getElementById('pedido-drawer').classList.remove('open')
+    }
+
+    document.getElementById('pedido-bg').addEventListener('click', closePedidoDrawer)
+
+    // ── WA Sidebar — chips (placeholder hasta waPanel.js) ─────────────────────
+    document.querySelectorAll('.wa-sb__chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.wa-sb__chip').forEach(c => c.classList.remove('active'))
+            chip.classList.add('active')
+        })
+    })
+
     // ── postMessage desde iframes ─────────────────────────────────────────────
     window.addEventListener('message', (e) => {
         if (e.data?.type === 'logout') {
@@ -132,6 +276,12 @@
         }
         if (e.data?.type === 'nav-switch') {
             _navTo(e.data.page)
+        }
+        if (e.data?.type === 'tomar-pedido-open') {
+            openPedidoDrawer()
+        }
+        if (e.data?.type === 'tomar-pedido-close') {
+            closePedidoDrawer()
         }
         if (e.data?.type === 'nueva-version') {
             document.getElementById('banner-nueva-version').style.display = 'block'

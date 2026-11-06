@@ -56,7 +56,7 @@ async function init() {
         navActions: [
             { icon: 'search',  label: 'Barrios',        onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'barrios' }, '*') },
             { icon: 'leaf',    label: 'Historial',      onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
-            { icon: 'pencil',  label: 'Tomar pedido',   onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'tomar-pedido' }, '*') },
+            { icon: 'pencil',  label: 'Tomar pedido',   onClick: () => window.parent.postMessage({ type: 'tomar-pedido-open' }, '*') },
             { icon: 'users',   label: 'Clientes',       onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'clientes' }, '*') },
         ],
         onLogout: async () => {
