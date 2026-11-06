@@ -20,24 +20,30 @@ const SVG = {
  * @param {Function} opts.onLogout  - Callback al cerrar sesion
  * @returns {HTMLElement} El elemento header insertado
  */
-export function mountHeader({ navLabel = 'Inicio', navItems = [], onLogout } = {}) {
-    const hasDropdown = navItems.length > 0 || !!onLogout
+export function mountHeader({ navLabel = 'Inicio', navSections = [], navItems = [], onHome, onLogout } = {}) {
+    const hasDropdown = navSections.length > 0
+
+    const showNavControls = !!onHome || hasDropdown
 
     const hdr = document.createElement('header')
     hdr.className = 'ld-header'
+    const _sedeWrap = `<div class="ld-header__sede-wrap"><svg class="ld-header__sede-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span class="ld-header__sede" id="hdr-sede"></span></div>`
+
     hdr.innerHTML = `
         <img src="${_LOGO}" class="ld-header__logo" alt="Las Delicias">
         <div class="ld-header__nav-wrap">
-            <button class="ld-header__nav-btn" id="hdr-nav-btn">
-                ${SVG.home}
-                <span id="hdr-nav-label">${navLabel}</span>
-                ${hasDropdown ? SVG.chevron : ''}
-            </button>
-            ${hasDropdown ? '<div class="ld-header__nav-dropdown" id="hdr-nav-dropdown"></div>' : ''}
+            ${showNavControls ? `<div class="ld-header__nav-controls">
+                ${onHome ? `<button class="ld-header__nav-home" id="hdr-home-btn" title="Inicio">${SVG.home}</button>` : ''}
+                <button class="ld-header__nav-btn" id="hdr-nav-btn">
+                    <span id="hdr-nav-label">${navLabel}</span>
+                    ${hasDropdown ? SVG.chevron : ''}
+                </button>
+                ${hasDropdown ? '<div class="ld-header__nav-dropdown" id="hdr-nav-dropdown"></div>' : ''}
+            </div>` : _sedeWrap}
         </div>
         <div class="ld-header__spacer"></div>
         <div class="ld-header__actions">
-            <button class="ld-header__icon-btn" id="hdr-pin-btn" title="">${SVG.pin}</button>
+            ${showNavControls ? _sedeWrap : ''}
             <button class="ld-header__icon-btn" title="Notificaciones">${SVG.bell}</button>
             <button class="ld-header__icon-btn" title="Contactos">${SVG.users}</button>
             <div class="ld-header__avatar" id="hdr-avatar">?</div>
@@ -46,31 +52,25 @@ export function mountHeader({ navLabel = 'Inicio', navItems = [], onLogout } = {
 
     document.body.prepend(hdr)
 
+    // Botón casa
+    if (onHome) {
+        hdr.querySelector('#hdr-home-btn').addEventListener('click', onHome)
+    }
+
     // Construir dropdown
     if (hasDropdown) {
         const btn = hdr.querySelector('#hdr-nav-btn')
         const dd  = hdr.querySelector('#hdr-nav-dropdown')
 
-        navItems.forEach(it => {
+        // Solo secciones / marcas — Historial y Cerrar sesion van en otro lugar
+        navSections.forEach(it => {
             const b = document.createElement('button')
             b.className = 'ld-header__nav-item' + (it.active ? ' active' : '')
             b.textContent = it.label
-            if (it.href) b.addEventListener('click', () => { window.location.href = it.href })
+            if (it.description) b.dataset.tooltip = it.description
+            if (it.onClick)     b.addEventListener('click', it.onClick)
             dd.appendChild(b)
         })
-
-        if (onLogout) {
-            if (navItems.length) {
-                const sep = document.createElement('div')
-                sep.className = 'ld-header__nav-sep'
-                dd.appendChild(sep)
-            }
-            const lb = document.createElement('button')
-            lb.className = 'ld-header__nav-item ld-header__nav-item--logout'
-            lb.textContent = 'Cerrar sesion'
-            lb.addEventListener('click', onLogout)
-            dd.appendChild(lb)
-        }
 
         btn.addEventListener('click', e => {
             e.stopPropagation()
@@ -92,6 +92,6 @@ export function setHeaderUser({ username = '', sede = '' } = {}) {
         av.textContent = (username[0] || '?').toUpperCase()
         av.title = username + (sede ? ` · ${sede}` : '')
     }
-    const pin = document.getElementById('hdr-pin-btn')
-    if (pin && sede) pin.title = sede
+    const sedeEl = document.getElementById('hdr-sede')
+    if (sedeEl && sede) sedeEl.textContent = sede
 }

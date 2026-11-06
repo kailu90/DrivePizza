@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Las Delicias — Panaderías</title>
+    <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="./Estilos/theme.css">
+    <link rel="prefetch" href="./panaderias-home.html">
+    <link rel="prefetch" href="./panaderias.html">
+    <link rel="prefetch" href="./historial.html">
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+
+        #pan-wrap {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+        }
+        #pan-frame { width: 100%; height: 100%; border: none; display: block; }
+
+        #banner-nueva-version {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0;
+            background: #f5c518; color: #3a2a00;
+            padding: 10px 20px; text-align: center;
+            font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600;
+            z-index: 99999; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        #banner-nueva-version button {
+            margin-left: 16px; background: #3a2a00; color: #f5c518;
+            border: none; border-radius: 6px;
+            padding: 4px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        #banner-nueva-version button:hover { background: #1a1200; }
+
+        #nav-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: var(--ld-beige, #F6EBE0);
+            z-index: 8000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #nav-overlay.visible { display: flex; }
+        .nav-logo { width: 220px; animation: nav-logo-in .5s .1s ease both; }
+        @keyframes nav-logo-in { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+    </style>
+</head>
+<body>
+
+<div id="banner-nueva-version">
+    Hay una nueva version disponible.
+    <button onclick="location.reload()">Recargar ahora</button>
+</div>
+
+<div id="pan-wrap">
+    <iframe id="pan-frame" src="./panaderias-home.html"></iframe>
+</div>
+
+<div id="nav-overlay" class="visible">
+    <img src="./Imagenes/Logo.png" class="nav-logo" alt="Las Delicias">
+</div>
+
+<script type="module">
+    import { supabase } from './supabaseConfig.js'
+
+    // ── Overlay ───────────────────────────────────────────────────────────────
+    const _overlay = document.getElementById('nav-overlay')
+    const MIN_OVERLAY_MS = 300
+    let _overlayShownAt  = performance.now()
+    let _overlayFallback = null
+    let _overlayHideTimer = null
+
+    function showOverlay() {
+        clearTimeout(_overlayHideTimer)
+        _overlayHideTimer = null
+        _overlayShownAt = performance.now()
+        _overlay.classList.add('visible')
+        clearTimeout(_overlayFallback)
+        _overlayFallback = setTimeout(() => hideOverlay(), 3000)
+    }
+
+    function hideOverlay() {
+        clearTimeout(_overlayFallback)
+        clearTimeout(_overlayHideTimer)
+        _overlayFallback = null
+        const elapsed = performance.now() - _overlayShownAt
+        const wait = Math.max(0, MIN_OVERLAY_MS - elapsed)
+        _overlayHideTimer = setTimeout(() => {
+            _overlayHideTimer = null
+            _overlay.classList.remove('visible')
+        }, wait)
+    }
+    _overlayFallback = setTimeout(() => hideOverlay(), 3000)
+
+    // ── Frame nav ─────────────────────────────────────────────────────────────
+    const _frame = document.getElementById('pan-frame')
+
+    function _listenForFrameNav(frame) {
+        try {
+            frame.contentWindow?.addEventListener('pagehide', () => {
+                showOverlay()
+            }, { once: true })
+        } catch(e) {}
+    }
+
+    _frame.addEventListener('load', () => {
+        hideOverlay()
+        _listenForFrameNav(_frame)
+    })
+
+    const PAGE_SRC = {
+        home:     './panaderias-home.html',
+        pedidos:  './panaderias.html',
+        historial: './historial.html',
+    }
+
+    function _navTo(page) {
+        const src = PAGE_SRC[page]
+        if (!src) return
+        showOverlay()
+        _frame.src = src
+    }
+
+    // ── postMessage desde iframes ─────────────────────────────────────────────
+    window.addEventListener('message', (e) => {
+        if (e.data?.type === 'logout') {
+            window.location.href = './index.html'
+            return
+        }
+        if (e.data?.type === 'nav-switch') {
+            _navTo(e.data.page)
+        }
+        if (e.data?.type === 'nueva-version') {
+            document.getElementById('banner-nueva-version').style.display = 'block'
+        }
+    })
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    ;(async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { window.location.href = './index.html'; return }
+
+        try {
+            const { data, error } = await supabase.from('usuarios')
+                .select('rol, active').eq('id', user.id).single()
+            if (error || !data || !data.active || data.rol !== 'panaderias') {
+                window.location.href = './index.html'
+                return
+            }
+        } catch (err) {
+            console.error('[pan-shell]', err)
+            window.location.href = './index.html'
+        } finally {
+            document.body.classList.add('loaded')
+        }
+    })()
+</script>
+
+</body>
+</html>

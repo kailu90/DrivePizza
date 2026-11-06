@@ -39,7 +39,7 @@ async function init() {
 
     if (!perfil || !perfil.active) {
         await supabase.auth.signOut()
-        window.location.href = './index.html'
+        window.top.location.href = './index.html'
         return
     }
 
@@ -47,13 +47,18 @@ async function init() {
 
     mountHeader({
         navLabel: 'Panaderias',
+        onHome: () => window.parent.postMessage({ type: 'nav-switch', page: 'home' }, '*'),
+        navSections: [
+            { label: 'Panaderias', active: true, description: 'Panaderia y pasteleria' },
+            { label: 'Ghema',                    description: 'Proximamente' },
+            { label: 'Figuettos',                description: 'Proximamente' },
+        ],
         navItems: [
-            { label: 'Pedidos',  href: './pedidos.html'  },
-            { label: 'Historial', href: './historial.html' },
+            { label: 'Historial', onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
         ],
         onLogout: async () => {
             await supabase.auth.signOut()
-            window.location.href = './index.html'
+            window.parent.postMessage({ type: 'logout' }, '*')
         },
     })
     setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })

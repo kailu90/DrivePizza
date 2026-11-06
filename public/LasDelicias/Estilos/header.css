@@ -9,7 +9,7 @@
     background: var(--ld-marron, #75473B);
     color: var(--ld-beige, #F6EBE0);
     padding: 0 16px;
-    height: 52px;
+    height: 64px;
     flex-shrink: 0;
     position: relative;
     z-index: 100;
@@ -17,15 +17,74 @@
 }
 
 .ld-header__logo {
-    height: 30px;
+    height: 36px;
     flex-shrink: 0;
     margin-right: 20px;
 }
 
 /* ── NAV DROPDOWN ──────────────────────────────────────── */
 .ld-header__nav-wrap {
-    position: relative;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
 }
+.ld-header__nav-wrap > * { pointer-events: auto; }
+
+.ld-header__nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ld-header__sede-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ld-header__sede-ico {
+    width: 20px;
+    height: 20px;
+    color: var(--ld-beige, #F6EBE0);
+    flex-shrink: 0;
+}
+
+.ld-header__sede {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--ld-beige, #F6EBE0);
+    letter-spacing: 0.02em;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+/* Sede en el lado derecho (dentro de actions) */
+.ld-header__actions .ld-header__sede-wrap {
+    margin-right: 10px;
+}
+
+/* ── BOTÓN CASA ────────────────────────────────────────── */
+.ld-header__nav-home {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: var(--ld-beige, #F6EBE0);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.ld-header__nav-home:hover { background: rgba(255,255,255,0.22); }
+.ld-header__nav-home svg   { width: 18px; height: 18px; }
 
 .ld-header__nav-btn {
     display: flex;
@@ -91,6 +150,31 @@
 .ld-header__nav-item:hover {
     background: #fdf4ee;
 }
+
+/* ── TOOLTIP en items de sección ───────────────────────── */
+.ld-header__nav-item[data-tooltip] { position: relative; }
+
+.ld-header__nav-item[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(40,20,10,0.88);
+    color: var(--ld-beige, #F6EBE0);
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'Montserrat', sans-serif;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s 0.08s;
+    z-index: 300;
+}
+
+.ld-header__nav-item[data-tooltip]:hover::after { opacity: 1; }
 
 .ld-header__nav-item.active {
     color: var(--ld-marron, #75473B);
