@@ -26,49 +26,100 @@
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            background: #fff;
-            border-right: 1px solid #e8d8cc;
+            background: var(--ld-beige, #F6EBE0);
+            border-right: 1px solid rgba(117,71,59,0.15);
             overflow: hidden;
             font-family: 'Montserrat', sans-serif;
         }
+
+        /* Header: fondo marrón, esquina inferior derecha redondeada */
         .wa-sb__hdr {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 12px; height: 50px;
-            border-bottom: 1px solid #f0e4d8; flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 0 0 14px;
+            height: 60px;
+            flex-shrink: 0;
+            background: var(--ld-marron, #75473B);
+            border-radius: 0 0 24px 0;
         }
         .wa-sb__title {
-            display: flex; align-items: center; gap: 7px;
+            display: flex; align-items: center; gap: 8px;
+            flex: 1;
         }
-        .wa-sb__logo { width: 20px; height: 20px; flex-shrink: 0; }
-        .wa-sb__label { font-size: 1.4rem; font-weight: 700; color: #3a2010; }
+        .wa-sb__logo { width: 22px; height: 22px; flex-shrink: 0; }
+        .wa-sb__label {
+            font-size: 1.5rem; font-weight: 700;
+            color: var(--ld-beige, #F6EBE0);
+            letter-spacing: 0.03em;
+        }
+
+        /* Botón ícono WA — igual que DrivePizza panel-header__icon */
+        .wa-sb__icon-btn {
+            width: 60px; height: 60px;
+            border-radius: 0 0 0 0;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            background: var(--ld-marron, #75473B);
+            color: var(--ld-beige, #F6EBE0);
+            border: none; cursor: default;
+        }
+        .wa-sb__icon-btn svg { width: 24px; height: 24px; }
+
+        /* Badge de no leídos */
         .wa-sb__badge {
+            position: absolute; top: 8px; right: 8px;
             background: #ef4444; color: #fff;
             font-size: 1rem; font-weight: 700;
-            border-radius: 10px; min-width: 18px; height: 18px;
-            padding: 0 4px; display: none;
+            border-radius: 8px; min-width: 16px; height: 16px;
+            padding: 0 3px; display: none;
             align-items: center; justify-content: center;
+            line-height: 1; font-family: sans-serif;
         }
         .wa-sb__badge.visible { display: flex; }
+
+        /* Chips de filtro */
         .wa-sb__chips {
-            display: flex; gap: 6px; padding: 8px 10px;
-            border-bottom: 1px solid #f0e4d8; flex-shrink: 0;
+            display: flex; gap: 6px; padding: 10px 10px 8px;
+            border-bottom: 1px solid rgba(117,71,59,0.12);
+            flex-shrink: 0;
         }
         .wa-sb__chip {
-            flex: 1; padding: 4px 6px; border-radius: 20px;
-            border: 1.5px solid #e0cfc4; background: none;
+            flex: 1; padding: 5px 6px; border-radius: 20px;
+            border: 1.5px solid rgba(117,71,59,0.3);
+            background: none;
             font-size: 1.1rem; font-family: 'Montserrat', sans-serif;
-            color: #7a5540; cursor: pointer; transition: all 0.15s;
+            color: var(--ld-marron, #75473B);
+            cursor: pointer; transition: all 0.15s;
+            font-weight: 500;
+        }
+        .wa-sb__chip:hover {
+            background: rgba(117,71,59,0.08);
         }
         .wa-sb__chip.active {
             background: var(--ld-marron, #75473B);
             border-color: var(--ld-marron, #75473B);
-            color: #fff;
+            color: var(--ld-beige, #F6EBE0);
+            font-weight: 600;
         }
+
+        /* Lista de conversaciones */
         .wa-sb__list { flex: 1; overflow-y: auto; }
+        .wa-sb__list::-webkit-scrollbar { width: 4px; }
+        .wa-sb__list::-webkit-scrollbar-track { background: transparent; }
+        .wa-sb__list::-webkit-scrollbar-thumb { background: rgba(117,71,59,0.2); border-radius: 4px; }
+
+        /* Estado vacío / placeholder */
         .wa-sb__placeholder {
-            display: flex; align-items: center; justify-content: center;
-            height: 120px; color: #b8a090; font-size: 1.2rem;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 8px;
+            height: 140px;
+            color: rgba(117,71,59,0.45);
+            font-size: 1.2rem; font-weight: 500;
         }
+        .wa-sb__placeholder svg { width: 32px; height: 32px; opacity: 0.35; }
 
         /* ── Marco principal (kanban, historial, etc.) ── */
         #pan-wrap {
@@ -145,20 +196,34 @@
         <div class="wa-sb__hdr">
             <div class="wa-sb__title">
                 <svg class="wa-sb__logo" viewBox="0 0 24 24">
-                    <path fill="#25D366" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9.69 9.69 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                    <path fill="#25D366" d="M12.004 0C5.374 0 0 5.373 0 12c0 2.113.546 4.1 1.5 5.829L0 24l6.336-1.482A11.933 11.933 0 0012.004 24C18.63 24 24 18.627 24 12S18.63 0 12.004 0zm.004 21.818a9.788 9.788 0 01-5.044-1.4l-.361-.214-3.761.879.919-3.655-.235-.375A9.818 9.818 0 012.182 12C2.182 6.57 6.572 2.182 12.008 2.182S21.818 6.57 21.818 12s-4.39 9.818-9.81 9.818z"/>
+                    <path fill="rgba(246,235,224,0.7)" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9.69 9.69 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path fill="rgba(246,235,224,0.7)" d="M12.004 0C5.374 0 0 5.373 0 12c0 2.113.546 4.1 1.5 5.829L0 24l6.336-1.482A11.933 11.933 0 0012.004 24C18.63 24 24 18.627 24 12S18.63 0 12.004 0zm.004 21.818a9.788 9.788 0 01-5.044-1.4l-.361-.214-3.761.879.919-3.655-.235-.375A9.818 9.818 0 012.182 12C2.182 6.57 6.572 2.182 12.008 2.182S21.818 6.57 21.818 12s-4.39 9.818-9.81 9.818z"/>
                 </svg>
                 <span class="wa-sb__label">WhatsApp</span>
-                <span class="wa-sb__badge" id="wa-badge">0</span>
+            </div>
+            <!-- Ícono WA + badge de no leídos (esquina derecha del header) -->
+            <div class="wa-sb__icon-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                </svg>
+                <span class="wa-sb__badge" id="wa-badge"></span>
             </div>
         </div>
+
         <div class="wa-sb__chips">
             <button class="wa-sb__chip active" data-filtro="todos">Todos</button>
             <button class="wa-sb__chip" data-filtro="pendientes">Pendientes</button>
         </div>
+
         <!-- Lista de conversaciones — waPanel.js la llenará cuando esté listo -->
         <div class="wa-sb__list" id="waList">
-            <div class="wa-sb__placeholder">Próximamente</div>
+            <div class="wa-sb__placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Sin conversaciones</span>
+            </div>
         </div>
     </aside>
 
