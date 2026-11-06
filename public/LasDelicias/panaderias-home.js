@@ -18,14 +18,16 @@ async function init() {
         return
     }
 
-    mountHeader({
-        navLabel: 'Panaderias',
-        onLogout: async () => {
-            await supabase.auth.signOut()
-            window.parent.postMessage({ type: 'logout' }, '*')
-        },
-    })
-    setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    if (window === window.top) {
+        mountHeader({
+            navLabel: 'Panaderias',
+            onLogout: async () => {
+                await supabase.auth.signOut()
+                window.parent.postMessage({ type: 'logout' }, '*')
+            },
+        })
+        setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    }
 
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')

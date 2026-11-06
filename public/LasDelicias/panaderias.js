@@ -45,26 +45,28 @@ async function init() {
 
     _perfil = perfil
 
-    mountHeader({
-        navLabel: 'Panaderias',
-        onHome: () => window.parent.postMessage({ type: 'nav-switch', page: 'home' }, '*'),
-        navSections: [
-            { label: 'Panaderias', active: true, description: 'Panaderia y pasteleria' },
-            { label: 'Ghema',                    description: 'Proximamente' },
-            { label: 'Figuettos',                description: 'Proximamente' },
-        ],
-        navActions: [
-            { icon: 'search',  label: 'Barrios',        onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'barrios' }, '*') },
-            { icon: 'leaf',    label: 'Historial',      onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
-            { icon: 'pencil',  label: 'Tomar pedido',   onClick: () => window.parent.postMessage({ type: 'tomar-pedido-open' }, '*') },
-            { icon: 'users',   label: 'Clientes',       onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'clientes' }, '*') },
-        ],
-        onLogout: async () => {
-            await supabase.auth.signOut()
-            window.parent.postMessage({ type: 'logout' }, '*')
-        },
-    })
-    setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    if (window === window.top) {
+        mountHeader({
+            navLabel: 'Panaderias',
+            onHome: () => window.parent.postMessage({ type: 'nav-switch', page: 'home' }, '*'),
+            navSections: [
+                { label: 'Panaderias', active: true, description: 'Panaderia y pasteleria' },
+                { label: 'Ghema',                    description: 'Proximamente' },
+                { label: 'Figuettos',                description: 'Proximamente' },
+            ],
+            navActions: [
+                { icon: 'search',  label: 'Barrios',        onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'barrios' }, '*') },
+                { icon: 'leaf',    label: 'Historial',      onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
+                { icon: 'pencil',  label: 'Tomar pedido',   onClick: () => window.parent.postMessage({ type: 'tomar-pedido-open' }, '*') },
+                { icon: 'users',   label: 'Clientes',       onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'clientes' }, '*') },
+            ],
+            onLogout: async () => {
+                await supabase.auth.signOut()
+                window.parent.postMessage({ type: 'logout' }, '*')
+            },
+        })
+        setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
+    }
 
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')

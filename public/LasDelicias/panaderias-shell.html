@@ -5,70 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Las Delicias — Panaderías</title>
     <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
-    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./Estilos/header.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
     <link rel="prefetch" href="./panaderias-home.html">
     <link rel="prefetch" href="./panaderias.html">
     <link rel="prefetch" href="./historial.html">
     <style>
+        html { font-size: 62.5%; }   /* 1rem = 10px */
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
 
-        /* ── Layout principal: WA sidebar + contenido ── */
-        #pan-layout {
+        /* ── WA Panel collapsible (strip 44px ↔ expanded 320px ↔ chat 620px) ── */
+        #wa-panel {
             position: fixed;
-            inset: 0;
-            display: flex;
+            top: 64px; left: 0; bottom: 0;
+            width: 320px;
+            display: flex; flex-direction: row;
+            transform: translateX(-276px);   /* shows 44px strip */
+            transition: transform 260ms ease, width 200ms ease;
+            z-index: 1200;
         }
+        #wa-panel.expanded          { transform: translateX(0); }
+        #wa-panel.expanded.has-chat { width: 620px; }
 
-        /* ── WA Sidebar (siempre visible, izquierda) ── */
-        #wa-sidebar {
-            width: 260px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
+        /* Left column: 320px, always present */
+        .wa-panel__left {
+            width: 320px; flex-shrink: 0;
+            display: flex; flex-direction: column;
             background: var(--ld-beige, #F6EBE0);
             border-right: 1px solid rgba(117,71,59,0.15);
             overflow: hidden;
             font-family: 'Montserrat', sans-serif;
         }
 
-        /* Header: fondo marrón, esquina inferior derecha redondeada */
-        .wa-sb__hdr {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 0 0 14px;
-            height: 60px;
-            flex-shrink: 0;
+        /* Panel header (brown bar) */
+        .wa-panel__hdr {
+            display: flex; align-items: center;
+            height: 44px; flex-shrink: 0;
             background: var(--ld-marron, #75473B);
-            border-radius: 0 0 24px 0;
-        }
-        .wa-sb__title {
-            display: flex; align-items: center; gap: 8px;
-            flex: 1;
-        }
-        .wa-sb__logo { width: 22px; height: 22px; flex-shrink: 0; }
-        .wa-sb__label {
-            font-size: 1.5rem; font-weight: 700;
-            color: var(--ld-beige, #F6EBE0);
-            letter-spacing: 0.03em;
         }
 
-        /* Botón ícono WA — igual que DrivePizza panel-header__icon */
-        .wa-sb__icon-btn {
-            width: 60px; height: 60px;
-            border-radius: 0 0 0 0;
-            flex-shrink: 0;
+        /* Strip toggle button */
+        #wa-strip {
+            width: 44px; height: 44px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
-            position: relative;
             background: var(--ld-marron, #75473B);
+            border: none; cursor: pointer;
             color: var(--ld-beige, #F6EBE0);
-            border: none; cursor: default;
+            position: relative;
         }
-        .wa-sb__icon-btn svg { width: 24px; height: 24px; }
+        #wa-strip svg { width: 20px; height: 20px; }
 
         /* Badge de no leídos */
-        .wa-sb__badge {
+        #wa-badge {
             position: absolute; top: 8px; right: 8px;
             background: #ef4444; color: #fff;
             font-size: 1rem; font-weight: 700;
@@ -77,9 +68,29 @@
             align-items: center; justify-content: center;
             line-height: 1; font-family: sans-serif;
         }
-        .wa-sb__badge.visible { display: flex; }
+        #wa-badge.visible { display: flex; }
 
-        /* Chips de filtro */
+        /* Title (only visible when expanded) */
+        .wa-panel__title {
+            display: flex; align-items: center;
+            flex: 1; padding: 0 6px 0 14px; overflow: hidden;
+        }
+        .wa-panel__label {
+            font-size: 1.3rem; font-weight: 700;
+            color: var(--ld-beige, #F6EBE0);
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        /* Body hidden when collapsed */
+        #wa-panel:not(.expanded) #wa-body { display: none; }
+
+        #wa-body {
+            flex: 1; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* Chips */
         .wa-sb__chips {
             display: flex; gap: 6px; padding: 10px 10px 8px;
             border-bottom: 1px solid rgba(117,71,59,0.12);
@@ -94,9 +105,7 @@
             cursor: pointer; transition: all 0.15s;
             font-weight: 500;
         }
-        .wa-sb__chip:hover {
-            background: rgba(117,71,59,0.08);
-        }
+        .wa-sb__chip:hover { background: rgba(117,71,59,0.08); }
         .wa-sb__chip.active {
             background: var(--ld-marron, #75473B);
             border-color: var(--ld-marron, #75473B);
@@ -104,41 +113,37 @@
             font-weight: 600;
         }
 
-        /* Lista de conversaciones */
+        /* Lista */
         .wa-sb__list { flex: 1; overflow-y: auto; }
         .wa-sb__list::-webkit-scrollbar { width: 4px; }
         .wa-sb__list::-webkit-scrollbar-track { background: transparent; }
         .wa-sb__list::-webkit-scrollbar-thumb { background: rgba(117,71,59,0.2); border-radius: 4px; }
 
-        /* Estado vacío / placeholder */
-        .wa-sb__placeholder {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 8px;
-            height: 140px;
-            color: rgba(117,71,59,0.45);
-            font-size: 1.2rem; font-weight: 500;
-        }
-        .wa-sb__placeholder svg { width: 32px; height: 32px; opacity: 0.35; }
-
-        /* ── Marco principal (kanban, historial, etc.) ── */
+        /* ── Content frame ── */
         #pan-wrap {
-            flex: 1; min-width: 0; position: relative; overflow: hidden;
+            position: fixed;
+            top: 64px; left: 44px; right: 0; bottom: 0;
+            overflow: hidden;
+            transition: left 260ms ease;
         }
+        #pan-wrap.wa-expanded  { left: 320px; }
+        #pan-wrap.has-chat     { left: 620px; }
+        #pan-wrap.wa-panel-off { left: 0 !important; }
+
         #pan-frame {
             position: absolute; inset: 0;
             width: 100%; height: 100%; border: none; display: block;
         }
 
-        /* ── Drawer "Tomar pedido" (desliza desde la derecha) ── */
+        /* ── Drawer "Tomar pedido" ── */
         #pedido-bg {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.3); z-index: 7000;
         }
         #pedido-bg.open { display: block; }
         #pedido-drawer {
-            position: fixed; top: 0; right: 0; bottom: 0;
-            width: calc(100% - 260px);
+            position: fixed; top: 64px; right: 0; bottom: 0;
+            width: calc(100% - 44px);
             transform: translateX(100%);
             transition: transform 300ms ease;
             z-index: 7001;
@@ -149,10 +154,12 @@
         #pedido-frame { flex: 1; border: none; min-height: 0; display: block; }
 
         @media (max-width: 700px) {
-            #wa-sidebar { display: none; }
-            #pedido-drawer { width: 100%; }
+            #wa-panel  { display: none; }
+            #pan-wrap  { left: 0 !important; }
+            #pedido-drawer { width: 100%; top: 0; }
         }
 
+        /* ── Banner nueva versión ── */
         #banner-nueva-version {
             display: none;
             position: fixed; top: 0; left: 0; right: 0;
@@ -168,6 +175,7 @@
         }
         #banner-nueva-version button:hover { background: #1a1200; }
 
+        /* ── Nav overlay ── */
         #nav-overlay {
             display: none;
             position: fixed; inset: 0;
@@ -189,49 +197,37 @@
     <button onclick="location.reload()">Recargar ahora</button>
 </div>
 
-<div id="pan-layout">
-
-    <!-- WA Sidebar: conversaciones WhatsApp -->
-    <aside id="wa-sidebar">
-        <div class="wa-sb__hdr">
-            <div class="wa-sb__title">
-                <svg class="wa-sb__logo" viewBox="0 0 24 24">
-                    <path fill="rgba(246,235,224,0.7)" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9.69 9.69 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                    <path fill="rgba(246,235,224,0.7)" d="M12.004 0C5.374 0 0 5.373 0 12c0 2.113.546 4.1 1.5 5.829L0 24l6.336-1.482A11.933 11.933 0 0012.004 24C18.63 24 24 18.627 24 12S18.63 0 12.004 0zm.004 21.818a9.788 9.788 0 01-5.044-1.4l-.361-.214-3.761.879.919-3.655-.235-.375A9.818 9.818 0 012.182 12C2.182 6.57 6.572 2.182 12.008 2.182S21.818 6.57 21.818 12s-4.39 9.818-9.81 9.818z"/>
-                </svg>
-                <span class="wa-sb__label">WhatsApp</span>
+<!-- WA Panel collapsible -->
+<div id="wa-panel">
+    <div class="wa-panel__left">
+        <div class="wa-panel__hdr">
+                <!-- Title (visible when expanded) -->
+            <div class="wa-panel__title">
+                <span class="wa-panel__label">WhatsApp</span>
             </div>
-            <!-- Ícono WA + badge de no leídos (esquina derecha del header) -->
-            <div class="wa-sb__icon-btn">
+            <!-- Toggle: siempre visible en la esquina derecha (60px) -->
+            <button id="wa-strip" title="WhatsApp">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.531 5.845L.057 23.448a.75.75 0 0 0 .92.921l5.684-1.481A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.524-5.208-1.433l-.374-.222-3.876 1.009 1.028-3.758-.244-.389A9.956 9.956 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                 </svg>
-                <span class="wa-sb__badge" id="wa-badge"></span>
+                <span id="wa-badge"></span>
+            </button>
+        </div>
+        <div id="wa-body">
+            <div class="wa-sb__chips">
+                <button class="wa-sb__chip active" data-filtro="todos">Todos</button>
+                <button class="wa-sb__chip" data-filtro="pendientes">Pendientes</button>
             </div>
+            <div class="wa-sb__list" id="waList"></div>
         </div>
-
-        <div class="wa-sb__chips">
-            <button class="wa-sb__chip active" data-filtro="todos">Todos</button>
-            <button class="wa-sb__chip" data-filtro="pendientes">Pendientes</button>
-        </div>
-
-        <!-- Lista de conversaciones — waPanel.js la llenará cuando esté listo -->
-        <div class="wa-sb__list" id="waList">
-            <div class="wa-sb__placeholder">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <span>Sin conversaciones</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Marco principal -->
-    <div id="pan-wrap">
-        <iframe id="pan-frame" src="./panaderias-home.html"></iframe>
     </div>
+    <!-- #ldwap-chat-col injected here by waPanel.js -->
+</div>
 
+<!-- Content frame -->
+<div id="pan-wrap">
+    <iframe id="pan-frame" src="./panaderias-home.html"></iframe>
 </div>
 
 <!-- Drawer: Tomar pedido -->
@@ -245,13 +241,14 @@
 </div>
 
 <script type="module">
-    import { supabase } from './supabaseConfig.js'
+    import { supabase }                          from './supabaseConfig.js'
+    import { mountHeader, setHeaderUser, setHeaderMode } from './Shared/ldHeader.js'
 
     // ── Overlay ───────────────────────────────────────────────────────────────
     const _overlay = document.getElementById('nav-overlay')
     const MIN_OVERLAY_MS = 300
-    let _overlayShownAt  = performance.now()
-    let _overlayFallback = null
+    let _overlayShownAt   = performance.now()
+    let _overlayFallback  = null
     let _overlayHideTimer = null
 
     function showOverlay() {
@@ -277,13 +274,13 @@
     _overlayFallback = setTimeout(() => hideOverlay(), 3000)
 
     // ── Frame nav ─────────────────────────────────────────────────────────────
-    const _frame = document.getElementById('pan-frame')
+    const _frame  = document.getElementById('pan-frame')
+    const _waPanel = document.getElementById('wa-panel')
+    const _panWrap = document.getElementById('pan-wrap')
 
     function _listenForFrameNav(frame) {
         try {
-            frame.contentWindow?.addEventListener('pagehide', () => {
-                showOverlay()
-            }, { once: true })
+            frame.contentWindow?.addEventListener('pagehide', () => showOverlay(), { once: true })
         } catch(e) {}
     }
 
@@ -296,14 +293,35 @@
         home:      './panaderias-home.html',
         pedidos:   './panaderias.html',
         historial: './historial.html',
+        barrios:   './barrios.html',
+        clientes:  './clientes.html',
     }
 
     function _navTo(page) {
         const src = PAGE_SRC[page]
         if (!src) return
+        setHeaderMode(page === 'home' ? 'home' : 'full')
         showOverlay()
         _frame.src = src
     }
+
+    // ── WA Panel: show/hide y toggle ─────────────────────────────────────────
+    function _setWaVisible(show) {
+        if (!show) {
+            _waPanel.classList.remove('expanded')
+            _waPanel.style.display = 'none'
+            _panWrap.classList.add('wa-panel-off')
+            _panWrap.classList.remove('wa-expanded', 'has-chat')
+        } else {
+            _waPanel.style.display = ''
+            _panWrap.classList.remove('wa-panel-off')
+        }
+    }
+
+    document.getElementById('wa-strip').addEventListener('click', () => {
+        const expanded = _waPanel.classList.toggle('expanded')
+        _panWrap.classList.toggle('wa-expanded', expanded)
+    })
 
     // ── Drawer "Tomar pedido" ─────────────────────────────────────────────────
     let _pedidoDrawerReady = false
@@ -331,15 +349,10 @@
             window.location.href = './index.html'
             return
         }
-        if (e.data?.type === 'nav-switch') {
-            _navTo(e.data.page)
-        }
-        if (e.data?.type === 'tomar-pedido-open') {
-            openPedidoDrawer()
-        }
-        if (e.data?.type === 'tomar-pedido-close') {
-            closePedidoDrawer()
-        }
+        if (e.data?.type === 'nav-switch')        _navTo(e.data.page)
+        if (e.data?.type === 'tomar-pedido-open')  openPedidoDrawer()
+        if (e.data?.type === 'tomar-pedido-close') closePedidoDrawer()
+        if (e.data?.type === 'wa-visible')         _setWaVisible(e.data.show !== false)
         if (e.data?.type === 'nueva-version') {
             document.getElementById('banner-nueva-version').style.display = 'block'
         }
@@ -352,11 +365,33 @@
 
         try {
             const { data, error } = await supabase.from('usuarios')
-                .select('rol, active, username').eq('id', user.id).single()
+                .select('rol, active, username, sede').eq('id', user.id).single()
             if (error || !data || !data.active || data.rol !== 'panaderias') {
                 window.location.href = './index.html'
                 return
             }
+
+            mountHeader({
+                navLabel: 'Panaderías',
+                navSections: [
+                    { label: 'Panaderías', active: true, description: 'Panadería y pastelería' },
+                    { label: 'Ghema',                    description: 'Próximamente' },
+                    { label: 'Figuettos',                description: 'Próximamente' },
+                ],
+                navActions: [
+                    { icon: 'search', label: 'Barrios',      onClick: () => _navTo('barrios')   },
+                    { icon: 'leaf',   label: 'Historial',    onClick: () => _navTo('historial') },
+                    { icon: 'pencil', label: 'Tomar pedido', onClick: openPedidoDrawer           },
+                    { icon: 'users',  label: 'Clientes',     onClick: () => _navTo('clientes')  },
+                ],
+                onHome: () => _navTo('home'),
+                onLogout: async () => {
+                    await supabase.auth.signOut()
+                    window.location.href = './index.html'
+                },
+            })
+            setHeaderUser({ username: data.username || '', sede: data.sede || '' })
+            setHeaderMode('home')   // página inicial es el dashboard
 
             // Inicializar panel WA omnicanal
             const { initWaPanel } = await import('./waPanel.js')

@@ -111,3 +111,36 @@ export function setHeaderUser({ username = '', sede = '' } = {}) {
     const sedeEl = document.getElementById('hdr-sede')
     if (sedeEl && sede) sedeEl.textContent = sede
 }
+
+/**
+ * Cambia el modo de navegación del header.
+ * @param {'home'|'full'} mode
+ *   'home' — oculta botón inicio, menú y acciones; solo muestra sede + logout
+ *   'full' — muestra todo
+ */
+export function setHeaderMode(mode) {
+    const navControls = document.querySelector('.ld-header__nav-controls')
+    const actionBtns  = document.querySelectorAll('.ld-header__icon-btn')
+    const sep         = document.querySelector('.ld-header__actions-sep')
+    const navWrap     = document.querySelector('.ld-header__nav-wrap')
+    const actions     = document.querySelector('.ld-header__actions')
+
+    if (mode === 'home') {
+        if (navControls) navControls.style.display = 'none'
+        actionBtns.forEach(b => { b.style.display = 'none' })
+        if (sep) sep.style.display = 'none'
+        // Mover sede-wrap al nav-wrap (centrado absolutamente)
+        const sede = actions?.querySelector('.ld-header__sede-wrap')
+        if (sede && navWrap) navWrap.appendChild(sede)
+    } else {
+        if (navControls) navControls.style.display = ''
+        actionBtns.forEach(b => { b.style.display = '' })
+        if (sep) sep.style.display = ''
+        // Devolver sede-wrap a actions (antes del logout)
+        const sede   = navWrap?.querySelector('.ld-header__sede-wrap')
+        const logout = actions?.querySelector('#hdr-logout-btn')
+        if (sede && actions) {
+            logout ? actions.insertBefore(sede, logout) : actions.appendChild(sede)
+        }
+    }
+}

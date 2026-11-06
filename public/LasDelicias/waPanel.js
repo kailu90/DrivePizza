@@ -4,8 +4,8 @@
  * Uso: import { initWaPanel } from './waPanel.js'
  *      initWaPanel({ asesor: 'nombre', authToken: '...' })
  *
- * Monta la lista en #waList (ya existe en panaderias-shell.html).
- * Inyecta #ldwap-chat-col como sibling de #wa-sidebar en #pan-layout.
+ * Monta la lista en #waList (dentro de #wa-panel → .wa-panel__left → #wa-body).
+ * Inyecta #ldwap-chat-col como segundo hijo flex de #wa-panel.
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js'
 
@@ -504,9 +504,9 @@ function _ensureChatCol() {
         </div>
     `
 
-    // Insertar entre #wa-sidebar y #pan-wrap
-    const sidebar = document.getElementById('wa-sidebar')
-    sidebar?.parentNode?.insertBefore(_chatCol, sidebar.nextSibling)
+    // Insertar dentro de #wa-panel (sibling de .wa-panel__left)
+    const panel = document.getElementById('wa-panel')
+    panel?.appendChild(_chatCol)
 
     // Listeners
     document.getElementById('ldwap-chat-back').addEventListener('click', _closeChat)
@@ -548,6 +548,8 @@ function _openChat(num, phone) {
     document.getElementById('ldwap-chat-num').textContent  = _fmtPhone(num)
 
     _chatCol.classList.add('open')
+    document.getElementById('wa-panel')?.classList.add('expanded', 'has-chat')
+    document.getElementById('pan-wrap')?.classList.add('wa-expanded', 'has-chat')
 
     _renderChatActions()
     _renderMsgs()
@@ -559,6 +561,8 @@ function _closeChat() {
     _state.activeContact = null
     _state.activeNum     = null
     if (_chatCol) _chatCol.classList.remove('open')
+    document.getElementById('wa-panel')?.classList.remove('has-chat')
+    document.getElementById('pan-wrap')?.classList.remove('has-chat')
     _renderList()
 }
 
