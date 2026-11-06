@@ -205,6 +205,11 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data)
+            // Evento global sin tenant
+            if (msg.tipo === 'nueva-version') {
+                document.getElementById('banner-nueva-version').style.display = 'block'
+                return
+            }
             // Solo eventos etiquetados explícitamente para Las Delicias
             if (msg.tenant !== 'lasdelicias') return
             if (msg.tipo === 'wa:mensaje')    _onMensaje(msg)
