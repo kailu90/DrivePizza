@@ -287,6 +287,11 @@ function _onStatus({ numero, sede, status }) {
     } else {
         _state.sesiones[idx].status = status
     }
+    // Cerrar modal QR cuando la sesión se conecta
+    if (status === 'conectado') {
+        const modal = document.getElementById('ldwap-qr-modal')
+        if (modal) modal.style.display = 'none'
+    }
     _renderList()
 }
 
