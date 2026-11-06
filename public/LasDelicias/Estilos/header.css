@@ -196,6 +196,41 @@
     flex: 1;
 }
 
+/* ── SEPARADOR VERTICAL EN ACTIONS ────────────────────── */
+.ld-header__actions-sep {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.2);
+    flex-shrink: 0;
+    margin: 0 4px;
+}
+
+/* ── BOTÓN LOGOUT ──────────────────────────────────────── */
+.ld-header__logout-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.10);
+    border: none;
+    color: var(--ld-beige, #F6EBE0);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.ld-header__logout-btn:hover {
+    background: rgba(220,50,50,0.25);
+    color: #fca5a5;
+}
+
+.ld-header__logout-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 /* ── BOTONES DE ACCION ─────────────────────────────────── */
 .ld-header__actions {
     display: flex;

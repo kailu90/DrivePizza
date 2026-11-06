@@ -53,8 +53,11 @@ async function init() {
             { label: 'Ghema',                    description: 'Proximamente' },
             { label: 'Figuettos',                description: 'Proximamente' },
         ],
-        navItems: [
-            { label: 'Historial', onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
+        navActions: [
+            { icon: 'search',  label: 'Barrios',        onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'barrios' }, '*') },
+            { icon: 'leaf',    label: 'Historial',      onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'historial' }, '*') },
+            { icon: 'pencil',  label: 'Tomar pedido',   onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'tomar-pedido' }, '*') },
+            { icon: 'users',   label: 'Clientes',       onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'clientes' }, '*') },
         ],
         onLogout: async () => {
             await supabase.auth.signOut()
