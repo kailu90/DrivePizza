@@ -626,9 +626,9 @@ async function _loadMsgsIfNeeded(num, phone) {
         c.msgs = data.map(m => ({
             text:  m.texto,
             ts:    m.timestamp || Math.floor(new Date(m.created_at).getTime() / 1000),
-            out:   m.from_me,
+            out:   m.saliente,
             asesor: m.asesor || null,
-            tipo:  m.tipo_mensaje || 'mensaje',
+            tipo:  m.tipo || 'mensaje',
             msgId: m.msg_id || null,
         }))
         _saveConv()
