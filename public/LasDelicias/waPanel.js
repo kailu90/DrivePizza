@@ -564,11 +564,12 @@ function _closeChat() {
 
 function _renderMsgs() {
     const el = document.getElementById('ldwap-chat-msgs')
-    if (!el) return
+    if (!el) { console.warn('[ldwap] _renderMsgs: #ldwap-chat-msgs no encontrado'); return }
     const { activeNum: num, activeContact: phone } = _state
-    if (!num || !phone) return
+    if (!num || !phone) { console.warn('[ldwap] _renderMsgs: activeNum/activeContact nulos'); return }
 
     const msgs = _state.conv[num]?.[phone]?.msgs || []
+    console.log('[ldwap] _renderMsgs', { num, phone, msgCount: msgs.length })
 
     if (!msgs.length) {
         el.innerHTML = '<div class="ldwap-msgs-empty">Sin mensajes aún</div>'
@@ -696,7 +697,8 @@ async function _resolverChat(num, phone) {
 
 async function _sendMsg(texto) {
     const { activeNum: num, activeContact: phone } = _state
-    if (!num || !phone || !texto) return
+    console.log('[ldwap] _sendMsg', { num, phone, texto })
+    if (!num || !phone || !texto) { console.warn('[ldwap] _sendMsg abortado: num/phone/texto vacío'); return }
 
     // Garantizar que la entrada de conv existe (puede no existir si es chat nuevo)
     if (!_state.conv[num]) _state.conv[num] = {}
@@ -704,12 +706,14 @@ async function _sendMsg(texto) {
         _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, nombre: null }
     }
     const c = _state.conv[num][phone]
+    console.log('[ldwap] c.msgs antes push:', c.msgs.length)
 
     // Insertar optimista
     const ts = Math.floor(Date.now() / 1000)
     c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, tipo: 'mensaje', pending: true })
     c.lastMsg = texto
     c.lastTs  = ts
+    console.log('[ldwap] c.msgs después push:', c.msgs.length)
     _renderMsgs()
     _renderList()
 
