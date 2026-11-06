@@ -205,8 +205,8 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data)
-            // Solo eventos etiquetados para Las Delicias
-            if (msg.tenant && msg.tenant !== 'lasdelicias') return
+            // Solo eventos etiquetados explícitamente para Las Delicias
+            if (msg.tenant !== 'lasdelicias') return
             if (msg.tipo === 'wa:mensaje')    _onMensaje(msg)
             if (msg.tipo === 'wa:status')     _onStatus(msg)
             if (msg.tipo === 'wa:qr')         _onQr(msg)
