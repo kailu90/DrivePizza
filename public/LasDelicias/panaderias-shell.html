@@ -325,14 +325,6 @@
 
     document.getElementById('pedido-bg').addEventListener('click', closePedidoDrawer)
 
-    // ── WA Sidebar — chips (placeholder hasta waPanel.js) ─────────────────────
-    document.querySelectorAll('.wa-sb__chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            document.querySelectorAll('.wa-sb__chip').forEach(c => c.classList.remove('active'))
-            chip.classList.add('active')
-        })
-    })
-
     // ── postMessage desde iframes ─────────────────────────────────────────────
     window.addEventListener('message', (e) => {
         if (e.data?.type === 'logout') {
@@ -360,11 +352,16 @@
 
         try {
             const { data, error } = await supabase.from('usuarios')
-                .select('rol, active').eq('id', user.id).single()
+                .select('rol, active, username').eq('id', user.id).single()
             if (error || !data || !data.active || data.rol !== 'panaderias') {
                 window.location.href = './index.html'
                 return
             }
+
+            // Inicializar panel WA omnicanal
+            const { initWaPanel } = await import('./waPanel.js')
+            initWaPanel({ asesor: data.username || '' })
+
         } catch (err) {
             console.error('[pan-shell]', err)
             window.location.href = './index.html'
