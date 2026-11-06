@@ -242,10 +242,21 @@ function _onMensaje({ numero, remitente, fromMe, pushName, texto, timestamp, ase
     const out = !!fromMe
     if (pushName && !out && !c.nombre) c.nombre = pushName
 
-    // Dedup mensajes salientes por msgId
+    // Dedup / confirmar mensajes salientes
     if (out && msgId) {
+        // Si ya existe un mensaje con ese msgId, solo re-renderizar
         const byId = c.msgs.find(m => m.msgId === msgId)
         if (byId) {
+            _saveConv()
+            if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs()
+            return
+        }
+        // Si hay un optimista pendiente con el mismo texto, confirmarlo en vez de duplicar
+        const pendingIdx = c.msgs.findIndex(m => m.pending && m.out && m.text === texto)
+        if (pendingIdx !== -1) {
+            c.msgs[pendingIdx].msgId   = msgId
+            c.msgs[pendingIdx].pending = false
+            c.msgs[pendingIdx].ts      = timestamp || c.msgs[pendingIdx].ts
             _saveConv()
             if (_state.activeContact === phone && _state.activeNum === numero) _renderMsgs()
             return
@@ -687,16 +698,20 @@ async function _sendMsg(texto) {
     const { activeNum: num, activeContact: phone } = _state
     if (!num || !phone || !texto) return
 
-    // Insertar optimista
-    const c = _state.conv[num]?.[phone]
-    if (c) {
-        const ts = Math.floor(Date.now() / 1000)
-        c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, tipo: 'mensaje', pending: true })
-        c.lastMsg = texto
-        c.lastTs  = ts
-        _renderMsgs()
-        _renderList()
+    // Garantizar que la entrada de conv existe (puede no existir si es chat nuevo)
+    if (!_state.conv[num]) _state.conv[num] = {}
+    if (!_state.conv[num][phone]) {
+        _state.conv[num][phone] = { msgs: [], unread: 0, lastMsg: '', lastTs: 0, nombre: null }
     }
+    const c = _state.conv[num][phone]
+
+    // Insertar optimista
+    const ts = Math.floor(Date.now() / 1000)
+    c.msgs.push({ text: texto, ts, out: true, asesor: _asesorActual, tipo: 'mensaje', pending: true })
+    c.lastMsg = texto
+    c.lastTs  = ts
+    _renderMsgs()
+    _renderList()
 
     try {
         await fetch(`${HETZNER_URL}/ld/wa/mensaje`, {
