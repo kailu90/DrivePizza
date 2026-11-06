@@ -209,6 +209,7 @@ function _connectWs() {
             if (msg.tenant && msg.tenant !== 'lasdelicias') return
             if (msg.tipo === 'wa:mensaje')    _onMensaje(msg)
             if (msg.tipo === 'wa:status')     _onStatus(msg)
+            if (msg.tipo === 'wa:qr')         _onQr(msg)
             if (msg.tipo === 'wa:asignacion') _onAsignacion(msg)
             if (msg.tipo === 'wa:liberacion') _onLiberacion(msg)
             if (msg.tipo === 'wa:estado')     _onEstado(msg)
@@ -348,12 +349,17 @@ function _renderList() {
     _updateBadge(totalUnread)
 
     if (!filtered.length) {
+        const noSes = _state.sesiones.length === 0
         el.innerHTML = `<div class="ldwap-placeholder">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            <span>${_state.sesiones.length ? 'Sin conversaciones' : 'Sin sesiones'}</span>
+            <span>${noSes ? 'Sin sesiones activas' : 'Sin conversaciones'}</span>
+            ${noSes ? `<button class="ldwap-conectar-btn" id="ldwap-conectar">Conectar WhatsApp</button>` : ''}
         </div>`
+        if (noSes) {
+            document.getElementById('ldwap-conectar')?.addEventListener('click', _conectarSesion)
+        }
         return
     }
 
@@ -393,6 +399,54 @@ function _renderList() {
     el.querySelectorAll('.ldwap-row').forEach(row => {
         row.addEventListener('click', () => _openChat(row.dataset.num, row.dataset.phone))
     })
+}
+
+// ── QR modal ──────────────────────────────────────────────────────────────────
+function _onQr({ numero, qr }) {
+    // Crear modal si no existe
+    let modal = document.getElementById('ldwap-qr-modal')
+    if (!modal) {
+        modal = document.createElement('div')
+        modal.id = 'ldwap-qr-modal'
+        modal.innerHTML = `
+            <div class="ldwap-qr-box">
+                <div class="ldwap-qr-hdr">
+                    <span>Escanea con WhatsApp</span>
+                    <button id="ldwap-qr-close">✕</button>
+                </div>
+                <p class="ldwap-qr-hint">Abre WhatsApp → ⋮ → Dispositivos vinculados → Vincular dispositivo</p>
+                <img id="ldwap-qr-img" src="" alt="QR Code">
+                <p class="ldwap-qr-num" id="ldwap-qr-num"></p>
+            </div>
+        `
+        document.body.appendChild(modal)
+        document.getElementById('ldwap-qr-close').addEventListener('click', () => {
+            modal.style.display = 'none'
+        })
+        modal.addEventListener('click', e => {
+            if (e.target === modal) modal.style.display = 'none'
+        })
+    }
+    document.getElementById('ldwap-qr-img').src = qr
+    document.getElementById('ldwap-qr-num').textContent = `Número: ${numero}`
+    modal.style.display = 'flex'
+}
+
+async function _conectarSesion() {
+    const numero = prompt('Número WhatsApp (con código de país, sin +):\nEjemplo: 573001234567')
+    if (!numero?.trim()) return
+    const sede   = prompt('Sede (ej: delicias de pinares):') || ''
+    try {
+        const r = await fetch(`${HETZNER_URL}/ld/wa/sesiones`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ numero: numero.trim(), sede }),
+        })
+        if (!r.ok) { alert('Error al iniciar sesión'); return }
+        alert('Sesión iniciando — el QR aparecerá en segundos')
+    } catch {
+        alert('Error de conexión con el backend')
+    }
 }
 
 function _updateBadge(count) {
@@ -826,6 +880,53 @@ function _injectStyles() {
 }
 .ldwap-chat-send:hover { background: var(--ld-marron-oscuro, #4e2e24); }
 .ldwap-chat-send svg { width: 16px; height: 16px; }
+
+/* ── Botón Conectar ── */
+.ldwap-conectar-btn {
+    margin-top: 4px; padding: 7px 16px;
+    border-radius: 20px; border: none;
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    font-size: 1.2rem; font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer; transition: opacity .15s;
+}
+.ldwap-conectar-btn:hover { opacity: .85; }
+
+/* ── Modal QR ── */
+#ldwap-qr-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 9999;
+    align-items: center; justify-content: center;
+}
+.ldwap-qr-box {
+    background: #fff; border-radius: 16px;
+    padding: 20px; width: 280px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+.ldwap-qr-hdr {
+    width: 100%; display: flex;
+    align-items: center; justify-content: space-between;
+    font-weight: 700; font-size: 1.3rem; color: #3a2010;
+    font-family: 'Montserrat', sans-serif;
+}
+.ldwap-qr-hdr button {
+    background: none; border: none; font-size: 1.4rem;
+    cursor: pointer; color: #7a5540; line-height: 1;
+}
+.ldwap-qr-hint {
+    font-size: 1.1rem; color: #7a5540; text-align: center;
+    font-family: 'Montserrat', sans-serif; margin: 0;
+}
+#ldwap-qr-img {
+    width: 220px; height: 220px;
+    border: 2px solid rgba(117,71,59,0.15); border-radius: 8px;
+}
+.ldwap-qr-num {
+    font-size: 1rem; color: #a07060;
+    font-family: 'Montserrat', sans-serif; margin: 0;
+}
 `
     document.head.appendChild(s)
 }
