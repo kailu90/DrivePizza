@@ -991,9 +991,9 @@ export function initWaPanel({ asesor = '', authToken = '' } = {}) {
     }, 60_000)
 
     // Chips de filtro (reemplaza los placeholder listeners del shell)
-    document.querySelectorAll('.wa-sb__chip').forEach(chip => {
+    document.querySelectorAll('.ld-wa__chip').forEach(chip => {
         chip.addEventListener('click', () => {
-            document.querySelectorAll('.wa-sb__chip').forEach(c => c.classList.remove('active'))
+            document.querySelectorAll('.ld-wa__chip').forEach(c => c.classList.remove('active'))
             chip.classList.add('active')
             _state.filtroChip = chip.dataset.filtro || 'todos'
             _renderList()
