@@ -301,6 +301,7 @@
         const src = PAGE_SRC[page]
         if (!src) return
         setHeaderMode(page === 'home' ? 'home' : 'full')
+        _setWaVisible(page !== 'home')
         showOverlay()
         _frame.src = src
     }
@@ -392,6 +393,7 @@
             })
             setHeaderUser({ username: data.username || '', sede: data.sede || '' })
             setHeaderMode('home')   // página inicial es el dashboard
+            _setWaVisible(false)    // home no muestra el panel omnicanal
 
             // Inicializar panel WA omnicanal
             const { initWaPanel } = await import('./waPanel.js')
