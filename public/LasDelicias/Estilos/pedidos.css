@@ -53,7 +53,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 12px;
-    height: 50px;
+    height: 52px;
     border-bottom: 1px solid #f0e4d8;
     flex-shrink: 0;
 }
@@ -260,6 +260,7 @@ body {
     background: #fff;
     border-bottom: 1px solid #e8d8cc;
     flex-shrink: 0;
+    height: 52px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -271,7 +272,7 @@ body {
 .ld-tabs {
     display: flex;
     gap: 4px;
-    padding: 8px 12px;
+    padding: 5px 12px;
     width: max-content;
     min-width: 100%;
 }
@@ -494,7 +495,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px 12px;
+    height: 52px;
+    padding: 0 16px;
     border-bottom: 1.5px solid #d9c4b0;
     flex-shrink: 0;
 }
