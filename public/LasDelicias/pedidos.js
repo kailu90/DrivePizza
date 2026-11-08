@@ -340,11 +340,12 @@ async function confirmarPedido() {
             .from('pedidos_callcenter').insert(pedido)
         if (error) throw error
 
-        ocultarOverlay(true)
         cerrarCheckout()
         limpiarFormulario()
         vaciarCarrito()
-        abrirConfirmacion(nPedido, nombre)
+        const sedeDisplay = (_perfil.sede || '').charAt(0).toUpperCase() + (_perfil.sede || '').slice(1).toLowerCase()
+        ocultarOverlay(true, { asesor: _perfil.username, pedidoId: nPedido, sede: sedeDisplay })
+        if (IS_DRAWER) setTimeout(() => window.parent.postMessage({ type: 'tomar-pedido-close' }, '*'), 3000)
 
     } catch (err) {
         ocultarOverlay()
@@ -370,11 +371,6 @@ function mostrarError(msg) {
     el.style.display  = 'block'
 }
 
-function abrirConfirmacion(nPedido, nombre) {
-    document.getElementById('conf-numero').textContent = `#${String(nPedido).padStart(3, '0')}`
-    document.getElementById('conf-nombre').textContent = nombre
-    document.getElementById('modalConfirmacion').classList.add('open')
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatPrecio(n) {
@@ -657,16 +653,6 @@ _cfIds.forEach(id => {
 })
 ;['cf-pago','cf-estado-col'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => _loadHistorial(true))
-})
-
-// Modal confirmación
-const _cerrarConfirmacion = () => {
-    document.getElementById('modalConfirmacion').classList.remove('open')
-    if (IS_DRAWER) window.parent.postMessage({ type: 'tomar-pedido-close' }, '*')
-}
-document.getElementById('btnCerrarConfirmacion').addEventListener('click', _cerrarConfirmacion)
-document.getElementById('modalConfirmacion').addEventListener('click', e => {
-    if (e.target === e.currentTarget) _cerrarConfirmacion()
 })
 
 // Modal detalle
