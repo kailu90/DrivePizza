@@ -122,18 +122,23 @@ function _abrirModalAgregar() {
 
 function _cerrarModalAgregar() {
     document.getElementById('modal-agregar-barrio').style.display = 'none'
+    document.getElementById('modal-barrio-error').style.display = 'none'
 }
 
 async function _guardarNuevo() {
     const nombre = document.getElementById('modal-barrio-nombre').value.trim()
     const valor  = parseInt(document.getElementById('modal-barrio-valor').value, 10)
+    const errEl  = document.getElementById('modal-barrio-error')
 
-    if (!nombre)                      { alert('El nombre del barrio no puede estar vacío.'); return }
-    if (isNaN(valor) || valor < 0)    { alert('Ingresa un valor de domicilio válido.'); return }
-    if (valor > 100000)               { alert('Valor de domicilio muy alto, verifica.'); return }
+    errEl.style.display = 'none'
+
+    if (!nombre)                      { _modalError(errEl, 'El nombre del barrio no puede estar vacío.'); return }
+    if (isNaN(valor) || valor < 0)    { _modalError(errEl, 'Ingresa un valor de domicilio válido.'); return }
+    if (valor > 100000)               { _modalError(errEl, 'Valor de domicilio muy alto, verifica.'); return }
 
     const btn = document.getElementById('btn-guardar-modal-barrio')
-    btn.disabled = true
+    btn.disabled    = true
+    btn.textContent = 'Guardando...'
 
     const { data, error } = await _supabase
         .from('barrios')
@@ -141,11 +146,14 @@ async function _guardarNuevo() {
         .select('id, nombre, valor, activo')
         .single()
 
-    btn.disabled = false
+    btn.disabled    = false
+    btn.textContent = 'Guardar'
 
     if (error) {
-        const msg = error.code === '23505' ? 'Ya existe ese barrio en esta sede.' : 'Error al guardar.'
-        _setStatus(msg, 'error')
+        const msg = error.code === '23505'
+            ? 'Ya existe ese barrio en esta sede.'
+            : (error.message || 'Error al guardar.')
+        _modalError(errEl, msg)
         return
     }
 
@@ -245,6 +253,11 @@ function _toast(msg) {
     el.classList.add('visible')
     clearTimeout(_toastTimer)
     _toastTimer = setTimeout(() => el.classList.remove('visible'), 3000)
+}
+
+function _modalError(el, msg) {
+    el.textContent  = msg
+    el.style.display = 'block'
 }
 
 function _cap(str) {
