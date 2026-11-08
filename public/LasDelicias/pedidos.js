@@ -63,20 +63,6 @@ async function init() {
     _user   = user
     _perfil = perfil
 
-    // ── Nav tabs (no en drawer mode) ─────────────────────────────────────
-    if (!IS_DRAWER) {
-        const isAdmin = ['admin', 'callcenter-admin'].includes(_perfil.rol)
-        const navEl = document.getElementById('ld-nav-tabs')
-        if (navEl) {
-            if (isAdmin) navEl.querySelector('[data-view="barrios"]')?.classList.remove('ld-nav-hidden')
-            navEl.style.display = ''
-            navEl.addEventListener('click', e => {
-                const btn = e.target.closest('[data-view]')
-                if (btn) switchView(btn.dataset.view)
-            })
-        }
-    }
-
     // Si la vista inicial es historial y ya tenemos perfil, cargar ahora
     if (_currentView === 'historial') _loadHistorial(true)
 
@@ -447,10 +433,6 @@ function switchView(view) {
     const layout = document.querySelector('.ld-omni-layout')
     if (orden)  orden.style.display = view === 'catalogo' ? '' : 'none'
     if (layout) layout.style.gridTemplateColumns = view === 'catalogo' ? '' : '1fr'
-
-    document.querySelectorAll('#ld-nav-tabs .ld-nav-tab').forEach(b =>
-        b.classList.toggle('active', b.dataset.view === view)
-    )
 
     if (view === 'historial' && _perfil && !_hist.loaded) _loadHistorial(true)
 
