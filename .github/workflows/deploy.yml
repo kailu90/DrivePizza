@@ -30,10 +30,11 @@ jobs:
       - name: Notificar nueva versión a clientes conectados
         run: |
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
-          if echo "$CHANGED" | grep -qv '^public/LasDelicias/'; then
-            SCOPE="all"
-          else
-            SCOPE="lasdelicias"
+          HAS_LD=$(echo "$CHANGED"     | grep -c '^public/LasDelicias/' || true)
+          HAS_DP=$(echo "$CHANGED"     | grep -cv '^public/LasDelicias/' || true)
+          if   [ "$HAS_LD" -gt 0 ] && [ "$HAS_DP" -gt 0 ]; then SCOPE="all"
+          elif [ "$HAS_LD" -gt 0 ];                         then SCOPE="lasdelicias"
+          else                                                    SCOPE="drivepizza"
           fi
           echo "Scope de deploy: $SCOPE"
           curl -s -X POST https://api.everest-central.com/deploy/notify \
