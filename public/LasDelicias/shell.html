@@ -255,7 +255,10 @@
             }
         }
         if (e.data?.type === 'nueva-version') {
-            document.getElementById('banner-nueva-version').style.display = 'block'
+            const s = e.data.scope
+            if (!s || s === 'all' || s === 'lasdelicias') {
+                document.getElementById('banner-nueva-version').style.display = 'block'
+            }
         }
     })
 
@@ -287,7 +290,12 @@
                 _historialFrame.style.display = 'none'
             }
             ccFrame.style.display = 'block'
-            ccFrame.src = './callcenter.html'
+            const _ccPath = (() => { try { return ccFrame.contentWindow?.location?.pathname || '' } catch { return '' } })()
+            if (!_ccPath.includes('pedidos')) {
+                ccFrame.src = './pedidos.html'
+            } else {
+                ccFrame.contentWindow?.postMessage({ type: 'frame-visible' }, '*')
+            }
             return
         }
         if (target === 'historial') {
@@ -350,6 +358,7 @@
             const { data, error } = await supabase.from('usuarios').select('*').eq('id', user.id).single()
             if (error || !data) { window.location.href = './index.html'; return }
 
+            if (!data.active) { window.location.href = './index.html'; return }
             const ROLES_VALIDOS = ['callcenter', 'callcenter-admin', 'admin']
             if (!ROLES_VALIDOS.includes(data.rol)) { window.location.href = './index.html'; return }
 
@@ -395,7 +404,10 @@
             try {
                 const msg = JSON.parse(e.data)
                 if (msg.tipo === 'nueva-version') {
-                    document.getElementById('banner-nueva-version').style.display = 'block'
+                    const s = msg.scope
+                    if (!s || s === 'all' || s === 'lasdelicias') {
+                        document.getElementById('banner-nueva-version').style.display = 'block'
+                    }
                 }
             } catch {}
         }
