@@ -61,6 +61,7 @@ async function init() {
                 { icon: 'users',   label: 'Clientes',       onClick: () => window.parent.postMessage({ type: 'nav-switch', page: 'clientes' }, '*') },
             ],
             onLogout: async () => {
+                if (!confirm('¿Deseas cerrar sesión?')) return
                 await supabase.auth.signOut()
                 window.parent.postMessage({ type: 'logout' }, '*')
             },

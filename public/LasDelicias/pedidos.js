@@ -333,6 +333,7 @@ async function confirmarPedido() {
             estado:    'pendiente',
             canal:     'callcenter',
             impreso:   false,
+            fecha:     new Date().toISOString(),
         }
 
         const { error } = await supabase
@@ -479,7 +480,7 @@ async function _loadHistorial(reset = false) {
 
     let q = supabase
         .from('pedidos_callcenter')
-        .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, created_at')
+        .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, fecha')
         .eq('sede', _perfil.sede)
         .order('n_pedido', { ascending: false })
         .range(_hist.offset, _hist.offset + 24)
@@ -547,7 +548,7 @@ function _renderHistItems(items) {
         const tr = document.createElement('tr')
         tr.innerHTML = `
             <td><b>#${String(p.n_pedido).padStart(3,'0')}</b></td>
-            <td>${_fmtHistDate(p.created_at)}</td>
+            <td>${_fmtHistDate(p.fecha)}</td>
             <td>${p.telefono}</td>
             <td>${p.nombre}</td>
             <td title="${p.direccion || ''}">${p.direccion || '—'}</td>
@@ -599,7 +600,7 @@ function _abrirDetalle(p) {
             <div class="ld-det__row"><span>Pago</span><span>${_capStr(p.pago)}</span></div>
             <div class="ld-det__row"><span>Canal</span><span>${_capStr(p.canal)}</span></div>
             <div class="ld-det__row"><span>Asesor</span><span>${p.asesor || '—'}</span></div>
-            <div class="ld-det__row"><span>Fecha</span><span>${_fmtHistDate(p.created_at)}</span></div>
+            <div class="ld-det__row"><span>Fecha</span><span>${_fmtHistDate(p.fecha)}</span></div>
         </div>
         <div class="ld-det__prods">${prodsHtml}</div>
         <div class="ld-det__total"><span>Total</span><span>${formatPrecio(p.total)}</span></div>
