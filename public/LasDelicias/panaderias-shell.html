@@ -175,6 +175,54 @@
         }
         #banner-nueva-version button:hover { background: #1a1200; }
 
+        /* ── Modal Próximamente ── */
+        #modal-proximamente {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #modal-proximamente.open { display: flex; }
+        .proxim__card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 36px 40px 28px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            min-width: 260px;
+            font-family: 'Montserrat', sans-serif;
+            animation: proxim-in .2s ease;
+        }
+        @keyframes proxim-in { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+        .proxim__title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--ld-marron, #75473B);
+            margin: 0 0 8px;
+        }
+        .proxim__text {
+            font-size: 1.3rem;
+            color: var(--ld-marron-suave, #a07060);
+            font-weight: 500;
+            margin: 0 0 24px;
+            letter-spacing: 0.04em;
+        }
+        .proxim__btn {
+            background: var(--ld-marron, #75473B);
+            color: var(--ld-beige, #F6EBE0);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 28px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .proxim__btn:hover { background: var(--ld-marron-oscuro, #4e2e24); }
+
         /* ── Nav overlay ── */
         #nav-overlay {
             display: none;
@@ -236,6 +284,15 @@
     <iframe id="pedido-frame"></iframe>
 </div>
 
+<!-- Modal Próximamente -->
+<div id="modal-proximamente">
+    <div class="proxim__card">
+        <p class="proxim__title" id="proxim-nombre"></p>
+        <p class="proxim__text">Próximamente</p>
+        <button class="proxim__btn" id="proxim-cerrar">Entendido</button>
+    </div>
+</div>
+
 <div id="nav-overlay" class="visible">
     <img src="./Imagenes/Logo.png" class="nav-logo" alt="Las Delicias">
 </div>
@@ -294,6 +351,16 @@
         pedidos:  './pedidos.html',
         barrios:  './barrios.html',
         clientes: './clientes.html',
+    }
+
+    // ── Modal Próximamente ────────────────────────────────────────────────────
+    const _modalProxim = document.getElementById('modal-proximamente')
+    document.getElementById('proxim-cerrar').addEventListener('click', () => _modalProxim.classList.remove('open'))
+    _modalProxim.addEventListener('click', e => { if (e.target === _modalProxim) _modalProxim.classList.remove('open') })
+
+    function showProximamente(nombre) {
+        document.getElementById('proxim-nombre').textContent = nombre
+        _modalProxim.classList.add('open')
     }
 
     let _currentPage = null  // página actualmente cargada en #pan-frame
@@ -399,8 +466,8 @@
                 navLabel: 'Panaderías',
                 navSections: [
                     { label: 'Panaderías', active: true, description: 'Panadería y pastelería' },
-                    { label: 'Ghema',                    description: 'Próximamente' },
-                    { label: 'Figuettos',                description: 'Próximamente' },
+                    { label: 'Ghema',     description: 'Próximamente', onClick: () => showProximamente('Ghema')     },
+                    { label: 'Figuettos', description: 'Próximamente', onClick: () => showProximamente('Figuettos') },
                 ],
                 navActions: [
                     { icon: 'search', label: 'Barrios',      onClick: () => _navTo('barrios')   },
