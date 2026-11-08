@@ -577,35 +577,80 @@ function _capStr(s) {
 }
 
 function _abrirDetalle(p) {
-    document.getElementById('det-titulo').textContent =
-        `Pedido #${String(p.n_pedido).padStart(3, '0')}`
+    // Header: número + fecha
+    document.getElementById('det-titulo').innerHTML =
+        `<span class="ld-det__num">#${String(p.n_pedido).padStart(3,'0')}</span>` +
+        `<span class="ld-det__fecha-hdr">${_fmtHistDate(p.fecha)}</span>`
 
-    const entrega = p.domicilio?.tipo === 'recoger'
-        ? 'Recoger en tienda'
-        : [p.direccion, p.domicilio?.barrio].filter(Boolean).join(' — ')
+    // Dirección
+    const esDomicilio = p.domicilio?.tipo !== 'recoger' && p.direccion !== 'Recoger en tienda'
+    const dirTexto = esDomicilio
+        ? [p.direccion, p.domicilio?.barrio].filter(Boolean).join(' · ')
+        : 'Recoger en tienda'
+    const pinSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`
+    const dirHtml = `<div class="ld-det__dir${esDomicilio ? '' : ' ld-det__dir--recoger'}">${pinSvg}<span>${dirTexto}</span></div>`
 
-    const prodsHtml = (p.productos || []).map(pr => `
+    const canalIcon = p.canal === 'whatsapp' ? '📱' : p.canal === 'ivr' ? '📞' : ''
+
+    // Productos
+    const prods = p.productos || []
+    const subtotal = prods.reduce((s, pr) => s + (pr.precio || 0) * (pr.qty || 1), 0)
+    const valorDom = esDomicilio ? (p.domicilio?.valor || 0) : 0
+    const prodsHtml = prods.map(pr => `
         <div class="ld-det__prod">
-            <span class="ld-det__prod-name">${pr.nombre}</span>
-            <span class="ld-det__prod-qty">×${pr.qty}</span>
-            <span class="ld-det__prod-price">${formatPrecio(pr.precio * pr.qty)}</span>
+            <span class="ld-det__prod-qty">${pr.qty ?? 1}×</span>
+            <span class="ld-det__prod-name">${pr.nombre || '—'}</span>
+            <span class="ld-det__prod-price">${formatPrecio((pr.precio||0)*(pr.qty||1))}</span>
         </div>`).join('')
 
+    const domRowHtml = esDomicilio && valorDom > 0
+        ? `<div class="ld-det__tot-row"><span>Domicilio</span><span>${formatPrecio(valorDom)}</span></div>`
+        : ''
+
+    const obsHtml = p.obs
+        ? `<div class="ld-det__obs">💬 ${p.obs}</div>`
+        : ''
+
+    // Timeline
+    const STEPS = [
+        { id: 'recibido',       label: 'Recibido',   icon: '✓'  },
+        { id: 'en preparacion', label: 'Preparando', icon: '☕' },
+        { id: 'despachado',     label: 'Despachado', icon: '🛵' },
+        { id: 'entregado',      label: 'Entregado',  icon: '✓'  },
+    ]
+    const idxActual = STEPS.findIndex(s => s.id === p.estado)
+    const timelineHtml = p.estado === 'cancelado'
+        ? `<div class="ld-det__cancelado">❌ Pedido cancelado</div>`
+        : `<div class="ld-det__timeline">${STEPS.map((s, i) => {
+            const done   = i < idxActual
+            const active = i === idxActual
+            const cls    = done ? 'ld-tl__step--done' : active ? 'ld-tl__step--active' : ''
+            return `<div class="ld-tl__step ${cls}">
+                <div class="ld-tl__dot">${done || active ? s.icon : ''}</div>
+                <div class="ld-tl__label">${s.label}</div>
+            </div>`
+        }).join('')}</div>`
+
     document.getElementById('det-body').innerHTML = `
-        <div class="ld-det__info">
-            <div class="ld-det__row"><span>Estado</span>
-                <span><span class="ld-hist-badge ld-hist-badge--${(p.estado||'').replace(/ /g,'-')}">${_capStr(p.estado)}</span></span>
-            </div>
-            <div class="ld-det__row"><span>Cliente</span><span>${p.nombre}</span></div>
-            <div class="ld-det__row"><span>Teléfono</span><span>${p.telefono}</span></div>
-            <div class="ld-det__row"><span>Entrega</span><span>${entrega}</span></div>
-            <div class="ld-det__row"><span>Pago</span><span>${_capStr(p.pago)}</span></div>
-            <div class="ld-det__row"><span>Canal</span><span>${_capStr(p.canal)}</span></div>
-            <div class="ld-det__row"><span>Asesor</span><span>${p.asesor || '—'}</span></div>
-            <div class="ld-det__row"><span>Fecha</span><span>${_fmtHistDate(p.fecha)}</span></div>
+        <div class="ld-det__nombre">${p.nombre || '—'}</div>
+        <div class="ld-det__sub-row">
+            <span>${p.telefono || '—'}</span>
+            ${p.asesor ? `<span>👤 ${p.asesor}</span>` : ''}
         </div>
+        <div class="ld-det__sub-row">
+            <span>Pago: ${_capStr(p.pago)}</span>
+            ${p.canal ? `<span>${canalIcon} ${_capStr(p.canal)}</span>` : ''}
+        </div>
+        ${dirHtml}
+        <div class="ld-det__section-title">Productos</div>
         <div class="ld-det__prods">${prodsHtml}</div>
-        <div class="ld-det__total"><span>Total</span><span>${formatPrecio(p.total)}</span></div>
+        <div class="ld-det__totales">
+            <div class="ld-det__tot-row"><span>Productos</span><span>${formatPrecio(subtotal)}</span></div>
+            ${domRowHtml}
+            <div class="ld-det__tot-row ld-det__tot-row--total"><span>TOTAL</span><span>${formatPrecio(p.total || subtotal + valorDom)}</span></div>
+        </div>
+        ${obsHtml}
+        ${timelineHtml}
     `
     document.getElementById('modalDetalle').classList.add('open')
 }
