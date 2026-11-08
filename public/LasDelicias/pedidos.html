@@ -121,37 +121,130 @@
             <!-- VIEW: Historial de pedidos -->
             <div id="view-historial">
 
-                <!-- Toolbar de filtros -->
-                <div class="ld-hist-bar">
-                    <div class="ld-hist-search-wrap">
-                        <svg class="ld-hist-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <circle cx="11" cy="11" r="7.5"/>
-                            <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
-                        </svg>
-                        <input class="ld-hist-search" type="search" id="hist-busqueda" placeholder="Nombre o teléfono...">
+                <!-- Panel lateral de filtros -->
+                <div id="hist-overlay" class="ld-hist-overlay"></div>
+                <aside id="hist-panel" class="ld-hist-panel">
+                    <div class="ld-hist-panel__hdr">
+                        <span>Filtros</span>
+                        <button class="ld-hist-panel__cerrar" id="hist-panel-cerrar">&times;</button>
                     </div>
-                    <select class="ld-hist-sel" id="hist-estado">
-                        <option value="">Todos los estados</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="recibido">Recibido</option>
-                        <option value="en preparacion">En preparación</option>
-                        <option value="despachado">Despachado</option>
-                        <option value="entregado">Entregado</option>
-                        <option value="cancelado">Cancelado</option>
-                    </select>
-                    <input class="ld-hist-date" type="date" id="hist-desde" title="Desde">
-                    <input class="ld-hist-date" type="date" id="hist-hasta" title="Hasta">
-                </div>
+                    <div class="ld-hist-panel__body">
+                        <div class="ld-hist-grupo">
+                            <label>Desde</label>
+                            <input type="date" id="hist-desde">
+                        </div>
+                        <div class="ld-hist-grupo">
+                            <label>Hasta</label>
+                            <input type="date" id="hist-hasta">
+                        </div>
+                        <div class="ld-hist-grupo">
+                            <label>Estado</label>
+                            <select id="hist-estado">
+                                <option value="">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="recibido">Recibido</option>
+                                <option value="en preparacion">En preparación</option>
+                                <option value="despachado">Despachado</option>
+                                <option value="entregado">Entregado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <button class="ld-hist-btn-filtrar" id="hist-btn-filtrar">Filtrar</button>
+                        <button class="ld-hist-btn-limpiar" id="hist-btn-limpiar">Limpiar</button>
+                    </div>
+                </aside>
 
-                <!-- Lista de pedidos -->
-                <div class="ld-hist-list" id="histList">
-                    <div class="ld-hist-loading" id="histLoading" style="display:none">Cargando...</div>
-                </div>
+                <!-- Contenido principal -->
+                <div class="ld-hist-main">
 
-                <!-- Cargar más -->
-                <div class="ld-hist-footer" id="histFooter" style="display:none">
-                    <button class="ld-hist-mas-btn" id="histMas">Cargar más</button>
-                </div>
+                    <!-- Topbar -->
+                    <div class="ld-hist-topbar">
+                        <button class="ld-hist-btn-panel" id="hist-btn-panel">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/></svg>
+                            Filtros
+                        </button>
+                        <button class="ld-hist-btn-actualizar" id="hist-btn-actualizar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Actualizar
+                        </button>
+                    </div>
+
+                    <!-- Resumen cards -->
+                    <div class="ld-hist-resumen">
+                        <div class="ld-hist-res-card">
+                            <span class="ld-hist-res-label">Total pedidos</span>
+                            <span class="ld-hist-res-valor" id="hist-res-total">—</span>
+                        </div>
+                        <div class="ld-hist-res-card">
+                            <span class="ld-hist-res-label">Entregados</span>
+                            <span class="ld-hist-res-valor" id="hist-res-entregados">—</span>
+                        </div>
+                        <div class="ld-hist-res-card">
+                            <span class="ld-hist-res-label">Cancelados</span>
+                            <span class="ld-hist-res-valor" id="hist-res-cancelados">—</span>
+                        </div>
+                        <div class="ld-hist-res-card">
+                            <span class="ld-hist-res-label">Total ventas</span>
+                            <span class="ld-hist-res-valor" id="hist-res-ventas">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabla -->
+                    <div class="ld-hist-tabla-wrap">
+                        <table class="ld-hist-tabla">
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Fecha / Hora</th>
+                                    <th>Teléfono</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección</th>
+                                    <th>Pago</th>
+                                    <th>Asesor</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                </tr>
+                                <tr class="ld-hist-filtros-col">
+                                    <th><input class="ld-hist-col-filter" type="text" id="cf-npedido" placeholder="#"></th>
+                                    <th></th>
+                                    <th><input class="ld-hist-col-filter" type="text" id="cf-telefono" placeholder="Tel."></th>
+                                    <th><input class="ld-hist-col-filter" type="text" id="cf-cliente" placeholder="Nombre"></th>
+                                    <th><input class="ld-hist-col-filter" type="text" id="cf-direccion" placeholder="Dir."></th>
+                                    <th>
+                                        <select class="ld-hist-col-filter" id="cf-pago">
+                                            <option value="">Todos</option>
+                                            <option value="efectivo">Efectivo</option>
+                                            <option value="transferencia">Transf.</option>
+                                            <option value="tarjeta">Datáfono</option>
+                                        </select>
+                                    </th>
+                                    <th><input class="ld-hist-col-filter" type="text" id="cf-asesor" placeholder="Asesor"></th>
+                                    <th>
+                                        <select class="ld-hist-col-filter" id="cf-estado-col">
+                                            <option value="">Todos</option>
+                                            <option value="pendiente">Pendiente</option>
+                                            <option value="recibido">Recibido</option>
+                                            <option value="en preparacion">En prep.</option>
+                                            <option value="despachado">Despachado</option>
+                                            <option value="entregado">Entregado</option>
+                                            <option value="cancelado">Cancelado</option>
+                                        </select>
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="hist-tbody">
+                                <tr><td colspan="9" class="ld-hist-loading" id="histLoading" style="display:none">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Cargar más -->
+                    <div class="ld-hist-footer" id="histFooter" style="display:none">
+                        <button class="ld-hist-mas-btn" id="histMas">Cargar más</button>
+                    </div>
+
+                </div><!-- /ld-hist-main -->
 
             </div><!-- /view-historial -->
 

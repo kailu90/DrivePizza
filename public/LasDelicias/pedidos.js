@@ -425,8 +425,10 @@ function switchView(view) {
         if (!el) return
         el.style.display = v === view ? (v === 'catalogo' ? '' : 'flex') : 'none'
     })
-    const orden = document.querySelector('.ld-orden')
-    if (orden) orden.style.display = view === 'catalogo' ? '' : 'none'
+    const orden  = document.querySelector('.ld-orden')
+    const layout = document.querySelector('.ld-omni-layout')
+    if (orden)  orden.style.display = view === 'catalogo' ? '' : 'none'
+    if (layout) layout.style.gridTemplateColumns = view === 'catalogo' ? '' : '1fr'
 
     if (view === 'historial' && _perfil && !_hist.loaded) _loadHistorial(true)
 }
@@ -440,78 +442,113 @@ window.addEventListener('message', e => {
 })
 
 // ── Historial ─────────────────────────────────────────────────────────────────
+
+function _histFiltros() {
+    return {
+        desde:     document.getElementById('hist-desde')?.value     || '',
+        hasta:     document.getElementById('hist-hasta')?.value      || '',
+        estado:    document.getElementById('hist-estado')?.value     || '',
+        npedido:   document.getElementById('cf-npedido')?.value.trim()   || '',
+        telefono:  document.getElementById('cf-telefono')?.value.trim()  || '',
+        cliente:   document.getElementById('cf-cliente')?.value.trim()   || '',
+        direccion: document.getElementById('cf-direccion')?.value.trim() || '',
+        pago:      document.getElementById('cf-pago')?.value         || '',
+        asesor:    document.getElementById('cf-asesor')?.value.trim()     || '',
+        estadoCol: document.getElementById('cf-estado-col')?.value   || '',
+    }
+}
+
 async function _loadHistorial(reset = false) {
     if (_hist.loading) return
     if (!reset && _hist.done) return
 
     if (reset) {
-        _hist.offset  = 0
-        _hist.done    = false
-        _hist.loaded  = true
-        document.getElementById('histList').innerHTML = ''
+        _hist.offset = 0
+        _hist.done   = false
+        _hist.loaded = true
+        const tbody = document.getElementById('hist-tbody')
+        tbody.innerHTML = ''
+        _loadResumen()
     }
 
     _hist.loading = true
     document.getElementById('histLoading').style.display = ''
 
-    const busqueda = document.getElementById('hist-busqueda')?.value.trim() || ''
-    const estado   = document.getElementById('hist-estado')?.value           || ''
-    const desde    = document.getElementById('hist-desde')?.value            || ''
-    const hasta    = document.getElementById('hist-hasta')?.value            || ''
+    const f = _histFiltros()
+    const estado = f.estadoCol || f.estado
 
     let q = supabase
         .from('pedidos_callcenter')
         .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, created_at')
         .eq('sede', _perfil.sede)
         .order('n_pedido', { ascending: false })
-        .range(_hist.offset, _hist.offset + 19)
+        .range(_hist.offset, _hist.offset + 24)
 
-    if (estado)   q = q.eq('estado', estado)
-    if (busqueda) q = q.or(`nombre.ilike.%${busqueda}%,telefono.ilike.%${busqueda}%`)
-    if (desde)    q = q.gte('created_at', desde + 'T00:00:00')
-    if (hasta)    q = q.lte('created_at', hasta + 'T23:59:59')
+    if (estado)      q = q.eq('estado', estado)
+    if (f.desde)     q = q.gte('created_at', f.desde + 'T00:00:00')
+    if (f.hasta)     q = q.lte('created_at', f.hasta + 'T23:59:59')
+    if (f.npedido)   q = q.eq('n_pedido', Number(f.npedido))
+    if (f.telefono)  q = q.ilike('telefono', `%${f.telefono}%`)
+    if (f.cliente)   q = q.ilike('nombre', `%${f.cliente}%`)
+    if (f.direccion) q = q.ilike('direccion', `%${f.direccion}%`)
+    if (f.pago)      q = q.eq('pago', f.pago)
+    if (f.asesor)    q = q.ilike('asesor', `%${f.asesor}%`)
 
     const { data } = await q
-
     _hist.loading = false
     document.getElementById('histLoading').style.display = 'none'
 
     if (!data?.length) {
         if (reset) {
-            document.getElementById('histList').innerHTML =
-                '<div class="ld-hist-empty-msg">No se encontraron pedidos</div>'
+            document.getElementById('hist-tbody').innerHTML =
+                '<tr><td colspan="9" class="ld-hist-empty-msg">No se encontraron pedidos</td></tr>'
         }
         _hist.done = true
     } else {
         _hist.offset += data.length
-        if (data.length < 20) _hist.done = true
+        if (data.length < 25) _hist.done = true
         _renderHistItems(data)
     }
 
     document.getElementById('histFooter').style.display = _hist.done ? 'none' : ''
 }
 
+async function _loadResumen() {
+    const f = _histFiltros()
+    let q = supabase
+        .from('pedidos_callcenter')
+        .select('estado, total')
+        .eq('sede', _perfil.sede)
+    if (f.desde) q = q.gte('created_at', f.desde + 'T00:00:00')
+    if (f.hasta) q = q.lte('created_at', f.hasta + 'T23:59:59')
+
+    const { data } = await q
+    if (!data) return
+
+    const entregados = data.filter(p => p.estado === 'entregado')
+    document.getElementById('hist-res-total').textContent       = data.length
+    document.getElementById('hist-res-entregados').textContent  = entregados.length
+    document.getElementById('hist-res-cancelados').textContent  = data.filter(p => p.estado === 'cancelado').length
+    document.getElementById('hist-res-ventas').textContent      = formatPrecio(entregados.reduce((s, p) => s + (p.total || 0), 0))
+}
+
 function _renderHistItems(items) {
-    const list = document.getElementById('histList')
+    const tbody = document.getElementById('hist-tbody')
     items.forEach(p => {
-        const card = document.createElement('div')
-        card.className = 'ld-hist-card'
-        card.innerHTML = `
-            <div class="ld-hist-card__left">
-                <div class="ld-hist-card__num">#${String(p.n_pedido).padStart(3, '0')}</div>
-                <div class="ld-hist-card__date">${_fmtHistDate(p.created_at)}</div>
-            </div>
-            <div class="ld-hist-card__mid">
-                <div class="ld-hist-card__nombre">${p.nombre}</div>
-                <div class="ld-hist-card__tel">${p.telefono}</div>
-            </div>
-            <div class="ld-hist-card__right">
-                <span class="ld-hist-badge ld-hist-badge--${(p.estado || '').replace(/ /g, '-')}">${_capStr(p.estado)}</span>
-                <div class="ld-hist-card__total">${formatPrecio(p.total)}</div>
-            </div>
+        const tr = document.createElement('tr')
+        tr.innerHTML = `
+            <td><b>#${String(p.n_pedido).padStart(3,'0')}</b></td>
+            <td>${_fmtHistDate(p.created_at)}</td>
+            <td>${p.telefono}</td>
+            <td>${p.nombre}</td>
+            <td title="${p.direccion || ''}">${p.direccion || '—'}</td>
+            <td>${_capStr(p.pago)}</td>
+            <td>${p.asesor || '—'}</td>
+            <td><span class="ld-hist-badge ld-hist-badge--${(p.estado||'').replace(/ /g,'-')}">${_capStr(p.estado)}</span></td>
+            <td><b>${formatPrecio(p.total)}</b></td>
         `
-        card.addEventListener('click', () => _abrirDetalle(p))
-        list.appendChild(card)
+        tr.addEventListener('click', () => _abrirDetalle(p))
+        tbody.appendChild(tr)
     })
 }
 
@@ -544,8 +581,7 @@ function _abrirDetalle(p) {
 
     document.getElementById('det-body').innerHTML = `
         <div class="ld-det__info">
-            <div class="ld-det__row">
-                <span>Estado</span>
+            <div class="ld-det__row"><span>Estado</span>
                 <span><span class="ld-hist-badge ld-hist-badge--${(p.estado||'').replace(/ /g,'-')}">${_capStr(p.estado)}</span></span>
             </div>
             <div class="ld-det__row"><span>Cliente</span><span>${p.nombre}</span></div>
@@ -562,17 +598,52 @@ function _abrirDetalle(p) {
     document.getElementById('modalDetalle').classList.add('open')
 }
 
-// Listeners historial
-let _histDebounce = null
-document.getElementById('hist-busqueda').addEventListener('input', () => {
-    clearTimeout(_histDebounce)
-    _histDebounce = setTimeout(() => _loadHistorial(true), 400)
+// ── Listeners historial ───────────────────────────────────────────────────────
+// Panel lateral
+document.getElementById('hist-btn-panel').addEventListener('click', () => {
+    document.getElementById('hist-panel').classList.add('open')
+    document.getElementById('hist-overlay').classList.add('open')
 })
-document.getElementById('hist-estado').addEventListener('change', () => _loadHistorial(true))
-document.getElementById('hist-desde').addEventListener('change',  () => _loadHistorial(true))
-document.getElementById('hist-hasta').addEventListener('change',  () => _loadHistorial(true))
+const _cerrarPanel = () => {
+    document.getElementById('hist-panel').classList.remove('open')
+    document.getElementById('hist-overlay').classList.remove('open')
+}
+document.getElementById('hist-panel-cerrar').addEventListener('click', _cerrarPanel)
+document.getElementById('hist-overlay').addEventListener('click', _cerrarPanel)
+
+document.getElementById('hist-btn-filtrar').addEventListener('click', () => {
+    _cerrarPanel()
+    _loadHistorial(true)
+})
+document.getElementById('hist-btn-limpiar').addEventListener('click', () => {
+    ;['hist-desde','hist-hasta','hist-estado'].forEach(id => {
+        const el = document.getElementById(id)
+        if (el) el.value = ''
+    })
+    _cerrarPanel()
+    _loadHistorial(true)
+})
+
+// Botón actualizar
+document.getElementById('hist-btn-actualizar').addEventListener('click', () => _loadHistorial(true))
+
+// Cargar más
 document.getElementById('histMas').addEventListener('click', () => _loadHistorial(false))
 
+// Filtros de columna con debounce
+let _histDebounce = null
+const _cfIds = ['cf-npedido','cf-telefono','cf-cliente','cf-direccion','cf-asesor']
+_cfIds.forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+        clearTimeout(_histDebounce)
+        _histDebounce = setTimeout(() => _loadHistorial(true), 350)
+    })
+})
+;['cf-pago','cf-estado-col'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => _loadHistorial(true))
+})
+
+// Modal detalle
 document.getElementById('btnCerrarDetalle').addEventListener('click', () =>
     document.getElementById('modalDetalle').classList.remove('open')
 )
