@@ -28,7 +28,10 @@ function _initVersionBanner() {
             try {
                 const msg = JSON.parse(e.data);
                 if (msg.tipo === 'nueva-version') {
-                    document.getElementById('dp-version-banner').style.display = 'block';
+                    const s = msg.scope
+                    if (!s || s === 'all' || s === 'drivepizza') {
+                        document.getElementById('dp-version-banner').style.display = 'block';
+                    }
                 }
             } catch {}
         };

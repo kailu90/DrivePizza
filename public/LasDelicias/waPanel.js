@@ -207,7 +207,10 @@ function _connectWs() {
             const msg = JSON.parse(e.data)
             // Evento global sin tenant
             if (msg.tipo === 'nueva-version') {
-                document.getElementById('banner-nueva-version').style.display = 'block'
+                const s = msg.scope
+                if (!s || s === 'all' || s === 'lasdelicias') {
+                    document.getElementById('banner-nueva-version').style.display = 'block'
+                }
                 return
             }
             // Solo eventos etiquetados explícitamente para Las Delicias

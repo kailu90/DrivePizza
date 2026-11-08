@@ -29,6 +29,13 @@ jobs:
 
       - name: Notificar nueva versión a clientes conectados
         run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          if echo "$CHANGED" | grep -qv '^public/LasDelicias/'; then
+            SCOPE="all"
+          else
+            SCOPE="lasdelicias"
+          fi
+          echo "Scope de deploy: $SCOPE"
           curl -s -X POST https://api.everest-central.com/deploy/notify \
             -H "Content-Type: application/json" \
-            -d "{\"token\":\"${{ secrets.DEPLOY_SECRET }}\"}" || true
+            -d "{\"token\":\"${{ secrets.DEPLOY_SECRET }}\",\"scope\":\"$SCOPE\"}" || true
