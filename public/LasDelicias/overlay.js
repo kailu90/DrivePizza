@@ -16,6 +16,10 @@ function _patchLogo() {
     logo.style.borderRadius = '0'
     logo.style.background   = 'none'
     logo.style.padding      = '0'
+    logo.style.animation    = 'none'
+
+    const ring = document.querySelector('#dp-overlay .dp-overlay__ring')
+    if (ring) ring.style.display = 'none'
 }
 
 // Patch tras DOMContentLoaded (el overlay compartido también escucha ese evento,
