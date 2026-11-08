@@ -397,7 +397,7 @@ document.getElementById('searchInput').addEventListener('input', e => {
 document.getElementById('orderItems').addEventListener('click', e => {
     const btn = e.target.closest('.ld-item__btn')
     if (!btn) return
-    cambiarCantidad(btn.dataset.id, Number(btn.dataset.delta))
+    cambiarCantidad(Number(btn.dataset.id), Number(btn.dataset.delta))
 })
 
 // Toggle entrega (domicilio / recoger)
@@ -485,8 +485,8 @@ async function _loadHistorial(reset = false) {
         .range(_hist.offset, _hist.offset + 24)
 
     if (estado)      q = q.eq('estado', estado)
-    if (f.desde)     q = q.gte('created_at', f.desde + 'T00:00:00')
-    if (f.hasta)     q = q.lte('created_at', f.hasta + 'T23:59:59')
+    if (f.desde)     q = q.gte('created_at', f.desde + 'T00:00:00-05:00')
+    if (f.hasta)     q = q.lte('created_at', f.hasta + 'T23:59:59-05:00')
     if (f.npedido)   q = q.eq('n_pedido', Number(f.npedido))
     if (f.telefono)  q = q.ilike('telefono', `%${f.telefono}%`)
     if (f.cliente)   q = q.ilike('nombre', `%${f.cliente}%`)
@@ -515,20 +515,29 @@ async function _loadHistorial(reset = false) {
 
 async function _loadResumen() {
     const f = _histFiltros()
-    let q = supabase
-        .from('pedidos_callcenter')
-        .select('estado, total')
-        .eq('sede', _perfil.sede)
-    if (f.desde) q = q.gte('created_at', f.desde + 'T00:00:00')
-    if (f.hasta) q = q.lte('created_at', f.hasta + 'T23:59:59')
+    const PAGE = 1000
+    let all = [], offset = 0, done = false
 
-    const { data } = await q
-    if (!data) return
+    while (!done) {
+        let q = supabase
+            .from('pedidos_callcenter')
+            .select('estado, total')
+            .eq('sede', _perfil.sede)
+            .range(offset, offset + PAGE - 1)
+        if (f.desde) q = q.gte('created_at', f.desde + 'T00:00:00-05:00')
+        if (f.hasta) q = q.lte('created_at', f.hasta + 'T23:59:59-05:00')
 
-    const entregados = data.filter(p => p.estado === 'entregado')
-    document.getElementById('hist-res-total').textContent       = data.length
+        const { data } = await q
+        if (!data?.length) break
+        all = all.concat(data)
+        if (data.length < PAGE) done = true
+        else offset += PAGE
+    }
+
+    const entregados = all.filter(p => p.estado === 'entregado')
+    document.getElementById('hist-res-total').textContent       = all.length
     document.getElementById('hist-res-entregados').textContent  = entregados.length
-    document.getElementById('hist-res-cancelados').textContent  = data.filter(p => p.estado === 'cancelado').length
+    document.getElementById('hist-res-cancelados').textContent  = all.filter(p => p.estado === 'cancelado').length
     document.getElementById('hist-res-ventas').textContent      = formatPrecio(entregados.reduce((s, p) => s + (p.total || 0), 0))
 }
 
@@ -654,4 +663,4 @@ document.getElementById('modalDetalle').addEventListener('click', e => {
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
 switchView(INITIAL_VIEW)
-init().then(() => renderProductos())
+init()
