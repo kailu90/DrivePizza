@@ -347,10 +347,8 @@
     })
 
     const PAGE_SRC = {
-        home:     './panaderias-home.html',
-        pedidos:  './pedidos.html',
-        barrios:  './barrios.html',
-        clientes: './clientes.html',
+        home:    './panaderias-home.html',
+        pedidos: './pedidos.html',
     }
 
     // ── Modal Próximamente ────────────────────────────────────────────────────
@@ -444,7 +442,10 @@
         if (e.data?.type === 'tomar-pedido-close') closePedidoDrawer()
         if (e.data?.type === 'wa-visible')         _setWaVisible(e.data.show !== false)
         if (e.data?.type === 'nueva-version') {
-            document.getElementById('banner-nueva-version').style.display = 'block'
+            const s = e.data.scope
+            if (!s || s === 'all' || s === 'lasdelicias') {
+                document.getElementById('banner-nueva-version').style.display = 'block'
+            }
         }
     })
 
