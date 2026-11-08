@@ -296,15 +296,19 @@ function _initBarrioPicker() {
         const matches = _barriosCatalogo.filter(b => b.nombre.toLowerCase().includes(q))
         if (!matches.length) {
             list.innerHTML = '<div class="ld-barrio-picker__none">Sin resultados</div>'
-            list.style.display = ''
-            return
+        } else {
+            list.innerHTML = matches.map(b =>
+                `<div class="ld-barrio-picker__item" data-nombre="${b.nombre}" data-valor="${b.valor}">
+                    <span>${b.nombre}</span>
+                    <span class="ld-barrio-picker__val">$${Number(b.valor).toLocaleString('es-CO')}</span>
+                 </div>`
+            ).join('')
         }
-        list.innerHTML = matches.map(b =>
-            `<div class="ld-barrio-picker__item" data-nombre="${b.nombre}" data-valor="${b.valor}">
-                <span>${b.nombre}</span>
-                <span class="ld-barrio-picker__val">$${Number(b.valor).toLocaleString('es-CO')}</span>
-             </div>`
-        ).join('')
+
+        const rect = input.getBoundingClientRect()
+        list.style.top   = (rect.bottom + 4) + 'px'
+        list.style.left  = rect.left + 'px'
+        list.style.width = rect.width + 'px'
         list.style.display = ''
     })
 

@@ -780,16 +780,13 @@ body {
 
 .ld-barrio-picker__list {
     display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
+    position: fixed;
     background: #fff;
     border: 1.5px solid #d9c4b0;
     border-radius: 8px;
     max-height: 180px;
     overflow-y: auto;
-    z-index: 200;
+    z-index: 10000;
     box-shadow: 0 4px 12px rgba(117,71,59,0.12);
 }
 .ld-barrio-picker__item {
