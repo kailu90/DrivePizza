@@ -221,8 +221,11 @@ function abrirModal(pedido) {
     _modalPedido = pedido
     document.getElementById('mod-num').textContent = `Pedido #${pedido.n_pedido ?? '—'}`
     actualizarBadgeModal(pedido.estado)
-    document.getElementById('mod-nombre').textContent    = pedido.nombre || '—'
-    document.getElementById('mod-pago').textContent      = pedido.pago   || '—'
+    document.getElementById('mod-nombre').textContent = pedido.nombre || '—'
+    document.getElementById('mod-pago').textContent   = pedido.pago   || '—'
+    document.getElementById('mod-fecha').textContent  = pedido.fecha
+        ? new Date(pedido.fecha).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })
+        : '—'
 
     // Dirección
     const esDomicilio = pedido.direccion && pedido.direccion !== 'Recoger en tienda'
