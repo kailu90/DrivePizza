@@ -68,8 +68,12 @@ async function init() {
 
     _initBarrioPicker()
 
-    // Si la vista inicial es historial y ya tenemos perfil, cargar ahora
+    // Si la vista inicial es historial o barrios y ya tenemos perfil, iniciar ahora
     if (_currentView === 'historial') _loadHistorial(true)
+    if (_currentView === 'barrios' && !_barriosInited) {
+        _barriosInited = true
+        import('./barrios.js').then(m => m.initBarrios(supabase, _perfil))
+    }
 
     if (IS_DRAWER) {
         document.body.classList.add('drawer-mode')
