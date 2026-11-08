@@ -19,7 +19,7 @@
 .ld-header__logo {
     height: 36px;
     flex-shrink: 0;
-    margin-right: 20px;
+    margin-left: 4px;
 }
 
 /* ── NAV DROPDOWN ──────────────────────────────────────── */

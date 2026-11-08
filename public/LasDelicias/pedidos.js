@@ -2,7 +2,9 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
-const IS_DRAWER = new URLSearchParams(location.search).has('drawer')
+const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
+// Vista inicial: 'catalogo' (default) o 'historial' (vía ?view=historial)
+const INITIAL_VIEW = new URLSearchParams(location.search).get('view') || 'catalogo'
 
 // SVG icons por categoria
 const _S = `stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`
@@ -407,12 +409,27 @@ document.querySelectorAll('.ld-pago-btn').forEach(b => {
     })
 })
 
-// Frame visible desde shell
+// ── Vistas del panel central ──────────────────────────────────────────────────
+const VIEWS = ['catalogo', 'historial', 'barrios', 'clientes']
+
+function switchView(view) {
+    VIEWS.forEach(v => {
+        const el = document.getElementById(`view-${v}`)
+        if (!el) return
+        el.style.display = v === view ? (v === 'catalogo' ? '' : 'flex') : 'none'
+    })
+    const orden = document.querySelector('.ld-orden')
+    if (orden) orden.style.display = view === 'catalogo' ? '' : 'none'
+}
+
+// Frame visible desde shell / switch de vista
 window.addEventListener('message', e => {
     if (e.data?.type === 'frame-visible' && !IS_DRAWER) {
         window.parent.postMessage({ type: 'wa-visible', show: true }, '*')
     }
+    if (e.data?.type === 'switch-view') switchView(e.data.view)
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
+switchView(INITIAL_VIEW)
 init().then(() => renderProductos())

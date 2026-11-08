@@ -34,13 +34,6 @@
             padding: 2.4rem 2rem;
         }
 
-        .pan-home__title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--ld-marron, #75473B);
-            margin: 0;
-        }
-
         .pan-home__cards {
             flex: 1;
             display: grid;
@@ -100,7 +93,6 @@
         }
         @media (max-width: 540px) {
             .pan-home__cards { grid-template-columns: 1fr; width: 240px; }
-            .pan-home__title { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -108,7 +100,6 @@
 
 <div id="contenido-principal" style="display:none;">
     <main class="pan-home">
-        <h1 class="pan-home__title">Que deseas gestionar hoy?</h1>
         <div class="pan-home__cards">
             <button class="pan-home__card" data-nav="pedidos">
                 <div class="pan-home__card-ico">

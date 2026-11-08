@@ -290,18 +290,40 @@
     })
 
     const PAGE_SRC = {
-        home:      './panaderias-home.html',
-        pedidos:   './pedidos.html',
-        historial: './historial.html',
-        barrios:   './barrios.html',
-        clientes:  './clientes.html',
+        home:     './panaderias-home.html',
+        pedidos:  './pedidos.html',
+        barrios:  './barrios.html',
+        clientes: './clientes.html',
     }
 
+    let _currentPage = null  // página actualmente cargada en #pan-frame
+
     function _navTo(page) {
-        const src = PAGE_SRC[page]
+        // Vistas internas de pedidos.html
+        const PEDIDOS_VIEWS = { historial: 1, barrios: 1, clientes: 1 }
+
+        // Si pedidos ya está cargado, cambiar la vista interna sin recargar
+        if (_currentPage === 'pedidos') {
+            if (PEDIDOS_VIEWS[page]) {
+                _frame.contentWindow?.postMessage({ type: 'switch-view', view: page }, '*')
+                return
+            }
+            if (page === 'pedidos') {
+                _frame.contentWindow?.postMessage({ type: 'switch-view', view: 'catalogo' }, '*')
+                return
+            }
+        }
+
+        // Vista interna pedida desde fuera de pedidos → cargar pedidos con ?view=
+        const isPedidosView = !!PEDIDOS_VIEWS[page]
+        const targetPage    = isPedidosView ? 'pedidos' : page
+        const src           = isPedidosView ? `./pedidos.html?view=${page}` : PAGE_SRC[page]
         if (!src) return
-        setHeaderMode(page === 'home' ? 'home' : 'full')
-        _setWaVisible(page !== 'home')
+
+        _currentPage = targetPage
+        setHeaderMode(targetPage === 'home' ? 'home' : 'full')
+
+        _setWaVisible(targetPage !== 'home')
         showOverlay()
         _frame.src = src
     }
@@ -372,6 +394,7 @@
                 return
             }
 
+            _currentPage = 'home'
             mountHeader({
                 navLabel: 'Panaderías',
                 navSections: [
@@ -382,7 +405,7 @@
                 navActions: [
                     { icon: 'search', label: 'Barrios',      onClick: () => _navTo('barrios')   },
                     { icon: 'leaf',   label: 'Historial',    onClick: () => _navTo('historial') },
-                    { icon: 'pencil', label: 'Tomar pedido', onClick: openPedidoDrawer           },
+                    { icon: 'pencil', label: 'Tomar pedido', onClick: () => _navTo('pedidos')   },
                     { icon: 'users',  label: 'Clientes',     onClick: () => _navTo('clientes')  },
                 ],
                 onHome: () => _navTo('home'),

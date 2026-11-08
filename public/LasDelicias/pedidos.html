@@ -38,6 +38,38 @@
         body.drawer-mode { display: flex; flex-direction: column; }
         body.drawer-mode #contenido-principal { flex: 1; min-height: 0; }
         .drawer-mode .ld-drawer-hdr { display: flex; }
+
+        /* ── Vistas del panel central ── */
+        #view-catalogo {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        #view-historial,
+        #view-barrios,
+        #view-clientes {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+        .ld-hist-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--ld-marron-suave, #a07060);
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        .ld-hist-empty svg {
+            width: 48px; height: 48px;
+            opacity: 0.35;
+        }
     </style>
 </head>
 <body>
@@ -62,24 +94,63 @@
              ═══════════════════════════════════════════════════════ -->
         <div class="ld-catalogo">
 
-            <!-- Tabs de categorias horizontales (renderCategorias() las genera) -->
-            <div class="ld-tabs-wrap">
-                <div class="ld-tabs" id="catTabs"></div>
-            </div>
+            <!-- VIEW: Catálogo de productos -->
+            <div id="view-catalogo">
 
-            <!-- Barra de busqueda (fija, no scrollea) -->
-            <div class="ld-search-wrap">
-                <svg class="ld-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <circle cx="11" cy="11" r="7.5"/>
-                    <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
-                </svg>
-                <input type="search" class="ld-search" id="searchInput" placeholder="Buscar producto...">
-            </div>
+                <!-- Tabs de categorias horizontales (renderCategorias() las genera) -->
+                <div class="ld-tabs-wrap">
+                    <div class="ld-tabs" id="catTabs"></div>
+                </div>
 
-            <!-- Grid de productos (scrolleable) -->
-            <div class="ld-catalogo__body">
-                <div class="ld-grid" id="productGrid"></div>
-            </div>
+                <!-- Barra de busqueda (fija, no scrollea) -->
+                <div class="ld-search-wrap">
+                    <svg class="ld-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="11" cy="11" r="7.5"/>
+                        <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
+                    </svg>
+                    <input type="search" class="ld-search" id="searchInput" placeholder="Buscar producto...">
+                </div>
+
+                <!-- Grid de productos (scrolleable) -->
+                <div class="ld-catalogo__body">
+                    <div class="ld-grid" id="productGrid"></div>
+                </div>
+
+            </div><!-- /view-catalogo -->
+
+            <!-- VIEW: Historial de pedidos -->
+            <div id="view-historial">
+                <div class="ld-hist-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 7v5l3 3"/>
+                    </svg>
+                    Historial de pedidos — próximamente
+                </div>
+            </div><!-- /view-historial -->
+
+            <!-- VIEW: Barrios -->
+            <div id="view-barrios">
+                <div class="ld-hist-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m19 19-3.5-3.5"/>
+                    </svg>
+                    Gestión de barrios — próximamente
+                </div>
+            </div><!-- /view-barrios -->
+
+            <!-- VIEW: Clientes -->
+            <div id="view-clientes">
+                <div class="ld-hist-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="7" r="3"/>
+                        <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                        <path d="M21 21v-2a4 4 0 00-3-3.85"/>
+                    </svg>
+                    Clientes — próximamente
+                </div>
+            </div><!-- /view-clientes -->
 
         </div>
 
