@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
     <link rel="prefetch" href="./callcenter.html">
-    <link rel="prefetch" href="./historial.html">
+    <link rel="prefetch" href="./pedidos.html?view=historial">
     <link rel="prefetch" href="./pedidos.html">
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -277,7 +277,7 @@
                 _historialPendingParams = null
             }
         }, { once: true })
-        _historialFrame.src = './historial.html'
+        _historialFrame.src = './pedidos.html?view=historial'
         document.getElementById('cc-wrap').appendChild(_historialFrame)
     }
 
@@ -323,7 +323,7 @@
                     _historialFrame.contentWindow?.postMessage({ type: 'frame-visible', params }, '*')
                     _listenForFrameNav(_historialFrame)
                 }, { once: true })
-                _historialFrame.src = './historial.html'
+                _historialFrame.src = './pedidos.html?view=historial'
                 document.getElementById('cc-wrap').appendChild(_historialFrame)
             }
             ccFrame.contentWindow?.postMessage({ type: 'frame-hidden' }, '*')
