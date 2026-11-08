@@ -7,7 +7,8 @@
 let _supabase    = null
 let _perfil      = null
 let _isEditor    = false
-let _sede        = ''        // sede_id activo (name.toLowerCase())
+let _sede        = null      // sede_id real (FK a lasdelicias.sedes.id)
+let _sedeNombre  = ''        // nombre para mostrar en UI
 let _barrios     = []
 let _query       = ''
 let _toastTimer  = null
@@ -16,11 +17,18 @@ let _detId       = null      // id del barrio en modal-detalle
 export async function initBarrios(supabase, perfil) {
     _supabase = supabase
     _perfil   = perfil
-    _isEditor = ['admin', 'panaderias-admin'].includes(perfil.rol)
+    _isEditor   = ['admin', 'panaderias-admin'].includes(perfil.rol)
+    _sedeNombre = perfil.sede || ''
+    document.getElementById('barrios-titulo').textContent = _cap(_sedeNombre)
 
-    // Sede del usuario
-    _sede = (perfil.sede || '').toLowerCase()
-    document.getElementById('barrios-titulo').textContent = _cap(perfil.sede || _sede)
+    // Resolver sede_id real (FK a lasdelicias.sedes.id)
+    const { data: sedes } = await supabase.from('sedes').select('id, name')
+    const sedeRow = sedes?.find(s => s.name.toLowerCase() === _sedeNombre.toLowerCase())
+    if (!sedeRow) {
+        _setStatus('No se encontró la sede del usuario en la tabla de sedes.', 'error')
+        return
+    }
+    _sede = sedeRow.id
 
     // Ocultar botón agregar si no es editor
     document.getElementById('btn-agregar-barrio').style.display = _isEditor ? '' : 'none'
@@ -115,7 +123,7 @@ function _renderTabla() {
 function _abrirModalAgregar() {
     document.getElementById('modal-barrio-nombre').value = ''
     document.getElementById('modal-barrio-valor').value  = ''
-    document.getElementById('modal-barrio-sede-label').textContent = document.getElementById('barrios-titulo').textContent
+    document.getElementById('modal-barrio-sede-label').textContent = _cap(_sedeNombre)
     document.getElementById('modal-agregar-barrio').style.display = 'flex'
     document.getElementById('modal-barrio-nombre').focus()
 }
@@ -171,7 +179,7 @@ function _abrirModalDetalle(id) {
     if (!item) return
     _detId = id
 
-    document.getElementById('modal-det-sede').textContent    = _cap(_sede)
+    document.getElementById('modal-det-sede').textContent    = _cap(_sedeNombre)
     document.getElementById('modal-det-barrio').value        = item.nombre
     document.getElementById('modal-det-valor').value         = item.valor
     document.getElementById('modal-det-activo').checked      = item.activo

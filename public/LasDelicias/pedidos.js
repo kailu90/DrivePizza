@@ -267,10 +267,15 @@ function renderCarrito() {
 // ── Barrio picker ─────────────────────────────────────────────────────────────
 async function _loadBarriosCatalogo() {
     if (_barriosCatalogo !== null) return
+    // Resolver sede_id real (FK a lasdelicias.sedes.id)
+    const { data: sedes } = await supabase.from('sedes').select('id, name')
+    const sedeRow = sedes?.find(s => s.name.toLowerCase() === (_perfil.sede || '').toLowerCase())
+    if (!sedeRow) { _barriosCatalogo = []; return }
+
     const { data } = await supabase
         .from('barrios')
         .select('nombre, valor')
-        .eq('sede_id', (_perfil.sede || '').toLowerCase())
+        .eq('sede_id', sedeRow.id)
         .eq('activo', true)
         .order('nombre')
     _barriosCatalogo = data ?? []
