@@ -356,7 +356,10 @@
         <div id="campos-domicilio-modal">
             <div class="ld-modal__row2">
                 <input class="ld-modal__input" type="text" id="ck-direccion" placeholder="Dirección" autocomplete="off">
-                <input class="ld-modal__input" type="text" id="ck-barrio"    placeholder="Barrio"     autocomplete="off">
+                <div class="ld-barrio-picker" id="ck-barrio-wrap">
+                    <input class="ld-modal__input" type="text" id="ck-barrio" placeholder="Buscar barrio..." autocomplete="off">
+                    <div class="ld-barrio-picker__list" id="ck-barrio-list"></div>
+                </div>
             </div>
         </div>
 
@@ -384,6 +387,10 @@
             <div class="ld-modal__resumen-row">
                 <span>Productos</span>
                 <span id="modal-subtotal">$0</span>
+            </div>
+            <div class="ld-modal__resumen-row" id="row-domicilio" style="display:none">
+                <span>Domicilio</span>
+                <span id="modal-domicilio">$0</span>
             </div>
             <div class="ld-modal__resumen-row ld-modal__resumen-row--total">
                 <span>Total</span>

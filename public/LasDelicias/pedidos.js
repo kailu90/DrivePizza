@@ -39,12 +39,15 @@ let _currentView   = INITIAL_VIEW
 let _barriosInited = false
 
 const _hist = { offset: 0, done: false, loading: false, loaded: false }
-let _categorias  = []
-let _productos   = []        // todos los productos cargados
-let _catActiva   = null
-let _carrito     = []        // [{ id, name, precio, qty }]
-let _tipoEntrega = 'domicilio'
-let _pago        = 'efectivo'
+let _categorias      = []
+let _productos       = []        // todos los productos cargados
+let _catActiva       = null
+let _carrito         = []        // [{ id, name, precio, qty }]
+let _tipoEntrega     = 'domicilio'
+let _pago            = 'efectivo'
+let _barriosCatalogo = null      // [{ nombre, valor }] — cargado lazy al abrir checkout
+let _domicilioValor  = 0         // valor del barrio seleccionado
+let _barrioNombre    = ''        // nombre del barrio seleccionado
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -62,6 +65,8 @@ async function init() {
 
     _user   = user
     _perfil = perfil
+
+    _initBarrioPicker()
 
     // Si la vista inicial es historial y ya tenemos perfil, cargar ahora
     if (_currentView === 'historial') _loadHistorial(true)
@@ -255,6 +260,69 @@ function renderCarrito() {
     totalEl.textContent = formatPrecio(total)
 }
 
+// ── Barrio picker ─────────────────────────────────────────────────────────────
+async function _loadBarriosCatalogo() {
+    if (_barriosCatalogo !== null) return
+    const { data } = await supabase
+        .from('barrios')
+        .select('nombre, valor')
+        .eq('sede_id', (_perfil.sede || '').toLowerCase())
+        .eq('activo', true)
+        .order('nombre')
+    _barriosCatalogo = data ?? []
+}
+
+function _initBarrioPicker() {
+    const input = document.getElementById('ck-barrio')
+    const list  = document.getElementById('ck-barrio-list')
+
+    input.addEventListener('input', () => {
+        _barrioNombre   = ''
+        _domicilioValor = 0
+        _actualizarResumen()
+
+        const q = input.value.toLowerCase().trim()
+        if (!q || !_barriosCatalogo?.length) { list.style.display = 'none'; return }
+
+        const matches = _barriosCatalogo.filter(b => b.nombre.toLowerCase().includes(q))
+        if (!matches.length) {
+            list.innerHTML = '<div class="ld-barrio-picker__none">Sin resultados</div>'
+            list.style.display = ''
+            return
+        }
+        list.innerHTML = matches.map(b =>
+            `<div class="ld-barrio-picker__item" data-nombre="${b.nombre}" data-valor="${b.valor}">
+                <span>${b.nombre}</span>
+                <span class="ld-barrio-picker__val">$${Number(b.valor).toLocaleString('es-CO')}</span>
+             </div>`
+        ).join('')
+        list.style.display = ''
+    })
+
+    list.addEventListener('click', e => {
+        const item = e.target.closest('.ld-barrio-picker__item')
+        if (!item) return
+        _barrioNombre   = item.dataset.nombre
+        _domicilioValor = Number(item.dataset.valor)
+        input.value = _barrioNombre
+        list.style.display = 'none'
+        _actualizarResumen()
+    })
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#ck-barrio-wrap')) list.style.display = 'none'
+    })
+}
+
+function _actualizarResumen() {
+    const subtotal = _carrito.reduce((s, i) => s + i.precio * i.qty, 0)
+    const domVal   = _tipoEntrega === 'domicilio' ? _domicilioValor : 0
+    document.getElementById('modal-subtotal').textContent  = formatPrecio(subtotal)
+    document.getElementById('modal-domicilio').textContent = formatPrecio(domVal)
+    document.getElementById('row-domicilio').style.display = (_tipoEntrega === 'domicilio' && domVal > 0) ? '' : 'none'
+    document.getElementById('modal-total').textContent     = formatPrecio(subtotal + domVal)
+}
+
 // ── Checkout ──────────────────────────────────────────────────────────────────
 function setEntrega(tipo) {
     _tipoEntrega = tipo
@@ -263,14 +331,14 @@ function setEntrega(tipo) {
     )
     const camposDir = document.getElementById('campos-domicilio-modal')
     if (camposDir) camposDir.style.display = tipo === 'domicilio' ? '' : 'none'
+    _actualizarResumen()
 }
 
-function abrirCheckout() {
-    const total = _carrito.reduce((s, i) => s + i.precio * i.qty, 0)
-    document.getElementById('modal-subtotal').textContent = formatPrecio(total)
-    document.getElementById('modal-total').textContent    = formatPrecio(total)
+async function abrirCheckout() {
+    await _loadBarriosCatalogo()
     document.getElementById('ck-error').style.display = 'none'
     document.getElementById('modalCheckout').classList.add('open')
+    _actualizarResumen()
 }
 
 function cerrarCheckout() {
@@ -289,7 +357,7 @@ async function confirmarPedido() {
         const dir    = document.getElementById('ck-direccion').value.trim()
         const barrio = document.getElementById('ck-barrio').value.trim()
         if (!dir)    { mostrarError('Ingresa la dirección.'); return }
-        if (!barrio) { mostrarError('Ingresa el barrio.'); return }
+        if (!barrio) { mostrarError('Selecciona el barrio.'); return }
     }
 
     mostrarOverlay('Guardando pedido...')
@@ -304,7 +372,7 @@ async function confirmarPedido() {
         const domicilio = _tipoEntrega === 'domicilio'
             ? {
                 barrio: document.getElementById('ck-barrio').value.trim(),
-                valor:  0
+                valor:  _domicilioValor
               }
             : { tipo: 'recoger', valor: 0 }
 
@@ -315,7 +383,8 @@ async function confirmarPedido() {
             qty:    i.qty,
         }))
 
-        const total = _carrito.reduce((s, i) => s + i.precio * i.qty, 0)
+        const subtotal = _carrito.reduce((s, i) => s + i.precio * i.qty, 0)
+        const total    = subtotal + (_tipoEntrega === 'domicilio' ? _domicilioValor : 0)
 
         const pedido = {
             n_pedido:  nPedido,
@@ -359,6 +428,9 @@ function limpiarFormulario() {
         const el = document.getElementById(id)
         if (el) el.value = ''
     })
+    _barrioNombre   = ''
+    _domicilioValor = 0
+    document.getElementById('ck-barrio-list').style.display = 'none'
     setEntrega('domicilio')
     _pago = 'efectivo'
     document.querySelectorAll('.ld-pago-btn').forEach(b =>

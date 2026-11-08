@@ -771,6 +771,54 @@ body {
     margin-bottom: 10px;
 }
 
+/* ── Barrio picker (buscador con dropdown) ───────────── */
+.ld-barrio-picker {
+    position: relative;
+    width: 100%;
+}
+.ld-barrio-picker .ld-modal__input { width: 100%; box-sizing: border-box; }
+
+.ld-barrio-picker__list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1.5px solid #d9c4b0;
+    border-radius: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(117,71,59,0.12);
+}
+.ld-barrio-picker__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    cursor: pointer;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #f0e8df;
+    font-family: 'Montserrat', sans-serif;
+}
+.ld-barrio-picker__item:last-child { border-bottom: none; }
+.ld-barrio-picker__item:hover { background: #f7ede2; }
+.ld-barrio-picker__val {
+    font-weight: 700;
+    color: #2e7d32;
+    white-space: nowrap;
+    margin-left: 8px;
+    font-size: 1.2rem;
+}
+.ld-barrio-picker__none {
+    padding: 12px;
+    text-align: center;
+    color: #aaa;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', sans-serif;
+}
+
 .ld-modal__input {
     width: 100%;
     padding: 10px 12px;
