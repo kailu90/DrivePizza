@@ -1065,13 +1065,17 @@ html, body {
     flex: 1; min-height: 0;
     overflow: auto;
     background: var(--ld-beige, #F6EBE0);
+    padding: 0 16px 16px;
 }
 .ld-hist-tabla-wrap::-webkit-scrollbar { width: 5px; height: 5px; }
 .ld-hist-tabla-wrap::-webkit-scrollbar-thumb { background: rgba(117,71,59,0.2); border-radius: 4px; }
 
 .ld-hist-tabla {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
     font-size: 1.3rem;
     font-family: 'Montserrat', sans-serif;
 }
@@ -1105,7 +1109,6 @@ html, body {
 .ld-hist-col-filter:focus { border-color: var(--ld-marron, #75473B); }
 
 .ld-hist-tabla tbody tr {
-    border-bottom: 1px solid rgba(117,71,59,0.1);
     cursor: pointer;
     transition: background 0.1s;
     background: var(--ld-beige, #F6EBE0);
@@ -1118,6 +1121,8 @@ html, body {
     white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis;
     max-width: 160px;
+    border-bottom: 1px solid rgba(117,71,59,0.1);
+    border-radius: 0;
 }
 .ld-hist-tabla tbody td:nth-child(4) { text-align: left; } /* Cliente */
 .ld-hist-tabla tbody td:nth-child(5) { text-align: left; } /* Dirección */
