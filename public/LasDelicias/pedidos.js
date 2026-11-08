@@ -35,6 +35,9 @@ function catIcon(name) {
 // ── Estado ───────────────────────────────────────────────────────────────────
 let _user        = null
 let _perfil      = null
+let _currentView = INITIAL_VIEW
+
+const _hist = { offset: 0, done: false, loading: false, loaded: false }
 let _categorias  = []
 let _productos   = []        // todos los productos cargados
 let _catActiva   = null
@@ -58,6 +61,9 @@ async function init() {
 
     _user   = user
     _perfil = perfil
+
+    // Si la vista inicial es historial y ya tenemos perfil, cargar ahora
+    if (_currentView === 'historial') _loadHistorial(true)
 
     if (IS_DRAWER) {
         document.body.classList.add('drawer-mode')
@@ -413,6 +419,7 @@ document.querySelectorAll('.ld-pago-btn').forEach(b => {
 const VIEWS = ['catalogo', 'historial', 'barrios', 'clientes']
 
 function switchView(view) {
+    _currentView = view
     VIEWS.forEach(v => {
         const el = document.getElementById(`view-${v}`)
         if (!el) return
@@ -420,6 +427,8 @@ function switchView(view) {
     })
     const orden = document.querySelector('.ld-orden')
     if (orden) orden.style.display = view === 'catalogo' ? '' : 'none'
+
+    if (view === 'historial' && _perfil && !_hist.loaded) _loadHistorial(true)
 }
 
 // Frame visible desde shell / switch de vista
@@ -428,6 +437,148 @@ window.addEventListener('message', e => {
         window.parent.postMessage({ type: 'wa-visible', show: true }, '*')
     }
     if (e.data?.type === 'switch-view') switchView(e.data.view)
+})
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+async function _loadHistorial(reset = false) {
+    if (_hist.loading) return
+    if (!reset && _hist.done) return
+
+    if (reset) {
+        _hist.offset  = 0
+        _hist.done    = false
+        _hist.loaded  = true
+        document.getElementById('histList').innerHTML = ''
+    }
+
+    _hist.loading = true
+    document.getElementById('histLoading').style.display = ''
+
+    const busqueda = document.getElementById('hist-busqueda')?.value.trim() || ''
+    const estado   = document.getElementById('hist-estado')?.value           || ''
+    const desde    = document.getElementById('hist-desde')?.value            || ''
+    const hasta    = document.getElementById('hist-hasta')?.value            || ''
+
+    let q = supabase
+        .from('pedidos_callcenter')
+        .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, created_at')
+        .eq('sede', _perfil.sede)
+        .order('n_pedido', { ascending: false })
+        .range(_hist.offset, _hist.offset + 19)
+
+    if (estado)   q = q.eq('estado', estado)
+    if (busqueda) q = q.or(`nombre.ilike.%${busqueda}%,telefono.ilike.%${busqueda}%`)
+    if (desde)    q = q.gte('created_at', desde + 'T00:00:00')
+    if (hasta)    q = q.lte('created_at', hasta + 'T23:59:59')
+
+    const { data } = await q
+
+    _hist.loading = false
+    document.getElementById('histLoading').style.display = 'none'
+
+    if (!data?.length) {
+        if (reset) {
+            document.getElementById('histList').innerHTML =
+                '<div class="ld-hist-empty-msg">No se encontraron pedidos</div>'
+        }
+        _hist.done = true
+    } else {
+        _hist.offset += data.length
+        if (data.length < 20) _hist.done = true
+        _renderHistItems(data)
+    }
+
+    document.getElementById('histFooter').style.display = _hist.done ? 'none' : ''
+}
+
+function _renderHistItems(items) {
+    const list = document.getElementById('histList')
+    items.forEach(p => {
+        const card = document.createElement('div')
+        card.className = 'ld-hist-card'
+        card.innerHTML = `
+            <div class="ld-hist-card__left">
+                <div class="ld-hist-card__num">#${String(p.n_pedido).padStart(3, '0')}</div>
+                <div class="ld-hist-card__date">${_fmtHistDate(p.created_at)}</div>
+            </div>
+            <div class="ld-hist-card__mid">
+                <div class="ld-hist-card__nombre">${p.nombre}</div>
+                <div class="ld-hist-card__tel">${p.telefono}</div>
+            </div>
+            <div class="ld-hist-card__right">
+                <span class="ld-hist-badge ld-hist-badge--${(p.estado || '').replace(/ /g, '-')}">${_capStr(p.estado)}</span>
+                <div class="ld-hist-card__total">${formatPrecio(p.total)}</div>
+            </div>
+        `
+        card.addEventListener('click', () => _abrirDetalle(p))
+        list.appendChild(card)
+    })
+}
+
+function _fmtHistDate(iso) {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) +
+           ' · ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+}
+
+function _capStr(s) {
+    if (!s) return '—'
+    return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function _abrirDetalle(p) {
+    document.getElementById('det-titulo').textContent =
+        `Pedido #${String(p.n_pedido).padStart(3, '0')}`
+
+    const entrega = p.domicilio?.tipo === 'recoger'
+        ? 'Recoger en tienda'
+        : [p.direccion, p.domicilio?.barrio].filter(Boolean).join(' — ')
+
+    const prodsHtml = (p.productos || []).map(pr => `
+        <div class="ld-det__prod">
+            <span class="ld-det__prod-name">${pr.nombre}</span>
+            <span class="ld-det__prod-qty">×${pr.qty}</span>
+            <span class="ld-det__prod-price">${formatPrecio(pr.precio * pr.qty)}</span>
+        </div>`).join('')
+
+    document.getElementById('det-body').innerHTML = `
+        <div class="ld-det__info">
+            <div class="ld-det__row">
+                <span>Estado</span>
+                <span><span class="ld-hist-badge ld-hist-badge--${(p.estado||'').replace(/ /g,'-')}">${_capStr(p.estado)}</span></span>
+            </div>
+            <div class="ld-det__row"><span>Cliente</span><span>${p.nombre}</span></div>
+            <div class="ld-det__row"><span>Teléfono</span><span>${p.telefono}</span></div>
+            <div class="ld-det__row"><span>Entrega</span><span>${entrega}</span></div>
+            <div class="ld-det__row"><span>Pago</span><span>${_capStr(p.pago)}</span></div>
+            <div class="ld-det__row"><span>Canal</span><span>${_capStr(p.canal)}</span></div>
+            <div class="ld-det__row"><span>Asesor</span><span>${p.asesor || '—'}</span></div>
+            <div class="ld-det__row"><span>Fecha</span><span>${_fmtHistDate(p.created_at)}</span></div>
+        </div>
+        <div class="ld-det__prods">${prodsHtml}</div>
+        <div class="ld-det__total"><span>Total</span><span>${formatPrecio(p.total)}</span></div>
+    `
+    document.getElementById('modalDetalle').classList.add('open')
+}
+
+// Listeners historial
+let _histDebounce = null
+document.getElementById('hist-busqueda').addEventListener('input', () => {
+    clearTimeout(_histDebounce)
+    _histDebounce = setTimeout(() => _loadHistorial(true), 400)
+})
+document.getElementById('hist-estado').addEventListener('change', () => _loadHistorial(true))
+document.getElementById('hist-desde').addEventListener('change',  () => _loadHistorial(true))
+document.getElementById('hist-hasta').addEventListener('change',  () => _loadHistorial(true))
+document.getElementById('histMas').addEventListener('click', () => _loadHistorial(false))
+
+document.getElementById('btnCerrarDetalle').addEventListener('click', () =>
+    document.getElementById('modalDetalle').classList.remove('open')
+)
+document.getElementById('modalDetalle').addEventListener('click', e => {
+    if (e.target === e.currentTarget)
+        document.getElementById('modalDetalle').classList.remove('open')
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

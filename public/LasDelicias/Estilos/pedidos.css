@@ -895,6 +895,230 @@ html, body {
     display: none;
 }
 
+/* ════════════════════════════════════════════════════════
+   HISTORIAL DE PEDIDOS
+   ════════════════════════════════════════════════════════ */
+.ld-hist-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fff;
+    border-bottom: 1px solid #e8d8cc;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.ld-hist-search-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 160px;
+    gap: 8px;
+    background: #fdf4ee;
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.ld-hist-search-ico { width: 16px; height: 16px; color: var(--ld-marron-suave, #a07060); flex-shrink: 0; }
+
+.ld-hist-search {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #3a2010;
+    outline: none;
+}
+.ld-hist-search::placeholder { color: #b09080; }
+
+.ld-hist-sel,
+.ld-hist-date {
+    height: 34px;
+    border: 1.5px solid rgba(117,71,59,0.2);
+    border-radius: 8px;
+    padding: 0 8px;
+    font-size: 1.2rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #3a2010;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+}
+.ld-hist-sel:focus,
+.ld-hist-date:focus { border-color: var(--ld-marron, #75473B); }
+
+.ld-hist-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+.ld-hist-list::-webkit-scrollbar { width: 4px; }
+.ld-hist-list::-webkit-scrollbar-track { background: transparent; }
+.ld-hist-list::-webkit-scrollbar-thumb { background: rgba(117,71,59,0.2); border-radius: 4px; }
+
+.ld-hist-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0e8e0;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.ld-hist-card:hover { background: #fdf8f5; }
+
+.ld-hist-card__left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 60px;
+}
+.ld-hist-card__num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+.ld-hist-card__date {
+    font-size: 1.1rem;
+    color: #a09080;
+    white-space: nowrap;
+}
+
+.ld-hist-card__mid {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.ld-hist-card__nombre {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ld-hist-card__tel {
+    font-size: 1.2rem;
+    color: #9a8070;
+}
+
+.ld-hist-card__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+.ld-hist-card__total {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+
+/* ── Badges de estado ─────────────────────────────────── */
+.ld-hist-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.ld-hist-badge--pendiente      { background: #fef3c7; color: #92400e; }
+.ld-hist-badge--recibido       { background: #dbeafe; color: #1e40af; }
+.ld-hist-badge--en-preparacion { background: #ede9fe; color: #5b21b6; }
+.ld-hist-badge--despachado     { background: #d1fae5; color: #065f46; }
+.ld-hist-badge--entregado      { background: #dcfce7; color: #166534; }
+.ld-hist-badge--cancelado      { background: #fee2e2; color: #991b1b; }
+
+.ld-hist-loading,
+.ld-hist-empty-msg {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--ld-marron-suave, #a07060);
+    font-size: 1.3rem;
+}
+
+.ld-hist-footer {
+    padding: 10px;
+    text-align: center;
+    flex-shrink: 0;
+    border-top: 1px solid #f0e8e0;
+}
+.ld-hist-mas-btn {
+    background: none;
+    border: 1.5px solid rgba(117,71,59,0.3);
+    border-radius: 8px;
+    padding: 8px 28px;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--ld-marron, #75473B);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.ld-hist-mas-btn:hover {
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+}
+
+/* ── Modal detalle pedido ─────────────────────────────── */
+.ld-det__info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ld-det__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.ld-det__row > span:first-child {
+    font-size: 1.2rem;
+    color: #9a8070;
+    white-space: nowrap;
+}
+.ld-det__row > span:last-child {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-align: right;
+}
+.ld-det__prods {
+    background: #fdf8f5;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 14px;
+}
+.ld-det__prod {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.3rem;
+}
+.ld-det__prod-name { flex: 1; color: #1a1a1a; }
+.ld-det__prod-qty  { color: #9a8070; font-size: 1.2rem; min-width: 28px; text-align: center; }
+.ld-det__prod-price { font-weight: 700; color: var(--ld-marron, #75473B); }
+.ld-det__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+    padding-top: 12px;
+    border-top: 1.5px solid #e8d8cc;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 600px) {
     .ld-omni-layout {

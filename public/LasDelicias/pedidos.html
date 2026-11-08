@@ -120,13 +120,39 @@
 
             <!-- VIEW: Historial de pedidos -->
             <div id="view-historial">
-                <div class="ld-hist-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 3"/>
-                    </svg>
-                    Historial de pedidos — próximamente
+
+                <!-- Toolbar de filtros -->
+                <div class="ld-hist-bar">
+                    <div class="ld-hist-search-wrap">
+                        <svg class="ld-hist-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <circle cx="11" cy="11" r="7.5"/>
+                            <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
+                        </svg>
+                        <input class="ld-hist-search" type="search" id="hist-busqueda" placeholder="Nombre o teléfono...">
+                    </div>
+                    <select class="ld-hist-sel" id="hist-estado">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="recibido">Recibido</option>
+                        <option value="en preparacion">En preparación</option>
+                        <option value="despachado">Despachado</option>
+                        <option value="entregado">Entregado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                    <input class="ld-hist-date" type="date" id="hist-desde" title="Desde">
+                    <input class="ld-hist-date" type="date" id="hist-hasta" title="Hasta">
                 </div>
+
+                <!-- Lista de pedidos -->
+                <div class="ld-hist-list" id="histList">
+                    <div class="ld-hist-loading" id="histLoading" style="display:none">Cargando...</div>
+                </div>
+
+                <!-- Cargar más -->
+                <div class="ld-hist-footer" id="histFooter" style="display:none">
+                    <button class="ld-hist-mas-btn" id="histMas">Cargar más</button>
+                </div>
+
             </div><!-- /view-historial -->
 
             <!-- VIEW: Barrios -->
@@ -261,6 +287,21 @@
 
         <button class="ld-btn-confirmar" id="btnConfirmar">Confirmar pedido</button>
 
+    </div>
+</div>
+
+<!-- Modal detalle pedido -->
+<div class="ld-modal-bg" id="modalDetalle">
+    <div class="ld-modal">
+        <div class="ld-modal__hdr">
+            <span class="ld-modal__title" id="det-titulo">Pedido</span>
+            <button class="ld-modal__close" id="btnCerrarDetalle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div id="det-body"></div>
     </div>
 </div>
 
