@@ -16,48 +16,14 @@ let _detId       = null      // id del barrio en modal-detalle
 export async function initBarrios(supabase, perfil) {
     _supabase = supabase
     _perfil   = perfil
-    _isEditor = ['admin', 'callcenter-admin'].includes(perfil.rol)
+    _isEditor = ['admin', 'panaderias-admin'].includes(perfil.rol)
+
+    // Sede del usuario
+    _sede = (perfil.sede || '').toLowerCase()
+    document.getElementById('barrios-titulo').textContent = _cap(perfil.sede || _sede)
 
     // Ocultar botón agregar si no es editor
     document.getElementById('btn-agregar-barrio').style.display = _isEditor ? '' : 'none'
-
-    // ── Cargar sedes ──────────────────────────────────────────────────────
-    const { data: sedes, error: sedesErr } = await supabase
-        .from('sedes')
-        .select('id, name')
-        .order('name')
-
-    if (sedesErr || !sedes?.length) {
-        _setStatus('No se pudieron cargar las sedes.', 'error')
-        return
-    }
-
-    const nav = document.getElementById('barrios-sede-nav')
-    nav.innerHTML = ''
-    sedes.forEach((s, i) => {
-        const btn = document.createElement('button')
-        btn.type      = 'button'
-        btn.className = 'ld-barrios-sede-btn' + (i === 0 ? ' active' : '')
-        btn.dataset.sede = s.name.toLowerCase()
-        btn.textContent  = _cap(s.name)
-        nav.appendChild(btn)
-    })
-
-    _sede = sedes[0].name.toLowerCase()
-    document.getElementById('barrios-titulo').textContent = _cap(sedes[0].name)
-
-    // Event delegation sede buttons
-    nav.addEventListener('click', e => {
-        const btn = e.target.closest('.ld-barrios-sede-btn')
-        if (!btn) return
-        nav.querySelectorAll('.ld-barrios-sede-btn').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        _sede = btn.dataset.sede
-        document.getElementById('barrios-titulo').textContent = btn.textContent
-        document.getElementById('barrios-search').value = ''
-        _query = ''
-        _cargarSede(_sede)
-    })
 
     // ── Búsqueda ─────────────────────────────────────────────────────────
     document.getElementById('barrios-search').addEventListener('input', e => {

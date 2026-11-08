@@ -1366,58 +1366,12 @@ body {
    VISTA BARRIOS
    ════════════════════════════════════════════════════════ */
 
-.ld-barrios-layout {
-    display: grid;
-    grid-template-columns: 160px 1fr;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-}
-
-/* ── Sidebar sedes ─────────────────────────────────────── */
-.ld-barrios-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 16px 12px;
-    border-right: 1px solid #e0d4c8;
-    overflow-y: auto;
-    background: #fdf6ed;
-}
-
-.ld-barrios-sidebar__title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--ld-marron-suave, #a07060);
-    margin-bottom: 4px;
-}
-
-.ld-barrios-sede-btn {
-    width: 100%;
-    text-align: left;
-    padding: 8px 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: none;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #555;
-    cursor: pointer;
-    font-family: 'Montserrat', sans-serif;
-}
-.ld-barrios-sede-btn:hover { border-color: var(--ld-marron, #75473B); color: var(--ld-marron, #75473B); }
-.ld-barrios-sede-btn.active {
-    background: var(--ld-marron, #75473B);
-    color: var(--ld-beige, #F6EBE0);
-    border-color: var(--ld-marron, #75473B);
-}
-
 /* ── Panel principal ───────────────────────────────────── */
 .ld-barrios-main {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
     padding: 16px 20px;
     overflow: hidden;
     gap: 10px;
