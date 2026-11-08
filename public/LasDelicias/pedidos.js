@@ -1,6 +1,5 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
-import { mountHeader, setHeaderUser } from './Shared/ldHeader.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -39,8 +38,6 @@ let _perfil        = null
 let _currentView   = INITIAL_VIEW
 let _barriosInited = false
 
-const NAV_LABEL = { catalogo: 'Pedidos', historial: 'Historial', barrios: 'Barrios', clientes: 'Clientes' }
-
 const _hist = { offset: 0, done: false, loading: false, loaded: false }
 let _categorias  = []
 let _productos   = []        // todos los productos cargados
@@ -66,26 +63,18 @@ async function init() {
     _user   = user
     _perfil = perfil
 
-    // ── Header (no en drawer mode) ────────────────────────────────────────
+    // ── Nav tabs (no en drawer mode) ─────────────────────────────────────
     if (!IS_DRAWER) {
         const isAdmin = ['admin', 'callcenter-admin'].includes(_perfil.rol)
-        const navSections = [
-            { label: 'Pedidos',   onClick: () => switchView('catalogo')  },
-            { label: 'Historial', onClick: () => switchView('historial') },
-        ]
-        if (isAdmin) {
-            navSections.push({ label: 'Barrios', onClick: () => switchView('barrios') })
+        const navEl = document.getElementById('ld-nav-tabs')
+        if (navEl) {
+            if (isAdmin) navEl.querySelector('[data-view="barrios"]')?.classList.remove('ld-nav-hidden')
+            navEl.style.display = ''
+            navEl.addEventListener('click', e => {
+                const btn = e.target.closest('[data-view]')
+                if (btn) switchView(btn.dataset.view)
+            })
         }
-        mountHeader({
-            navLabel: NAV_LABEL[INITIAL_VIEW] || 'Pedidos',
-            navSections,
-            onLogout: async () => {
-                if (!confirm('¿Cerrar sesión?')) return
-                await supabase.auth.signOut()
-                window.parent.postMessage({ type: 'logout' }, '*')
-            },
-        })
-        setHeaderUser({ sede: _perfil.sede })
     }
 
     // Si la vista inicial es historial y ya tenemos perfil, cargar ahora
@@ -459,8 +448,9 @@ function switchView(view) {
     if (orden)  orden.style.display = view === 'catalogo' ? '' : 'none'
     if (layout) layout.style.gridTemplateColumns = view === 'catalogo' ? '' : '1fr'
 
-    const labelEl = document.getElementById('hdr-nav-label')
-    if (labelEl) labelEl.textContent = NAV_LABEL[view] || view
+    document.querySelectorAll('#ld-nav-tabs .ld-nav-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === view)
+    )
 
     if (view === 'historial' && _perfil && !_hist.loaded) _loadHistorial(true)
 

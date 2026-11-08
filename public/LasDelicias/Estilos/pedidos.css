@@ -18,6 +18,36 @@ body {
     flex-direction: column;
 }
 
+/* ── Nav tabs de vistas (Pedidos / Historial / Barrios) ── */
+.ld-nav-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px 12px 0;
+    background: var(--ld-beige, #F6EBE0);
+    border-bottom: 2px solid #e0d4c8;
+    flex-shrink: 0;
+}
+.ld-nav-tab {
+    padding: 7px 18px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    background: none;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ld-marron-suave, #a07060);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+.ld-nav-tab:hover { color: var(--ld-marron, #75473B); background: rgba(117,71,59,0.07); }
+.ld-nav-tab.active {
+    color: var(--ld-marron, #75473B);
+    background: white;
+    border-bottom: 2px solid white;
+    margin-bottom: -2px;
+}
+.ld-nav-hidden { display: none; }
+
 #contenido-principal {
     display: flex;
     flex-direction: column;

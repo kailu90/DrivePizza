@@ -7,7 +7,6 @@
     <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
-    <link rel="stylesheet" href="./Estilos/header.css">
     <link rel="stylesheet" href="./Estilos/pedidos.css">
     <style>
         /* ── Drawer mode (cargado desde panaderias-shell con ?drawer) ── */
@@ -75,7 +74,12 @@
 </head>
 <body>
 
-<!-- Header: inyectado por ldHeader.js en init() -->
+<!-- Nav tabs de vistas (solo para callcenter / admin) -->
+<nav id="ld-nav-tabs" class="ld-nav-tabs" style="display:none;">
+    <button class="ld-nav-tab" data-view="catalogo">Pedidos</button>
+    <button class="ld-nav-tab" data-view="historial">Historial</button>
+    <button class="ld-nav-tab ld-nav-hidden" data-view="barrios">Barrios</button>
+</nav>
 
 <div class="ld-drawer-hdr">
     <span class="ld-drawer-hdr__title">Tomar pedido</span>
