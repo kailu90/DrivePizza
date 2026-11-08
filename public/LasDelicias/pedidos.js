@@ -344,7 +344,7 @@ async function confirmarPedido() {
         cerrarCheckout()
         limpiarFormulario()
         vaciarCarrito()
-        if (IS_DRAWER) window.parent.postMessage({ type: 'tomar-pedido-close' }, '*')
+        abrirConfirmacion(nPedido, nombre)
 
     } catch (err) {
         ocultarOverlay()
@@ -368,6 +368,12 @@ function mostrarError(msg) {
     const el = document.getElementById('ck-error')
     el.textContent    = msg
     el.style.display  = 'block'
+}
+
+function abrirConfirmacion(nPedido, nombre) {
+    document.getElementById('conf-numero').textContent = `#${String(nPedido).padStart(3, '0')}`
+    document.getElementById('conf-nombre').textContent = nombre
+    document.getElementById('modalConfirmacion').classList.add('open')
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -486,8 +492,8 @@ async function _loadHistorial(reset = false) {
         .range(_hist.offset, _hist.offset + 24)
 
     if (estado)      q = q.eq('estado', estado)
-    if (f.desde)     q = q.gte('created_at', f.desde + 'T00:00:00-05:00')
-    if (f.hasta)     q = q.lte('created_at', f.hasta + 'T23:59:59-05:00')
+    if (f.desde)     q = q.gte('fecha', f.desde + 'T00:00:00-05:00')
+    if (f.hasta)     q = q.lte('fecha', f.hasta + 'T23:59:59-05:00')
     if (f.npedido)   q = q.eq('n_pedido', Number(f.npedido))
     if (f.telefono)  q = q.ilike('telefono', `%${f.telefono}%`)
     if (f.cliente)   q = q.ilike('nombre', `%${f.cliente}%`)
@@ -525,8 +531,8 @@ async function _loadResumen() {
             .select('estado, total')
             .eq('sede', _perfil.sede)
             .range(offset, offset + PAGE - 1)
-        if (f.desde) q = q.gte('created_at', f.desde + 'T00:00:00-05:00')
-        if (f.hasta) q = q.lte('created_at', f.hasta + 'T23:59:59-05:00')
+        if (f.desde) q = q.gte('fecha', f.desde + 'T00:00:00-05:00')
+        if (f.hasta) q = q.lte('fecha', f.hasta + 'T23:59:59-05:00')
 
         const { data } = await q
         if (!data?.length) break
@@ -651,6 +657,16 @@ _cfIds.forEach(id => {
 })
 ;['cf-pago','cf-estado-col'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => _loadHistorial(true))
+})
+
+// Modal confirmación
+const _cerrarConfirmacion = () => {
+    document.getElementById('modalConfirmacion').classList.remove('open')
+    if (IS_DRAWER) window.parent.postMessage({ type: 'tomar-pedido-close' }, '*')
+}
+document.getElementById('btnCerrarConfirmacion').addEventListener('click', _cerrarConfirmacion)
+document.getElementById('modalConfirmacion').addEventListener('click', e => {
+    if (e.target === e.currentTarget) _cerrarConfirmacion()
 })
 
 // Modal detalle
