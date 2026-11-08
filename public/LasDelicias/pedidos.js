@@ -269,15 +269,18 @@ async function _loadBarriosCatalogo() {
     if (_barriosCatalogo !== null) return
     // Resolver sede_id real (FK a lasdelicias.sedes.id)
     const { data: sedes } = await supabase.from('sedes').select('id, name')
+    console.log('[barrios] sedes:', sedes, '| perfil.sede:', _perfil.sede)
     const sedeRow = sedes?.find(s => s.name.toLowerCase() === (_perfil.sede || '').toLowerCase())
+    console.log('[barrios] sedeRow encontrado:', sedeRow)
     if (!sedeRow) { _barriosCatalogo = []; return }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('barrios')
         .select('nombre, valor')
         .eq('sede_id', sedeRow.id)
         .eq('activo', true)
         .order('nombre')
+    console.log('[barrios] catálogo cargado:', data, '| error:', error)
     _barriosCatalogo = data ?? []
 }
 
@@ -348,6 +351,7 @@ function setEntrega(tipo) {
 }
 
 async function abrirCheckout() {
+    _barriosCatalogo = null   // forzar recarga fresca
     await _loadBarriosCatalogo()
     document.getElementById('ck-error').style.display = 'none'
     document.getElementById('modalCheckout').classList.add('open')
