@@ -22,6 +22,7 @@ async function init() {
         mountHeader({
             navLabel: 'Panaderias',
             onLogout: async () => {
+                if (!confirm('¿Deseas cerrar sesión?')) return
                 await supabase.auth.signOut()
                 window.parent.postMessage({ type: 'logout' }, '*')
             },
