@@ -63,13 +63,13 @@ let _sedesLoaded = false
 if (btnCreateAccount) btnCreateAccount.addEventListener('click', async () => {
     if (_sedesLoaded) return
     _sedesLoaded = true
-    const { data: sedes } = await supabase.from('sedes').select('id, name, nombre_display').order('name')
+    const { data: sedes } = await supabase.from('sedes').select('id, name').order('name')
     const sel = document.getElementById('reg_sede')
     if (!sel || !sedes?.length) return
     sedes.forEach(s => {
         const o = document.createElement('option')
         o.value = s.name.toLowerCase()
-        o.textContent = s.nombre_display || s.name
+        o.textContent = s.name
         sel.appendChild(o)
     })
 })
@@ -82,28 +82,32 @@ document.getElementById('register_form').addEventListener('submit', async (e) =>
     const confirmPass = document.getElementById('reg_confirm_pass').value
     const sede        = document.getElementById('reg_sede').value
 
-    if (username.length < 3)  { displayError('El usuario es muy corto.'); return }
-    if (pass !== confirmPass)  { displayError('Las contraseñas no coinciden.'); return }
+    if (!sede)                 { displayRegError('Selecciona una sede.'); return }
+    if (username.length < 3)  { displayRegError('El usuario es muy corto.'); return }
+    if (pass !== confirmPass)  { displayRegError('Las contraseñas no coinciden.'); return }
 
     try {
         const { data: exist } = await supabase.from('usuarios').select('id').eq('username', username).limit(1)
-        if (exist?.length) { displayError('Este usuario ya está tomado.'); return }
+        if (exist?.length) { displayRegError('Este usuario ya está tomado.'); return }
 
         const { data, error } = await supabase.auth.signUp({ email, password: pass })
         if (error) throw error
 
-        await supabase.from('usuarios').insert({
+        const { error: insertError } = await supabase.from('usuarios').insert({
             id: data.user.id, username, email, sede,
             rol: 'pending', active: false, status: 'pending',
         })
+        if (insertError) {
+            await supabase.auth.signOut()
+            throw insertError
+        }
 
         await supabase.auth.signOut()
         registrationModal.classList.remove('active')
         confirmationModal.classList.add('active')
-        confirmationModal.onclick = (ev) => { if (ev.target === confirmationModal) confirmationModal.classList.remove('active') }
     } catch (err) {
         const msg = err.message?.includes('already') ? 'El correo ya existe.' : (err.message || 'Error en el registro.')
-        displayError(msg)
+        displayRegError(msg)
     }
 })
 
@@ -119,17 +123,16 @@ if (closeForgotBtn) closeForgotBtn.addEventListener('click', () => forgotModal.c
 document.getElementById('forgot_form').addEventListener('submit', async (e) => {
     e.preventDefault()
     const email = document.getElementById('forgot_email').value.trim()
-    if (!email) { displayError('Ingresa tu correo electrónico.'); return }
+    if (!email) { displayForgotError('Ingresa tu correo electrónico.'); return }
     try {
         const redirectTo = window.location.origin + window.location.pathname
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
         if (error) throw error
         forgotModal.classList.remove('active')
         confirmationForgotModal.classList.add('active')
-        confirmationForgotModal.onclick = (ev) => { if (ev.target === confirmationForgotModal) confirmationForgotModal.classList.remove('active') }
         document.getElementById('forgot_form').reset()
     } catch (err) {
-        displayError(err.message || 'Error al enviar el correo.')
+        displayForgotError(err.message || 'Error al enviar el correo.')
     }
 })
 
@@ -145,18 +148,17 @@ document.getElementById('reset_form').addEventListener('submit', async (e) => {
     e.preventDefault()
     const newPass     = document.getElementById('reset_pass').value
     const confirmPass = document.getElementById('reset_confirm_pass').value
-    if (newPass !== confirmPass)  { displayError('Las contraseñas no coinciden.'); return }
-    if (newPass.length < 6)       { displayError('Mínimo 6 caracteres.'); return }
+    if (newPass !== confirmPass)  { displayResetError('Las contraseñas no coinciden.'); return }
+    if (newPass.length < 6)       { displayResetError('Mínimo 6 caracteres.'); return }
     try {
         const { error } = await supabase.auth.updateUser({ password: newPass })
         if (error) throw error
         resetModal.classList.remove('active')
         document.getElementById('reset_form').reset()
         confirmationResetModal.classList.add('active')
-        confirmationResetModal.onclick = (ev) => { if (ev.target === confirmationResetModal) confirmationResetModal.classList.remove('active') }
         await supabase.auth.signOut()
     } catch (err) {
-        displayError(err.message || 'Error al cambiar la contraseña.')
+        displayResetError(err.message || 'Error al cambiar la contraseña.')
     }
 })
 
@@ -176,6 +178,35 @@ function displayError(msg = 'Usuario o contraseña incorrectos.') {
     errorMessage.style.display = 'block'
     setTimeout(() => { errorMessage.style.display = 'none' }, 5000)
 }
+
+function displayRegError(msg) {
+    const el = document.getElementById('reg_error')
+    if (!el) return
+    el.textContent   = msg
+    el.style.display = 'block'
+    setTimeout(() => { el.style.display = 'none' }, 5000)
+}
+
+function displayForgotError(msg) {
+    const el = document.getElementById('forgot_error')
+    if (!el) return
+    el.textContent   = msg
+    el.style.display = 'block'
+    setTimeout(() => { el.style.display = 'none' }, 5000)
+}
+
+function displayResetError(msg) {
+    const el = document.getElementById('reset_error')
+    if (!el) return
+    el.textContent   = msg
+    el.style.display = 'block'
+    setTimeout(() => { el.style.display = 'none' }, 5000)
+}
+
+document.getElementById('btn_cancel_reset')?.addEventListener('click', () => { resetModal.classList.remove('active'); document.getElementById('reset_form').reset() })
+document.getElementById('btn_close_confirmation')?.addEventListener('click', () => confirmationModal.classList.remove('active'))
+document.getElementById('btn_close_confirmation_forgot')?.addEventListener('click', () => confirmationForgotModal.classList.remove('active'))
+document.getElementById('btn_close_confirmation_reset')?.addEventListener('click', () => confirmationResetModal.classList.remove('active'))
 
 window.addEventListener('load', () => {
     document.body.classList.add('loaded')
