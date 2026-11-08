@@ -30,6 +30,10 @@ async function init() {
         setHeaderUser({ username: perfil.username, sede: perfil.sede || '' })
     }
 
+    if (['admin', 'panaderias-admin'].includes(perfil.rol)) {
+        document.getElementById('card-barrios').style.display = ''
+    }
+
     document.getElementById('contenido-principal').style.display = ''
     document.body.classList.add('loaded')
 }
