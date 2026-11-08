@@ -13,6 +13,11 @@ html, body {
     overflow: hidden;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
 #contenido-principal {
     display: flex;
     flex-direction: column;
@@ -1353,6 +1358,288 @@ html, body {
     font-size: 1.3rem;
     font-weight: 700;
     padding: 10px 0 2px;
+}
+
+/* ════════════════════════════════════════════════════════
+   VISTA BARRIOS
+   ════════════════════════════════════════════════════════ */
+
+.ld-barrios-layout {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ── Sidebar sedes ─────────────────────────────────────── */
+.ld-barrios-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 12px;
+    border-right: 1px solid #e0d4c8;
+    overflow-y: auto;
+    background: #fdf6ed;
+}
+
+.ld-barrios-sidebar__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ld-marron-suave, #a07060);
+    margin-bottom: 4px;
+}
+
+.ld-barrios-sede-btn {
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: none;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+.ld-barrios-sede-btn:hover { border-color: var(--ld-marron, #75473B); color: var(--ld-marron, #75473B); }
+.ld-barrios-sede-btn.active {
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    border-color: var(--ld-marron, #75473B);
+}
+
+/* ── Panel principal ───────────────────────────────────── */
+.ld-barrios-main {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+    overflow: hidden;
+    gap: 10px;
+}
+
+.ld-barrios-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.ld-barrios-titulo {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+
+.ld-barrios-btn-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+.ld-barrios-btn-add:hover { background: var(--ld-marron-oscuro, #4e2e24); }
+
+/* ── Buscador ──────────────────────────────────────────── */
+.ld-barrios-search {
+    padding: 9px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', sans-serif;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.ld-barrios-search:focus { border-color: var(--ld-marron, #75473B); outline: none; }
+
+/* ── Status ────────────────────────────────────────────── */
+.ld-barrios-status {
+    font-size: 1.2rem;
+    min-height: 1.6rem;
+    flex-shrink: 0;
+}
+.ld-barrios-status--error { color: #c0392b; }
+.ld-barrios-status--ok    { color: var(--ld-marron, #75473B); }
+
+/* ── Tabla ─────────────────────────────────────────────── */
+.ld-barrios-tabla-wrap {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e0d4c8;
+    border-radius: 8px;
+}
+
+.ld-barrios-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+}
+.ld-barrios-tabla thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.ld-barrios-tabla th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--ld-beige, #F6EBE0);
+    border-bottom: 2px solid var(--ld-marron, #75473B);
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+.ld-barrios-tabla td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #ede5d8;
+    vertical-align: middle;
+}
+.ld-barrios-tr { cursor: pointer; }
+.ld-barrios-tr:hover td { background: #f7ede2; }
+
+.td-nom { width: 60%; font-weight: 600; color: var(--ld-marron, #75473B); }
+.td-val { width: 25%; }
+.td-act { width: 15%; }
+
+.ld-barrios-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: #f0e8e0;
+    color: #aaa;
+}
+.ld-barrios-badge--on {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.ld-barrios-empty {
+    text-align: center;
+    color: #aaa;
+    padding: 30px;
+    font-size: 1.3rem;
+}
+
+/* ── Botones modal ─────────────────────────────────────── */
+.ld-barrios-btn-save {
+    padding: 8px 20px;
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+.ld-barrios-btn-save:hover { background: var(--ld-marron-oscuro, #4e2e24); }
+
+.ld-barrios-btn-cancel {
+    padding: 8px 16px;
+    background: none;
+    color: #666;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+.ld-barrios-btn-cancel:hover { border-color: var(--ld-marron, #75473B); color: var(--ld-marron, #75473B); }
+
+.ld-barrios-btn-delete {
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5c0bb;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+.ld-barrios-btn-delete:hover { background: #f5c0bb; }
+
+.ld-barrios-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.ld-barrios-field-label {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 5px;
+}
+
+/* ── Toggle activo ─────────────────────────────────────── */
+.ld-barrios-toggle {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+.ld-barrios-toggle input { opacity: 0; width: 0; height: 0; }
+.ld-barrios-toggle__slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    border-radius: 22px;
+    transition: background 0.2s;
+}
+.ld-barrios-toggle__slider::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.ld-barrios-toggle input:checked + .ld-barrios-toggle__slider { background: var(--ld-marron, #75473B); }
+.ld-barrios-toggle input:checked + .ld-barrios-toggle__slider::before { transform: translateX(18px); }
+.ld-barrios-toggle input:disabled + .ld-barrios-toggle__slider { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Toast ─────────────────────────────────────────────── */
+.ld-barrios-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    z-index: 99999;
+    white-space: nowrap;
+}
+.ld-barrios-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 /* ── RESPONSIVE ───────────────────────────────────────── */

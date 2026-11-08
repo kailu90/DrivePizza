@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
     <link rel="stylesheet" href="../Estilos/styles.css">
     <link rel="stylesheet" href="./Estilos/theme.css">
+    <link rel="stylesheet" href="./Estilos/header.css">
     <link rel="stylesheet" href="./Estilos/pedidos.css">
     <style>
         /* ── Drawer mode (cargado desde panaderias-shell con ?drawer) ── */
@@ -249,11 +250,34 @@
 
             <!-- VIEW: Barrios -->
             <div id="view-barrios">
-                <div class="ld-hist-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m19 19-3.5-3.5"/>
-                    </svg>
-                    Gestión de barrios — próximamente
+                <div class="ld-barrios-layout">
+                    <nav class="ld-barrios-sidebar">
+                        <div class="ld-barrios-sidebar__title">Sedes</div>
+                        <div id="barrios-sede-nav"></div>
+                    </nav>
+                    <div class="ld-barrios-main">
+                        <div class="ld-barrios-topbar">
+                            <h2 class="ld-barrios-titulo" id="barrios-titulo">—</h2>
+                            <button class="ld-barrios-btn-add" id="btn-agregar-barrio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Agregar barrio
+                            </button>
+                        </div>
+                        <input type="text" id="barrios-search" class="ld-barrios-search" placeholder="Buscar barrio..." autocomplete="off">
+                        <div id="barrios-status" class="ld-barrios-status"></div>
+                        <div class="ld-barrios-tabla-wrap">
+                            <table class="ld-barrios-tabla">
+                                <thead>
+                                    <tr>
+                                        <th class="td-nom">Barrio</th>
+                                        <th class="td-val">Domicilio</th>
+                                        <th class="td-act">Activo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="barrios-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div><!-- /view-barrios -->
 
@@ -396,6 +420,67 @@
         <div id="det-body"></div>
     </div>
 </div>
+
+<!-- Modal agregar barrio -->
+<div class="ld-modal-bg" id="modal-agregar-barrio" style="display:none;">
+    <div class="ld-modal" style="max-width:380px;">
+        <div class="ld-modal__hdr">
+            <span class="ld-modal__title">Agregar barrio</span>
+            <button class="ld-modal__close" id="btn-cerrar-modal-barrio">&times;</button>
+        </div>
+        <p id="modal-barrio-sede-label" style="margin:4px 0 16px;font-size:1.8rem;font-weight:900;color:var(--ld-marron,#75473B);letter-spacing:0.5px;"></p>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label class="ld-barrios-field-label">Nombre del barrio</label>
+                <input id="modal-barrio-nombre" type="text" placeholder="Ej: Villa del Prado" class="ld-modal__input" style="width:100%;box-sizing:border-box;" autocomplete="off">
+            </div>
+            <div>
+                <label class="ld-barrios-field-label">Valor domicilio</label>
+                <input id="modal-barrio-valor" type="number" min="0" placeholder="Ej: 5000" class="ld-modal__input" style="width:100%;box-sizing:border-box;">
+            </div>
+        </div>
+        <div class="ld-barrios-modal-footer">
+            <button class="ld-barrios-btn-cancel" id="btn-cancelar-modal-barrio">Cancelar</button>
+            <button class="ld-barrios-btn-save"   id="btn-guardar-modal-barrio">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal detalle / edición barrio -->
+<div class="ld-modal-bg" id="modal-detalle-barrio" style="display:none;">
+    <div class="ld-modal" style="max-width:400px;">
+        <div class="ld-modal__hdr">
+            <p id="modal-det-sede" style="margin:0;font-size:1.1rem;color:#999;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;"></p>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button id="modal-det-eliminar" class="ld-barrios-btn-delete" title="Eliminar">🗑</button>
+                <button id="btn-cerrar-modal-detalle" class="ld-modal__close">&times;</button>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px;">
+            <div>
+                <label class="ld-barrios-field-label">Nombre del barrio</label>
+                <input id="modal-det-barrio" type="text" class="ld-modal__input" style="width:100%;box-sizing:border-box;" autocomplete="off">
+            </div>
+            <div>
+                <label class="ld-barrios-field-label">Valor domicilio</label>
+                <input id="modal-det-valor" type="number" min="0" class="ld-modal__input" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <label class="ld-barrios-field-label" style="margin:0;">Activo</label>
+                <label class="ld-barrios-toggle">
+                    <input type="checkbox" id="modal-det-activo">
+                    <span class="ld-barrios-toggle__slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="ld-barrios-modal-footer">
+            <button class="ld-barrios-btn-cancel" id="modal-det-cancelar">Cancelar</button>
+            <button class="ld-barrios-btn-save"   id="modal-det-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="barrios-toast" class="ld-barrios-toast"></div>
 
 <script type="module" src="./pedidos.js"></script>
 </body>
