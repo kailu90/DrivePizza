@@ -41,6 +41,9 @@ function normalizarMovimiento(row) {
         diferencia:      row.diferencia,
         cambios:         row.cambios,
         productos:       row.productos,
+        materiales:      row.materiales,
+        productoSalida:  row.producto_salida,
+        productosSalida: row.productos_salida,
         subtipo:         row.subtipo,
         // Campos de formato anterior (una sola modificación de campo)
         campo:           row.campo,
@@ -428,13 +431,19 @@ async function buscar() {
 
         let rows = allRows.map(normalizarMovimiento);
 
-        // Filtro producto en memoria: cubre producto_nombre Y array JSONB productos[]
+        // Filtro producto en memoria: cubre producto_nombre, productos[] (SALIDAs de pedido)
+        // y los campos de producción: materiales[], producto_salida, productos_salida[]
         if (productoNombre) {
             const needle = productoNombre.toLowerCase();
             rows = rows.filter(m => {
                 if ((m.productoNombre || '').toLowerCase().includes(needle)) return true;
                 if (Array.isArray(m.productos))
                     return m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+                if (Array.isArray(m.materiales))
+                    return m.materiales.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+                if (m.productoSalida && (m.productoSalida.productoNombre || '').toLowerCase().includes(needle)) return true;
+                if (Array.isArray(m.productosSalida))
+                    return m.productosSalida.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
                 return false;
             });
         }
