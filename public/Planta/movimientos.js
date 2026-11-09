@@ -345,7 +345,8 @@ function abrirModalDetalle(m) {
 // ════════════════════════ ESTADO, DATOS Y RENDER ════════════════════════════
 
 // ── Estado ─────────────────────────────────────────────────────────────────
-let allMovimientos = [];
+let _movimientosCargados = []; // fuente de verdad: todos los registros del rango de fechas activo
+let allMovimientos = [];        // subconjunto filtrado por producto (usado por renderMovimientos + getFiltrados)
 const POR_PAGINA = 50;
 let paginaActual = 1;
 
@@ -382,11 +383,11 @@ function getProductoId() {
 // ── Cargar datos ───────────────────────────────────────────────────────────
 const PAGE_SIZE = 1000;
 
+// ── Cargar del servidor (solo cambia cuando cambian las fechas) ─────────────
 async function cargarMovimientos() {
     tbody.innerHTML = '<tr><td colspan="6" class="mv-loading">Cargando...</td></tr>';
     document.getElementById('mv-btn-resumen').style.display = 'none';
 
-    const productoNombre = productoInput.value.trim();
     const desde = desdeEl.value;
     const hasta = hastaEl.value;
 
@@ -405,9 +406,9 @@ async function cargarMovimientos() {
             if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
             if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
 
-            // No se aplica filtro server-side por producto: las SALIDAs de pedidos
-            // guardan los nombres en el array JSONB `productos`, no en `producto_nombre`.
-            // El filtro se aplica en memoria después de cargar todos los registros.
+            // El filtro por producto NO se aplica aquí: las SALIDAs de pedidos
+            // guardan nombres en el array JSONB `productos`, no en `producto_nombre`.
+            // Se filtra en memoria dentro de aplicarFiltros().
 
             const { data: page, error } = await query;
             if (error) throw error;
@@ -415,35 +416,49 @@ async function cargarMovimientos() {
             allRows = allRows.concat(page || []);
             if (!page || page.length < PAGE_SIZE) break;
 
-            // Actualizar indicador si hay más de una página
             tbody.innerHTML = `<tr><td colspan="6" class="mv-loading">Cargando... (${allRows.length} registros)</td></tr>`;
             offset += PAGE_SIZE;
         }
 
-        allMovimientos = allRows.map(normalizarMovimiento);
-
-        // Filtro por producto en memoria: cubre producto_nombre Y el array productos[] (SALIDAs de pedidos)
-        if (productoNombre) {
-            const needle = productoNombre.toLowerCase();
-            allMovimientos = allMovimientos.filter(m => {
-                if ((m.productoNombre || '').toLowerCase() === needle) return true;
-                if (Array.isArray(m.productos))
-                    return m.productos.some(p => (p.productoNombre || '').toLowerCase() === needle);
-                return false;
-            });
-        }
-
-        // Resumen de salidas por día: solo cuando hay producto + rango de fechas
-        if (productoNombre && desde && hasta) {
-            renderResumen(allMovimientos);
-        }
-
-        paginaActual = 1;
-        renderMovimientos();
+        _movimientosCargados = allRows.map(normalizarMovimiento);
+        aplicarFiltros();
     } catch (err) {
         console.error('Error al cargar movimientos:', err);
         tbody.innerHTML = `<tr><td colspan="6" class="mv-loading" style="color:red">Error al cargar movimientos.</td></tr>`;
     }
+}
+
+// ── Aplicar filtros en memoria (producto + tipo) ────────────────────────────
+// Llamar cada vez que cambia el input de producto o el select de tipo.
+// No hace requests al servidor.
+function aplicarFiltros() {
+    document.getElementById('mv-btn-resumen').style.display = 'none';
+
+    const productoNombre = productoInput.value.trim();
+    const desde = desdeEl.value;
+    const hasta = hastaEl.value;
+
+    // Filtro por producto: busca en producto_nombre Y en el array JSONB productos[]
+    // Usa includes para permitir texto parcial (ej: "napo" encuentra "Napolitana")
+    if (productoNombre) {
+        const needle = productoNombre.toLowerCase();
+        allMovimientos = _movimientosCargados.filter(m => {
+            if ((m.productoNombre || '').toLowerCase().includes(needle)) return true;
+            if (Array.isArray(m.productos))
+                return m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+            return false;
+        });
+    } else {
+        allMovimientos = _movimientosCargados;
+    }
+
+    // Resumen de salidas por día: solo cuando hay producto + rango de fechas
+    if (productoNombre && desde && hasta) {
+        renderResumen(allMovimientos);
+    }
+
+    paginaActual = 1;
+    renderMovimientos();
 }
 
 // ── Resumen por día ────────────────────────────────────────────────────────
@@ -626,12 +641,26 @@ document.getElementById('mv-btn-mes').addEventListener('click', () => {
     cargarMovimientos();
 });
 
-// Filtros de fecha manual y producto: recargar
-desdeEl.addEventListener('change',    () => { setQuickActive(null); cargarMovimientos(); });
-hastaEl.addEventListener('change',    () => { setQuickActive(null); cargarMovimientos(); });
-productoInput.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
+// Fechas → recarga del servidor
+desdeEl.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
+hastaEl.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
 
-// Filtro tipo en memoria: no requiere recarga
+// Producto → filtro en memoria (sin request al servidor)
+// input con debounce: reacciona mientras escribe (incluye selección de datalist)
+// keydown Enter: aplica inmediatamente sin esperar el debounce
+let _productoTimer = null;
+productoInput.addEventListener('input', () => {
+    clearTimeout(_productoTimer);
+    _productoTimer = setTimeout(() => aplicarFiltros(), 350);
+});
+productoInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        clearTimeout(_productoTimer);
+        aplicarFiltros();
+    }
+});
+
+// Tipo → re-render en memoria (sin request al servidor)
 tipoEl.addEventListener('change', () => { paginaActual = 1; renderMovimientos(); });
 
 // ── Cerrar modal de detalle ────────────────────────────────────────────────
