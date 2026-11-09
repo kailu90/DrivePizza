@@ -294,6 +294,7 @@ function _initBarrioPicker() {
         _actualizarResumen()
 
         const q = input.value.toLowerCase().trim()
+        console.log('[picker] input fired, q:', q, 'catálogo:', _barriosCatalogo?.length)
         if (!q || !_barriosCatalogo?.length) { list.style.display = 'none'; return }
 
         const matches = _barriosCatalogo.filter(b => b.nombre.toLowerCase().includes(q))
