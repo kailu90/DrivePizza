@@ -568,7 +568,7 @@ stockForm.addEventListener('submit', (event) => {
     const unidadMedida = _stockProductoSeleccionado?.unit || '';
     const supplierId   = _proveedorStockSeleccionado?.id || '';
     const supplierName = _proveedorStockSeleccionado?.name || '';
-    const quantityToAdd = parseInt(document.getElementById('stock-quantity').value, 10);
+    const quantityToAdd = parseFloat(document.getElementById('stock-quantity').value);
     const observations  = document.getElementById('stock-observation').value.trim();
 
     if (!productId || !supplierId || isNaN(quantityToAdd) || quantityToAdd <= 0) {
@@ -737,7 +737,7 @@ formAjuste.addEventListener('submit', async (e) => {
     e.preventDefault();
     const productId   = _ajusteProductoSeleccionado?.id || '';
     const productName = _ajusteProductoSeleccionado?.name || '';
-    const stockNuevo  = parseInt(ajusteStockReal.value, 10);
+    const stockNuevo  = parseFloat(ajusteStockReal.value);
     const motivo      = document.getElementById('ajuste-motivo').value.trim();
     const notas       = document.getElementById('ajuste-notas').value.trim();
 
