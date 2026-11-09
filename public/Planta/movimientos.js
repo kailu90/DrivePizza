@@ -120,6 +120,7 @@ function getTipoDisplay(m) {
     if (m.tipo === 'AJUSTE')      return 'Ajuste';
     if (m.tipo === 'CREACION')    return 'Creación';
     if (m.tipo === 'ELIMINACION') return 'Eliminación';
+    if (m.tipo === 'PRODUCCION')  return 'Producción';
     if (m.tipo === 'Devolución')  return 'Devolución';
     return m.tipo;
 }
@@ -140,6 +141,7 @@ const BADGE = {
     'Eliminación':       'mv-badge--eliminacion',
     'Devolución':        'mv-badge--entrada',
     'Ajuste':            'mv-badge--ajuste',
+    'Producción':        'mv-badge--produccion',
 };
 
 const LABEL_CAMPO = {
@@ -152,6 +154,20 @@ const LABEL_CAMPO = {
     stock:           'Stock',
     rotacion:        'Rotación',
 };
+
+// ── Producto a mostrar en columna PRODUCTO ─────────────────────────────────
+function getProductoDisplay(m) {
+    if (m.tipo === 'PRODUCCION') {
+        if (Array.isArray(m.productosSalida) && m.productosSalida.length > 0) {
+            return m.productosSalida.map(p => toTitleCase(p.productoNombre)).join(', ');
+        }
+        if (Array.isArray(m.productoSalida)) {
+            return m.productoSalida.map(p => toTitleCase(p.productoNombre)).join(', ');
+        }
+        if (m.productoSalida?.productoNombre) return toTitleCase(m.productoSalida.productoNombre);
+    }
+    return toTitleCase(m.productoNombre) || '—';
+}
 
 // ════════════════════════ DESCRIPCIÓN DE MOVIMIENTOS ════════════════════════
 
@@ -236,6 +252,13 @@ function buildDetalle(m) {
             if (m.entidad === 'Proveedor')  return `Proveedor eliminado`;
             return `Producto eliminado`;
 
+        case 'PRODUCCION': {
+            const matsStr = Array.isArray(m.materiales) && m.materiales.length > 0
+                ? m.materiales.map(p => `${toTitleCase(p.productoNombre)} ×${p.cantidad}`).join(', ')
+                : '—';
+            return `Ingredientes: ${matsStr}`;
+        }
+
         default:
             return m.notas || m.motivo || '—';
     }
@@ -303,6 +326,16 @@ function abrirModalDetalle(m) {
         if (m.motivo) contexto += ` · Motivo: ${m.motivo}`;
     } else if (m.tipo === 'Devolución') {
         contexto = `Devolución de ${m.cantidad ?? '—'} ${m.unidadMedida || 'unidades'}`;
+    } else if (m.tipo === 'PRODUCCION') {
+        let salidaStr = '';
+        if (Array.isArray(m.productosSalida) && m.productosSalida.length > 0) {
+            salidaStr = m.productosSalida.map(p => `${toTitleCase(p.productoNombre)} ×${p.cantidad}`).join(', ');
+        } else if (Array.isArray(m.productoSalida)) {
+            salidaStr = m.productoSalida.map(p => `${toTitleCase(p.productoNombre)} ×${p.cantidad}`).join(', ');
+        } else if (m.productoSalida?.productoNombre) {
+            salidaStr = `${toTitleCase(m.productoSalida.productoNombre)} ×${m.productoSalida.cantidad}`;
+        }
+        contexto = salidaStr ? `Producido: ${salidaStr}` : '';
     } else if (m.motivo) {
         contexto = m.motivo;
     }
@@ -321,10 +354,12 @@ function abrirModalDetalle(m) {
         items = m.productos;
     } else if (m.tipo === 'CREACION' && m.entidad === 'Pedido' && m.productos?.length > 0) {
         items = m.productos;
+    } else if (m.tipo === 'PRODUCCION' && m.materiales?.length > 0) {
+        items = m.materiales;
     }
 
     if (items?.length > 0) {
-        itemsTitle.textContent   = m.tipo === 'MODIFICACION' ? 'Cambios' : 'Productos';
+        itemsTitle.textContent   = m.tipo === 'MODIFICACION' ? 'Cambios' : m.tipo === 'PRODUCCION' ? 'Ingredientes' : 'Productos';
         itemsTitle.style.display = '';
         itemsList.style.display  = '';
         itemsList.innerHTML = items.map(item => {
@@ -553,7 +588,7 @@ function renderMovimientos() {
         tr.innerHTML = `
             <td class="mv-cell">${formatFecha(m.fecha)}</td>
             <td class="mv-cell"><span class="mv-badge ${badgeClass}">${tipoDisplay}</span></td>
-            <td class="mv-cell">${toTitleCase(m.productoNombre) || '—'}</td>
+            <td class="mv-cell">${getProductoDisplay(m)}</td>
             <td class="mv-cell" title="${buildDetalle(m)}">${buildDetalle(m)}</td>
             <td class="mv-cell">${m.notas || '—'}</td>
             <td class="mv-cell">${m.usuario || '—'}</td>
@@ -713,6 +748,22 @@ function exportarExcel() {
                 'Proveedor':  '',
                 'Detalle':    `${m.stockAnterior} → ${m.stockNuevo} · ${m.motivo || ''}${m.notas ? ' · ' + m.notas : ''}`,
                 'Usuario':    usuario,
+            });
+            return;
+        }
+
+        // PRODUCCION → fila con productos producidos
+        if (m.tipo === 'PRODUCCION') {
+            filas.push({
+                'Fecha':     fecha,
+                'Tipo':      tipo,
+                'Producto':  getProductoDisplay(m),
+                'Cantidad':  '',
+                'Unidad':    '',
+                'N° Pedido': '',
+                'Proveedor': '',
+                'Detalle':   buildDetalle(m),
+                'Usuario':   usuario,
             });
             return;
         }

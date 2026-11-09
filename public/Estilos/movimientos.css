@@ -163,6 +163,7 @@
 .mv-badge--eliminacion  { background-color: #e2d9f3; color: #4a235a; }
 .mv-badge--toggle       { background-color: #fde8d0; color: #7a3b00; }
 .mv-badge--ajuste       { background-color: #cce5ff; color: #004085; }
+.mv-badge--produccion   { background-color: #d1fae5; color: #065f46; }
 
 /* Loading / empty */
 .mv-loading {
