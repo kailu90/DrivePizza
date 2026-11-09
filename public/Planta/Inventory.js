@@ -348,7 +348,7 @@ stockForm.addEventListener('submit', (event) => {
     const unidadMedida = stockProductoSeleccionado?.unit || '';
     const supplierId   = proveedorSeleccionado?.id || '';
     const supplierName = proveedorSeleccionado?.name || '';
-    const quantityToAdd = parseInt(inputQuantity.value, 10);
+    const quantityToAdd = parseFloat(inputQuantity.value);
     const observations = inputObservation.value.trim();
 
     if (!productId || !supplierId || isNaN(quantityToAdd) || quantityToAdd <= 0) {
@@ -521,7 +521,7 @@ formAjuste?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const productId   = ajusteProductoSeleccionado?.id || '';
     const productName = ajusteProductoSeleccionado?.name || '';
-    const stockNuevo  = parseInt(ajusteStockReal.value, 10);
+    const stockNuevo  = parseFloat(ajusteStockReal.value);
     const motivo      = document.getElementById('ajuste-motivo').value.trim();
     const notas       = document.getElementById('ajuste-notas').value.trim();
 
