@@ -209,6 +209,71 @@ export async function registrarMovimiento({
     }
 }
 
+// ── ejecutarRecepcionMercancia ────────────────────────────────────────────────
+// Registra una recepción de mercancía (factura con múltiples productos).
+// Crea 1 registro en `recepciones` y 1 ENTRADA en `movimientos` por producto.
+export async function ejecutarRecepcionMercancia({
+    proveedorId,
+    proveedorNombre,
+    fecha,
+    numeroFactura,
+    valorTotal,
+    metodoPago,
+    notas,
+    productos,   // [{ productoId, productoNombre, cantidad, unidadMedida }]
+    usuario,
+}) {
+    // 1. Crear registro de recepción
+    const { data: recepcion, error: errRec } = await supabase
+        .from('recepciones')
+        .insert({
+            proveedor_id:     proveedorId    || null,
+            proveedor_nombre: proveedorNombre || null,
+            fecha,
+            numero_factura:   numeroFactura  || null,
+            valor_total:      valorTotal     || null,
+            metodo_pago:      metodoPago,
+            notas:            notas          || null,
+            usuario,
+            productos:        productos.map(p => ({
+                productoId:     p.productoId,
+                productoNombre: p.productoNombre,
+                cantidad:       p.cantidad,
+                unidadMedida:   p.unidadMedida,
+            })),
+        })
+        .select('id')
+        .single();
+    if (errRec) throw errRec;
+
+    const recepcionId = recepcion.id;
+    const notaBase    = `Recepción #${recepcionId}${numeroFactura ? ' · Factura: ' + numeroFactura : ''}`;
+
+    // 2. Por cada producto: movimiento primero, luego stock (evita stock huérfano)
+    for (let i = 0; i < productos.length; i++) {
+        const p = productos[i];
+        await _insertMovimiento({
+            movimiento_id:    Date.now() + i,
+            fecha:            new Date().toISOString(),
+            tipo:             'ENTRADA',
+            entidad:          'Producto',
+            producto_id:      parseInt(p.productoId) || null,
+            producto_nombre:  p.productoNombre,
+            cantidad:         p.cantidad,
+            unidad_medida:    p.unidadMedida || null,
+            proveedor_id:     proveedorId ? (parseInt(proveedorId) || null) : null,
+            proveedor_nombre: proveedorNombre || null,
+            referencia_id:    recepcionId,
+            motivo:           'Recepción de Mercancía',
+            notas:            notaBase,
+            usuario,
+        });
+        await _incrementStock(p.productoId, p.cantidad);
+    }
+
+    return recepcionId;
+}
+
 // ── ejecutarOrdenProduccionMulti ──────────────────────────────────────────────
 // Descuenta materias primas, suma múltiples productos salida y registra 1 movimiento.
 export async function ejecutarOrdenProduccionMulti({
