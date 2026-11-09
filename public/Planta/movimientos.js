@@ -345,10 +345,11 @@ function abrirModalDetalle(m) {
 // ════════════════════════ ESTADO, DATOS Y RENDER ════════════════════════════
 
 // ── Estado ─────────────────────────────────────────────────────────────────
-let _movimientosCargados = []; // fuente de verdad: todos los registros del rango de fechas activo
-let allMovimientos = [];        // subconjunto filtrado por producto (usado por renderMovimientos + getFiltrados)
-const POR_PAGINA = 50;
-let paginaActual = 1;
+let allMovimientos = [];   // resultado final filtrado (producto + tipo aplicados en getFiltrados)
+const POR_PAGINA   = 50;
+let paginaActual   = 1;
+let _cargaToken    = 0;    // token para descartar respuestas de búsquedas anteriores
+let _productoTimer = null; // debounce del input de producto
 
 // ── DOM ────────────────────────────────────────────────────────────────────
 const tbody       = document.getElementById('mv-tbody');
@@ -380,23 +381,27 @@ function getProductoId() {
     return _productosMap[productoInput.value.trim()] || '';
 }
 
-// ── Cargar datos ───────────────────────────────────────────────────────────
+// ── Consulta unificada ─────────────────────────────────────────────────────
+// Se llama cada vez que cambia cualquier filtro (fechas, producto, tipo).
+// Vuelve a consultar el servidor y aplica todos los filtros en memoria.
 const PAGE_SIZE = 1000;
 
-// ── Cargar del servidor (solo cambia cuando cambian las fechas) ─────────────
-async function cargarMovimientos() {
+async function buscar() {
+    const miToken        = ++_cargaToken;
+    const productoNombre = productoInput.value.trim();
+    const desde          = desdeEl.value;
+    const hasta          = hastaEl.value;
+
     tbody.innerHTML = '<tr><td colspan="6" class="mv-loading">Cargando...</td></tr>';
     document.getElementById('mv-btn-resumen').style.display = 'none';
 
-    const desde = desdeEl.value;
-    const hasta = hastaEl.value;
-
     try {
-        // Paginar en servidor para superar el límite de 1000 filas de PostgREST
         let allRows = [];
         let offset  = 0;
 
         while (true) {
+            if (miToken !== _cargaToken) return; // descarta si llegó una búsqueda más nueva
+
             let query = supabase
                 .from('movimientos')
                 .select('*')
@@ -406,9 +411,8 @@ async function cargarMovimientos() {
             if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
             if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
 
-            // El filtro por producto NO se aplica aquí: las SALIDAs de pedidos
-            // guardan nombres en el array JSONB `productos`, no en `producto_nombre`.
-            // Se filtra en memoria dentro de aplicarFiltros().
+            // Producto no se filtra en servidor: SALIDAs de pedidos guardan los nombres
+            // en el array JSONB `productos[]`, no en `producto_nombre`. Se filtra abajo.
 
             const { data: page, error } = await query;
             if (error) throw error;
@@ -420,45 +424,32 @@ async function cargarMovimientos() {
             offset += PAGE_SIZE;
         }
 
-        _movimientosCargados = allRows.map(normalizarMovimiento);
-        aplicarFiltros();
+        if (miToken !== _cargaToken) return;
+
+        let rows = allRows.map(normalizarMovimiento);
+
+        // Filtro producto en memoria: cubre producto_nombre Y array JSONB productos[]
+        if (productoNombre) {
+            const needle = productoNombre.toLowerCase();
+            rows = rows.filter(m => {
+                if ((m.productoNombre || '').toLowerCase().includes(needle)) return true;
+                if (Array.isArray(m.productos))
+                    return m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+                return false;
+            });
+        }
+
+        allMovimientos = rows;
+
+        if (productoNombre && desde && hasta) renderResumen(allMovimientos);
+
+        paginaActual = 1;
+        renderMovimientos();
     } catch (err) {
+        if (miToken !== _cargaToken) return;
         console.error('Error al cargar movimientos:', err);
         tbody.innerHTML = `<tr><td colspan="6" class="mv-loading" style="color:red">Error al cargar movimientos.</td></tr>`;
     }
-}
-
-// ── Aplicar filtros en memoria (producto + tipo) ────────────────────────────
-// Llamar cada vez que cambia el input de producto o el select de tipo.
-// No hace requests al servidor.
-function aplicarFiltros() {
-    document.getElementById('mv-btn-resumen').style.display = 'none';
-
-    const productoNombre = productoInput.value.trim();
-    const desde = desdeEl.value;
-    const hasta = hastaEl.value;
-
-    // Filtro por producto: busca en producto_nombre Y en el array JSONB productos[]
-    // Usa includes para permitir texto parcial (ej: "napo" encuentra "Napolitana")
-    if (productoNombre) {
-        const needle = productoNombre.toLowerCase();
-        allMovimientos = _movimientosCargados.filter(m => {
-            if ((m.productoNombre || '').toLowerCase().includes(needle)) return true;
-            if (Array.isArray(m.productos))
-                return m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
-            return false;
-        });
-    } else {
-        allMovimientos = _movimientosCargados;
-    }
-
-    // Resumen de salidas por día: solo cuando hay producto + rango de fechas
-    if (productoNombre && desde && hasta) {
-        renderResumen(allMovimientos);
-    }
-
-    paginaActual = 1;
-    renderMovimientos();
 }
 
 // ── Resumen por día ────────────────────────────────────────────────────────
@@ -619,49 +610,47 @@ function setQuickActive(id) {
     });
 }
 
+// ── Helpers para disparar búsqueda ─────────────────────────────────────────
+// Cancela el debounce pendiente del producto y lanza buscar() de inmediato.
+function _buscarAhora() {
+    clearTimeout(_productoTimer);
+    buscar();
+}
+
 document.getElementById('mv-btn-hoy').addEventListener('click', () => {
     const hoy = toISO(new Date());
     desdeEl.value = hoy;
     hastaEl.value = hoy;
     setQuickActive('mv-btn-hoy');
-    cargarMovimientos();
+    _buscarAhora();
 });
 
 document.getElementById('mv-btn-semana').addEventListener('click', () => {
     desdeEl.value = toISO(inicioSemana());
     hastaEl.value = toISO(new Date());
     setQuickActive('mv-btn-semana');
-    cargarMovimientos();
+    _buscarAhora();
 });
 
 document.getElementById('mv-btn-mes').addEventListener('click', () => {
     desdeEl.value = toISO(inicioMes());
     hastaEl.value = toISO(new Date());
     setQuickActive('mv-btn-mes');
-    cargarMovimientos();
+    _buscarAhora();
 });
 
-// Fechas → recarga del servidor
-desdeEl.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
-hastaEl.addEventListener('change', () => { setQuickActive(null); cargarMovimientos(); });
+// Todos los filtros relanzán buscar() — fechas y tipo de inmediato, producto con debounce
+desdeEl.addEventListener('change',  () => { setQuickActive(null); _buscarAhora(); });
+hastaEl.addEventListener('change',  () => { setQuickActive(null); _buscarAhora(); });
+tipoEl.addEventListener('change',   () => _buscarAhora());
 
-// Producto → filtro en memoria (sin request al servidor)
-// input con debounce: reacciona mientras escribe (incluye selección de datalist)
-// keydown Enter: aplica inmediatamente sin esperar el debounce
-let _productoTimer = null;
 productoInput.addEventListener('input', () => {
     clearTimeout(_productoTimer);
-    _productoTimer = setTimeout(() => aplicarFiltros(), 350);
+    _productoTimer = setTimeout(() => buscar(), 400);
 });
 productoInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-        clearTimeout(_productoTimer);
-        aplicarFiltros();
-    }
+    if (e.key === 'Enter') { clearTimeout(_productoTimer); buscar(); }
 });
-
-// Tipo → re-render en memoria (sin request al servidor)
-tipoEl.addEventListener('change', () => { paginaActual = 1; renderMovimientos(); });
 
 // ── Cerrar modal de detalle ────────────────────────────────────────────────
 document.getElementById('mv-det-cerrar')?.addEventListener('click', () => {
@@ -773,4 +762,4 @@ document.getElementById('mv-modal-resumen').addEventListener('click', (e) => {
 const hoy = toISO(new Date());
 desdeEl.value = hoy;
 hastaEl.value = hoy;
-cargarMovimientos();
+buscar();
