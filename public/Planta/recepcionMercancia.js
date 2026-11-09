@@ -3,6 +3,7 @@ import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, revelarSplash } from '../Shared/components.js';
 import { getProductos } from '../Shared/productosService.js';
 import { ejecutarRecepcionMercancia } from './inventoryService.js';
+import { mostrarOverlay, ocultarOverlay } from '../Shared/overlay.js';
 
 CargarSidebar();
 
@@ -157,8 +158,8 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
 
     if (!confirm(`¿Registrar recepción de ${productos.length} producto(s)?`)) return;
 
-    btn.disabled    = true;
-    btn.textContent = 'Registrando...';
+    btn.disabled = true;
+    mostrarOverlay('Registrando factura...');
 
     try {
         const recepcionId = await ejecutarRecepcionMercancia({
@@ -173,15 +174,16 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
             usuario:  _usuario,
         });
 
-        alert(`Recepción #${recepcionId} registrada correctamente.\n${productos.length} producto(s) actualizados en inventario.`);
+        ocultarOverlay(true);
+        alert(`Factura #${recepcionId} registrada correctamente.\n${productos.length} producto(s) actualizados en inventario.`);
         _resetForm();
         _cargarPendientes();
     } catch (err) {
         console.error('Error al registrar recepción:', err);
+        ocultarOverlay();
         alert('Error al registrar: ' + (err.message || JSON.stringify(err)));
     } finally {
-        btn.disabled    = false;
-        btn.textContent = 'Registrar';
+        btn.disabled = false;
     }
 });
 
