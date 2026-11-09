@@ -50,6 +50,7 @@ async function _init() {
 
     _agregarFila();
     revelarSplash();
+    _cargarPendientes();
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -174,12 +175,102 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
 
         alert(`Recepción #${recepcionId} registrada correctamente.\n${productos.length} producto(s) actualizados en inventario.`);
         _resetForm();
+        _cargarPendientes();
     } catch (err) {
         console.error('Error al registrar recepción:', err);
         alert('Error al registrar: ' + (err.message || JSON.stringify(err)));
     } finally {
         btn.disabled    = false;
         btn.textContent = 'Registrar';
+    }
+});
+
+// ── Pagos pendientes ─────────────────────────────────────────────────────────
+let _pendienteIdActivo = null;
+
+async function _cargarPendientes() {
+    const { data, error } = await supabase
+        .from('recepciones')
+        .select('id, fecha, proveedor_nombre, numero_factura, valor_total')
+        .eq('metodo_pago', 'pendiente')
+        .order('fecha', { ascending: false });
+
+    if (error) { console.error(error); return; }
+
+    const card  = document.getElementById('rc-pendientes-card');
+    const tbody = document.getElementById('rc-pendientes-tbody');
+    const badge = document.getElementById('rc-pendientes-badge');
+
+    if (!data?.length) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = '';
+    badge.textContent  = data.length;
+    tbody.innerHTML    = '';
+
+    data.forEach(r => {
+        const fechaFmt = r.fecha
+            ? new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : '—';
+        const valorFmt = r.valor_total != null
+            ? `$ ${Number(r.valor_total).toLocaleString('es-CO')}`
+            : '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="rc-cell">#${r.id}</td>
+            <td class="rc-cell">${fechaFmt}</td>
+            <td class="rc-cell">${r.proveedor_nombre || '—'}</td>
+            <td class="rc-cell">${r.numero_factura  || '—'}</td>
+            <td class="rc-cell">${valorFmt}</td>
+            <td class="rc-cell rc-cell--action">
+                <button class="rc-btn-pagar" data-id="${r.id}"
+                    data-info="${r.proveedor_nombre || ''} · ${valorFmt}">Pagar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Abrir dialog de pago al hacer clic en "Pagar"
+document.getElementById('rc-pendientes-tbody').addEventListener('click', e => {
+    const btn = e.target.closest('.rc-btn-pagar');
+    if (!btn) return;
+    _pendienteIdActivo = parseInt(btn.dataset.id);
+    document.getElementById('rc-dialog-info').textContent =
+        `Recepción #${_pendienteIdActivo} · ${btn.dataset.info}`;
+    document.getElementById('rc-dialog-metodo').value = 'transferencia';
+    document.getElementById('rc-dialog-pago').showModal();
+});
+
+// Cerrar dialog
+document.getElementById('rc-dialog-cerrar').addEventListener('click',   () => document.getElementById('rc-dialog-pago').close());
+document.getElementById('rc-dialog-cancelar').addEventListener('click', () => document.getElementById('rc-dialog-pago').close());
+
+// Confirmar pago
+document.getElementById('rc-dialog-confirmar').addEventListener('click', async () => {
+    const metodoPago = document.getElementById('rc-dialog-metodo').value;
+    const btnConf    = document.getElementById('rc-dialog-confirmar');
+
+    btnConf.disabled    = true;
+    btnConf.textContent = 'Guardando...';
+
+    try {
+        const { error } = await supabase
+            .from('recepciones')
+            .update({ metodo_pago: metodoPago })
+            .eq('id', _pendienteIdActivo);
+        if (error) throw error;
+
+        document.getElementById('rc-dialog-pago').close();
+        await _cargarPendientes();
+    } catch (err) {
+        console.error(err);
+        alert('Error al actualizar: ' + err.message);
+    } finally {
+        btnConf.disabled    = false;
+        btnConf.textContent = 'Confirmar pago';
     }
 });
 
