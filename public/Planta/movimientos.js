@@ -437,13 +437,10 @@ async function buscar() {
             const needle = productoNombre.toLowerCase();
             rows = rows.filter(m => {
                 if ((m.productoNombre || '').toLowerCase().includes(needle)) return true;
-                if (Array.isArray(m.productos))
-                    return m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
-                if (Array.isArray(m.materiales))
-                    return m.materiales.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+                if (Array.isArray(m.productos) && m.productos.some(p => (p.productoNombre || '').toLowerCase().includes(needle))) return true;
+                if (Array.isArray(m.materiales) && m.materiales.some(p => (p.productoNombre || '').toLowerCase().includes(needle))) return true;
                 if (m.productoSalida && (m.productoSalida.productoNombre || '').toLowerCase().includes(needle)) return true;
-                if (Array.isArray(m.productosSalida))
-                    return m.productosSalida.some(p => (p.productoNombre || '').toLowerCase().includes(needle));
+                if (Array.isArray(m.productosSalida) && m.productosSalida.some(p => (p.productoNombre || '').toLowerCase().includes(needle))) return true;
                 return false;
             });
         }
