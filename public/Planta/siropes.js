@@ -18,9 +18,13 @@ let _siropesData       = [];
 let _filtroEstado      = 'pendiente';
 let _filtroSede        = '';
 
-const fmtFecha = iso => iso
-    ? new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '—';
+const fmtFecha = iso => {
+    if (!iso) return '—';
+    // Fechas sin hora (YYYY-MM-DD) se parsean como UTC → un día menos en UTC-5.
+    // Forzar hora local añadiendo T00:00:00 cuando no viene timestamp.
+    const d = iso.includes('T') ? new Date(iso) : new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ sede }) => {

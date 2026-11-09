@@ -386,7 +386,6 @@ async function cargarMovimientos() {
     tbody.innerHTML = '<tr><td colspan="6" class="mv-loading">Cargando...</td></tr>';
     document.getElementById('mv-btn-resumen').style.display = 'none';
 
-    const productoId     = getProductoId();
     const productoNombre = productoInput.value.trim();
     const desde = desdeEl.value;
     const hasta = hastaEl.value;
@@ -406,10 +405,9 @@ async function cargarMovimientos() {
             if (desde) query = query.gte('fecha', colFechaToUTC(desde, 'inicio'));
             if (hasta) query = query.lte('fecha', colFechaToUTC(hasta, 'fin'));
 
-            // Filtra por nombre exacto (case-insensitive) cuando el usuario eligió un producto del datalist
-            if (productoId && productoNombre) {
-                query = query.ilike('producto_nombre', productoNombre);
-            }
+            // No se aplica filtro server-side por producto: las SALIDAs de pedidos
+            // guardan los nombres en el array JSONB `productos`, no en `producto_nombre`.
+            // El filtro se aplica en memoria después de cargar todos los registros.
 
             const { data: page, error } = await query;
             if (error) throw error;
@@ -424,8 +422,19 @@ async function cargarMovimientos() {
 
         allMovimientos = allRows.map(normalizarMovimiento);
 
-        // Resumen de salidas por día: solo cuando hay producto exacto + rango de fechas
-        if (productoId && desde && hasta) {
+        // Filtro por producto en memoria: cubre producto_nombre Y el array productos[] (SALIDAs de pedidos)
+        if (productoNombre) {
+            const needle = productoNombre.toLowerCase();
+            allMovimientos = allMovimientos.filter(m => {
+                if ((m.productoNombre || '').toLowerCase() === needle) return true;
+                if (Array.isArray(m.productos))
+                    return m.productos.some(p => (p.productoNombre || '').toLowerCase() === needle);
+                return false;
+            });
+        }
+
+        // Resumen de salidas por día: solo cuando hay producto + rango de fechas
+        if (productoNombre && desde && hasta) {
             renderResumen(allMovimientos);
         }
 
@@ -459,12 +468,19 @@ function abrirModalResumen() {
     titulo.textContent = `${nombreProducto} · ${desde} → ${hasta}`;
 
     // Agrupar salidas por día
-    const porDia = {};
+    const needle  = productoInput.value.trim().toLowerCase();
+    const porDia  = {};
     rows.forEach(r => {
         if (r.tipo?.toUpperCase() !== 'SALIDA') return;
         const dia = r.fecha ? r.fecha.substring(0, 10) : '—';
         if (!porDia[dia]) porDia[dia] = 0;
-        porDia[dia] += r.cantidad || 0;
+        // SALIDAs de pedidos: cantidad en el item del array productos[]
+        if (Array.isArray(r.productos)) {
+            const item = r.productos.find(p => (p.productoNombre || '').toLowerCase() === needle);
+            porDia[dia] += item?.cantidad || 0;
+        } else {
+            porDia[dia] += r.cantidad || 0;
+        }
     });
 
     const dias = Object.keys(porDia).sort((a, b) => b.localeCompare(a));
