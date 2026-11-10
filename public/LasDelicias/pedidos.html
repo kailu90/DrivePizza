@@ -275,14 +275,45 @@
 
             <!-- VIEW: Clientes -->
             <div id="view-clientes">
-                <div class="ld-hist-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="9" cy="7" r="3"/>
-                        <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
-                        <path d="M16 3.13a4 4 0 010 7.75"/>
-                        <path d="M21 21v-2a4 4 0 00-3-3.85"/>
-                    </svg>
-                    Clientes — próximamente
+                <div class="ld-cli-main">
+
+                    <div class="ld-cli-topbar">
+                        <h2 class="ld-cli-titulo">Clientes</h2>
+                        <button class="ld-cli-btn-actualizar" id="cli-btn-actualizar" title="Actualizar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="ld-cli-searchbar">
+                        <svg class="ld-cli-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <circle cx="11" cy="11" r="7.5"/>
+                            <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
+                        </svg>
+                        <input type="search" id="cli-search" class="ld-cli-search"
+                               placeholder="Buscar por nombre o teléfono..." autocomplete="off">
+                    </div>
+
+                    <div id="cli-status" class="ld-cli-status"></div>
+
+                    <div class="ld-cli-tabla-wrap">
+                        <table class="ld-cli-tabla">
+                            <thead>
+                                <tr>
+                                    <th class="td-cli-nombre">Nombre</th>
+                                    <th class="td-cli-tel">Teléfono</th>
+                                    <th class="td-cli-count">Pedidos</th>
+                                    <th class="td-cli-fecha">Último pedido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cli-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="cli-paginacion" class="ld-cli-paginacion"></div>
+
                 </div>
             </div><!-- /view-clientes -->
 
@@ -481,6 +512,33 @@
 </div>
 
 <div id="barrios-toast" class="ld-barrios-toast"></div>
+
+<!-- Modal detalle cliente -->
+<div id="modal-cli-bg" class="ld-cli-modal-bg" style="display:none">
+    <div class="ld-cli-modal">
+
+        <div class="ld-cli-modal-hdr">
+            <div class="ld-cli-modal-info">
+                <span class="ld-cli-modal-nombre" id="modal-cli-nombre"></span>
+                <span class="ld-cli-modal-tel" id="modal-cli-tel"></span>
+            </div>
+            <button id="modal-cli-cerrar" class="ld-cli-modal-cerrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="ld-cli-modal-body">
+            <h4 class="ld-cli-modal-seccion">Últimos pedidos</h4>
+            <div id="modal-cli-pedidos-list" class="ld-cli-modal-lista"></div>
+
+            <h4 class="ld-cli-modal-seccion" style="margin-top:1.6rem">Direcciones</h4>
+            <div id="modal-cli-dirs-list" class="ld-cli-modal-lista"></div>
+        </div>
+
+    </div>
+</div>
 
 <script type="module" src="./pedidos.js"></script>
 </body>

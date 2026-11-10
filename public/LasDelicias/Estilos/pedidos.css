@@ -1643,6 +1643,341 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
+/* ── CLIENTES ─────────────────────────────────────────── */
+.ld-cli-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 2rem;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ld-cli-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ld-cli-titulo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--ld-marron, #75473B);
+    margin: 0;
+}
+
+.ld-cli-btn-actualizar {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(117,71,59,0.25);
+    background: transparent;
+    color: var(--ld-marron, #75473B);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.ld-cli-btn-actualizar svg { width: 16px; height: 16px; }
+.ld-cli-btn-actualizar:hover { background: rgba(117,71,59,0.08); }
+
+.ld-cli-searchbar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: #fff;
+    border: 1.5px solid rgba(117,71,59,0.2);
+    border-radius: 10px;
+    padding: 0 1.2rem;
+}
+.ld-cli-search-ico { width: 16px; height: 16px; color: #bba898; flex-shrink: 0; }
+.ld-cli-search {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    padding: 1rem 0;
+    background: transparent;
+    color: var(--ld-marron, #75473B);
+}
+.ld-cli-search::placeholder { color: #bba898; }
+
+.ld-cli-status {
+    font-size: 1.2rem;
+    color: #a07060;
+    font-weight: 500;
+    min-height: 1.6rem;
+}
+
+.ld-cli-tabla-wrap { overflow-x: auto; }
+
+.ld-cli-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ld-cli-tabla thead th {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #a07060;
+    border-bottom: 2px solid rgba(117,71,59,0.12);
+    white-space: nowrap;
+}
+
+.td-cli-nombre { width: 36%; }
+.td-cli-tel    { width: 28%; }
+.td-cli-count  { width: 12%; text-align: center; }
+.td-cli-fecha  { width: 24%; }
+
+.ld-cli-tr {
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.ld-cli-tr td {
+    padding: 1rem 1rem;
+    border-bottom: 1px solid rgba(117,71,59,0.07);
+    color: var(--ld-marron, #75473B);
+    font-weight: 500;
+}
+.ld-cli-tr td.td-cli-count { text-align: center; font-weight: 700; }
+.ld-cli-tr:hover td { background: rgba(117,71,59,0.04); }
+
+.ld-cli-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #bba898;
+    font-size: 1.3rem;
+}
+
+/* ── Paginación clientes ── */
+.ld-cli-paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 1rem 0;
+}
+.ld-cli-pag-btn {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    border: 1.5px solid rgba(117,71,59,0.3);
+    background: transparent;
+    color: var(--ld-marron, #75473B);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ld-cli-pag-btn:hover:not(:disabled) { background: rgba(117,71,59,0.08); }
+.ld-cli-pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ld-cli-pag-info {
+    font-size: 1.2rem;
+    color: #a07060;
+    font-weight: 500;
+}
+
+/* ── Modal detalle cliente ── */
+.ld-cli-modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+    padding: 1.6rem;
+    box-sizing: border-box;
+}
+.ld-cli-modal-bg[style*="flex"] { display: flex !important; }
+
+.ld-cli-modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    overflow: hidden;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.ld-cli-modal-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.8rem 2rem 1.4rem;
+    border-bottom: 1px solid rgba(117,71,59,0.1);
+    flex-shrink: 0;
+}
+
+.ld-cli-modal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.ld-cli-modal-nombre {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--ld-marron, #75473B);
+}
+
+.ld-cli-modal-tel {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #a07060;
+}
+
+.ld-cli-modal-cerrar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(117,71,59,0.07);
+    color: var(--ld-marron, #75473B);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.ld-cli-modal-cerrar svg { width: 16px; height: 16px; }
+.ld-cli-modal-cerrar:hover { background: rgba(117,71,59,0.14); }
+
+.ld-cli-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.6rem 2rem 2rem;
+}
+
+.ld-cli-modal-seccion {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #a07060;
+    margin: 0 0 1rem;
+}
+
+.ld-cli-modal-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.ld-cli-loading {
+    font-size: 1.2rem;
+    color: #bba898;
+    margin: 0;
+}
+
+/* ── Fila pedido en modal ── */
+.ld-cli-ped-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: rgba(117,71,59,0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(117,71,59,0.08);
+}
+
+.ld-cli-ped-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.ld-cli-ped-num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+
+.ld-cli-ped-dir {
+    font-size: 1.1rem;
+    color: #a07060;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.ld-cli-ped-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.ld-cli-ped-total {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+}
+
+.ld-cli-ped-fecha {
+    font-size: 1.1rem;
+    color: #a07060;
+}
+
+/* Badges de estado */
+.ld-cli-estado {
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.ld-cli-estado--pendiente      { background: #fef3c7; color: #92400e; }
+.ld-cli-estado--recibido       { background: #dbeafe; color: #1e40af; }
+.ld-cli-estado--en-preparacion { background: #ede9fe; color: #5b21b6; }
+.ld-cli-estado--despachado     { background: #d1fae5; color: #065f46; }
+.ld-cli-estado--entregado      { background: #d1fae5; color: #065f46; }
+.ld-cli-estado--cancelado      { background: #fee2e2; color: #991b1b; }
+
+/* ── Fila dirección en modal ── */
+.ld-cli-dir-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.9rem 1.2rem;
+    background: rgba(117,71,59,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(117,71,59,0.08);
+}
+
+.ld-cli-dir-txt {
+    font-size: 1.3rem;
+    color: var(--ld-marron, #75473B);
+    font-weight: 500;
+    flex: 1;
+}
+
+.ld-cli-dir-badge {
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(117,71,59,0.1);
+    color: var(--ld-marron, #75473B);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 600px) {
     .ld-omni-layout {

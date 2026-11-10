@@ -1,5 +1,6 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
+import { upsertClienteLd } from './clientesLd.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -36,7 +37,8 @@ function catIcon(name) {
 let _user          = null
 let _perfil        = null
 let _currentView   = INITIAL_VIEW
-let _barriosInited = false
+let _barriosInited   = false
+let _clientesInited  = false
 
 const _hist = { offset: 0, done: false, loading: false, loaded: false }
 let _categorias      = []
@@ -73,6 +75,10 @@ async function init() {
     if (_currentView === 'barrios' && !_barriosInited) {
         _barriosInited = true
         import('./barrios.js').then(m => m.initBarrios(supabase, _perfil))
+    }
+    if (_currentView === 'clientes' && !_clientesInited) {
+        _clientesInited = true
+        import('./clientes.js').then(m => m.initClientes(supabase, _perfil))
     }
 
     if (IS_DRAWER) {
@@ -428,6 +434,16 @@ async function confirmarPedido() {
             .from('pedidos_callcenter').insert(pedido)
         if (error) throw error
 
+        // Upsert cliente (fire-and-forget — no bloquea el flujo)
+        upsertClienteLd({
+            telefono:  telefono,
+            nombre:    nombre,
+            direccion: _tipoEntrega === 'domicilio'
+                ? document.getElementById('ck-direccion').value.trim()
+                : null,
+            barrio:    _barrioNombre || null,
+        }).catch(e => console.warn('[upsertClienteLd]', e))
+
         cerrarCheckout()
         limpiarFormulario()
         vaciarCarrito()
@@ -529,6 +545,11 @@ function switchView(view) {
     if (view === 'barrios' && _perfil && !_barriosInited) {
         _barriosInited = true
         import('./barrios.js').then(m => m.initBarrios(supabase, _perfil))
+    }
+
+    if (view === 'clientes' && _perfil && !_clientesInited) {
+        _clientesInited = true
+        import('./clientes.js').then(m => m.initClientes(supabase, _perfil))
     }
 }
 
