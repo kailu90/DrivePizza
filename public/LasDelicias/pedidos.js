@@ -275,18 +275,15 @@ async function _loadBarriosCatalogo() {
     if (_barriosCatalogo !== null) return
     // Resolver sede_id real (FK a lasdelicias.sedes.id)
     const { data: sedes } = await supabase.from('sedes').select('id, name')
-    console.log('[barrios] sedes:', sedes, '| perfil.sede:', _perfil.sede)
     const sedeRow = sedes?.find(s => s.name.toLowerCase() === (_perfil.sede || '').toLowerCase())
-    console.log('[barrios] sedeRow encontrado:', sedeRow)
     if (!sedeRow) { _barriosCatalogo = []; return }
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('barrios')
         .select('nombre, valor')
         .eq('sede_id', sedeRow.id)
         .eq('activo', true)
         .order('nombre')
-    console.log('[barrios] catálogo cargado:', data, '| error:', error)
     _barriosCatalogo = data ?? []
 }
 
@@ -300,7 +297,6 @@ function _initBarrioPicker() {
         _actualizarResumen()
 
         const q = input.value.toLowerCase().trim()
-        console.log('[picker] input fired, q:', q, 'catálogo:', _barriosCatalogo?.length)
         if (!q || !_barriosCatalogo?.length) { list.style.display = 'none'; return }
 
         const matches = _barriosCatalogo.filter(b => b.nombre.toLowerCase().includes(q))
@@ -319,7 +315,7 @@ function _initBarrioPicker() {
         list.style.top   = (rect.bottom + 4) + 'px'
         list.style.left  = rect.left + 'px'
         list.style.width = rect.width + 'px'
-        list.style.display = ''
+        list.style.display = 'block'
     })
 
     list.addEventListener('click', e => {
