@@ -730,12 +730,25 @@ async function _sendMsg(texto) {
     _renderList()
 
     try {
-        await fetch(`${HETZNER_URL}/ld/wa/mensaje`, {
+        const r = await fetch(`${HETZNER_URL}/ld/wa/mensaje`, {
             method:  'POST',
             headers: _headers(),
             body:    JSON.stringify({ numero: num, contacto: phone, texto, asesor: _asesorActual }),
         })
-    } catch {}
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({ error: r.statusText }))
+            console.error('[ldwap] Error enviando mensaje:', r.status, err)
+            // Marcar el mensaje optimista como fallido
+            const c = _state.conv[num]?.[phone]
+            if (c) {
+                const last = c.msgs.findLast(m => m.pending && m.text === texto)
+                if (last) { last.failed = true; last.pending = false }
+                _renderMsgs()
+            }
+        }
+    } catch (err) {
+        console.error('[ldwap] Error de red al enviar:', err)
+    }
 }
 
 // ── CSS inyectado ─────────────────────────────────────────────────────────────

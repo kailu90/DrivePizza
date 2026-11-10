@@ -371,13 +371,8 @@
             }
 
             // Inicializar WA Panel
-            // TODO: crear LasDelicias/waPanel.js que use el schema lasdelicias
-            // Por ahora se omite — se activa cuando esté listo el módulo backend LD
-            // const { initWaPanel, resetWaView, destroyWaPanel, updateAuthToken } = await import('./waPanel.js')
-            // _resetWaView    = resetWaView
-            // _destroyWaPanel = destroyWaPanel
-            // _updateWaToken  = updateAuthToken
-            // initWaPanel('wa-body', { rol: data.rol, asesor: data.username, authToken: session?.access_token || '' })
+            const { initWaPanel } = await import('./waPanel.js')
+            initWaPanel({ asesor: data.username || '', authToken: session?.access_token || '' })
 
             setTimeout(_preloadHistorialFrame, 1500)
         } catch (err) {
