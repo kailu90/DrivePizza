@@ -371,8 +371,12 @@
             }
 
             // Inicializar WA Panel
-            const { initWaPanel } = await import('./waPanel.js')
-            initWaPanel({ asesor: data.username || '', authToken: session?.access_token || '' })
+            const { initWaPanel, resetWaView, destroyWaPanel, updateAuthToken } = await import('./waPanel.js')
+            _resetWaView    = resetWaView
+            _destroyWaPanel = destroyWaPanel
+            _updateWaToken  = updateAuthToken
+            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || '', authToken: session?.access_token || '' })
+            _setWaVisible(true)
 
             setTimeout(_preloadHistorialFrame, 1500)
         } catch (err) {
