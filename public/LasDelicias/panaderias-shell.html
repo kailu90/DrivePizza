@@ -86,7 +86,7 @@
         #wa-panel:not(.expanded) #wa-body { display: none; }
 
         #wa-body {
-            flex: 1; overflow: hidden;
+            flex: 1; overflow: hidden; min-height: 0;
             display: flex; flex-direction: column;
         }
 
@@ -262,13 +262,7 @@
                 <span id="wa-badge"></span>
             </button>
         </div>
-        <div id="wa-body">
-            <div class="wa-sb__chips">
-                <button class="wa-sb__chip active" data-filtro="todos">Todos</button>
-                <button class="wa-sb__chip" data-filtro="pendientes">Pendientes</button>
-            </div>
-            <div class="wa-sb__list" id="waList"></div>
-        </div>
+        <div id="wa-body"></div>
     </div>
     <!-- #ldwap-chat-col injected here by waPanel.js -->
 </div>
@@ -454,6 +448,8 @@
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { window.location.href = './index.html'; return }
 
+        const { data: { session } } = await supabase.auth.getSession()
+
         try {
             const { data, error } = await supabase.from('usuarios')
                 .select('rol, active, username, sede').eq('id', user.id).single()
@@ -490,7 +486,7 @@
 
             // Inicializar panel WA omnicanal
             const { initWaPanel } = await import('./waPanel.js')
-            initWaPanel({ asesor: data.username || '' })
+            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || '', authToken: session?.access_token || '' })
 
         } catch (err) {
             console.error('[pan-shell]', err)
