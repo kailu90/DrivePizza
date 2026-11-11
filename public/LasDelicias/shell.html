@@ -361,7 +361,8 @@
             if (error || !data) { window.location.href = './index.html'; return }
 
             if (!data.active) { window.location.href = './index.html'; return }
-            const ROLES_VALIDOS = ['callcenter', 'callcenter-admin', 'admin']
+            if (data.rol === 'admin') { window.location.href = './panaderias-shell.html'; return }
+            const ROLES_VALIDOS = ['callcenter', 'callcenter-admin']
             if (!ROLES_VALIDOS.includes(data.rol)) { window.location.href = './index.html'; return }
 
             window._usuarioLD = {
