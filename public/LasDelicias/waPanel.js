@@ -4839,6 +4839,18 @@ function _onQr({ numero, sede, qr }) {
     if (_waitingQrFor === numero) _showQr(numero, qr);
 }
 
+// ── Navegación de vistas ────────────────────────────────────────────────────
+function _navTo(view) {
+    document.querySelectorAll('#wap-nav .wap-nav-icon').forEach(b =>
+        b.classList.toggle('wap-nav-icon--active', b.dataset.view === view));
+    document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
+    document.getElementById('wap-view-rr').classList.toggle('wap-view--hidden', view !== 'rr');
+    document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
+    if (view === 'ses')  _renderSesionesView();
+    if (view === 'conv') _renderList();
+    if (view === 'rr')   _renderRRView();
+}
+
 // ── Vista Sesiones ─────────────────────────────────────────────────────────
 function _renderSesionesView() {
     const el = document.getElementById('wap-ses-list');
