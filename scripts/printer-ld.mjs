@@ -7,7 +7,7 @@ import notifier from 'node-notifier';
 import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const logoPath = path.join(__dirname, '../public/LasDelicias/Imagenes/Logo.png');
+const logoPath = path.join(__dirname, 'logo.png');
 const logoBase64 = `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`;
 
 const { print } = pkg;
