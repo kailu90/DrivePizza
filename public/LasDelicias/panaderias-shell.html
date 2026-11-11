@@ -21,18 +21,18 @@
         #wa-panel {
             position: fixed;
             top: 64px; left: 0; bottom: 0;
-            width: 320px;
+            width: 420px;
             display: flex; flex-direction: row;
             overflow: hidden;
-            transform: translateX(-276px);   /* shows 44px strip */
+            transform: translateX(-376px);   /* shows 44px strip */
             transition: transform 260ms ease, width 200ms ease;
             z-index: 1200;
         }
         #wa-panel.expanded          { transform: translateX(0); }
 
-        /* Left column: 320px, always present */
+        /* Left column: 420px, always present */
         .wa-panel__left {
-            width: 320px; flex-shrink: 0;
+            width: 420px; flex-shrink: 0;
             display: flex; flex-direction: column;
             background: var(--ld-beige, #F6EBE0);
             border-right: 1px solid rgba(117,71,59,0.15);
