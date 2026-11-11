@@ -356,7 +356,7 @@ function _injectStyles() {
 .wap-ses-card-name {
     font-weight: 700;
     font-size: 1.25rem;
-    color: var(--color-terciario);
+    color: #1a1a1a;
 }
 .wap-ses-card-num {
     font-size: 1.1rem;
@@ -1088,7 +1088,7 @@ function _injectStyles() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-terciario);
+    color: #1a1a1a;
     flex: 1;
     min-width: 0;
 }
