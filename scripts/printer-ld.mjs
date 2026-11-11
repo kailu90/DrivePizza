@@ -1,0 +1,409 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import pkg from 'pdf-to-printer';
+import puppeteer from 'puppeteer';
+import notifier from 'node-notifier';
+import { createClient } from '@supabase/supabase-js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const logoPath = path.join(__dirname, '../public/LasDelicias/Imagenes/Logo.png');
+const logoBase64 = `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`;
+
+const { print } = pkg;
+
+// ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+const MI_SEDE = 'delicias de pinares';   // ← valor exacto de la columna sede en BD
+const NOMBRE_IMPRESORA = 'DELICIAS';     // ← nombre de impresora en Windows
+const LOG_FILE = 'printer-ld_log.txt';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const { supabaseUrl, serviceRoleKey } = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'supabaseKey.json'), 'utf8')
+);
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+    db: { schema: 'lasdelicias' },
+});
+
+function log(mensaje) {
+    const ahora = new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+    }).format(new Date());
+    const linea = `[${ahora}] ${mensaje}\n`;
+    fs.appendFileSync(LOG_FILE, linea, 'utf8');
+    console.log(linea.trim());
+}
+
+function formatearPrecio(numero) {
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0 }).format(numero);
+}
+
+function formatearFecha(fecha) {
+    const d = new Date(fecha);
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(d);
+}
+
+function generarHTML(pedido) {
+    const productosHTML = pedido.productos.map(item => {
+        const qty = (item.qty || 1);
+        const subtotal = item.precio * qty;
+
+        const obsHTML = item.obs
+            ? `<div style="padding-left:10px; font-size:11pt; font-weight:700; color:black;">📝 ${item.obs}</div>`
+            : '';
+
+        return `
+        <div style="margin-bottom:6px;">
+            <div style="display:flex; justify-content:space-between; font-size:11pt;">
+                <span style="font-weight:bold;">${qty}× ${item.nombre}</span>
+                <span style="font-weight:bold;">$${formatearPrecio(subtotal)}</span>
+            </div>
+            ${obsHTML}
+        </div>`;
+    }).join('');
+
+    const barrio = (pedido.domicilio?.tipo !== 'recoger' && pedido.domicilio?.barrio)
+        ? `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>BARRIO:</strong> ${pedido.domicilio.barrio}</p>`
+        : '';
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    html, body { margin: 0; padding: 0; }
+</style>
+</head>
+<body>
+        <div style="width:280px; font-family:'Courier New',monospace; color:black; background:white; padding:5px; margin:0 auto; font-weight:700;">
+            <div style="text-align:center; margin-bottom:4px;">
+                <img src="${logoBase64}" style="max-width:200px; height:auto;" />
+            </div>
+            <p style="text-align:center; margin:5px 0; font-size:12pt; font-weight:bold;">${(pedido.sede || MI_SEDE).toUpperCase()}</p>
+
+            <div style="border:4px solid black; display:flex; align-items:center; justify-content:center; gap:10px; padding:6px 10px; margin:10px 0;">
+                <span style="font-size:14pt; font-weight:bold;">PEDIDO N°</span>
+                <span style="font-size:24pt; font-weight:900;">#${pedido.nPedido || '---'}</span>
+            </div>
+
+            <div style="border-top:2px dashed black; margin:10px 0;"></div>
+            <p style="text-align:center; font-weight:bold; margin-bottom:10px; font-size:12pt;">DETALLE DEL PEDIDO</p>
+
+            <div style="width:100%;">
+                ${productosHTML}
+            </div>
+
+            ${pedido.obs ? `<div style="border-top:1px dashed black; margin:10px 0; padding-top:6px;"><p style="margin:0; font-size:11pt; font-weight:700;"><strong>OBS:</strong> ${pedido.obs}</p></div>` : ''}
+
+            <div style="border-top:3px solid black; margin-top:10px; padding-top:5px; text-align:right;">
+                <span style="font-size:16pt; font-weight:bold;">TOTAL: $${formatearPrecio(pedido.total)}</span>
+                ${pedido.domicilio
+                    ? pedido.domicilio.tipo === 'recoger'
+                        ? `<div style="font-size:11pt; margin-top:4px;">ENTREGA: <strong>Recoge en tienda</strong></div>`
+                        : `<div style="font-size:11pt; margin-top:4px;">DOMICILIO: <strong>$${formatearPrecio(pedido.domicilio.valor)}</strong></div>`
+                    : ''}
+            </div>
+
+            <div style="border-top:2px dashed black; margin:10px 0;"></div>
+
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>FECHA:</strong> ${formatearFecha(pedido.fecha)}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CLIENTE:</strong> ${pedido.nombre}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>TEL:</strong> ${pedido.telefono}</p>
+            ${pedido.domicilio?.tipo !== 'recoger'
+                ? `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>DIR:</strong> ${pedido.direccion}</p>`
+                : `<p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ENTREGA:</strong> Recoge en tienda</p>`}
+            ${barrio}
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>CANAL:</strong> ${pedido.canal || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>ASESOR:</strong> ${pedido.asesor || '---'}</p>
+            <p style="margin:5px 0; font-size:11pt; font-weight:700;"><strong>PAGO:</strong> ${pedido.pago}</p>
+
+            <p style="text-align:center; margin-top:20px; font-size:9pt; font-weight:700;">*** LAS DELICIAS ***</p>
+        </div>
+</body>
+</html>`;
+}
+
+async function convertirHTMLaPDF(html, rutaPDF) {
+    let browser;
+    try {
+        browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 302, height: 800, deviceScaleFactor: 2 });
+        await page.setContent(html, { waitUntil: 'load' });
+        const altura = await page.evaluate(() => document.body.scrollHeight + 20);
+        await page.pdf({
+            path: rutaPDF,
+            width: '80mm',
+            height: `${altura}px`,
+            margin: { top: '0', right: '0', bottom: '0', left: '0' },
+            printBackground: true,
+        });
+        log('PDF generado correctamente');
+    } catch (error) {
+        log(`Error al generar PDF: ${error.message}`);
+        throw error;
+    } finally {
+        if (browser) await browser.close();
+    }
+}
+
+async function imprimirPDF(rutaPDF, copias = 2) {
+    for (let i = 1; i <= copias; i++) {
+        await print(rutaPDF, { printer: NOMBRE_IMPRESORA });
+        log(`Copia ${i}/${copias} impresa correctamente`);
+    }
+}
+
+async function procesarReimpresion(rawPedido) {
+    const pedido = { ...rawPedido, nPedido: rawPedido.n_pedido };
+    const id = rawPedido.id;
+
+    log(`Reimpresión solicitada: #${pedido.nPedido} (${id})`);
+    notifier.notify({ title: 'Reimpresión', message: `Reimprimiendo #${pedido.nPedido} — ${pedido.nombre}`, sound: false });
+
+    const resetFlag = async () => {
+        const { error } = await supabase
+            .from('pedidos_callcenter')
+            .update({ reprint_requested: false })
+            .eq('id', id);
+        if (error) log(`Advertencia: error reseteando reprint_requested #${pedido.nPedido}: ${error.message}`);
+    };
+
+    try {
+        const html = generarHTML(pedido);
+        const rutaPDF = `reprint_ld_${id}.pdf`;
+
+        await convertirHTMLaPDF(html, rutaPDF);
+
+        try {
+            await imprimirPDF(rutaPDF, 1);
+        } catch (error) {
+            log(`Error al reimprimir #${pedido.nPedido}: ${error.message}`);
+            notifier.notify({ title: 'ERROR REIMPRESIÓN', message: `No se pudo reimprimir #${pedido.nPedido}. Revisar impresora.`, sound: true });
+            if (fs.existsSync(rutaPDF)) fs.unlinkSync(rutaPDF);
+            await resetFlag();
+            return;
+        }
+
+        await resetFlag();
+        log(`Reimpresión #${pedido.nPedido} completada`);
+        if (fs.existsSync(rutaPDF)) fs.unlinkSync(rutaPDF);
+
+        if (pedido.estado === 'pendiente') {
+            const ahora = new Date().toISOString();
+            const { error: errUpdate } = await supabase
+                .from('pedidos_callcenter')
+                .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
+                .eq('id', id);
+            if (errUpdate) {
+                log(`Advertencia: error avanzando pedido pendiente #${pedido.nPedido}: ${errUpdate.message}`);
+            } else {
+                log(`Pedido #${pedido.nPedido} avanzado a recibido (estaba pendiente)`);
+                setTimeout(async () => {
+                    const { data: actual } = await supabase
+                        .from('pedidos_callcenter').select('estado').eq('id', id).single();
+                    if (actual?.estado === 'recibido') {
+                        await supabase.from('pedidos_callcenter')
+                            .update({ estado: 'en preparacion', ts_preparacion: new Date().toISOString() })
+                            .eq('id', id);
+                        log(`Pedido #${pedido.nPedido} → en preparacion (auto-avance)`);
+                    }
+                }, 2 * 60 * 1000);
+            }
+        }
+
+    } catch (error) {
+        log(`Error en reimpresión ${id}: ${error.message}`);
+        await resetFlag();
+    }
+}
+
+async function procesarPedido(rawPedido) {
+    const pedido = { ...rawPedido, nPedido: rawPedido.n_pedido };
+    const id = rawPedido.id;
+
+    log(`Pedido detectado: #${pedido.nPedido} (${id})`);
+    notifier.notify({ title: 'Nuevo Pedido', message: `Pedido #${pedido.nPedido} - ${pedido.nombre}`, sound: true });
+
+    try {
+        const html = generarHTML(pedido);
+        const rutaPDF = `ticket_ld_${id}.pdf`;
+
+        await convertirHTMLaPDF(html, rutaPDF);
+
+        const MAX_INTENTOS_IMPRESION = 20;
+        let imprimioOK = false;
+        for (let intentoImp = 1; intentoImp <= MAX_INTENTOS_IMPRESION; intentoImp++) {
+            try {
+                await imprimirPDF(rutaPDF);
+                imprimioOK = true;
+                break;
+            } catch (error) {
+                log(`Error al imprimir (intento ${intentoImp}/${MAX_INTENTOS_IMPRESION}): ${error.message}. Reintentando en 30s...`);
+                if (intentoImp < MAX_INTENTOS_IMPRESION) await new Promise(r => setTimeout(r, 30000));
+            }
+        }
+        if (!imprimioOK) {
+            log(`Pedido #${pedido.nPedido} — impresión fallida tras ${MAX_INTENTOS_IMPRESION} intentos. Revisar impresora.`);
+            notifier.notify({ title: 'ERROR DE IMPRESIÓN', message: `Pedido #${pedido.nPedido} no se pudo imprimir. Revisar impresora.`, sound: true });
+            fs.unlinkSync(rutaPDF);
+            return;
+        }
+
+        const ahora = new Date().toISOString();
+        const MAX_INTENTOS_UPDATE = 5;
+        const DELAY_UPDATE_MS = 5000;
+        let updateOk = false;
+        for (let intento = 1; intento <= MAX_INTENTOS_UPDATE; intento++) {
+            const { error: errUpdate } = await supabase
+                .from('pedidos_callcenter')
+                .update({ impreso: true, estado: 'recibido', ts_recibido: ahora })
+                .eq('id', id);
+            if (!errUpdate) { updateOk = true; break; }
+            log(`Advertencia: error marcando pedido en Supabase (intento ${intento}/${MAX_INTENTOS_UPDATE}): ${errUpdate.message}`);
+            if (intento < MAX_INTENTOS_UPDATE) await new Promise(r => setTimeout(r, DELAY_UPDATE_MS));
+        }
+
+        if (!updateOk) {
+            log(`Error crítico: pedido #${pedido.nPedido} impreso físicamente pero NO pudo marcarse en Supabase tras ${MAX_INTENTOS_UPDATE} intentos.`);
+        } else {
+            log(`Pedido #${pedido.nPedido} marcado como recibido`);
+
+            setTimeout(async () => {
+                const { data: actual } = await supabase
+                    .from('pedidos_callcenter').select('estado').eq('id', id).single();
+                if (actual?.estado === 'recibido') {
+                    const { error: errAvance } = await supabase
+                        .from('pedidos_callcenter')
+                        .update({ estado: 'en preparacion', ts_preparacion: new Date().toISOString() })
+                        .eq('id', id);
+                    if (errAvance) log(`Advertencia: error en auto-avance pedido #${pedido.nPedido}: ${errAvance.message}`);
+                    else log(`Pedido #${pedido.nPedido} → en preparacion (auto-avance)`);
+                }
+            }, 2 * 60 * 1000);
+        }
+
+        fs.unlinkSync(rutaPDF);
+
+    } catch (error) {
+        log(`Error procesando pedido ${id}: ${error.message}`);
+    }
+}
+
+// ── Cola serial de impresión ──────────────────────────────────────────────────
+const colaPedidos = [];
+let procesandoCola = false;
+
+function encolar(rawPedido) {
+    const id = rawPedido.id;
+    if (colaPedidos.some(p => p.id === id && !p._esReimpresion)) {
+        log(`Pedido ${id} ya está en cola — ignorado`);
+        return;
+    }
+    colaPedidos.push(rawPedido);
+    log(`Pedido ${id} encolado (cola: ${colaPedidos.length})`);
+    procesarCola();
+}
+
+function encolarReimpresion(rawPedido) {
+    const id = rawPedido.id;
+    if (colaPedidos.some(p => p.id === id && p._esReimpresion)) {
+        log(`Reimpresión ${id} ya está en cola — ignorada`);
+        return;
+    }
+    colaPedidos.push({ ...rawPedido, _esReimpresion: true });
+    log(`Reimpresión ${id} encolada (cola: ${colaPedidos.length})`);
+    procesarCola();
+}
+
+async function procesarCola() {
+    if (procesandoCola) return;
+    procesandoCola = true;
+    while (colaPedidos.length > 0) {
+        const item = colaPedidos.shift();
+        if (item._esReimpresion) {
+            await procesarReimpresion(item);
+        } else {
+            await procesarPedido(item);
+        }
+    }
+    procesandoCola = false;
+}
+
+async function iniciar() {
+    log(`Monitor Las Delicias iniciado — Sede: ${MI_SEDE}`);
+
+    // Procesar pedidos no impresos de las últimas 4 horas (ej: reinicio del script)
+    const hace4h = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    const { data: pendientes, error: errPend } = await supabase
+        .from('pedidos_callcenter')
+        .select('*')
+        .eq('sede', MI_SEDE)
+        .eq('impreso', false)
+        .neq('estado', 'cancelado')
+        .gte('fecha', hace4h);
+
+    if (errPend) {
+        log(`Error cargando pedidos pendientes: ${errPend.message}`);
+    } else {
+        for (const pedido of (pendientes || [])) {
+            encolar(pedido);
+        }
+    }
+
+    // Procesar reimpresiones pendientes (solicitadas mientras el script estaba detenido)
+    const { data: reprints, error: errReprint } = await supabase
+        .from('pedidos_callcenter')
+        .select('*')
+        .eq('sede', MI_SEDE)
+        .eq('reprint_requested', true);
+    if (errReprint) {
+        log(`Error cargando reimpresiones pendientes: ${errReprint.message}`);
+    } else {
+        for (const pedido of (reprints || [])) {
+            encolarReimpresion(pedido);
+        }
+    }
+
+    // Escuchar nuevos pedidos en tiempo real
+    supabase.channel(`printer-ld-${MI_SEDE}`)
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'lasdelicias',
+            table: 'pedidos_callcenter',
+            filter: `sede=eq.${MI_SEDE}`,
+        }, (payload) => {
+            if (!payload.new.impreso) {
+                encolar(payload.new);
+            }
+        })
+        .subscribe((status) => {
+            log(`Realtime INSERT: ${status}`);
+        });
+
+    // Escuchar solicitudes de reimpresión en tiempo real
+    supabase.channel(`printer-ld-reprint-${MI_SEDE}`)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'lasdelicias',
+            table: 'pedidos_callcenter',
+            filter: `sede=eq.${MI_SEDE}`,
+        }, (payload) => {
+            if (payload.new.reprint_requested === true) {
+                encolarReimpresion(payload.new);
+            }
+        })
+        .subscribe((status) => {
+            log(`Realtime UPDATE: ${status}`);
+        });
+}
+
+iniciar();
