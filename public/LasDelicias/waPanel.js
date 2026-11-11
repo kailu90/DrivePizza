@@ -3291,7 +3291,7 @@ function _injectStyles() {
 
 // ── HTML Shell ─────────────────────────────────────────────────────────────
 function _renderShell(body) {
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin'].includes(_rolUsuario);
 
     body.innerHTML = `
         <div class="wap-root" id="wap-root">
@@ -4666,7 +4666,7 @@ function _onEstado({ numero, contacto, estado, asesor }) {
         _updateChatHeader(contacto);
         const actionsWrap = document.getElementById('wap-chat-actions-wrap');
         if (actionsWrap) {
-            const isAdminChat   = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+            const isAdminChat   = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
             const puedeResolver = estado === 'asignado' && (_esMio(numero, contacto) || isAdminChat);
             actionsWrap.style.display = puedeResolver ? '' : 'none';
         }
@@ -4841,7 +4841,7 @@ function _renderSesionesView() {
     const el = document.getElementById('wap-ses-list');
     if (!el) return;
 
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin'].includes(_rolUsuario);
 
     // ── WhatsApp section ────────────────────────────────────────────────────
     let _sesHtml = `<div class="wap-ses-channel-label">WhatsApp</div>`;
@@ -5085,7 +5085,7 @@ function _renderAsesorPills(keepOpen = false) {
     const wrap = document.getElementById('wap-asesor-pills');
     if (!wrap) return;
 
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     const fa      = _state.filtroAsesor;
 
     const asesores = isAdmin
@@ -5176,7 +5176,7 @@ function _aOpt(key, label, fa) {
 function _renderFiltroAsesor() {
     const el = document.getElementById('wap-filtro-asesor');
     if (!el) return;
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     if (!isAdmin) { el.style.display = 'none'; return; }
 
     el.style.display = '';
@@ -5311,7 +5311,7 @@ async function _loadResueltas() {
     r.loading = true;
     _renderResueltas(); // muestra spinner
 
-    const isAdmin  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin  = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     const params   = new URLSearchParams({ offset: r.offset, limit: 20 });
     const fa       = _state.filtroAsesor;
 
@@ -5500,7 +5500,7 @@ function _renderList() {
     }
 
     const q      = _state.filterText;
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     const filtered = allConvs
         .filter(({ num, phone, data }) => {
             // Filtrar por texto
@@ -5620,7 +5620,7 @@ function _openChat(phone) {
     _updateChatHeader(phone);
 
     // Mostrar RESOLVER si el chat está asignado y: es mío, o soy admin/callcenter-admin
-    const isAdminChat  = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdminChat  = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     const puedeResolver = _getEstado(_state.activeNum, phone) === 'asignado' && (_esMio(_state.activeNum, phone) || isAdminChat);
     const actionsWrap  = document.getElementById('wap-chat-actions-wrap');
     if (actionsWrap) actionsWrap.style.display = puedeResolver ? '' : 'none';
@@ -7349,7 +7349,7 @@ async function _doForward(num, phone) {
     _fwdMsg = null;
 
     // Validar si el chat destino está asignado a otro asesor
-    const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
+    const isAdmin = ['admin', 'callcenter-admin', 'panaderias-admin'].includes(_rolUsuario);
     const asig    = _getAsig(num, phone);
     const asignadoAOtro = asig?.estado === 'asignado' && asig.asesor !== _asesorActual;
     if (asignadoAOtro) {
