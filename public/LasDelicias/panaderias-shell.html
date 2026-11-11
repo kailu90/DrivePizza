@@ -124,8 +124,10 @@
             position: fixed;
             top: 64px; left: 44px; right: 0; bottom: 0;
             overflow: hidden;
+            transition: left 260ms ease;
         }
         #pan-wrap.wa-panel-off { left: 0 !important; }
+        #wa-panel.expanded ~ #pan-wrap { left: 420px; }
 
         #pan-frame {
             position: absolute; inset: 0;
