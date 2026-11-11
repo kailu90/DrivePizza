@@ -12,7 +12,7 @@ const REDIRECT_ROL = {
     'callcenter-admin':  'shell.html',
     panaderias:          'panaderias-shell.html',
     'panaderias-admin':  'panaderias-shell.html',
-    admin:               'shell.html',
+    admin:               'panaderias-shell.html',
 }
 
 // ── Login ────────────────────────────────────────────────────────────────────
