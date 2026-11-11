@@ -4486,6 +4486,7 @@ function _connectWs() {
     _ws.onmessage = e => {
         try {
             const msg = JSON.parse(e.data);
+            if (msg.tenant && msg.tenant !== 'drivepizza') return;
             console.log('[waPanel WS]', msg.tipo, msg);
             if (msg.tipo === 'wa:mensaje')    _onMensaje(msg);
             if (msg.tipo === 'wa:status')     _onStatus(msg);
