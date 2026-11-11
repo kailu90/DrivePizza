@@ -595,10 +595,11 @@ async function _loadHistorial(reset = false) {
     const f = _histFiltros()
     const estado = f.estadoCol || f.estado
 
+    const _sede = _perfil.sede || 'delicias de pinares'
     let q = supabase
         .from('pedidos_callcenter')
         .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, fecha')
-        .eq('sede', _perfil.sede)
+        .eq('sede', _sede)
         .order('n_pedido', { ascending: false })
         .range(_hist.offset, _hist.offset + 24)
 
@@ -640,7 +641,7 @@ async function _loadResumen() {
         let q = supabase
             .from('pedidos_callcenter')
             .select('estado, total')
-            .eq('sede', _perfil.sede)
+            .eq('sede', _perfil.sede || 'delicias de pinares')
             .range(offset, offset + PAGE - 1)
         if (f.desde) q = q.gte('fecha', f.desde + 'T00:00:00-05:00')
         if (f.hasta) q = q.lte('fecha', f.hasta + 'T23:59:59-05:00')

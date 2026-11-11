@@ -379,8 +379,8 @@ async function iniciar() {
             event: 'INSERT',
             schema: 'lasdelicias',
             table: 'pedidos_callcenter',
-            filter: `sede=eq.${MI_SEDE}`,
         }, (payload) => {
+            if (payload.new.sede !== MI_SEDE) return;
             if (!payload.new.impreso) {
                 encolar(payload.new);
             }
@@ -395,8 +395,8 @@ async function iniciar() {
             event: 'UPDATE',
             schema: 'lasdelicias',
             table: 'pedidos_callcenter',
-            filter: `sede=eq.${MI_SEDE}`,
         }, (payload) => {
+            if (payload.new.sede !== MI_SEDE) return;
             if (payload.new.reprint_requested === true) {
                 encolarReimpresion(payload.new);
             }
