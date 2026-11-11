@@ -4,6 +4,7 @@
  * Renderiza lista de conversaciones + chat inline dentro del panel lateral.
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
+import { supabase } from './supabaseConfig.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
 const SESSION_COLORS = [
@@ -3784,7 +3785,9 @@ function _renderShell(body) {
             _histReload();
         }, 450);
     });
-    document.getElementById('wap-cp-btn-pedido').addEventListener('click', () => _showToast('Próximamente', 2000));
+    document.getElementById('wap-cp-btn-pedido').addEventListener('click', () => {
+        window.parent?.postMessage({ type: 'tomar-pedido-open' }, '*');
+    });
     document.getElementById('wap-cp-add-note').addEventListener('click', () => _showToast('Próximamente', 2000));
     document.getElementById('wap-cp-addr-edit').addEventListener('click', () => _showToast('Próximamente', 2000));
     document.getElementById('wap-vincular-lid-btn').addEventListener('click', _vincularLid);
@@ -6370,7 +6373,7 @@ async function _buscarClientes(q) {
     res.innerHTML = '<p class="wap-nc-empty">Buscando...</p>';
     const { data, error } = await supabase
         .from('clientes')
-        .select('nombre, telefono, ciudad')
+        .select('nombre, telefono')
         .or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%`)
         .limit(20);
     // Normalizar a JID colombiano completo: 3XXXXXXXXX → 573XXXXXXXXX
@@ -6410,7 +6413,7 @@ async function _buscarClientes(q) {
     const htmlResultados = clientes.map(c => `
         <div class="wap-nc-result" data-phone="${c.telefono}" data-nombre="${_esc(c.nombre || '')}">
             <span class="wap-nc-result-name">${_esc(c.nombre || '—')}</span>
-            <span class="wap-nc-result-phone">${_esc(c.telefono)}${c.ciudad ? ' · ' + _esc(c.ciudad) : ''}</span>
+            <span class="wap-nc-result-phone">${_esc(c.telefono)}</span>
         </div>
     `).join('');
 
@@ -7532,9 +7535,9 @@ async function _saveEditMsg(msgId) {
     const phone = _state.activeContact;
     try {
         const r = await fetch(
-            `${HETZNER_URL}/ld/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}/${encodeURIComponent(msgId)}`,
+            `${HETZNER_URL}/ld/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(msgId)}`,
             { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ texto, asesor: _asesorActual }) }
+              body: JSON.stringify({ contacto: phone, texto, asesor: _asesorActual }) }
         );
         if (!r.ok) { _showToast('Error al editar', 3000); return; }
         // Actualizar localmente (optimistic)
@@ -7601,7 +7604,7 @@ async function _deleteMsg(msgId) {
     const phone = _state.activeContact;
     try {
         const r = await fetch(
-            `${HETZNER_URL}/ld/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(phone)}/${encodeURIComponent(msgId)}`,
+            `${HETZNER_URL}/ld/wa/mensajes/${encodeURIComponent(num)}/${encodeURIComponent(msgId)}?contacto=${encodeURIComponent(phone)}`,
             { method: 'DELETE' }
         );
         if (!r.ok) {
