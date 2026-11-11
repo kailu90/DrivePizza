@@ -17,7 +17,7 @@
     /* Mapeo a variables globales */
     --color-primario:     var(--ld-marron);
     --color-secundario:   var(--ld-beige);
-    --color-terciario:    var(--ld-beige);
+    --color-terciario:    #2d2d2d;
     --color-cuaternario:  var(--ld-marron-oscuro);
     --color-quinto:       var(--ld-marron);
     --color-acento:       var(--ld-marron);
