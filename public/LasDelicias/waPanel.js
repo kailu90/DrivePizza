@@ -1122,8 +1122,8 @@ function _injectStyles() {
 .wap-filtros-wrap {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 10px 6px;
+    gap: 4px;
+    padding: 6px 8px 5px;
     flex-shrink: 0;
     border-bottom: 1px solid rgba(0,0,0,.06);
     overflow-x: auto;
@@ -1133,14 +1133,14 @@ function _injectStyles() {
 /* ── Filtros de estado ───────────────────────────── */
 .wap-filtros {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
 }
 .wap-filtro {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 11px;
+    gap: 3px;
+    padding: 4px 8px;
     border-radius: 20px;
     border: 1px solid rgba(0,0,0,.1);
     background: transparent;
@@ -1416,6 +1416,7 @@ function _injectStyles() {
     flex: 1;
     min-height: 0;
     position: relative;
+    overflow: hidden;
 }
 /* Header clickable (avatar + info) */
 .wap-chat-avatar { cursor: pointer; }
