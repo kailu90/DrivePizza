@@ -2418,7 +2418,7 @@ function _injectStyles() {
     color: var(--color-primario);
     margin-bottom: 1px;
 }
-.wap-msg-text { color: var(--color-terciario); white-space: pre-wrap; word-break: break-word; }
+.wap-msg-text { color: #1a1a1a; white-space: pre-wrap; word-break: break-word; }
 .wap-msg-img { display: block; max-width: 260px; max-height: 300px; border-radius: 8px; cursor: zoom-in; object-fit: cover; }
 .wap-lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
 .wap-lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; object-fit: contain; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
