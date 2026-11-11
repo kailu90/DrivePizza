@@ -1603,7 +1603,7 @@ function _injectStyles() {
 .wap-cp-title {
     font-weight: 700;
     font-size: 1.3rem;
-    color: var(--color-terciario);
+    color: #1a1a1a;
 }
 .wap-cp-scroll {
     flex: 1;
@@ -1636,7 +1636,7 @@ function _injectStyles() {
 .wap-cp-name {
     font-size: 1.55rem;
     font-weight: 700;
-    color: var(--color-terciario);
+    color: #1a1a1a;
     text-align: center;
     line-height: 1.3;
     cursor: text;
@@ -1648,7 +1648,7 @@ function _injectStyles() {
 .wap-cp-name-input {
     font-size: 1.55rem;
     font-weight: 700;
-    color: var(--color-terciario);
+    color: #1a1a1a;
     text-align: center;
     background: none;
     border: none;
