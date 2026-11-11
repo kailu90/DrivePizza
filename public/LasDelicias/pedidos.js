@@ -50,6 +50,7 @@ let _pago            = 'efectivo'
 let _barriosCatalogo = null      // [{ nombre, valor }] — cargado lazy al abrir checkout
 let _domicilioValor  = 0         // valor del barrio seleccionado
 let _barrioNombre    = ''        // nombre del barrio seleccionado
+let _realtimeDebounce = null
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -68,6 +69,7 @@ async function init() {
     _user   = user
     _perfil = perfil
 
+    _iniciarRealtimeHistorial()
     _initBarrioPicker()
 
     // Si la vista inicial es historial o barrios y ya tenemos perfil, iniciar ahora
@@ -655,6 +657,25 @@ async function _loadResumen() {
     document.getElementById('hist-res-entregados').textContent  = entregados.length
     document.getElementById('hist-res-cancelados').textContent  = all.filter(p => p.estado === 'cancelado').length
     document.getElementById('hist-res-ventas').textContent      = formatPrecio(entregados.reduce((s, p) => s + (p.total || 0), 0))
+}
+
+function _iniciarRealtimeHistorial() {
+    supabase.channel('ld-historial-pedidos')
+        .on('postgres_changes', { event: '*', schema: 'lasdelicias', table: 'pedidos_callcenter' }, () => {
+            if (_currentView !== 'historial') return
+            clearTimeout(_realtimeDebounce)
+            _realtimeDebounce = setTimeout(() => _loadHistorial(true), 1000)
+        })
+        .subscribe()
+
+    // Refresco periódico como respaldo (cada 5 min)
+    setInterval(() => {
+        if (_currentView === 'historial') _loadHistorial(true)
+    }, 5 * 60 * 1000)
+
+    document.addEventListener('visibilitychange', () => {
+        if (_currentView === 'historial' && document.visibilityState === 'visible') _loadHistorial(true)
+    })
 }
 
 function _renderHistItems(items) {
