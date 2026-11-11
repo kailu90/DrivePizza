@@ -28,7 +28,6 @@
             z-index: 1200;
         }
         #wa-panel.expanded          { transform: translateX(0); }
-        #wa-panel.expanded.has-chat { width: 620px; }
 
         /* Left column: 320px, always present */
         .wa-panel__left {
@@ -124,10 +123,7 @@
             position: fixed;
             top: 64px; left: 44px; right: 0; bottom: 0;
             overflow: hidden;
-            transition: left 260ms ease;
         }
-        #pan-wrap.wa-expanded  { left: 320px; }
-        #pan-wrap.has-chat     { left: 620px; }
         #pan-wrap.wa-panel-off { left: 0 !important; }
 
         #pan-frame {
@@ -393,7 +389,6 @@
             _waPanel.classList.remove('expanded')
             _waPanel.style.display = 'none'
             _panWrap.classList.add('wa-panel-off')
-            _panWrap.classList.remove('wa-expanded', 'has-chat')
         } else {
             _waPanel.style.display = ''
             _panWrap.classList.remove('wa-panel-off')
@@ -401,8 +396,7 @@
     }
 
     document.getElementById('wa-strip').addEventListener('click', () => {
-        const expanded = _waPanel.classList.toggle('expanded')
-        _panWrap.classList.toggle('wa-expanded', expanded)
+        _waPanel.classList.toggle('expanded')
     })
 
     // ── Drawer "Tomar pedido" ─────────────────────────────────────────────────
