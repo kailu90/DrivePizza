@@ -290,6 +290,7 @@
 <script type="module">
     import { supabase }                          from './supabaseConfig.js'
     import { mountHeader, setHeaderUser, setHeaderMode } from './Shared/ldHeader.js'
+    import { WS_URL }                            from '../Api/config.js'
 
     // ── Overlay ───────────────────────────────────────────────────────────────
     const _overlay = document.getElementById('nav-overlay')
@@ -429,13 +430,31 @@
         if (e.data?.type === 'tomar-pedido-open')  openPedidoDrawer()
         if (e.data?.type === 'tomar-pedido-close') closePedidoDrawer()
         if (e.data?.type === 'wa-visible')         _setWaVisible(e.data.show !== false)
-        if (e.data?.type === 'nueva-version') {
-            const s = e.data.scope
-            if (!s || s === 'all' || s === 'lasdelicias') {
-                document.getElementById('banner-nueva-version').style.display = 'block'
-            }
-        }
     })
+
+    // ── WS backend (nueva versión) ────────────────────────────────────────────
+    let _wsRetry = 0
+    function initWs() {
+        const ws = new WebSocket(WS_URL)
+        ws.onopen  = () => { _wsRetry = 0 }
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data)
+                if (msg.tipo === 'nueva-version') {
+                    const s = msg.scope
+                    if (!s || s === 'all' || s === 'lasdelicias') {
+                        document.getElementById('banner-nueva-version').style.display = 'block'
+                    }
+                }
+            } catch {}
+        }
+        ws.onclose = () => {
+            const delay = Math.min(1000 * 2 ** _wsRetry, 30_000)
+            _wsRetry++
+            setTimeout(initWs, delay)
+        }
+    }
+    initWs()
 
     // ── Auth ──────────────────────────────────────────────────────────────────
     ;(async () => {
