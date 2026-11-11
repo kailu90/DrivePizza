@@ -1978,7 +1978,7 @@ function _injectStyles() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-terciario);
+    color: #1a1a1a;
 }
 .wap-edit-name-btn {
     background: none;
