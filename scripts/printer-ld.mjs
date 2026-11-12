@@ -346,7 +346,7 @@ async function iniciar() {
     const { data: pendientes, error: errPend } = await supabase
         .from('pedidos_callcenter')
         .select('*')
-        .eq('sede', MI_SEDE)
+        .ilike('sede', MI_SEDE)
         .eq('impreso', false)
         .neq('estado', 'cancelado')
         .gte('fecha', hace4h);
@@ -363,7 +363,7 @@ async function iniciar() {
     const { data: reprints, error: errReprint } = await supabase
         .from('pedidos_callcenter')
         .select('*')
-        .eq('sede', MI_SEDE)
+        .ilike('sede', MI_SEDE)
         .eq('reprint_requested', true);
     if (errReprint) {
         log(`Error cargando reimpresiones pendientes: ${errReprint.message}`);
@@ -373,31 +373,6 @@ async function iniciar() {
         }
     }
 
-    // Polling cada 30s — respaldo confiable cuando Realtime no entrega eventos del schema lasdelicias
-    async function _poll() {
-        try {
-            const hace4h = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-            const { data: nuevos } = await supabase
-                .from('pedidos_callcenter')
-                .select('*')
-                .eq('sede', MI_SEDE)
-                .eq('impreso', false)
-                .neq('estado', 'cancelado')
-                .gte('fecha', hace4h);
-            for (const pedido of (nuevos || [])) encolar(pedido);
-
-            const { data: reprints } = await supabase
-                .from('pedidos_callcenter')
-                .select('*')
-                .eq('sede', MI_SEDE)
-                .eq('reprint_requested', true);
-            for (const pedido of (reprints || [])) encolarReimpresion(pedido);
-        } catch (e) {
-            log(`Error en polling: ${e.message}`);
-        }
-    }
-    setInterval(_poll, 30 * 1000);
-
     // Escuchar nuevos pedidos en tiempo real
     supabase.channel(`printer-ld-${MI_SEDE}`)
         .on('postgres_changes', {
@@ -405,7 +380,7 @@ async function iniciar() {
             schema: 'lasdelicias',
             table: 'pedidos_callcenter',
         }, (payload) => {
-            if (payload.new.sede !== MI_SEDE) return;
+            if (payload.new.sede?.toLowerCase() !== MI_SEDE.toLowerCase()) return;
             if (!payload.new.impreso) {
                 encolar(payload.new);
             }
@@ -421,7 +396,7 @@ async function iniciar() {
             schema: 'lasdelicias',
             table: 'pedidos_callcenter',
         }, (payload) => {
-            if (payload.new.sede !== MI_SEDE) return;
+            if (payload.new.sede?.toLowerCase() !== MI_SEDE.toLowerCase()) return;
             if (payload.new.reprint_requested === true) {
                 encolarReimpresion(payload.new);
             }
