@@ -439,12 +439,6 @@ function renderProducts(categoria) {
                 <h4>25K</h4>
                 <p class="product-desc">Kit Pizzeritos<br>5 sabores disponibles</p>
             </div>
-            <div class="card card-promo card-promo--inactiva">
-                <div class="promo-badge">PROMO</div>
-                <h4>19.9K</h4>
-                <p class="product-desc">Duelo de Sabores<br>Pizzeta Carbonara + Gaseosa</p>
-                <p class="promo-elegibles">No disponible</p>
-            </div>
         `;
         return;
     }
