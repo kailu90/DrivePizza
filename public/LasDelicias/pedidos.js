@@ -1,6 +1,7 @@
 import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
+import { badgeEstado } from '../Shared/badges.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -698,7 +699,7 @@ function _renderHistItems(items) {
             <td title="${p.direccion || ''}">${p.direccion || '—'}</td>
             <td>${_capStr(p.pago)}</td>
             <td>${p.asesor || '—'}</td>
-            <td><span class="ld-hist-badge ld-hist-badge--${(p.estado||'').replace(/ /g,'-')}">${_capStr(p.estado)}</span></td>
+            <td>${badgeEstado(p.estado)}</td>
             <td><b>${formatPrecio(p.total)}</b></td>
         `
         tr.addEventListener('click', () => _abrirDetalle(p))
