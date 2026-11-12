@@ -1170,7 +1170,7 @@ function actualizarComanda() {
             ? `<span class="promo-tag">DUELO DE SABORES</span>`
             : '';
         const nombreDisplay = item.esPromo3x2
-            ? item.nombre.replace(/^\[PROMO 3x2\]\s*(🎁\s*OBSEQUIO\s*)?/, '')
+            ? item.nombre.replace(/^(\[PROMO 3x2\]\s*)?(🎁\s*OBSEQUIO\s*)?/, '')
             : item.nombre;
         const precioClass = (item.esObsequio3x2 || item.esGaseosa65k || item.esGaseosaLasEsp || item.esExtra28k || item.esObsequio2x1Ctg) ? 'item-precio item-precio--gratis' : 'item-precio';
 
