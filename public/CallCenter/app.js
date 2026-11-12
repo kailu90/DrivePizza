@@ -154,7 +154,7 @@ function _aplicarFiltro2x1Ctg() {
 }
 
 function _limpiarFiltro2x1Ctg() {
-    if (carrito.some(i => i.esPromo2x1Ctg)) return;
+    if (carrito.some(i => i.esPromo2x1Ctg) || carrito.some(i => i.esPromoLasEsp && i.promoVariante === 'ctg')) return;
     const btnDomicilio = document.querySelector('.entrega-btn[data-tipo="domicilio"]');
     if (btnDomicilio) btnDomicilio.disabled = false;
     document.getElementById('sede-restriccion-2x1-aviso')?.remove();
@@ -3247,7 +3247,8 @@ window._promoLasEspSelGaseosa = function (sabor) {
     }
     localStorage.setItem(cfg.obsKey, `${cfg.obsLabel}${state.categoria}`);
     actualizarComanda();
-    if (!promoVariante || promoVariante !== 'ctg') _aplicarFiltroSedes();
+    if (promoVariante === 'ctg') _aplicarFiltro2x1Ctg();
+    else _aplicarFiltroSedes();
 };
 
 // ── PROMO PEPPERONI 28K ────────────────────────────────────────────────────
