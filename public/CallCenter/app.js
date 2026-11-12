@@ -61,7 +61,7 @@ function _resolverOpciones(p, base, ciudad, sede) {
 }
 
 function _limpiarFiltroSedes() {
-    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb);
+    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb) || carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg');
     if (tienePromoRestringida) return;
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         btn.disabled = false;
@@ -3247,6 +3247,7 @@ window._promoLasEspSelGaseosa = function (sabor) {
     }
     localStorage.setItem(cfg.obsKey, `${cfg.obsLabel}${state.categoria}`);
     actualizarComanda();
+    if (!promoVariante || promoVariante !== 'ctg') _aplicarFiltroSedes();
 };
 
 // ── PROMO PEPPERONI 28K ────────────────────────────────────────────────────
