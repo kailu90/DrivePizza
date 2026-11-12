@@ -61,7 +61,7 @@ function _resolverOpciones(p, base, ciudad, sede) {
 }
 
 function _limpiarFiltroSedes() {
-    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb) || carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg');
+    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb) || carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg') || carrito.some(i => i.esPromoPepperoni);
     if (tienePromoRestringida) return;
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         btn.disabled = false;
@@ -3297,6 +3297,7 @@ window.abrirPromoPepperoni = function () {
     });
     localStorage.setItem('dp_promoPepperoni_obs', 'PROMO PEPPERONI 28K');
     actualizarComanda();
+    _aplicarFiltroSedes();
 };
 
 // ── PROMO BERRIONDA 35K (22-23 Jul 2026 · Solo Piedecuesta) ───────────────
