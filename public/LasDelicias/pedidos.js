@@ -482,6 +482,13 @@ function formatPrecio(n) {
     return '$' + Number(n).toLocaleString('es-CO')
 }
 
+function formatHora(iso) {
+    if (!iso) return ''
+    return new Date(iso).toLocaleTimeString('es-CO', {
+        timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: true,
+    })
+}
+
 // ── Listeners ─────────────────────────────────────────────────────────────────
 // Panel derecho
 document.getElementById('btnVaciar').addEventListener('click', vaciarCarrito)
@@ -598,8 +605,8 @@ async function _loadHistorial(reset = false) {
     const _sede = _perfil.sede || 'delicias de pinares'
     let q = supabase
         .from('pedidos_callcenter')
-        .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, fecha')
-        .eq('sede', _sede)
+        .select('n_pedido, nombre, telefono, direccion, pago, estado, total, domicilio, productos, asesor, canal, fecha, obs, motivo_cancelacion, ts_recibido, ts_preparacion, ts_despachado, ts_entregado')
+        .ilike('sede', _sede)
         .order('n_pedido', { ascending: false })
         .range(_hist.offset, _hist.offset + 24)
 
@@ -746,25 +753,40 @@ function _abrirDetalle(p) {
         ? `<div class="ld-det__obs">💬 ${p.obs}</div>`
         : ''
 
-    // Timeline
-    const STEPS = [
-        { id: 'recibido',       label: 'Recibido',   icon: '✓'  },
-        { id: 'en preparacion', label: 'Preparando', icon: '☕' },
-        { id: 'despachado',     label: 'Despachado', icon: '🛵' },
-        { id: 'entregado',      label: 'Entregado',  icon: '✓'  },
+    // Stepper (igual que DrivePizza CallCenter)
+    const _ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    const DET_STEPS = [
+        { id: 'recibido',       label: 'Recibido',   tsField: 'ts_recibido',
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>` },
+        { id: 'en preparacion', label: 'Preparando', tsField: 'ts_preparacion',
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>` },
+        { id: 'despachado',     label: 'Despachado', tsField: 'ts_despachado',
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M15 6h-4l-2 6H3l2-4h8"/><path d="M15 6l2 6h2l1-3h-5"/></svg>` },
+        { id: 'entregado',      label: 'Entregado',  tsField: 'ts_entregado',
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` },
     ]
-    const idxActual = STEPS.findIndex(s => s.id === p.estado)
+    const DET_ESTADO_IDX = { recibido: 0, 'en preparacion': 1, despachado: 2, entregado: 3 }
+    const idxActual = DET_ESTADO_IDX[p.estado] ?? -1
     const timelineHtml = p.estado === 'cancelado'
-        ? `<div class="ld-det__cancelado">❌ Pedido cancelado</div>`
-        : `<div class="ld-det__timeline">${STEPS.map((s, i) => {
-            const done   = i < idxActual
-            const active = i === idxActual
-            const cls    = done ? 'ld-tl__step--done' : active ? 'ld-tl__step--active' : ''
-            return `<div class="ld-tl__step ${cls}">
-                <div class="ld-tl__dot">${done || active ? s.icon : ''}</div>
-                <div class="ld-tl__label">${s.label}</div>
-            </div>`
-        }).join('')}</div>`
+        ? `<div class="modal-cancelado"><span>✕ Pedido cancelado</span>${p.motivo_cancelacion ? `<small>${p.motivo_cancelacion}</small>` : ''}</div>`
+        : (() => {
+            let html = '<div class="stepper">'
+            DET_STEPS.forEach((step, i) => {
+                let cls = 'step-locked', icon = step.icon
+                if (i < idxActual)       { cls = 'step-done'; icon = _ICON_CHECK }
+                else if (i === idxActual)  cls = 'step-active'
+                const hora = i <= idxActual ? formatHora(p[step.tsField]) : ''
+                html += `<div class="step ${cls}">
+                    <div class="step-circle">${icon}</div>
+                    <span class="step-label">${step.label}</span>
+                    ${hora ? `<span class="step-time">${hora}</span>` : ''}
+                </div>`
+                if (i < DET_STEPS.length - 1)
+                    html += `<div class="step-connector ${i < idxActual ? 'active' : ''}"></div>`
+            })
+            html += '</div>'
+            return html
+        })()
 
     document.getElementById('det-body').innerHTML = `
         <div class="ld-det__nombre">${p.nombre || '—'}</div>
