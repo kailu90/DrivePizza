@@ -224,6 +224,12 @@
                            style="flex:1;" oninput="window.actualizarPrecioDomicilio()">
                     <datalist id="barrios-list"></datalist>
                     <strong id="domicilio-precio" style="color:#e67e22; min-width:80px; text-align:right;"></strong>
+                    <div id="domi-unidades" style="display:flex;gap:3px;flex-shrink:0;">
+                        <button type="button" class="domi-u-btn" data-u="1" onclick="window.setDomiUnidades(1)"
+                                style="padding:4px 9px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;border:2px solid #e67e22;background:#e67e22;color:#fff;line-height:1;">×1</button>
+                        <button type="button" class="domi-u-btn" data-u="2" onclick="window.setDomiUnidades(2)"
+                                style="padding:4px 9px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;border:2px solid #e67e22;background:#fff;color:#e67e22;line-height:1;">×2</button>
+                    </div>
                 </div>
             </div>
 
@@ -580,6 +586,7 @@
         datalist.innerHTML = Object.keys(barrios).map(b => `<option value="${b}">`).join('');
         document.getElementById('barrioInput').value = '';
         document.getElementById('domicilio-precio').textContent = '';
+        window.setDomiUnidades?.(1);
         actualizarBarrioField();
         window.actualizarTotalCheckout?.();
     });
@@ -595,6 +602,7 @@
                 document.getElementById('clienteDireccion').value = '';
                 document.getElementById('barrioInput').value = '';
                 document.getElementById('domicilio-precio').textContent = '';
+                window.setDomiUnidades?.(1);
             }
             actualizarBarrioField();
             window.actualizarTotalCheckout?.();
@@ -609,11 +617,24 @@
         barrioField.style.display = (tipo === 'domicilio' && Object.keys(barrios).length > 0) ? 'flex' : 'none';
     }
 
+    window._domiUnidades = 1;
+
+    window.setDomiUnidades = (n) => {
+        window._domiUnidades = n;
+        document.querySelectorAll('.domi-u-btn').forEach(b => {
+            const activo = parseInt(b.dataset.u) === n;
+            b.style.background = activo ? '#e67e22' : '#fff';
+            b.style.color      = activo ? '#fff'    : '#e67e22';
+        });
+        window.actualizarPrecioDomicilio();
+    };
+
     window.actualizarPrecioDomicilio = () => {
         const sede   = document.querySelector('.sede-btn.active')?.dataset.sede || '';
         const barrio = document.getElementById('barrioInput').value;
-        const valor  = window.domicilios?.[sede]?.[barrio];
-        document.getElementById('domicilio-precio').textContent = valor ? `$${valor.toLocaleString()}` : '';
+        const base   = window.domicilios?.[sede]?.[barrio];
+        const u      = window._domiUnidades || 1;
+        document.getElementById('domicilio-precio').textContent = base ? `$${(base * u).toLocaleString()}` : '';
         window.actualizarTotalCheckout?.();
     };
 

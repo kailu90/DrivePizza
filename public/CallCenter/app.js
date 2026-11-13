@@ -1480,7 +1480,7 @@ function actualizarTotalCheckout() {
     const tipo    = document.querySelector('.entrega-btn.active')?.dataset.tipo || '';
     const sede    = document.querySelector('.sede-btn.active')?.dataset.sede    || '';
     const barrio  = document.getElementById('barrioInput')?.value               || '';
-    const valDom  = (tipo === 'domicilio' && window.domicilios?.[sede]?.[barrio]) || 0;
+    const valDom  = ((tipo === 'domicilio' && window.domicilios?.[sede]?.[barrio]) || 0) * (window._domiUnidades || 1);
 
     const elSub   = document.getElementById('checkout-subtotal');
     const elDom   = document.getElementById('checkout-domicilio-val');
@@ -1944,6 +1944,7 @@ function limpiarFormularioCheckout() {
     telInput.style.outlineColor = '';
     document.getElementById('clienteDireccion').value = '';
     document.getElementById('barrioInput').value = '';
+    window.setDomiUnidades?.(1);
     document.getElementById('observaciones').value = '';
     document.getElementById('fechaReserva').value = '';
     document.getElementById('horaReserva').value = '';
@@ -2134,7 +2135,7 @@ async function procesarPedidoFinal() {
     } else {
         const barrioVal = document.getElementById('barrioInput')?.value?.trim() || '';
         if (barrioVal && window.domicilios) {
-            const valorDom = window.domicilios[datos.sede]?.[barrioVal] || 0;
+            const valorDom = (window.domicilios[datos.sede]?.[barrioVal] || 0) * (window._domiUnidades || 1);
             datos.domicilio = { barrio: barrioVal, valor: valorDom };
         }
     }
