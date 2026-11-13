@@ -1484,12 +1484,15 @@ function actualizarTotalCheckout() {
 
     const elSub   = document.getElementById('checkout-subtotal');
     const elDom   = document.getElementById('checkout-domicilio-val');
+    const elLabel = document.getElementById('checkout-domicilio-label');
     const elTotal = document.getElementById('checkout-total-final');
     const elRow   = document.getElementById('checkout-domicilio-row');
     if (!elSub) return;
 
+    const domiUnidades = window._domiUnidades || 1;
     elSub.textContent   = `$${totalProductos.toLocaleString()}`;
     elDom.textContent   = `$${valDom.toLocaleString()}`;
+    if (elLabel) elLabel.textContent = domiUnidades > 1 ? `Domicilio (×${domiUnidades}):` : 'Domicilio:';
     elTotal.textContent = `$${(totalProductos + valDom).toLocaleString()}`;
     elRow.style.display = tipo === 'domicilio' ? 'flex' : 'none';
 }
