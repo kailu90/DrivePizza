@@ -392,15 +392,15 @@ function renderProducts(categoria) {
             const esLunMieVie = diaCtg === 1 || diaCtg === 3 || diaCtg === 5;
             const sedeActiva  = document.querySelector('.sede-toggle .sede-btn.active')?.dataset.sede || '';
             const esSedeValida = SEDES_PROMO_2X1_CTG.has(sedeActiva);
-            const esActivo2x1  = esSedeValida; // esSedeValida && esMarJue — habilitado temporalmente para pruebas
-            const esActivoLas  = esSedeValida && esLunMieVie;
+            const esActivo2x1  = true; // esMarJue && esSedeValida — habilitado temporalmente para pruebas
+            const esActivoLas  = esSedeValida ? esLunMieVie : false;
             const msgSede = '⚠️ Solo sede CC Nuestro';
             grid.innerHTML = `
                 <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
                     <div class="promo-badge">MAR · JUE</div>
                     <h4>2 × 1</h4>
                     <p class="product-desc">Compra una pizza y lleva una Clásica del mismo tamaño gratis.</p>
-                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger' : !esSedeValida ? msgSede : 'Disponible martes y jueves'}</p>
+                    <p class="promo-elegibles">Solo para recoger · CC Nuestro</p>
                 </div>
                 <div class="card card-promo ${esActivoLas ? '' : 'card-promo--inactiva'}" onclick="${esActivoLas ? 'abrirPromoLasEspCtg()' : ''}">
                     <div class="promo-badge">LUN · MIÉ · VIE</div>
