@@ -2097,7 +2097,11 @@ async function procesarPedidoFinal() {
     // Anteponer etiqueta de promo si hay una en el carrito (fuente: items del carrito, nunca localStorage)
     if (carrito.some(i => i.esPromo3x2)) {
         const obsequios = carrito.filter(i => i.esObsequio3x2);
-        const label = 'PROMO 3X2 - ' + obsequios.map((o, i) => `Obs #${i + 1} ${o.nombreObsequio}${o.tamanoObsequio ? ` (${o.tamanoObsequio})` : ''}`).join(' | ');
+        const label = 'PROMO 3X2 - ' + obsequios.map((o, i) => {
+            let txt = `Obs #${i + 1} ${o.nombreObsequio}${o.tamanoObsequio ? ` (${o.tamanoObsequio})` : ''}`;
+            if (o.obs?.trim()) txt += `: ${o.obs.trim()}`;
+            return txt;
+        }).join(' | ');
         datos.obs = datos.obs.trim() ? `${label} — ${datos.obs.trim()}` : label;
     } else if (carrito.some(i => i.esPromo65k)) {
         const label = 'PROMO 65K';
