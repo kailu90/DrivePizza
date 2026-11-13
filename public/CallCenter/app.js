@@ -388,21 +388,25 @@ function renderProducts(categoria) {
         if (_ciudadPromo === 'cartago') {
             const _hCtg  = new Date();
             const diaCtg = _hCtg.getDay();   // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
-            const esMarJue   = diaCtg === 2 || diaCtg === 4;
-            const esActivo2x1 = true; // esMarJue — habilitado temporalmente para pruebas
+            const esMarJue    = diaCtg === 2 || diaCtg === 4;
             const esLunMieVie = diaCtg === 1 || diaCtg === 3 || diaCtg === 5;
+            const sedeActiva  = document.querySelector('.sede-toggle .sede-btn.active')?.dataset.sede || '';
+            const esSedeValida = SEDES_PROMO_2X1_CTG.has(sedeActiva);
+            const esActivo2x1  = esSedeValida; // esSedeValida && esMarJue — habilitado temporalmente para pruebas
+            const esActivoLas  = esSedeValida && esLunMieVie;
+            const msgSede = '⚠️ Solo sede CC Nuestro';
             grid.innerHTML = `
                 <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
                     <div class="promo-badge">MAR · JUE</div>
                     <h4>2 × 1</h4>
                     <p class="product-desc">Compra una pizza y lleva una Clásica del mismo tamaño gratis.</p>
-                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger' : 'Disponible martes y jueves'}</p>
+                    <p class="promo-elegibles">${esActivo2x1 ? 'Solo para recoger' : !esSedeValida ? msgSede : 'Disponible martes y jueves'}</p>
                 </div>
-                <div class="card card-promo ${esLunMieVie ? '' : 'card-promo--inactiva'}" onclick="${esLunMieVie ? 'abrirPromoLasEspCtg()' : ''}">
+                <div class="card card-promo ${esActivoLas ? '' : 'card-promo--inactiva'}" onclick="${esActivoLas ? 'abrirPromoLasEspCtg()' : ''}">
                     <div class="promo-badge">LUN · MIÉ · VIE</div>
                     <h4>42.9K</h4>
                     <p class="product-desc">2 Lasañas o 2 Espaguettis<br>+ 2 Gaseosas 250ml</p>
-                    <p class="promo-elegibles">${esLunMieVie ? 'Disponible hoy' : 'Disponible lunes, miércoles y viernes'}</p>
+                    <p class="promo-elegibles">${esActivoLas ? 'Disponible hoy' : !esSedeValida ? msgSede : 'Disponible lunes, miércoles y viernes'}</p>
                 </div>
             `;
             return;
