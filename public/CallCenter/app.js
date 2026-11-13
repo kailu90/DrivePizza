@@ -2871,7 +2871,7 @@ function _promo3x2ClickProducto(producto) {
     const tamanoFijo = state.prod1?.tamano;
 
     // Categorías donde siempre se muestra el picker (opciones son variantes, no tamaños compartidos)
-    const siemprePicker = ["Hamburguesas"].includes(producto.categoriaPromo);
+    const siemprePicker = ["Hamburguesas", "Lasañas"].includes(producto.categoriaPromo);
 
     // Pasos 2 y 3: tamaño ya fijo y el producto lo tiene → confirmar directo (excepto siemprePicker)
     if (tamanoFijo && !siemprePicker && producto.opciones?.[tamanoFijo] !== undefined) {
