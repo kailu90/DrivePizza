@@ -226,9 +226,9 @@
                     <strong id="domicilio-precio" style="color:#e67e22; min-width:80px; text-align:right;"></strong>
                     <div id="domi-unidades" style="display:flex;gap:3px;flex-shrink:0;">
                         <button type="button" class="domi-u-btn" data-u="1" onclick="window.setDomiUnidades(1)"
-                                style="padding:4px 9px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;border:2px solid #e67e22;background:#e67e22;color:#fff;line-height:1;">×1</button>
+                                style="padding:4px 9px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid #bbb;background:#555;color:#fff;line-height:1;">×1</button>
                         <button type="button" class="domi-u-btn" data-u="2" onclick="window.setDomiUnidades(2)"
-                                style="padding:4px 9px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;border:2px solid #e67e22;background:#fff;color:#e67e22;line-height:1;">×2</button>
+                                style="padding:4px 9px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#999;line-height:1;">×2</button>
                     </div>
                 </div>
             </div>
@@ -325,23 +325,22 @@
 
     <!-- Modal confirmación domicilio ×2 -->
     <div id="modal-domi-doble" class="modal-overlay" style="display:none;align-items:center;justify-content:center;">
-        <div class="modal-content" style="max-width:380px;text-align:center;padding:28px 24px;">
-            <div style="font-size:36px;margin-bottom:10px;">🛵🛵</div>
-            <h3 style="margin:0 0 10px;">Cobrar domicilio doble</h3>
-            <p id="domi-doble-valores" style="font-size:1.5rem;font-weight:700;color:#e67e22;margin:0 0 14px;"></p>
-            <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:20px;text-align:left;">
-                <p style="margin:0;font-size:1.3rem;color:#7b5800;line-height:1.5;">
-                    <strong>Recuerda:</strong> el cobro de domicilio doble aplica a partir de <strong>4 pizzas jumbo</strong>.
+        <div class="modal-content" style="max-width:360px;text-align:center;padding:24px 22px;">
+            <h3 style="margin:0 0 8px;color:#333;">Domicilio doble</h3>
+            <p id="domi-doble-valores" style="font-size:1.5rem;font-weight:700;color:#444;margin:0 0 14px;"></p>
+            <div style="background:#f7f7f7;border:1px solid #e0e0e0;border-radius:8px;padding:10px 14px;margin-bottom:20px;text-align:left;">
+                <p style="margin:0;font-size:1.3rem;color:#666;line-height:1.5;">
+                    <strong>Recuerda:</strong> aplica a partir de <strong>4 pizzas jumbo</strong>.
                     Verifica antes de confirmar.
                 </p>
             </div>
             <div style="display:flex;gap:10px;justify-content:center;">
                 <button onclick="window._confirmarDomiDoble(false)"
-                        style="flex:1;padding:11px;font-size:1.4rem;font-weight:700;border-radius:8px;cursor:pointer;border:2px solid #aaa;background:#fff;color:#555;">
+                        style="flex:1;padding:10px;font-size:1.4rem;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#666;">
                     Cancelar
                 </button>
                 <button onclick="window._confirmarDomiDoble(true)"
-                        style="flex:1;padding:11px;font-size:1.4rem;font-weight:700;border-radius:8px;cursor:pointer;border:none;background:#e67e22;color:#fff;">
+                        style="flex:1;padding:10px;font-size:1.4rem;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid #bbb;background:#555;color:#fff;">
                     Confirmar ×2
                 </button>
             </div>
@@ -648,8 +647,9 @@
         window._domiUnidades = n;
         document.querySelectorAll('.domi-u-btn').forEach(b => {
             const activo = parseInt(b.dataset.u) === n;
-            b.style.background = activo ? '#e67e22' : '#fff';
-            b.style.color      = activo ? '#fff'    : '#e67e22';
+            b.style.background  = activo ? '#555'   : '#f5f5f5';
+            b.style.color       = activo ? '#fff'   : '#999';
+            b.style.borderColor = activo ? '#bbb'   : '#ddd';
         });
         window.actualizarPrecioDomicilio();
     }
