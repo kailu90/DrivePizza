@@ -2142,8 +2142,9 @@ async function procesarPedidoFinal() {
     } else {
         const barrioVal = document.getElementById('barrioInput')?.value?.trim() || '';
         if (barrioVal && window.domicilios) {
-            const valorDom = (window.domicilios[datos.sede]?.[barrioVal] || 0) * (window._domiUnidades || 1);
-            datos.domicilio = { barrio: barrioVal, valor: valorDom };
+            const domiU    = window._domiUnidades || 1;
+            const valorDom = (window.domicilios[datos.sede]?.[barrioVal] || 0) * domiU;
+            datos.domicilio = { barrio: barrioVal, valor: valorDom, ...(domiU > 1 && { unidades: domiU }) };
         }
     }
 

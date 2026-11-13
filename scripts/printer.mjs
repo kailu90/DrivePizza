@@ -140,7 +140,7 @@ function generarHTML(pedido) {
                 ${pedido.domicilio
                     ? pedido.domicilio.tipo === 'recoger'
                         ? `<div style="font-size:11pt; margin-top:4px;">RECOGER: <strong>Recoge en tienda</strong></div>`
-                        : `<div style="font-size:11pt; margin-top:4px;">DOMICILIO: <strong>$${formatearPrecio(pedido.domicilio.valor)}</strong></div>`
+                        : `<div style="font-size:11pt; margin-top:4px;">DOMICILIO${pedido.domicilio.unidades > 1 ? ` (×${pedido.domicilio.unidades})` : ''}: <strong>$${formatearPrecio(pedido.domicilio.valor)}</strong></div>`
                     : ''}
             </div>
 
