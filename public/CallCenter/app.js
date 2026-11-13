@@ -61,7 +61,7 @@ function _resolverOpciones(p, base, ciudad, sede) {
 }
 
 function _limpiarFiltroSedes() {
-    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb) || carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg') || carrito.some(i => i.esPromoPepperoni) || carrito.some(i => i.esPromo2x1Ctg) || carrito.some(i => i.esPromoLasEsp && i.promoVariante === 'ctg');
+    const tienePromoRestringida = carrito.some(i => i.esPromo65k) || carrito.some(i => i.esPromoPizzetaCarb) || carrito.some(i => i.esPromoLasEsp && i.promoVariante !== 'ctg') || carrito.some(i => i.esPromoPepperoni);
     if (tienePromoRestringida) return;
     document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
         btn.disabled = false;
@@ -127,14 +127,6 @@ function _aplicarFiltroPizzeta() {
 }
 
 function _aplicarFiltro2x1Ctg() {
-    // Bloquear sedes: solo CC Nuestro
-    const sedeActiva = document.querySelector('.sede-toggle .sede-btn.active');
-    if (sedeActiva && !SEDES_PROMO_2X1_CTG.has(sedeActiva.dataset.sede)) {
-        sedeActiva.classList.remove('active');
-    }
-    document.querySelectorAll('.sede-toggle .sede-btn').forEach(btn => {
-        if (!SEDES_PROMO_2X1_CTG.has(btn.dataset.sede)) btn.disabled = true;
-    });
     // Bloquear domicilio: forzar Recoger
     const btnDomicilio = document.querySelector('.entrega-btn[data-tipo="domicilio"]');
     const btnRecoger   = document.querySelector('.entrega-btn[data-tipo="recoger"]');
