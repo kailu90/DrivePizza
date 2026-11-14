@@ -123,6 +123,7 @@ function _textColorForBg(hex) {
 
 let _rolUsuario   = '';
 let _asesorActual = '';
+let _sedeActual   = '';
 let _authToken    = '';
 
 // Devuelve headers con Authorization si hay token — usado en rutas sensibles (admin)
@@ -190,11 +191,12 @@ export function updateAuthToken(token) {
     if (token) _authToken = token;
 }
 
-export function initWaPanel(bodyId, { rol = '', asesor = '', authToken = '' } = {}) {
+export function initWaPanel(bodyId, { rol = '', asesor = '', sede = '', authToken = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;
     _rolUsuario   = rol;
     _asesorActual = asesor;
+    _sedeActual   = sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : '';
     _authToken    = authToken;
     _injectStyles();
     _loadMeta();          // restaurar nombres personalizados desde localStorage
@@ -8520,7 +8522,7 @@ function _openRRForm(id) {
         <input  id="wap-rr-titulo" type="text" placeholder="Título corto (ej: saludo)" maxlength="60" value="${_esc(rr?.titulo || '')}">
         <small id="wap-rr-titulo-warn" style="display:none;color:#dc2626;font-size:1.05rem;margin-top:-2px;">Ya existe una respuesta con ese título</small>
         <textarea id="wap-rr-texto" rows="3"   placeholder="Texto del mensaje...">${_esc(rr?.texto || '')}</textarea>
-        <p class="wap-rr-vars-hint">Insertar: <code class="wap-rr-var" data-var="{nombreUsuario}">{nombreUsuario}</code><code class="wap-rr-var" data-var="{nombreAsesor}">{nombreAsesor}</code></p>
+        <p class="wap-rr-vars-hint">Insertar: <code class="wap-rr-var" data-var="{nombreUsuario}">{nombreUsuario}</code><code class="wap-rr-var" data-var="{nombreAsesor}">{nombreAsesor}</code><code class="wap-rr-var" data-var="{nombreSede}">{nombreSede}</code></p>
         <input type="file" id="wap-rr-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" style="display:none">
         ${rr?.media_url
             ? `<div class="wap-rr-media-row" id="wap-rr-media-row">
@@ -8725,7 +8727,8 @@ async function _applySlash(id) {
 
     input.value = rr.texto
         .replace(/\{nombreUsuario\}/gi, nombreUsuario)
-        .replace(/\{nombreAsesor\}/gi, nombreAsesor);
+        .replace(/\{nombreAsesor\}/gi, nombreAsesor)
+        .replace(/\{nombreSede\}/gi, _sedeActual);
     _autoResizeTextarea(input);
     _updateSendVoiceBtn();
     _hideSlashPicker();

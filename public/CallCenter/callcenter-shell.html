@@ -548,7 +548,7 @@
             _resetWaView    = resetWaView;
             _destroyWaPanel = destroyWaPanel;
             _updateWaToken  = updateAuthToken;
-            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email, authToken: session?.access_token || '' });
+            initWaPanel('wa-body', { rol: data.rol || '', asesor: data.username || user.email, sede: data.sede || '', authToken: session?.access_token || '' });
             if (data.extension) initSIP(data.extension, data.sip_password || '');
             // Precargar historial en background — 1.5s para que pedidos cargue primero
             setTimeout(_preloadHistorialFrame, 1500);
