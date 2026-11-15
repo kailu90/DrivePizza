@@ -1,0 +1,4 @@
+supabaseKey.json
+node_modules/
+*.log
+*.pdf
