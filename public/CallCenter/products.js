@@ -197,7 +197,7 @@ const menuData = {
         { nombre: "Bolognesa", opciones: preciosPizzas.especial , descripcion: "Carne a la bolognesa y tocineta."},
         { nombre: "Camaron a la criolla", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, cebolla, perejil y camarón."},
         { nombre: "Carbonara", opciones: preciosPizzas.especialSinPorcion , descripcion: "Queso mozzarella, tocineta, pollo, champiñones, rúgula, parmesano y salsa carbonara."},
-        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true, noCalzone: true },
+        { nombre: "La Majestuosa", opciones: preciosPizzas.majestuosaPequeña , descripcion: "Queso mozzarella, stroganoff lomo de res, champiñones salteados, tomates cherry, queso brie, vinagre balsámico al brandy, cebolla crocante y albahaca.", noNuestro: true, noCalzone: true, noMitad: true },
         { nombre: "Topetunas", opciones: preciosPizzas.especial , descripcion: "Queso mozzarella, tomate, pepperoni y aceitunas."}  
     ],
     "Pizzas Clásicas": [

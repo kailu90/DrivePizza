@@ -847,7 +847,7 @@ function abrirSeleccion(producto) {
         // Layout especial: botón tamaño + botón ½+½ para tamaños mixables
         gridOpciones.className = 'opciones-grid opciones-pizza';
         gridOpciones.innerHTML = Object.entries(producto.opciones).map(([tam, pre]) => {
-            const mixable = TAMANOS_MIXABLES.has(tam);
+            const mixable = TAMANOS_MIXABLES.has(tam) && !producto.noMitad;
             if (tam === 'Porción' && !producto.esEstofada && ciudad === 'bucaramanga') {
                 return `
                 <div class="tamano-fila">
@@ -969,9 +969,9 @@ function abrirSegundoSabor(sabor1, tamano, precio1) {
         if (menuData[key]) todosSabores = [...todosSabores, ...menuData[key]];
     });
 
-    // Excluye el sabor ya elegido y los que no tienen ese tamaño
+    // Excluye el sabor ya elegido, los que no tienen ese tamaño, y los no combinables
     const saboresDisponibles = todosSabores.filter(s =>
-        s.nombre !== sabor1.nombre && s.opciones[tamano] !== undefined
+        s.nombre !== sabor1.nombre && s.opciones[tamano] !== undefined && !s.noMitad
     );
 
     _mezclaState = { saboresDisponibles, sabor1, tamano, precio1 };
