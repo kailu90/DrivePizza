@@ -1,5 +1,5 @@
-import { supabase } from '../Api/supabaseConfig.js'
-import { WS_URL } from '../Api/config.js'
+import { supabase } from '../../Api/supabaseConfig.js'
+import { WS_URL } from '../../Api/config.js'
 
 // ── Banner nueva versión (singleton) ─────────────────────────────────────────
 function _initVersionBanner() {

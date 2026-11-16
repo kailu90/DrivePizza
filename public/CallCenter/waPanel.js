@@ -5,7 +5,7 @@
  */
 import { HETZNER_URL, WS_URL } from '../Api/config.js';
 import { supabase } from '../Api/supabaseConfig.js';
-import { getSedes } from '../Shared/sedesService.js';
+import { getSedes } from '../DrivePizza/Shared/sedesService.js';
 
 // ── State en memoria (se pierde al recargar — Phase 1) ────────────────────
 const SESSION_COLORS = [
@@ -123,7 +123,6 @@ function _textColorForBg(hex) {
 
 let _rolUsuario   = '';
 let _asesorActual = '';
-let _sedeActual   = '';
 let _authToken    = '';
 
 // Devuelve headers con Authorization si hay token — usado en rutas sensibles (admin)
@@ -180,6 +179,7 @@ export function destroyWaPanel() {
     if (_ws) { _ws.onclose = null; _ws.onerror = null; _ws.close(); _ws = null; }
     _notifAudio.pause();
     if (_asesorDdEl) { _asesorDdEl.remove(); _asesorDdEl = null; }
+    _igCuentas = null; // forzar recarga en la siguiente sesión
 }
 
 export function resetWaView() {
@@ -191,12 +191,11 @@ export function updateAuthToken(token) {
     if (token) _authToken = token;
 }
 
-export function initWaPanel(bodyId, { rol = '', asesor = '', sede = '', authToken = '' } = {}) {
+export function initWaPanel(bodyId, { rol = '', asesor = '', authToken = '' } = {}) {
     const body = document.getElementById(bodyId);
     if (!body) return;
     _rolUsuario   = rol;
     _asesorActual = asesor;
-    _sedeActual   = sede ? sede.charAt(0).toUpperCase() + sede.slice(1) : '';
     _authToken    = authToken;
     _injectStyles();
     _loadMeta();          // restaurar nombres personalizados desde localStorage
@@ -6979,14 +6978,16 @@ function _closeChat() {
 }
 
 // ── Cuentas Instagram ──────────────────────────────────────────────────────
-async function _loadIgCuentas() {
-    if (_igCuentas !== null) return; // ya cargadas en esta sesión
+async function _loadIgCuentas(force = false) {
+    if (!force && _igCuentas !== null) return; // ya cargadas en esta sesión
     try {
         const res  = await fetch(`${HETZNER_URL}/ig/cuentas`);
+        if (!res.ok) return; // error HTTP — no envenenar caché, reintentará en siguiente visita
         const data = await res.json();
         _igCuentas = data.ok ? (data.cuentas || []) : [];
     } catch {
-        _igCuentas = [];
+        // error de red — mantener null para reintentar en siguiente visita al tab
+        return;
     }
     const isAdmin = ['admin', 'callcenter-admin'].includes(_rolUsuario);
     if (isAdmin) _renderSesionesView(); // re-render panel de conexiones si está abierto
@@ -7039,7 +7040,7 @@ function _navTo(view) {
     document.getElementById('wap-view-conv').classList.toggle('wap-view--hidden', view !== 'conv');
     document.getElementById('wap-view-rr').classList.toggle('wap-view--hidden', view !== 'rr');
     document.getElementById('wap-view-ses').classList.toggle('wap-view--hidden', view !== 'ses');
-    if (view === 'ses') { _renderSesionesView(); _loadIgCuentas(); }
+    if (view === 'ses') { _renderSesionesView(); _loadIgCuentas(true); }
     if (view === 'conv') _renderList();
     if (view === 'rr') _renderRRView();
 }
@@ -8724,11 +8725,13 @@ async function _applySlash(id) {
     const c             = _state.conv[_state.activeNum]?.[_state.activeContact];
     const nombreUsuario = c?.nombre || c?.name || _fmtPhone(_state.activeContact);
     const nombreAsesor  = _asesorActual || '';
+    const _sesActiva    = _state.sesiones.find(s => s.numero === _state.activeNum);
+    const nombreSede    = _sesActiva?.sede ? _capitalizarSede(_sesActiva.sede) : '';
 
     input.value = rr.texto
         .replace(/\{nombreUsuario\}/gi, nombreUsuario)
         .replace(/\{nombreAsesor\}/gi, nombreAsesor)
-        .replace(/\{nombreSede\}/gi, _sedeActual);
+        .replace(/\{nombreSede\}/gi, nombreSede);
     _autoResizeTextarea(input);
     _updateSendVoiceBtn();
     _hideSlashPicker();

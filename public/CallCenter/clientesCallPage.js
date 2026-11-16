@@ -2,8 +2,8 @@ import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { initNavButtons } from './navCallCenter.js';
 import { openBarriosModal } from './modalBarrios.js';
-import { getSedes } from '../Shared/sedesService.js';
-import { revelarSplash } from '../Shared/components.js';
+import { getSedes } from '../DrivePizza/Shared/sedesService.js';
+import { revelarSplash } from '../DrivePizza/Shared/components.js';
 
 let SEDE_LABELS = {};
 

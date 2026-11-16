@@ -1,11 +1,11 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { ejecutarSalidaPedido, registrarMovimiento, ejecutarTransaccionStock } from './inventoryService.js'
-import { CargarHeader, CargarSidebar, CargarFooter } from '../Shared/components.js'
+import { CargarHeader, CargarSidebar, CargarFooter } from '../DrivePizza/Shared/components.js'
 import { RECARGO_SERVICIO } from './planta.config.js'
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js'
 import { mostrarOverlay, actualizarOverlay, ocultarOverlay } from '../Shared/overlay.js'
-import { getProductos, invalidarProductos } from '../Shared/productosService.js'
-import { getSedes } from '../Shared/sedesService.js'
+import { getProductos, invalidarProductos } from '../DrivePizza/Shared/productosService.js'
+import { getSedes } from '../DrivePizza/Shared/sedesService.js'
 import { initColumnFilters } from '../Shared/tableFilters.js'
 
 const ordersContainer = document.getElementById('ordersContainer');

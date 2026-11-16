@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js'
-import { CargarHeader, MostrarBotonSelector, MostrarBotonMonitor, revelarSplash } from '../Shared/components.js'
+import { CargarHeader, MostrarBotonSelector, MostrarBotonMonitor, revelarSplash } from '../DrivePizza/Shared/components.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
 
 const skeletonType = document.body.dataset.skeleton

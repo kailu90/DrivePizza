@@ -1,7 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
-import { getProductos } from '../Shared/productosService.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../DrivePizza/Shared/components.js';
+import { getProductos } from '../DrivePizza/Shared/productosService.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 CargarSidebar();
 

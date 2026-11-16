@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
-import { getSedes } from '../Shared/sedesService.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../DrivePizza/Shared/components.js';
+import { getSedes } from '../DrivePizza/Shared/sedesService.js';
 import { normalizarPedido, poblarModal, cerrarModal } from '../Shared/modalDetalle.js';
 
 // ── Constantes ─────────────────────────────────────────────────────────────────

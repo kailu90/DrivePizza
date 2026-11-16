@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../DrivePizza/Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { SEDES_MASA, INFORME_PROD_CATEGORIAS, INFORME_PROD_SIROPES,
          INFORME_PROD_MASAS, INFORME_PROD_CARNES } from './planta.config.js';

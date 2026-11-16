@@ -1,7 +1,7 @@
 import { supabase }                                         from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../DrivePizza/Shared/components.js';
 import { verificarAccesoPlanta }                            from '../Auth/plantaAuth.js';
-import { getSedes }                                         from '../Shared/sedesService.js';
+import { getSedes }                                         from '../DrivePizza/Shared/sedesService.js';
 import { initColumnFilters }                                from '../Shared/tableFilters.js';
 CargarSidebar();
 

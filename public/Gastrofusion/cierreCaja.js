@@ -1,6 +1,6 @@
 import { supabase }      from '../Api/supabaseConfig.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
-import { revelarSplash, initVersionBanner } from '../Shared/components.js';
+import { revelarSplash, initVersionBanner } from '../DrivePizza/Shared/components.js';
 initVersionBanner();
 
 function hoyEnColombia() {

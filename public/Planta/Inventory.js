@@ -1,8 +1,8 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js';
+import { getProductos, invalidarProductos, actualizarStockEnCache } from '../DrivePizza/Shared/productosService.js';
 import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, mostrarBannerRecarga } from '../DrivePizza/Shared/components.js';
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 CargarSidebar();

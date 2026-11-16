@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, capitalizarSede, revelarSplash, initVersionBanner } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, revelarSplash, initVersionBanner } from '../DrivePizza/Shared/components.js';
 initVersionBanner();
 import { getPeriodo, getNumeroPeriodo, toISO, pedidosLiquidables, devolucionesLiquidables, colFechaToUTC } from '../Shared/semanas.js';
 

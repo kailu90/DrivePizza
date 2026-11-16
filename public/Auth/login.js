@@ -3,7 +3,7 @@
 import { supabase } from '../Api/supabaseConfig.js'
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js'
 import { mostrarOverlay, ocultarOverlay } from '../Shared/overlay.js'
-import { getSedes } from '../Shared/sedesService.js'
+import { getSedes } from '../DrivePizza/Shared/sedesService.js'
 
 mostrarSkeleton('login')
 const login_form              = document.getElementById("login_form")

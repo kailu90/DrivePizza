@@ -1,5 +1,5 @@
 import { supabase }                                                   from '../Api/supabaseConfig.js';
-import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, initVersionBanner } from '../Shared/components.js';
+import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, initVersionBanner } from '../DrivePizza/Shared/components.js';
 import { verificarAccesoPlanta }                                      from '../Auth/plantaAuth.js';
 
 const frame  = document.getElementById('planta-frame');

@@ -1,4 +1,4 @@
-import { supabase } from '../Api/supabaseConfig.js';
+import { supabase } from '../../Api/supabaseConfig.js';
 
 const CACHE_KEY = 'planta_sedes_sup_v4'; // v4: incluye campo aforo
 const CACHE_TTL = 60 * 60 * 1000; // 60 min

@@ -1,7 +1,7 @@
 // ── Servicio centralizado de productos ────────────────────────────────────────
 // Lee directamente desde Supabase.
 
-import { supabase } from '../Api/supabaseConfig.js'
+import { supabase } from '../../Api/supabaseConfig.js'
 
 let _cache = null
 

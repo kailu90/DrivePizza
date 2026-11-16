@@ -10,8 +10,8 @@ import { initNavButtons }                   from './navCallCenter.js';
 import { openBarriosModal }                 from './modalBarrios.js';
 import { domicilios as domiciliosLocal }    from './domicilios.js';
 import { invalidarCacheBarrios }            from './barriosService.js';
-import { getSedes }                         from '../Shared/sedesService.js';
-import { revelarSplash }                    from '../Shared/components.js';
+import { getSedes }                         from '../DrivePizza/Shared/sedesService.js';
+import { revelarSplash }                    from '../DrivePizza/Shared/components.js';
 
 const _barriosBC = (() => { try { return new BroadcastChannel('barrios'); } catch { return null; } })();
 function _broadcastBarrios(sede) { _barriosBC?.postMessage({ sede: sede ?? null }); }

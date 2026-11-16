@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { getProductos } from '../Shared/productosService.js';
-import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../Shared/components.js';
+import { getProductos } from '../DrivePizza/Shared/productosService.js';
+import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../DrivePizza/Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { ejecutarOrdenProduccion, ejecutarOrdenProduccionMulti } from './inventoryService.js';
 import { initColumnFilters } from '../Shared/tableFilters.js';

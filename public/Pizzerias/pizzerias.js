@@ -1,4 +1,4 @@
-import { initVersionBanner, CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../Shared/components.js';
+import { initVersionBanner, CargarHeader, CargarSidebar, CargarFooter, capitalizarSede } from '../DrivePizza/Shared/components.js';
 import { supabase } from '../Api/supabaseConfig.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
 import { ESTADO_BADGE } from '../Shared/badges.js';

@@ -1,6 +1,6 @@
 import { supabase } from '../Api/supabaseConfig.js';
-import { getProductos, invalidarProductos, actualizarStockEnCache } from '../Shared/productosService.js'
-import { CargarHeader, CargarSidebar, capitalizarSede } from '../Shared/components.js';
+import { getProductos, invalidarProductos, actualizarStockEnCache } from '../DrivePizza/Shared/productosService.js'
+import { CargarHeader, CargarSidebar, capitalizarSede } from '../DrivePizza/Shared/components.js';
 import { UNIDADES_MEDIDA } from './planta.config.js';
 import { registrarMovimiento, ejecutarAjusteStock } from './inventoryService.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';

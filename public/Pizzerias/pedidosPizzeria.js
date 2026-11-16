@@ -1,7 +1,7 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { mostrarSkeleton, ocultarSkeleton } from '../Shared/skeleton.js';
 import { colFechaToUTC } from '../Shared/semanas.js';
-import { initVersionBanner } from '../Shared/components.js';
+import { initVersionBanner } from '../DrivePizza/Shared/components.js';
 import { badgeEstado, badgeCanal } from '../Shared/badges.js';
 import { normalizarPedido, poblarModal, cerrarModal } from '../Shared/modalDetalle.js';
 import { calcularPageSize, crearPaginacion } from '../Shared/paginacion.js';

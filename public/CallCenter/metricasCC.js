@@ -1,6 +1,6 @@
 import { supabase }                    from '../Api/supabaseConfig.js';
-import { getSedes }                    from '../Shared/sedesService.js';
-import { initVersionBanner, CargarHeader, CargarSidebar } from '../Shared/components.js';
+import { getSedes }                    from '../DrivePizza/Shared/sedesService.js';
+import { initVersionBanner, CargarHeader, CargarSidebar } from '../DrivePizza/Shared/components.js';
 
 const ROLES_OK        = ['callcenter-admin', 'admin'];
 const SEDES_EXCLUIDAS = ['planta produccion', 'gastrofusion'];

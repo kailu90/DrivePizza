@@ -1,5 +1,5 @@
 import { supabase } from '../Api/supabaseConfig.js'
-import { MostrarBotonSelector } from '../Shared/components.js'
+import { MostrarBotonSelector } from '../DrivePizza/Shared/components.js'
 
 const ROLES_PLANTA = ['planta', 'admin', 'planta-admin']
 const LOGIN_URL    = '../index.html'

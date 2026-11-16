@@ -1,10 +1,10 @@
 import { supabase } from '../Api/supabaseConfig.js';
 import { RECARGO_SERVICIO } from './planta.config.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
-import { getProductos } from '../Shared/productosService.js';
+import { getProductos } from '../DrivePizza/Shared/productosService.js';
 import { registrarMovimiento } from './inventoryService.js';
-import { getSedes } from '../Shared/sedesService.js';
-import { mostrarBannerRecarga, revelarSplash, initVersionBanner } from '../Shared/components.js';
+import { getSedes } from '../DrivePizza/Shared/sedesService.js';
+import { mostrarBannerRecarga, revelarSplash, initVersionBanner } from '../DrivePizza/Shared/components.js';
 initVersionBanner();
 
 // Estado del módulo

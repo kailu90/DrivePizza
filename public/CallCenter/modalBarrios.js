@@ -10,7 +10,7 @@
 
 import { cargarBarriosSede } from './barriosService.js';
 import { supabase } from '../Api/supabaseConfig.js';
-import { getSedes } from '../Shared/sedesService.js';
+import { getSedes } from '../DrivePizza/Shared/sedesService.js';
 
 let _sede          = null;
 let _barriosSede   = [];   // [{ barrio, valor }] de la sede activa
