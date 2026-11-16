@@ -258,6 +258,7 @@ const menuData = {
         { nombre: "Adición Pepperoni", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
         { nombre: "Adición Carne", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
         { nombre: "Adición Chorizo", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Aguacate", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
         { nombre: "Adición Camarón", opciones: preciosAdiciones.gourmet, opcionesCiudad: { cartago: preciosAdicionesCartago.gourmet } },
         { nombre: "Adición Salsas (1 cup)", opciones: preciosAdiciones.salsas},
         { nombre: "Adición Filete de Pollo", opciones: preciosAdiciones.hamburguesa},

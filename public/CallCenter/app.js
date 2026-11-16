@@ -1194,7 +1194,7 @@ function actualizarComanda() {
                     </div>
                     <div class="item-controls">
                         ${botonAdicion}
-                        ${(item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
+                        ${(item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
                         ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg || item.esPromoPizzetaCarb) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
@@ -2357,6 +2357,7 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
     function mostrarVistaAlcance(nombreAdicion, precioCompleta) {
         const precioMedia = Math.round(precioCompleta / 2);
         const sabores     = itemPadre.sabores || null; // [s1, s2] para pizza ½+½
+        const sinMedia    = tamanoRaw === 'Porción' || tamanoRaw === 'Pizzeta';
 
         titulo.innerHTML = `⊕ ${nombreAdicion}<br>
             <small style="font-size:1.3rem;color:#666;font-weight:normal;">${itemPadre.nombre}</small>`;
@@ -2376,7 +2377,7 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
             <button class="btn-tamano btn-alcance-pick" data-alcance="completa" data-precio="${precioCompleta}">
                 Completa<br><strong>$${precioCompleta.toLocaleString()}</strong>
             </button>
-            ${botonesMedia}
+            ${sinMedia ? '' : botonesMedia}
             <button id="btn-volver-adic"
                 style="grid-column:1/-1;background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer;padding:6px;margin-top:4px;">← Volver</button>
         `;
