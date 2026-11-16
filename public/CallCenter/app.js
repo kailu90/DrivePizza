@@ -24,6 +24,21 @@ function _renderAcomps(ciudad) {
     });
 }
 
+// ── Filtro de menuData por ciudad ─────────────────────────────────────────────
+// Se ejecuta una sola vez al cargar app.js, antes de cualquier función.
+// Elimina de menuData los productos y categorías excluidos para la ciudad activa,
+// de modo que todo el código posterior (menú, promos, 3x2, etc.) ya recibe el
+// catálogo limpio sin necesidad de filtrar individualmente en cada lugar.
+(function _filtrarMenuPorCiudad() {
+    const ciudad       = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const excluirProds = new Set(MENU_EXCLUIR?.[ciudad]?.productos || []);
+    const excluirCats  = new Set(MENU_EXCLUIR?.[ciudad]?.categorias || []);
+    for (const cat of Object.keys(menuData)) {
+        if (excluirCats.has(cat)) { delete menuData[cat]; continue; }
+        menuData[cat] = menuData[cat].filter(p => !excluirProds.has(p.nombre));
+    }
+})();
+
 // Sedes donde aplican las promos especiales (65K, Pepperoni, Lasaña)
 const SEDES_PROMO_ESPECIAL  = new Set(['acropolis', 'megamall', 'unico']);
 // Sedes donde aplica la promo 2×1 Cartago
