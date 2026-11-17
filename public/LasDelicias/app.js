@@ -144,9 +144,6 @@ export const LD_BEBIDAS_GRUPOS = [
         variantes: {
             'Maracuyá':   'H2O 600 ML MARACUYÁ',
             'Lima Limón': 'H2O LIMA LIMON 600 ML',
-            'Limonata':   'H2O LIMONATA 600 ML',
-            'Manzana':    'H2O MANZANA 600 ML',
-            'Toronja':    'H2O TORONJA 500 ML',
         },
     },
 ]
