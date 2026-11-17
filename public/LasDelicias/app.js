@@ -101,7 +101,6 @@ export const LD_BEBIDAS_GRUPOS = [
             'Pepsi':      'PEPSI 1.5 LTS',
             'Tamarindo':  'TAMARINDO 1.5 LTS',
             'Uva':        'UVA 1.5 LTS',
-            'Bretaña':    'BRETAÑA 1.5 LTS',
         },
     },
     {
