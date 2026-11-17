@@ -159,16 +159,17 @@ function renderProductos(busqueda = '') {
     let lista = _productos
     if (_catActiva) lista = lista.filter(p => p.id_category === _catActiva)
     if (busqueda) {
-        const b = busqueda.toLowerCase()
+        const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        const b = norm(busqueda)
         // Productos que coinciden con el nombre en BD
-        const porNombre = new Set(lista.filter(p => p.name.toLowerCase().includes(b)).map(p => p.id))
+        const porNombre = new Set(lista.filter(p => norm(p.name).includes(b)).map(p => p.id))
         // Productos que pertenecen a un grupo cuyo nombre coincide (ej: "Gaseosa" → incluye COLOMBIANA 400 ML…)
         const todosGrupos = [
             ...LD_BEBIDAS_GRUPOS.map(g => ({ nombre: g.nombre, nombres: Object.values(g.variantes) })),
             ...BEBIDAS_GRUPOS.map(g => ({ nombre: g.nombre, detectar: g.detectar })),
         ]
         todosGrupos.forEach(g => {
-            if (!g.nombre.toLowerCase().includes(b)) return
+            if (!norm(g.nombre).includes(b)) return
             lista.forEach(p => {
                 if (g.nombres?.includes(p.name) || g.detectar?.(p.name)) porNombre.add(p.id)
             })
