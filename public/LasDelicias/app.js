@@ -146,6 +146,13 @@ export const LD_BEBIDAS_GRUPOS = [
             'Lima Limón': 'H2O LIMA LIMON 600 ML',
         },
     },
+    {
+        nombre: 'Mr Tea 500 ML',
+        variantes: {
+            'Durazno': 'MR TEA 500 ML DURAZNO',
+            'Limón':   'MR TEA LIMON 500 ML',
+        },
+    },
 ]
 
 // Helpers internos para formatear nombres en las tarjetas individuales (resto)
@@ -179,10 +186,6 @@ export const BEBIDAS_GRUPOS = [
     {
         nombre: 'Aguas',
         detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
-    },
-    {
-        nombre: 'Tés y Sodas',
-        detectar: n => /^(TE HATSU|SODA HATSU|MR TEA)\b/.test(_nb(n)),
     },
     {
         nombre: 'Energizantes',
