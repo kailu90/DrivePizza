@@ -199,8 +199,4 @@ export const BEBIDAS_GRUPOS = [
         nombre: 'Natumalta',
         detectar: n => /^NATUMALTA\b/.test(n),
     },
-    {
-        nombre: 'Cervezas y Refajos',
-        detectar: n => /^(CERVEZA|REFAJO)\b/.test(n),
-    },
 ]
