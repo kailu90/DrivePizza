@@ -153,6 +153,14 @@ export const LD_BEBIDAS_GRUPOS = [
             'Limón':   'MR TEA LIMON 500 ML',
         },
     },
+    {
+        nombre: 'Speed Max',
+        variantes: {
+            '250 ML':      'SPEED MAX 250 ML',
+            '310 ML Lata': 'SPEED MAX 310 ML LATA',
+            '400 ML':      'SPEED MAX 400 ML',
+        },
+    },
 ]
 
 // Helpers internos para formatear nombres en las tarjetas individuales (resto)
@@ -188,11 +196,7 @@ export const BEBIDAS_GRUPOS = [
         detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
     },
     {
-        nombre: 'Energizantes',
-        detectar: n => /^(RED BULL|SPEED MAX)\b/.test(n),
-    },
-    {
-        nombre: 'Maltas',
+        nombre: 'Natumalta',
         detectar: n => /^NATUMALTA\b/.test(n),
     },
     {
