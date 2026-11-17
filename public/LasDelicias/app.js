@@ -114,6 +114,15 @@ export const LD_BEBIDAS_GRUPOS = [
         },
     },
     {
+        nombre: 'Gaseosa 3.1 Lts',
+        variantes: {
+            'Colombiana': 'COLOMBIANA 3.1 LTS',
+            'Manzana':    'MANZANA 3.1 LTS',
+            'Pepsi':      'PEPSI 3.1 LTS',
+            'Uva':        'UVA 3.1 LTS',
+        },
+    },
+    {
         nombre: 'HIT 500 ML',
         variantes: {
             'Lulo':              'HIT 500 ML LULO',
