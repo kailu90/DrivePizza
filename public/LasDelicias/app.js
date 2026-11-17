@@ -131,6 +131,24 @@ export const LD_BEBIDAS_GRUPOS = [
             'Frutas Tropicales': 'HIT 500 ML FRUTAS TROPICALES',
         },
     },
+    {
+        nombre: 'Gatorade 500 ML',
+        variantes: {
+            'Fruta Tropical': 'GATORADE 500 ML FRUTA TROPICAL',
+            'Mandarina':      'GATORADE 500 ML MANDARINA',
+            'Maracuyá':       'GATORADE 500 ML MARACUYÁ',
+        },
+    },
+    {
+        nombre: 'H2O 600 ML',
+        variantes: {
+            'Maracuyá':   'H2O 600 ML MARACUYÁ',
+            'Lima Limón': 'H2O LIMA LIMON 600 ML',
+            'Limonata':   'H2O LIMONATA 600 ML',
+            'Manzana':    'H2O MANZANA 600 ML',
+            'Toronja':    'H2O TORONJA 500 ML',
+        },
+    },
 ]
 
 // Helpers internos para formatear nombres en las tarjetas individuales (resto)
@@ -164,16 +182,6 @@ export const BEBIDAS_GRUPOS = [
     {
         nombre: 'Aguas',
         detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
-    },
-    {
-        nombre: 'Hidratantes',
-        detectar: n => /^(GATORADE|GATORLIT|H2O)\b/.test(n),
-        subgrupo: n => {
-            if (n.startsWith('GATORADE')) return 'Gatorade'
-            if (n.startsWith('GATORLIT')) return 'Gatorlit'
-            if (n.startsWith('H2O'))      return 'H2O'
-            return n.split(' ')[0]
-        },
     },
     {
         nombre: 'Tés y Sodas',
