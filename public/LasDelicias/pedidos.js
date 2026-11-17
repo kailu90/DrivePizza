@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS, formatNombreBebida } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS, LD_BEBIDAS_GRUPOS, formatNombreBebida } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -163,17 +163,32 @@ function renderProductos(busqueda = '') {
     const desayunosDB = lista.filter(p => esDesayuno(p.name))
     const migaoDB     = lista.filter(p => esMigao(p.name))
 
-    // Grupos de bebidas — first-match wins para evitar duplicados
-    const claimed = new Set()
+    // LD_BEBIDAS_GRUPOS — tarjetas con variantes explícitas (patrón DrivePizza)
+    const prodPorNombre = Object.fromEntries(_productos.map(p => [p.name, p]))
+    const ldGruposActivos = LD_BEBIDAS_GRUPOS.map(g => {
+        const opciones = {}
+        for (const [variante, nombreDB] of Object.entries(g.variantes)) {
+            const prod = prodPorNombre[nombreDB]
+            if (prod && lista.includes(prod)) opciones[variante] = prod
+        }
+        return { ...g, opciones }
+    }).filter(g => Object.keys(g.opciones).length >= 2)
+
+    // BEBIDAS_GRUPOS dinámicos (Aguas, Hidratantes, etc.)
+    const claimed = new Set([
+        ...desayunosDB, ...migaoDB,
+        ...ldGruposActivos.flatMap(g => Object.values(g.opciones))
+    ].map(p => p.id))
+
     const bebidasActivos = BEBIDAS_GRUPOS.map(g => {
         const productos = lista.filter(p => !claimed.has(p.id) && g.detectar(p.name))
         productos.forEach(p => claimed.add(p.id))
         return { ...g, productos }
     }).filter(g => g.productos.length > 0)
 
-    const resto = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name) && !claimed.has(p.id))
+    const resto = lista.filter(p => !claimed.has(p.id))
 
-    if (!desayunosDB.length && !migaoDB.length && !bebidasActivos.length && !resto.length) {
+    if (!desayunosDB.length && !migaoDB.length && !ldGruposActivos.length && !bebidasActivos.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
@@ -216,6 +231,32 @@ function renderProductos(busqueda = '') {
         grid.appendChild(card)
     }
 
+    // Cards de LD_BEBIDAS_GRUPOS (Gaseosa 400 ML, HIT 500 ML, etc.)
+    ldGruposActivos.forEach(g => {
+        const prods    = Object.values(g.opciones)
+        const precioMin = Math.min(...prods.map(p => p.price))
+        const card = document.createElement('div')
+        card.className = 'ld-prod-card'
+        card.innerHTML = `
+            <div class="ld-prod-card__img"></div>
+            <div class="ld-prod-card__body">
+                <span class="ld-prod-card__name">${g.nombre}</span>
+                <span class="ld-prod-card__desc">${Object.keys(g.opciones).length} sabores</span>
+                <div class="ld-prod-card__foot">
+                    <span class="ld-prod-card__precio">Desde ${formatPrecio(precioMin)}</span>
+                    <button class="ld-prod-card__add">+</button>
+                </div>
+            </div>
+        `
+        const items = Object.entries(g.opciones).map(([variante, prod]) => ({
+            ...prod,
+            displayName: variante,
+            cartName: `${g.nombre} - ${variante}`,
+        }))
+        card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
+        grid.appendChild(card)
+    })
+
     // Cards de grupos de bebidas
     bebidasActivos.forEach(g => {
         const precioMin = Math.min(...g.productos.map(p => p.price))
@@ -254,6 +295,7 @@ function renderProductos(busqueda = '') {
 
     resto.forEach(prod => {
         const displayName = formatNombreBebida(prod.name)
+        const cartName    = displayName !== prod.name ? displayName : prod.name
         const card = document.createElement('div')
         card.className = 'ld-prod-card'
         card.innerHTML = `
@@ -266,7 +308,7 @@ function renderProductos(busqueda = '') {
                 </div>
             </div>
         `
-        card.addEventListener('click', () => agregarAlCarrito(prod))
+        card.addEventListener('click', () => agregarAlCarrito({ ...prod, name: cartName }))
         grid.appendChild(card)
     })
 }
@@ -1151,7 +1193,7 @@ function _renderVariantesPaso() {
                 <span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>
             `
             btn.addEventListener('click', () => {
-                agregarAlCarrito(prod)
+                agregarAlCarrito({ ...prod, name: prod.cartName ?? prod.name })
                 document.getElementById('variantesModal').classList.remove('open')
             })
             grid.appendChild(btn)
