@@ -164,7 +164,7 @@ export const LD_BEBIDAS_GRUPOS = [
     {
         nombre: 'Agua Cristal',
         variantes: {
-            'Natural 600 ML':  'Agua Cristal 600 ML',
+            'Sin Gas 600 ML':  'Agua Cristal 600 ML',
             'Aloe 330 ML':     'Agua Cristal Aloe 330 ML',
             'Con Gas 600 ML':  'Agua Cristal Con Gas 600 ML',
         },
