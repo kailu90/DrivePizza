@@ -78,97 +78,6 @@ export function esMigao(nombre) {
     return norm.includes('migao')
 }
 
-// ── Bebidas — grupos con variantes explícitas (patrón DrivePizza) ─────────────
-// variantes: { 'NombreDisplay': 'NOMBRE_EXACTO_EN_DB' }
-// En renderProductos() se resuelven a productos reales de Supabase.
-export const LD_BEBIDAS_GRUPOS = [
-    {
-        nombre: 'Gaseosa 400 ML',
-        variantes: {
-            'Colombiana': 'COLOMBIANA 400 ML POSTOBON',
-            'Manzana':    'MANZANA 400 ML POSTOBON',
-            'Naranja':    'NARANJA 400 ML POSTOBON',
-            'Pepsi':      'PEPSI 400 ML POSTOBON',
-            'Uva':        'UVA 400 ML POSTOBON',
-        },
-    },
-    {
-        nombre: 'Gaseosa 1.5 Lts',
-        variantes: {
-            'Colombiana': 'COLOMBIANA 1.5 LTS',
-            'Manzana':    'MANZANA 1.5 LTS',
-            'Pepsi':      'PEPSI 1.5 LTS',
-            'Uva':        'UVA 1.5 LTS POSTOBON',
-        },
-    },
-    {
-        nombre: 'Gaseosa 2.5 Lts',
-        variantes: {
-            'Colombiana': 'COLOMBIANA 2.5 LTS POSTOBON',
-            'Manzana':    'MANZANA 2.5 LTS POSTOBON',
-            'Pepsi':      'PEPSI 2.5 LTS POSTOBON',
-            'Uva':        'UVA POSTOBON 2.5 LTS',
-        },
-    },
-    {
-        nombre: 'Gaseosa 3.1 Lts',
-        variantes: {
-            'Colombiana': 'COLOMBIANA 3.1 LTS',
-            'Manzana':    'MANZANA 3.1 LTS',
-            'Pepsi':      'PEPSI 3.1 LTS',
-            'Uva':        'UVA 3.1 LTS',
-        },
-    },
-    {
-        nombre: 'HIT 500 ML',
-        variantes: {
-            'Lulo':              'HIT 500 ML LULO',
-            'Mora':              'HIT 500 ML MORA',
-            'Mango':             'HIT 500 ML MANGO',
-            'Naranja Piña':      'HIT 500 ML NARANJA PIÑA',
-            'Frutas Tropicales': 'HIT 500 ML FRUTAS TROPICALES',
-        },
-    },
-    {
-        nombre: 'Gatorade 500 ML',
-        variantes: {
-            'Fruta Tropical': 'GATORADE 500 ML FRUTA TROPICAL',
-            'Mandarina':      'GATORADE 500 ML MANDARINA',
-            'Maracuyá':       'GATORADE 500 ML MARACUYÁ',
-        },
-    },
-    {
-        nombre: 'H2O 600 ML',
-        variantes: {
-            'Maracuyá':   'H2O 600 ML MARACUYÁ',
-            'Lima Limón': 'H2O LIMA LIMON 600 ML',
-        },
-    },
-    {
-        nombre: 'Mr Tea 500 ML',
-        variantes: {
-            'Durazno': 'MR TEA 500 ML DURAZNO',
-            'Limón':   'MR TEA LIMON 500 ML',
-        },
-    },
-    {
-        nombre: 'Speed Max',
-        variantes: {
-            '250 ML':      'SPEED MAX 250 ML',
-            '310 ML Lata': 'SPEED MAX 310 ML LATA',
-            '400 ML':      'SPEED MAX 400 ML',
-        },
-    },
-    {
-        nombre: 'Agua Cristal',
-        variantes: {
-            'Sin Gas 600 ML':  'Agua Cristal 600 ML',
-            'Aloe 330 ML':     'Agua Cristal Aloe 330 ML',
-            'Con Gas 600 ML':  'Agua Cristal Con Gas 600 ML',
-        },
-    },
-]
-
 // Helpers internos para formatear nombres en las tarjetas individuales (resto)
 const _nb      = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 const _tc      = s => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
@@ -196,4 +105,3 @@ export function formatNombreBebida(nombre) {
     return nombre
 }
 
-export const BEBIDAS_GRUPOS = []

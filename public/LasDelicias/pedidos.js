@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS, LD_BEBIDAS_GRUPOS, formatNombreBebida } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, formatNombreBebida } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -87,7 +87,7 @@ async function cargarCategorias() {
 async function cargarProductos() {
     const { data } = await supabase
         .from('productos')
-        .select('id, name, price, id_category')
+        .select('id, name, price, id_category, subgrupo, variante_display')
         .eq('active', true)
         .gt('price', 0)
         .order('name')
@@ -163,16 +163,11 @@ function renderProductos(busqueda = '') {
         const b = norm(busqueda)
         // Productos que coinciden con el nombre en BD
         const porNombre = new Set(lista.filter(p => norm(p.name).includes(b)).map(p => p.id))
-        // Productos que pertenecen a un grupo cuyo nombre coincide (ej: "Gaseosa" → incluye COLOMBIANA 400 ML…)
-        const todosGrupos = [
-            ...LD_BEBIDAS_GRUPOS.map(g => ({ nombre: g.nombre, nombres: Object.values(g.variantes) })),
-            ...BEBIDAS_GRUPOS.map(g => ({ nombre: g.nombre, detectar: g.detectar })),
-        ]
-        todosGrupos.forEach(g => {
-            if (!norm(g.nombre).includes(b)) return
-            lista.forEach(p => {
-                if (g.nombres?.includes(p.name) || g.detectar?.(p.name)) porNombre.add(p.id)
-            })
+        // Productos que pertenecen a un subgrupo cuyo nombre coincide (ej: "Gaseosa" → incluye todos los sabores)
+        const subgruposEnLista = [...new Set(lista.filter(p => p.subgrupo).map(p => p.subgrupo))]
+        subgruposEnLista.forEach(sg => {
+            if (!norm(sg).includes(b)) return
+            lista.forEach(p => { if (p.subgrupo === sg) porNombre.add(p.id) })
         })
         lista = lista.filter(p => porNombre.has(p.id))
     }
@@ -180,32 +175,28 @@ function renderProductos(busqueda = '') {
     const desayunosDB = lista.filter(p => esDesayuno(p.name))
     const migaoDB     = lista.filter(p => esMigao(p.name))
 
-    // LD_BEBIDAS_GRUPOS — tarjetas con variantes explícitas (patrón DrivePizza)
-    const prodPorNombre = Object.fromEntries(_productos.map(p => [p.name.toUpperCase(), p]))
-    const ldGruposActivos = LD_BEBIDAS_GRUPOS.map(g => {
-        const opciones = {}
-        for (const [variante, nombreDB] of Object.entries(g.variantes)) {
-            const prod = prodPorNombre[nombreDB.toUpperCase()]
-            if (prod && lista.includes(prod)) opciones[variante] = prod
-        }
-        return { ...g, opciones }
-    }).filter(g => Object.keys(g.opciones).length >= 2)
+    // Grupos dinámicos desde columna subgrupo en BD
+    const subgrupoMap = {}
+    for (const p of lista) {
+        if (!p.subgrupo) continue
+        if (!subgrupoMap[p.subgrupo]) subgrupoMap[p.subgrupo] = []
+        subgrupoMap[p.subgrupo].push(p)
+    }
+    const ldGruposActivos = Object.entries(subgrupoMap)
+        .filter(([, prods]) => prods.length >= 2)
+        .map(([nombre, prods]) => ({
+            nombre,
+            opciones: Object.fromEntries(prods.map(p => [p.variante_display || p.name, p]))
+        }))
 
-    // BEBIDAS_GRUPOS dinámicos (Aguas, Hidratantes, etc.)
     const claimed = new Set([
         ...desayunosDB, ...migaoDB,
         ...ldGruposActivos.flatMap(g => Object.values(g.opciones))
     ].map(p => p.id))
 
-    const bebidasActivos = BEBIDAS_GRUPOS.map(g => {
-        const productos = lista.filter(p => !claimed.has(p.id) && g.detectar(p.name))
-        productos.forEach(p => claimed.add(p.id))
-        return { ...g, productos }
-    }).filter(g => g.productos.length > 0)
-
     const resto = lista.filter(p => !claimed.has(p.id))
 
-    if (!desayunosDB.length && !migaoDB.length && !ldGruposActivos.length && !bebidasActivos.length && !resto.length) {
+    if (!desayunosDB.length && !migaoDB.length && !ldGruposActivos.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
@@ -274,41 +265,6 @@ function renderProductos(busqueda = '') {
         grid.appendChild(card)
     })
 
-    // Cards de grupos de bebidas
-    bebidasActivos.forEach(g => {
-        const precioMin = Math.min(...g.productos.map(p => p.price))
-        const card = document.createElement('div')
-        card.className = 'ld-prod-card'
-        card.innerHTML = `
-            <div class="ld-prod-card__img"></div>
-            <div class="ld-prod-card__body">
-                <span class="ld-prod-card__name">${g.nombre}</span>
-                <span class="ld-prod-card__desc">${g.productos.length} variedades</span>
-                <div class="ld-prod-card__foot">
-                    <span class="ld-prod-card__precio">Desde ${formatPrecio(precioMin)}</span>
-                    <button class="ld-prod-card__add">+</button>
-                </div>
-            </div>
-        `
-        // subgrupo → 2 niveles (marca → variedad)
-        // displayNombre → 1 nivel con etiqueta limpia (ej. sabor sin tamaño)
-        let items
-        if (g.subgrupo) {
-            const map = {}
-            for (const p of g.productos) {
-                const key = g.subgrupo(p.name)
-                if (!map[key]) map[key] = { label: key, subItems: [] }
-                map[key].subItems.push(p)
-            }
-            items = Object.values(map)
-        } else {
-            items = g.displayNombre
-                ? g.productos.map(p => ({ ...p, displayName: g.displayNombre(p.name) }))
-                : g.productos
-        }
-        card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
-        grid.appendChild(card)
-    })
 
     resto.forEach(prod => {
         const displayName = formatNombreBebida(prod.name)
