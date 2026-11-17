@@ -204,6 +204,7 @@ function renderProductos(busqueda = '') {
     }).filter(g => g.productos.length > 0)
 
     const resto = lista.filter(p => !claimed.has(p.id))
+    console.log('[LD-DEBUG] resto nombres:', resto.map(p => JSON.stringify(p.name)))
 
     if (!desayunosDB.length && !migaoDB.length && !ldGruposActivos.length && !bebidasActivos.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
