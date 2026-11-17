@@ -865,23 +865,33 @@ document.getElementById('modalDetalle').addEventListener('click', e => {
 })
 
 // ── Selector Desayunos ────────────────────────────────────────────────────────
-let _dsProductos = []
-let _dsHuevo     = null
+let _dsProductos  = []
+let _dsHuevo      = null
+let _dsPrecioBase = 0
+let _dsDelta      = 0
 
 function abrirSelectorDesayuno(productos) {
-    _dsProductos = productos
-    _dsHuevo     = null
+    _dsProductos  = productos
+    _dsHuevo      = null
+    _dsDelta      = 0
+    _dsPrecioBase = productos[0].price
 
     document.getElementById('dsModal-huevos').innerHTML =
-        DESAYUNO_HUEVOS.map(h => `<button class="ds-opcion-btn" data-valor="${h}">${h}</button>`).join('')
+        DESAYUNO_HUEVOS.map(h => `
+            <button class="ds-opcion-btn" data-valor="${h.nombre}" data-delta="${h.delta}">
+                <span class="ds-opcion-nombre">${h.nombre}</span>
+                ${h.desc ? `<span class="ds-opcion-desc">${h.desc}</span>` : ''}
+                <span class="ds-opcion-precio">${formatPrecio(_dsPrecioBase + h.delta)}</span>
+            </button>`).join('')
 
     document.getElementById('dsModal-step1').style.display = ''
     document.getElementById('dsModal-step2').style.display = 'none'
     document.getElementById('dsModal').classList.add('open')
 }
 
-function seleccionarHuevo(huevo) {
+function seleccionarHuevo(huevo, delta) {
     _dsHuevo = huevo
+    _dsDelta = delta
     document.getElementById('dsModal-huevo-sel').textContent = huevo
 
     document.getElementById('dsModal-bebidas').innerHTML =
@@ -898,7 +908,7 @@ function seleccionarBebida(bebida) {
         return normHuevo.split(' ').some(w => w.length > 3 && n.includes(w))
     }) || _dsProductos[0]
 
-    agregarAlCarrito({ id: prod.id, name: `Desayuno · ${_dsHuevo} · ${bebida}`, price: prod.price })
+    agregarAlCarrito({ id: prod.id, name: `Desayuno · ${_dsHuevo} · ${bebida}`, price: _dsPrecioBase + _dsDelta })
     document.getElementById('dsModal').classList.remove('open')
 }
 
@@ -915,7 +925,7 @@ document.getElementById('dsModal-back').addEventListener('click', () => {
 })
 document.getElementById('dsModal-huevos').addEventListener('click', e => {
     const btn = e.target.closest('.ds-opcion-btn')
-    if (btn) seleccionarHuevo(btn.dataset.valor)
+    if (btn) seleccionarHuevo(btn.dataset.valor, Number(btn.dataset.delta))
 })
 document.getElementById('dsModal-bebidas').addEventListener('click', e => {
     const btn = e.target.closest('.ds-opcion-btn')

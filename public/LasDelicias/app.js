@@ -48,11 +48,11 @@ export function getDescripcion(nombre) {
 
 // ── Selector Desayunos — opciones ─────────────────────────────────────────────
 export const DESAYUNO_HUEVOS = [
-    'Huevos revueltos',
-    'Huevos pericos',
-    'Huevos rancheros',
-    'Huevos en cacerola',
-    'Especial (Calentado)',
+    { nombre: 'Huevos revueltos',    desc: '',                   delta: 0    },
+    { nombre: 'Huevos pericos',      desc: 'Tomate y cebolla',   delta: 0    },
+    { nombre: 'Huevos rancheros',    desc: 'Salchicha ranchera', delta: 0    },
+    { nombre: 'Huevos en cacerola',  desc: '',                   delta: 0    },
+    { nombre: 'Especial (Calentado)',desc: '',                   delta: 1000 },
 ]
 
 export const DESAYUNO_BEBIDAS = [

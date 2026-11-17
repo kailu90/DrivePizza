@@ -512,20 +512,16 @@ body {
 
 .ds-opcion-btn {
     min-height: 72px;
-    padding: 12px 10px;
+    padding: 10px 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     background: var(--ld-beige, #F6EBE0);
     border: 2px solid transparent;
     border-radius: 12px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--ld-marron-oscuro, #4e2e24);
     cursor: pointer;
     font-family: 'Montserrat', sans-serif;
-    line-height: 1.3;
     transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 
@@ -536,6 +532,27 @@ body {
 }
 
 .ds-opcion-btn:active { transform: translateY(0); }
+
+.ds-opcion-nombre {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ld-marron-oscuro, #4e2e24);
+    line-height: 1.3;
+}
+
+.ds-opcion-desc {
+    font-size: 11px;
+    font-weight: 400;
+    color: #a07060;
+}
+
+.ds-opcion-precio {
+    margin-top: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+    align-self: flex-end;
+}
 
 .ds-btn-back {
     margin-top: 14px;
