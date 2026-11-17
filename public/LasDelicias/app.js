@@ -199,6 +199,6 @@ export function formatNombreBebida(nombre) {
 export const BEBIDAS_GRUPOS = [
     {
         nombre: 'Natumalta',
-        detectar: n => /^NATUMALTA\b/i.test(n),
+        detectar: n => /^NATUMALTA\b/i.test(n) && !/\b(1\.5\s*LTS?|1\s*LT\b|330\s*ML\s*VIDRIO)\b/i.test(n),
     },
 ]
