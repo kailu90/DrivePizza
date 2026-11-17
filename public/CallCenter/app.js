@@ -28,14 +28,13 @@ function _renderAcomps(ciudad) {
 // Se ejecuta una sola vez al cargar app.js, antes de cualquier función.
 // Elimina de menuData los productos y categorías excluidos para la ciudad activa,
 // de modo que todo el código posterior (menú, promos, 3x2, etc.) ya recibe el
-// catálogo limpio sin necesidad de filtrar individualmente en cada lugar.
 (function _filtrarMenuPorCiudad() {
-    const ciudad       = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
-    const excluirProds = new Set(MENU_EXCLUIR?.[ciudad]?.productos || []);
-    const excluirCats  = new Set(MENU_EXCLUIR?.[ciudad]?.categorias || []);
+    const ciudad       = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase(); // ciudad activa del agente
+    const excluirProds = new Set(MENU_EXCLUIR?.[ciudad]?.productos  || []); // productos bloqueados en esta ciudad
+    const excluirCats  = new Set(MENU_EXCLUIR?.[ciudad]?.categorias || []); // categorías bloqueadas en esta ciudad
     for (const cat of Object.keys(menuData)) {
-        if (excluirCats.has(cat)) { delete menuData[cat]; continue; }
-        menuData[cat] = menuData[cat].filter(p => !excluirProds.has(p.nombre));
+        if (excluirCats.has(cat)) { delete menuData[cat]; continue; }           // elimina la categoría completa
+        menuData[cat] = menuData[cat].filter(p => !excluirProds.has(p.nombre)); // filtra productos excluidos
     }
 })();
 
@@ -419,7 +418,7 @@ function renderProducts(categoria) {
             return;
         }
         // ── BUCARAMANGA ─────────────────────────────────────────────────────
-        const esMartes = true ;
+        const esMartes = true ; // forzado — promo 3×2 activa todos los días mientras esté vigente
         const _hoyB = new Date();
         const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
         grid.innerHTML = `
@@ -847,7 +846,7 @@ function abrirSeleccion(producto) {
         // Layout especial: botón tamaño + botón ½+½ para tamaños mixables
         gridOpciones.className = 'opciones-grid opciones-pizza';
         gridOpciones.innerHTML = Object.entries(producto.opciones).map(([tam, pre]) => {
-            const mixable = TAMANOS_MIXABLES.has(tam) && !producto.noMitad;
+            const mixable = TAMANOS_MIXABLES.has(tam) && !producto.noMitad; // habilita el botón ½+½ en este tamaño
             if (tam === 'Porción' && !producto.esEstofada && ciudad === 'bucaramanga') {
                 return `
                 <div class="tamano-fila">
@@ -971,7 +970,7 @@ function abrirSegundoSabor(sabor1, tamano, precio1) {
 
     // Excluye el sabor ya elegido, los que no tienen ese tamaño, y los no combinables
     const saboresDisponibles = todosSabores.filter(s =>
-        s.nombre !== sabor1.nombre && s.opciones[tamano] !== undefined && !s.noMitad
+        s.nombre !== sabor1.nombre && s.opciones[tamano] !== undefined && !s.noMitad // ≠ sabor, disponible en tamaño, combinable ½+½
     );
 
     _mezclaState = { saboresDisponibles, sabor1, tamano, precio1 };
@@ -1194,7 +1193,7 @@ function actualizarComanda() {
                     </div>
                     <div class="item-controls">
                         ${botonAdicion}
-                        ${(item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
+                        ${/* obs: oculto en Las Especiales, Pepperoni y Kit */ (item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit) ? '' : botonObs}
                         ${(item.esPromo3x2 || item.esPromo65k || item.esPromoLasEsp || item.esPromoPepperoni || item.esPromoKit || item.esPromoBerrionda || item.esPromo2x1Ctg || item.esPromoPizzetaCarb) ? '' : `<div class="qty-control">
                             <button class="btn-qty" onclick="decrementarQty(${item.id})">−</button>
                             <span class="qty-valor">${item.qty}</span>
@@ -2377,7 +2376,7 @@ function abrirAdicionesModal(itemId, tamanoRaw) {
             <button class="btn-tamano btn-alcance-pick" data-alcance="completa" data-precio="${precioCompleta}">
                 Completa<br><strong>$${precioCompleta.toLocaleString()}</strong>
             </button>
-            ${sinMedia ? '' : botonesMedia}
+            ${/* sinMedia=true en Porción y Pizzeta — no tienen opción Media */ sinMedia ? '' : botonesMedia}
             <button id="btn-volver-adic"
                 style="grid-column:1/-1;background:none;border:none;color:#999;font-size:1.2rem;cursor:pointer;padding:6px;margin-top:4px;">← Volver</button>
         `;
