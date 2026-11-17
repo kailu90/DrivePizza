@@ -895,20 +895,24 @@ function seleccionarHuevo(huevo, delta) {
     document.getElementById('dsModal-huevo-sel').textContent = huevo
 
     document.getElementById('dsModal-bebidas').innerHTML =
-        DESAYUNO_BEBIDAS.map(b => `<button class="ld-sel-opcion" data-valor="${b}">${b}</button>`).join('')
+        DESAYUNO_BEBIDAS.map(b => `
+            <button class="ld-sel-opcion" data-valor="${b.nombre}" data-delta="${b.delta}">
+                <span class="ld-sel-opcion__nombre">${b.nombre}</span>
+                <span class="ld-sel-opcion__precio">${formatPrecio(_dsPrecioBase + _dsDelta + b.delta)}</span>
+            </button>`).join('')
 
     document.getElementById('dsModal-step1').style.display = 'none'
     document.getElementById('dsModal-step2').style.display = ''
 }
 
-function seleccionarBebida(bebida) {
+function seleccionarBebida(bebida, bebidaDelta) {
     const normHuevo = _dsHuevo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     const prod = _dsProductos.find(p => {
         const n = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         return normHuevo.split(' ').some(w => w.length > 3 && n.includes(w))
     }) || _dsProductos[0]
 
-    agregarAlCarrito({ id: prod.id, name: `Desayuno · ${_dsHuevo} · ${bebida}`, price: _dsPrecioBase + _dsDelta })
+    agregarAlCarrito({ id: prod.id, name: `Desayuno · ${_dsHuevo} · ${bebida}`, price: _dsPrecioBase + _dsDelta + bebidaDelta })
     document.getElementById('dsModal').classList.remove('open')
 }
 
@@ -929,7 +933,7 @@ document.getElementById('dsModal-huevos').addEventListener('click', e => {
 })
 document.getElementById('dsModal-bebidas').addEventListener('click', e => {
     const btn = e.target.closest('.ld-sel-opcion')
-    if (btn) seleccionarBebida(btn.dataset.valor)
+    if (btn) seleccionarBebida(btn.dataset.valor, Number(btn.dataset.delta))
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

@@ -56,11 +56,11 @@ export const DESAYUNO_HUEVOS = [
 ]
 
 export const DESAYUNO_BEBIDAS = [
-    'Café en agua',
-    'Café en leche',
-    'Chocolate en agua',
-    'Chocolate en leche',
-    'Milo caliente en leche',
+    { nombre: 'Café en agua',           delta: 0    },
+    { nombre: 'Café en leche',          delta: 0    },
+    { nombre: 'Chocolate en agua',      delta: 0    },
+    { nombre: 'Chocolate en leche',     delta: 0    },
+    { nombre: 'Milo caliente en leche', delta: 1000 },
 ]
 
 export function esDesayuno(nombre) {
