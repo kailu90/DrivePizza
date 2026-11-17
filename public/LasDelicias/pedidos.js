@@ -2,37 +2,12 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
+import { catIcon, TODOS_SVG, getDescripcion } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
 // Vista inicial: 'catalogo' (default) o 'historial' (vía ?view=historial)
 const INITIAL_VIEW = new URLSearchParams(location.search).get('view') || 'catalogo'
-
-// SVG icons por categoria
-const _S = `stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`
-const CAT_SVG = {
-    'panaderia': `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M5 8c0-2.21 3.13-4 7-4s7 1.79 7 4v9a2 2 0 01-2 2H7a2 2 0 01-2-2V8z"/><path d="M5 12h14"/></svg>`,
-    'pasteler':  `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M4 15v5h16v-5"/><line x1="2" y1="15" x2="22" y2="15"/><path d="M6 15v-4h12v4"/><path d="M6 11a6 6 0 0112 0"/><line x1="12" y1="2" x2="12" y2="5"/></svg>`,
-    'cafeter':   `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
-    'cafe':      `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
-    'bebida':    `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M5 7h14l-1.5 9A2 2 0 0115.51 18H8.49A2 2 0 016.5 16L5 7z"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="12" y1="2" x2="12" y2="7"/></svg>`,
-    'hojaldre':  `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M3 17c0-4 3.5-10 9-10s9 6 9 10a2 2 0 01-4 0c0-2-2-6-5-6s-5 4-5 6a2 2 0 01-4 0z"/></svg>`,
-    'frito':     `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M6 20h12l1-10H5L6 20z"/><path d="M9 10V7M12 10V5M15 10V7"/></svg>`,
-    'desayuno':  `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M17 18a5 5 0 00-10 0"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/></svg>`,
-    'torta':     `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M4 15v5h16v-5"/><line x1="2" y1="15" x2="22" y2="15"/><path d="M6 15v-4h12v4"/><path d="M6 11a6 6 0 0112 0"/><line x1="12" y1="2" x2="12" y2="5"/></svg>`,
-    'ponque':    `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M4 15v5h16v-5"/><line x1="2" y1="15" x2="22" y2="15"/><path d="M6 15v-4h12v4"/><path d="M6 11a6 6 0 0112 0"/><line x1="12" y1="2" x2="12" y2="5"/></svg>`,
-    'galleta':   `<svg viewBox="0 0 24 24" fill="none" ${_S}><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>`,
-    'empanada':  `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M3 12a9 9 0 0118 0H3z"/><path d="M6 12a6 6 0 0112 0"/></svg>`,
-    'arepa':     `<svg viewBox="0 0 24 24" fill="none" ${_S}><ellipse cx="12" cy="12" rx="9" ry="5"/><ellipse cx="12" cy="12" rx="6" ry="3"/></svg>`,
-    'default':   `<svg viewBox="0 0 24 24" fill="none" ${_S}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>`,
-}
-
-const _TODOS_SVG = `<svg viewBox="0 0 24 24" fill="none" ${_S}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
-
-function catIcon(name) {
-    const key = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    return Object.entries(CAT_SVG).find(([k]) => key.includes(k))?.[1] ?? CAT_SVG.default
-}
 
 // ── Estado ───────────────────────────────────────────────────────────────────
 let _user          = null
@@ -162,7 +137,7 @@ function renderCategorias() {
         return btn
     }
 
-    tabs.appendChild(mkTab('Todos', _TODOS_SVG, null))
+    tabs.appendChild(mkTab('Todos', TODOS_SVG, null))
     _categorias.forEach(cat => tabs.appendChild(mkTab(cat.name, catIcon(cat.name), cat.id_category)))
 }
 
@@ -191,12 +166,14 @@ function renderProductos(busqueda = '') {
     }
 
     lista.forEach(prod => {
+        const desc = getDescripcion(prod.name)
         const card = document.createElement('div')
         card.className = 'ld-prod-card'
         card.innerHTML = `
             <div class="ld-prod-card__img"></div>
             <div class="ld-prod-card__body">
                 <span class="ld-prod-card__name">${prod.name}</span>
+                ${desc ? `<span class="ld-prod-card__desc">${desc}</span>` : ''}
                 <div class="ld-prod-card__foot">
                     <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
                     <button class="ld-prod-card__add">+</button>

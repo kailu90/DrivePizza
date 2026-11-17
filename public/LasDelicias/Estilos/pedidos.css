@@ -438,6 +438,12 @@ body {
     line-height: 1.35;
 }
 
+.ld-prod-card__desc {
+    font-size: 10.5px;
+    color: #a07060;
+    line-height: 1.35;
+}
+
 .ld-prod-card__foot {
     display: flex;
     align-items: center;
