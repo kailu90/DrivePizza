@@ -45,3 +45,25 @@ export function getDescripcion(nombre) {
     const match = DESAYUNO_DESC.find(d => norm.includes(d.key))
     return match ? match.label + SUFIJO_DESAYUNO : ''
 }
+
+// ── Selector Desayunos — opciones ─────────────────────────────────────────────
+export const DESAYUNO_HUEVOS = [
+    'Huevos revueltos',
+    'Huevos pericos',
+    'Huevos rancheros',
+    'Huevos en cacerola',
+    'Especial (Calentado)',
+]
+
+export const DESAYUNO_BEBIDAS = [
+    'Café en agua',
+    'Café en leche',
+    'Chocolate en agua',
+    'Chocolate en leche',
+    'Milo caliente en leche',
+]
+
+export function esDesayuno(nombre) {
+    const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    return norm.includes('desayun')
+}

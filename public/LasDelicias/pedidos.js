@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, getDescripcion } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -160,20 +160,40 @@ function renderProductos(busqueda = '') {
     if (_catActiva) lista = lista.filter(p => p.id_category === _catActiva)
     if (busqueda)   lista = lista.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()))
 
-    if (!lista.length) {
+    const desayunosDB = lista.filter(p => esDesayuno(p.name))
+    const resto       = lista.filter(p => !esDesayuno(p.name))
+
+    if (!desayunosDB.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
 
-    lista.forEach(prod => {
-        const desc = getDescripcion(prod.name)
+    // Card única para todos los desayunos
+    if (desayunosDB.length) {
+        const card = document.createElement('div')
+        card.className = 'ld-prod-card'
+        card.innerHTML = `
+            <div class="ld-prod-card__img"></div>
+            <div class="ld-prod-card__body">
+                <span class="ld-prod-card__name">Desayunos</span>
+                <span class="ld-prod-card__desc">Huevo al gusto, arepa con queso, bebida de tu elección de 8 Oz</span>
+                <div class="ld-prod-card__foot">
+                    <span class="ld-prod-card__precio">${formatPrecio(desayunosDB[0].price)}</span>
+                    <button class="ld-prod-card__add">+</button>
+                </div>
+            </div>
+        `
+        card.addEventListener('click', () => abrirSelectorDesayuno(desayunosDB))
+        grid.appendChild(card)
+    }
+
+    resto.forEach(prod => {
         const card = document.createElement('div')
         card.className = 'ld-prod-card'
         card.innerHTML = `
             <div class="ld-prod-card__img"></div>
             <div class="ld-prod-card__body">
                 <span class="ld-prod-card__name">${prod.name}</span>
-                ${desc ? `<span class="ld-prod-card__desc">${desc}</span>` : ''}
                 <div class="ld-prod-card__foot">
                     <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
                     <button class="ld-prod-card__add">+</button>
@@ -187,7 +207,7 @@ function renderProductos(busqueda = '') {
 
 // ── Carrito ───────────────────────────────────────────────────────────────────
 function agregarAlCarrito(prod) {
-    const item = _carrito.find(i => i.id === prod.id)
+    const item = _carrito.find(i => i.id === prod.id && i.name === prod.name)
     if (item) {
         item.qty++
     } else {
@@ -842,6 +862,64 @@ document.getElementById('btnCerrarDetalle').addEventListener('click', () =>
 document.getElementById('modalDetalle').addEventListener('click', e => {
     if (e.target === e.currentTarget)
         document.getElementById('modalDetalle').classList.remove('open')
+})
+
+// ── Selector Desayunos ────────────────────────────────────────────────────────
+let _dsProductos = []
+let _dsHuevo     = null
+
+function abrirSelectorDesayuno(productos) {
+    _dsProductos = productos
+    _dsHuevo     = null
+
+    document.getElementById('dsModal-huevos').innerHTML =
+        DESAYUNO_HUEVOS.map(h => `<button class="ds-opcion-btn" data-valor="${h}">${h}</button>`).join('')
+
+    document.getElementById('dsModal-step1').style.display = ''
+    document.getElementById('dsModal-step2').style.display = 'none'
+    document.getElementById('dsModal').classList.add('open')
+}
+
+function seleccionarHuevo(huevo) {
+    _dsHuevo = huevo
+    document.getElementById('dsModal-huevo-sel').textContent = huevo
+
+    document.getElementById('dsModal-bebidas').innerHTML =
+        DESAYUNO_BEBIDAS.map(b => `<button class="ds-opcion-btn" data-valor="${b}">${b}</button>`).join('')
+
+    document.getElementById('dsModal-step1').style.display = 'none'
+    document.getElementById('dsModal-step2').style.display = ''
+}
+
+function seleccionarBebida(bebida) {
+    const normHuevo = _dsHuevo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const prod = _dsProductos.find(p => {
+        const n = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        return normHuevo.split(' ').some(w => w.length > 3 && n.includes(w))
+    }) || _dsProductos[0]
+
+    agregarAlCarrito({ id: prod.id, name: `Desayuno · ${_dsHuevo} · ${bebida}`, price: prod.price })
+    document.getElementById('dsModal').classList.remove('open')
+}
+
+document.getElementById('dsModal-close').addEventListener('click', () =>
+    document.getElementById('dsModal').classList.remove('open')
+)
+document.getElementById('dsModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('dsModal').classList.remove('open')
+})
+document.getElementById('dsModal-back').addEventListener('click', () => {
+    _dsHuevo = null
+    document.getElementById('dsModal-step1').style.display = ''
+    document.getElementById('dsModal-step2').style.display = 'none'
+})
+document.getElementById('dsModal-huevos').addEventListener('click', e => {
+    const btn = e.target.closest('.ds-opcion-btn')
+    if (btn) seleccionarHuevo(btn.dataset.valor)
+})
+document.getElementById('dsModal-bebidas').addEventListener('click', e => {
+    const btn = e.target.closest('.ds-opcion-btn')
+    if (btn) seleccionarBebida(btn.dataset.valor)
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

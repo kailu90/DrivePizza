@@ -486,6 +486,63 @@ body {
     font-size: 13px;
 }
 
+/* ── Modal selector Desayunos ─────────────────────────────────────────────── */
+.ds-step-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ld-marron, #75473B);
+    margin: 0 0 12px;
+}
+
+.ds-huevo-sel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ld-marron, #75473B);
+    background: var(--ld-beige, #F6EBE0);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 0 0 14px;
+}
+
+.ds-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ds-opcion-btn {
+    width: 100%;
+    padding: 12px 16px;
+    text-align: left;
+    background: var(--ld-beige, #F6EBE0);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ld-marron-oscuro, #4e2e24);
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.ds-opcion-btn:hover {
+    border-color: var(--ld-marron, #75473B);
+    background: #edddc8;
+}
+
+.ds-btn-back {
+    margin-top: 14px;
+    background: none;
+    border: none;
+    color: #a07060;
+    font-size: 12px;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.ds-btn-back:hover { color: var(--ld-marron, #75473B); }
+
 /* ════════════════════════════════════════════════════════
    PANEL DERECHO — Pedido en curso
    ════════════════════════════════════════════════════════ */
