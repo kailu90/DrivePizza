@@ -161,6 +161,14 @@ export const LD_BEBIDAS_GRUPOS = [
             '400 ML':      'SPEED MAX 400 ML',
         },
     },
+    {
+        nombre: 'Agua Cristal',
+        variantes: {
+            'Natural 600 ML':  'Agua Cristal 600 ML',
+            'Aloe 330 ML':     'Agua Cristal Aloe 330 ML',
+            'Con Gas 600 ML':  'Agua Cristal Con Gas 600 ML',
+        },
+    },
 ]
 
 // Helpers internos para formatear nombres en las tarjetas individuales (resto)
@@ -192,11 +200,7 @@ export function formatNombreBebida(nombre) {
 
 export const BEBIDAS_GRUPOS = [
     {
-        nombre: 'Aguas',
-        detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
-    },
-    {
         nombre: 'Natumalta',
-        detectar: n => /^NATUMALTA\b/.test(n),
+        detectar: n => /^NATUMALTA\b/i.test(n),
     },
 ]
