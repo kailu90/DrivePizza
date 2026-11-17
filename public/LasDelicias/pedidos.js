@@ -181,11 +181,11 @@ function renderProductos(busqueda = '') {
     const migaoDB     = lista.filter(p => esMigao(p.name))
 
     // LD_BEBIDAS_GRUPOS — tarjetas con variantes explícitas (patrón DrivePizza)
-    const prodPorNombre = Object.fromEntries(_productos.map(p => [p.name, p]))
+    const prodPorNombre = Object.fromEntries(_productos.map(p => [p.name.toUpperCase(), p]))
     const ldGruposActivos = LD_BEBIDAS_GRUPOS.map(g => {
         const opciones = {}
         for (const [variante, nombreDB] of Object.entries(g.variantes)) {
-            const prod = prodPorNombre[nombreDB]
+            const prod = prodPorNombre[nombreDB.toUpperCase()]
             if (prod && lista.includes(prod)) opciones[variante] = prod
         }
         return { ...g, opciones }
