@@ -77,3 +77,61 @@ export function esMigao(nombre) {
     const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     return norm.includes('migao')
 }
+
+// ── Grupos de Bebidas ──────────────────────────────────────────────────────────
+// detectar(nombre) → true si el producto pertenece al grupo
+// subgrupo(nombre) → clave de agrupación de 2º nivel (sabor, marca…)
+const _nb = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+export const BEBIDAS_GRUPOS = [
+    {
+        nombre: 'Aguas',
+        detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
+    },
+    {
+        nombre: 'Gaseosas',
+        detectar: n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETANA)/.test(_nb(n)),
+        subgrupo: n => {
+            const m = n.match(/^(PEPSI CERO|COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETA[NÑ]A)/)
+            return m?.[1] ?? n.split(' ')[0]
+        },
+    },
+    {
+        nombre: 'Jugos HIT',
+        detectar: n => /^HIT\b/.test(n),
+        subgrupo: n => {
+            if (n.includes('LULO'))     return 'Lulo'
+            if (n.includes('MORA'))     return 'Mora'
+            if (n.includes('MANGO'))    return 'Mango'
+            if (n.includes('NARANJA'))  return 'Naranja Piña'
+            if (n.includes('TROPICAL')) return 'Frutas Tropicales'
+            return n.replace(/^HIT\s+[\d.]+\s*(ML|LTS?)\s*/i, '').trim() || n
+        },
+    },
+    {
+        nombre: 'Hidratantes',
+        detectar: n => /^(GATORADE|GATORLIT|H2O)\b/.test(n),
+        subgrupo: n => {
+            if (n.startsWith('GATORADE')) return 'Gatorade'
+            if (n.startsWith('GATORLIT')) return 'Gatorlit'
+            if (n.startsWith('H2O'))      return 'H2O'
+            return n.split(' ')[0]
+        },
+    },
+    {
+        nombre: 'Tés y Sodas',
+        detectar: n => /^(TE HATSU|SODA HATSU|MR TEA)\b/.test(_nb(n)),
+    },
+    {
+        nombre: 'Energizantes',
+        detectar: n => /^(RED BULL|SPEED MAX)\b/.test(n),
+    },
+    {
+        nombre: 'Maltas',
+        detectar: n => /^NATUMALTA\b/.test(n),
+    },
+    {
+        nombre: 'Cervezas y Refajos',
+        detectar: n => /^(CERVEZA|REFAJO)\b/.test(n),
+    },
+]

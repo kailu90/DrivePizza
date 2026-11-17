@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -162,9 +162,18 @@ function renderProductos(busqueda = '') {
 
     const desayunosDB = lista.filter(p => esDesayuno(p.name))
     const migaoDB     = lista.filter(p => esMigao(p.name))
-    const resto       = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name))
 
-    if (!desayunosDB.length && !migaoDB.length && !resto.length) {
+    // Grupos de bebidas — first-match wins para evitar duplicados
+    const claimed = new Set()
+    const bebidasActivos = BEBIDAS_GRUPOS.map(g => {
+        const productos = lista.filter(p => !claimed.has(p.id) && g.detectar(p.name))
+        productos.forEach(p => claimed.add(p.id))
+        return { ...g, productos }
+    }).filter(g => g.productos.length > 0)
+
+    const resto = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name) && !claimed.has(p.id))
+
+    if (!desayunosDB.length && !migaoDB.length && !bebidasActivos.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
@@ -206,6 +215,39 @@ function renderProductos(busqueda = '') {
         card.addEventListener('click', () => abrirSelectorMigao(migaoDB))
         grid.appendChild(card)
     }
+
+    // Cards de grupos de bebidas
+    bebidasActivos.forEach(g => {
+        const precioMin = Math.min(...g.productos.map(p => p.price))
+        const card = document.createElement('div')
+        card.className = 'ld-prod-card'
+        card.innerHTML = `
+            <div class="ld-prod-card__img"></div>
+            <div class="ld-prod-card__body">
+                <span class="ld-prod-card__name">${g.nombre}</span>
+                <span class="ld-prod-card__desc">${g.productos.length} variedades</span>
+                <div class="ld-prod-card__foot">
+                    <span class="ld-prod-card__precio">Desde ${formatPrecio(precioMin)}</span>
+                    <button class="ld-prod-card__add">+</button>
+                </div>
+            </div>
+        `
+        // Si tiene subgrupo → 2 niveles (sabor → tamaño); si no → lista plana
+        let items
+        if (g.subgrupo) {
+            const map = {}
+            for (const p of g.productos) {
+                const key = g.subgrupo(p.name)
+                if (!map[key]) map[key] = { label: key, subItems: [] }
+                map[key].subItems.push(p)
+            }
+            items = Object.values(map)
+        } else {
+            items = g.productos
+        }
+        card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
+        grid.appendChild(card)
+    })
 
     resto.forEach(prod => {
         const card = document.createElement('div')
@@ -1057,6 +1099,73 @@ document.getElementById('migaoModal-galletas').addEventListener('click', e => {
 document.getElementById('migaoModal-bebidas').addEventListener('click', e => {
     const btn = e.target.closest('.ld-sel-opcion[data-valor]')
     if (btn) _migaoSelBebida(btn.dataset.valor)
+})
+
+// ── Selector de variantes (reutilizable) ──────────────────────────────────────
+// items puede ser:
+//   • Array de productos           → lista plana, 1 nivel
+//   • Array de { label, subItems } → 2 niveles (ej. sabor → tamaño)
+let _variantesStack = []
+
+function abrirSelectorVariantes(titulo, items) {
+    _variantesStack = [{ titulo, items }]
+    _renderVariantesPaso()
+    document.getElementById('variantesModal').classList.add('open')
+}
+
+function _renderVariantesPaso() {
+    const { titulo, items } = _variantesStack[_variantesStack.length - 1]
+    document.getElementById('variantesModal-titulo').textContent = titulo
+    document.getElementById('variantesModal-volver').style.display =
+        _variantesStack.length > 1 ? '' : 'none'
+
+    const grid = document.getElementById('variantesModal-opciones')
+    grid.innerHTML = ''
+
+    if (items[0]?.subItems) {
+        // Nivel de grupos — mostrar etiqueta + cantidad
+        items.forEach(grupo => {
+            const btn = document.createElement('button')
+            btn.className = 'ld-sel-opcion'
+            btn.innerHTML = `
+                <span class="ld-sel-opcion__nombre">${grupo.label}</span>
+                <span class="ld-sel-opcion__desc">${grupo.subItems.length} opciones</span>
+            `
+            btn.addEventListener('click', () => {
+                _variantesStack.push({ titulo: grupo.label, items: grupo.subItems })
+                _renderVariantesPaso()
+            })
+            grid.appendChild(btn)
+        })
+    } else {
+        // Nivel de productos — agregar al carrito
+        items.forEach(prod => {
+            const btn = document.createElement('button')
+            btn.className = 'ld-sel-opcion'
+            btn.innerHTML = `
+                <span class="ld-sel-opcion__nombre">${prod.name}</span>
+                <span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>
+            `
+            btn.addEventListener('click', () => {
+                agregarAlCarrito(prod)
+                document.getElementById('variantesModal').classList.remove('open')
+            })
+            grid.appendChild(btn)
+        })
+    }
+}
+
+document.getElementById('variantesModal-close').addEventListener('click', () =>
+    document.getElementById('variantesModal').classList.remove('open')
+)
+document.getElementById('variantesModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('variantesModal').classList.remove('open')
+})
+document.getElementById('variantesModal-volver').addEventListener('click', () => {
+    if (_variantesStack.length > 1) {
+        _variantesStack.pop()
+        _renderVariantesPaso()
+    }
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
