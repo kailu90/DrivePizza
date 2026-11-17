@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, BEBIDAS_GRUPOS, formatNombreBebida } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -253,12 +253,13 @@ function renderProductos(busqueda = '') {
     })
 
     resto.forEach(prod => {
+        const displayName = formatNombreBebida(prod.name)
         const card = document.createElement('div')
         card.className = 'ld-prod-card'
         card.innerHTML = `
             <div class="ld-prod-card__img"></div>
             <div class="ld-prod-card__body">
-                <span class="ld-prod-card__name">${prod.name}</span>
+                <span class="ld-prod-card__name">${displayName}</span>
                 <div class="ld-prod-card__foot">
                     <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
                     <button class="ld-prod-card__add">+</button>

@@ -79,9 +79,6 @@ export function esMigao(nombre) {
 }
 
 // ── Grupos de Bebidas ──────────────────────────────────────────────────────────
-// detectar(nombre)      → true si el producto pertenece al grupo
-// subgrupo(nombre)      → clave 2º nivel (marca…) — 2 pasos en modal
-// displayNombre(nombre) → etiqueta limpia en modal de 1 paso (ej. sabor sin tamaño)
 const _nb        = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 const _esGaseosa = n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETANA)/.test(_nb(n))
 const _saborGas  = n => { const m = n.match(/^(PEPSI CERO|COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETA[NÑ]A)/); return m?.[1] ?? n.split(' ')[0] }
@@ -93,36 +90,30 @@ const _saborHIT  = n => {
     if (n.includes('TROPICAL')) return 'Frutas Tropicales'
     return n.replace(/^HIT\s+[\d.]+\s*(ML|LTS?)\s*/i, '').trim() || n
 }
+const _tc        = s => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+const _tamanio   = n => { const m = n.match(/(\d+[.,]?\d*)\s*(ML|LTS?|LT)\b/i); return m ? `${m[1]} ${m[2].toUpperCase()}` : '' }
+
+// Formatea nombres de gaseosas e HIT para mostrar en la tarjeta del catálogo
+// Ej: "COLOMBIANA 400 ML POSTOBON" → "Gaseosa 400 ML - Colombiana"
+//     "HIT 500 ML MORA"            → "HIT 500 ML - Mora"
+export function formatNombreBebida(nombre) {
+    if (_esGaseosa(nombre)) {
+        const sabor  = _tc(_saborGas(nombre))
+        const tamano = _tamanio(nombre)
+        return tamano ? `Gaseosa ${tamano} - ${sabor}` : nombre
+    }
+    if (/^HIT\b/.test(nombre)) {
+        const sabor  = _saborHIT(nombre)
+        const tamano = _tamanio(nombre)
+        return tamano ? `HIT ${tamano} - ${sabor}` : nombre
+    }
+    return nombre
+}
 
 export const BEBIDAS_GRUPOS = [
     {
         nombre: 'Aguas',
         detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
-    },
-    {
-        nombre: 'HIT 500 ML',
-        detectar: n => /^HIT\b/.test(n) && /500\s*ML/i.test(n),
-        displayNombre: _saborHIT,
-    },
-    {
-        nombre: 'Gaseosas 400 ML',
-        detectar: n => _esGaseosa(n) && /400\s*ML/i.test(n),
-        displayNombre: _saborGas,
-    },
-    {
-        nombre: 'Gaseosas 1.5 Lts',
-        detectar: n => _esGaseosa(n) && /1[.,]5\s*(LTS?|LT)\b/i.test(n),
-        displayNombre: _saborGas,
-    },
-    {
-        nombre: 'Gaseosas 2.5 Lts',
-        detectar: n => _esGaseosa(n) && /2[.,]5\s*(LTS?|LT)\b/i.test(n),
-        displayNombre: _saborGas,
-    },
-    {
-        nombre: 'Gaseosas 3.125 Lts',
-        detectar: n => _esGaseosa(n) && /3[.,]125/i.test(n),
-        displayNombre: _saborGas,
     },
     {
         nombre: 'Hidratantes',
