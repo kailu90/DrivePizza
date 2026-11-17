@@ -126,3 +126,40 @@ body {
 }
 
 .ld-sel-volver:hover { color: var(--ld-marron, #75473B); }
+
+/* Estado activo para multi-selección */
+.ld-sel-opcion--activo {
+    border-color: var(--ld-marron, #75473B);
+    background: #edddc8;
+}
+
+/* Contador de selección (ej: "2 / 3 elegidos") */
+.ld-sel-contador {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ld-marron-suave, #a07060);
+    margin: -8px 0 12px;
+}
+
+/* Botón continuar al siguiente paso */
+.ld-sel-continuar {
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--ld-marron, #75473B);
+    color: var(--ld-beige, #F6EBE0);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.ld-sel-continuar:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.ld-sel-continuar:not(:disabled):hover { opacity: 0.85; }

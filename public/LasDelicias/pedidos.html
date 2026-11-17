@@ -541,6 +541,44 @@
     </div>
 </div>
 
+<!-- Modal selector Migao — 3 pasos -->
+<div class="ld-modal-bg" id="migaoModal">
+    <div class="ld-modal" style="max-width:420px">
+        <div class="ld-modal__hdr">
+            <span class="ld-modal__title">Migao</span>
+            <button class="ld-modal__close" id="migaoModal-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Paso 1: Quesos (multi-select, 3) -->
+        <div id="migaoModal-step1">
+            <p class="ld-sel-label">Elige 3 productos de queso</p>
+            <p class="ld-sel-contador" id="migaoModal-contador">0 / 3 elegidos</p>
+            <div class="ld-sel-opciones" id="migaoModal-quesos"></div>
+            <button class="ld-sel-continuar" id="migaoModal-continuar" disabled>Continuar →</button>
+        </div>
+
+        <!-- Paso 2: Galleta -->
+        <div id="migaoModal-step2" style="display:none">
+            <p class="ld-sel-badge" id="migaoModal-quesos-sel"></p>
+            <p class="ld-sel-label">¿Qué galleta prefieres?</p>
+            <div class="ld-sel-opciones" id="migaoModal-galletas"></div>
+            <button class="ld-sel-volver" id="migaoModal-back1">← Cambiar quesos</button>
+        </div>
+
+        <!-- Paso 3: Bebida -->
+        <div id="migaoModal-step3" style="display:none">
+            <p class="ld-sel-badge" id="migaoModal-galleta-sel"></p>
+            <p class="ld-sel-label">¿En qué lo preparamos?</p>
+            <div class="ld-sel-opciones" id="migaoModal-bebidas"></div>
+            <button class="ld-sel-volver" id="migaoModal-back2">← Cambiar galleta</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal selector Desayunos — 2 pasos -->
 <div class="ld-modal-bg" id="dsModal">
     <div class="ld-modal" style="max-width:420px">

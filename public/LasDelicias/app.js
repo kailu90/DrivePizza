@@ -67,3 +67,13 @@ export function esDesayuno(nombre) {
     const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     return norm.includes('desayun')
 }
+
+// ── Selector Migao — opciones ─────────────────────────────────────────────────
+export const MIGAO_QUESOS   = ['Buñuelo', 'Arepa', 'Pandequeso', 'Almojábana', 'Pandebono']
+export const MIGAO_GALLETAS = ['Ducales', 'Saltinas']
+export const MIGAO_BEBIDAS  = ['Café en agua', 'Café en leche', 'Chocolate en agua', 'Chocolate en leche']
+
+export function esMigao(nombre) {
+    const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    return norm.includes('migao')
+}

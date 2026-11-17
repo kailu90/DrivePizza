@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -161,9 +161,10 @@ function renderProductos(busqueda = '') {
     if (busqueda)   lista = lista.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()))
 
     const desayunosDB = lista.filter(p => esDesayuno(p.name))
-    const resto       = lista.filter(p => !esDesayuno(p.name))
+    const migaoDB     = lista.filter(p => esMigao(p.name))
+    const resto       = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name))
 
-    if (!desayunosDB.length && !resto.length) {
+    if (!desayunosDB.length && !migaoDB.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
@@ -184,6 +185,25 @@ function renderProductos(busqueda = '') {
             </div>
         `
         card.addEventListener('click', () => abrirSelectorDesayuno(desayunosDB))
+        grid.appendChild(card)
+    }
+
+    // Card única para Migao
+    if (migaoDB.length) {
+        const card = document.createElement('div')
+        card.className = 'ld-prod-card'
+        card.innerHTML = `
+            <div class="ld-prod-card__img"></div>
+            <div class="ld-prod-card__body">
+                <span class="ld-prod-card__name">Migao</span>
+                <span class="ld-prod-card__desc">3 productos de queso, porción de queso, galleta y bebida</span>
+                <div class="ld-prod-card__foot">
+                    <span class="ld-prod-card__precio">${formatPrecio(migaoDB[0].price)}</span>
+                    <button class="ld-prod-card__add">+</button>
+                </div>
+            </div>
+        `
+        card.addEventListener('click', () => abrirSelectorMigao(migaoDB))
         grid.appendChild(card)
     }
 
@@ -934,6 +954,109 @@ document.getElementById('dsModal-huevos').addEventListener('click', e => {
 document.getElementById('dsModal-bebidas').addEventListener('click', e => {
     const btn = e.target.closest('.ld-sel-opcion')
     if (btn) seleccionarBebida(btn.dataset.valor, Number(btn.dataset.delta))
+})
+
+// ── Selector Migao ────────────────────────────────────────────────────────────
+let _migaoProductos  = []
+let _migaoQuesos     = []   // hasta 3 seleccionados
+let _migaoGalleta    = null
+let _migaoPrecioBase = 0
+
+function abrirSelectorMigao(productos) {
+    _migaoProductos  = productos
+    _migaoQuesos     = []
+    _migaoGalleta    = null
+    _migaoPrecioBase = productos[0].price
+
+    _renderQuesosBtns()
+    document.getElementById('migaoModal-step1').style.display = ''
+    document.getElementById('migaoModal-step2').style.display = 'none'
+    document.getElementById('migaoModal-step3').style.display = 'none'
+    document.getElementById('migaoModal').classList.add('open')
+}
+
+function _renderQuesosBtns() {
+    document.getElementById('migaoModal-quesos').innerHTML =
+        MIGAO_QUESOS.map(q => {
+            const activo = _migaoQuesos.includes(q)
+            return `<button class="ld-sel-opcion${activo ? ' ld-sel-opcion--activo' : ''}" data-valor="${q}">
+                <span class="ld-sel-opcion__nombre">${q}</span>
+            </button>`
+        }).join('')
+    const cnt = _migaoQuesos.length
+    document.getElementById('migaoModal-contador').textContent = `${cnt} / 3 elegidos`
+    document.getElementById('migaoModal-continuar').disabled = cnt !== 3
+}
+
+function _toggleQueso(nombre) {
+    const idx = _migaoQuesos.indexOf(nombre)
+    if (idx !== -1) {
+        _migaoQuesos.splice(idx, 1)
+    } else if (_migaoQuesos.length < 3) {
+        _migaoQuesos.push(nombre)
+    }
+    _renderQuesosBtns()
+}
+
+function _migaoIrGalleta() {
+    document.getElementById('migaoModal-quesos-sel').textContent = _migaoQuesos.join(' · ')
+    document.getElementById('migaoModal-galletas').innerHTML =
+        MIGAO_GALLETAS.map(g =>
+            `<button class="ld-sel-opcion" data-valor="${g}">
+                <span class="ld-sel-opcion__nombre">${g}</span>
+            </button>`
+        ).join('')
+    document.getElementById('migaoModal-step1').style.display = 'none'
+    document.getElementById('migaoModal-step2').style.display = ''
+}
+
+function _migaoSelGalleta(galleta) {
+    _migaoGalleta = galleta
+    document.getElementById('migaoModal-galleta-sel').textContent =
+        `${_migaoQuesos.join(', ')} · ${galleta}`
+    document.getElementById('migaoModal-bebidas').innerHTML =
+        MIGAO_BEBIDAS.map(b =>
+            `<button class="ld-sel-opcion" data-valor="${b}">
+                <span class="ld-sel-opcion__nombre">${b}</span>
+            </button>`
+        ).join('')
+    document.getElementById('migaoModal-step2').style.display = 'none'
+    document.getElementById('migaoModal-step3').style.display = ''
+}
+
+function _migaoSelBebida(bebida) {
+    const prod   = _migaoProductos[0]
+    const nombre = `Migao · ${_migaoQuesos.join(', ')} · ${_migaoGalleta} · ${bebida}`
+    agregarAlCarrito({ id: prod.id, name: nombre, price: _migaoPrecioBase })
+    document.getElementById('migaoModal').classList.remove('open')
+}
+
+document.getElementById('migaoModal-close').addEventListener('click', () =>
+    document.getElementById('migaoModal').classList.remove('open')
+)
+document.getElementById('migaoModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('migaoModal').classList.remove('open')
+})
+document.getElementById('migaoModal-continuar').addEventListener('click', _migaoIrGalleta)
+document.getElementById('migaoModal-back1').addEventListener('click', () => {
+    document.getElementById('migaoModal-step1').style.display = ''
+    document.getElementById('migaoModal-step2').style.display = 'none'
+})
+document.getElementById('migaoModal-back2').addEventListener('click', () => {
+    document.getElementById('migaoModal-step2').style.display = ''
+    document.getElementById('migaoModal-step3').style.display = 'none'
+})
+document.getElementById('migaoModal-quesos').addEventListener('click', e => {
+    const btn = e.target.closest('.ld-sel-opcion[data-valor]')
+    if (btn) _toggleQueso(btn.dataset.valor)
+})
+document.getElementById('migaoModal-galletas').addEventListener('click', e => {
+    const btn = e.target.closest('.ld-sel-opcion[data-valor]')
+    if (btn) _migaoSelGalleta(btn.dataset.valor)
+})
+document.getElementById('migaoModal-bebidas').addEventListener('click', e => {
+    const btn = e.target.closest('.ld-sel-opcion[data-valor]')
+    if (btn) _migaoSelBebida(btn.dataset.valor)
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
