@@ -167,7 +167,7 @@ export const LD_BEBIDAS_GRUPOS = [
 const _nb      = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 const _tc      = s => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
 const _tamanio = n => { const m = n.match(/(\d+[.,]?\d*)\s*(ML|LTS?|LT)\b/i); return m ? `${m[1]} ${m[2].toUpperCase()}` : '' }
-const _esGas   = n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETANA)/.test(_nb(n))
+const _esGas   = n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP)/.test(_nb(n))
 const _saborG  = n => { const m = n.match(/^(PEPSI CERO|COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETA[NÑ]A)/); return _tc(m?.[1] ?? n.split(' ')[0]) }
 const _saborH  = n => {
     if (n.includes('LULO'))     return 'Lulo'
