@@ -99,7 +99,6 @@ export const LD_BEBIDAS_GRUPOS = [
             'Manzana':    'MANZANA 1.5 LTS',
             'Naranja':    'NARANJA POSTOBON 1.5 LT',
             'Pepsi':      'PEPSI 1.5 LTS',
-            'Tamarindo':  'TAMARINDO 1.5 LTS POSTOBON',
             'Uva':        'UVA 1.5 LTS POSTOBON',
         },
     },
