@@ -2,7 +2,7 @@ import { supabase } from './supabaseConfig.js'
 import { mostrarOverlay, ocultarOverlay } from './overlay.js'
 import { upsertClienteLd } from './clientesLd.js'
 import { badgeEstado } from '../Shared/badges.js'
-import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS, esAdicion } from './app.js'
+import { catIcon, TODOS_SVG, esDesayuno, DESAYUNO_HUEVOS, DESAYUNO_BEBIDAS, esMigao, MIGAO_QUESOS, MIGAO_GALLETAS, MIGAO_BEBIDAS } from './app.js'
 
 // Modo drawer: cargado desde panaderias-shell como panel lateral
 const IS_DRAWER   = new URLSearchParams(location.search).has('drawer')
@@ -162,10 +162,9 @@ function renderProductos(busqueda = '') {
 
     const desayunosDB = lista.filter(p => esDesayuno(p.name))
     const migaoDB     = lista.filter(p => esMigao(p.name))
-    const adicionesDB = lista.filter(p => esAdicion(p.name))
-    const resto       = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name) && !esAdicion(p.name))
+    const resto       = lista.filter(p => !esDesayuno(p.name) && !esMigao(p.name))
 
-    if (!desayunosDB.length && !migaoDB.length && !adicionesDB.length && !resto.length) {
+    if (!desayunosDB.length && !migaoDB.length && !resto.length) {
         grid.innerHTML = '<p class="ld-empty">Sin productos</p>'
         return
     }
@@ -205,25 +204,6 @@ function renderProductos(busqueda = '') {
             </div>
         `
         card.addEventListener('click', () => abrirSelectorMigao(migaoDB))
-        grid.appendChild(card)
-    }
-
-    // Card única para Adiciones
-    if (adicionesDB.length) {
-        const card = document.createElement('div')
-        card.className = 'ld-prod-card'
-        card.innerHTML = `
-            <div class="ld-prod-card__img"></div>
-            <div class="ld-prod-card__body">
-                <span class="ld-prod-card__name">Adiciones</span>
-                <span class="ld-prod-card__desc">Quesillo, queso cuajada, huevo adicional y más</span>
-                <div class="ld-prod-card__foot">
-                    <span class="ld-prod-card__precio">Desde ${formatPrecio(Math.min(...adicionesDB.map(p => p.price)))}</span>
-                    <button class="ld-prod-card__add">+</button>
-                </div>
-            </div>
-        `
-        card.addEventListener('click', () => abrirSelectorAdicion(adicionesDB))
         grid.appendChild(card)
     }
 
@@ -1077,37 +1057,6 @@ document.getElementById('migaoModal-galletas').addEventListener('click', e => {
 document.getElementById('migaoModal-bebidas').addEventListener('click', e => {
     const btn = e.target.closest('.ld-sel-opcion[data-valor]')
     if (btn) _migaoSelBebida(btn.dataset.valor)
-})
-
-// ── Selector Adiciones ────────────────────────────────────────────────────────
-let _adicionProductos = []
-
-function abrirSelectorAdicion(productos) {
-    _adicionProductos = productos
-    const grid = document.getElementById('adicionModal-opciones')
-    grid.innerHTML = ''
-    productos.forEach(prod => {
-        const btn = document.createElement('button')
-        btn.className = 'ld-sel-opcion'
-        btn.dataset.id = prod.id
-        btn.innerHTML = `
-            <span class="ld-sel-opcion__nombre">${prod.name}</span>
-            <span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>
-        `
-        btn.addEventListener('click', () => {
-            agregarAlCarrito(prod)
-            document.getElementById('adicionModal').classList.remove('open')
-        })
-        grid.appendChild(btn)
-    })
-    document.getElementById('adicionModal').classList.add('open')
-}
-
-document.getElementById('adicionModal-close').addEventListener('click', () =>
-    document.getElementById('adicionModal').classList.remove('open')
-)
-document.getElementById('adicionModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) document.getElementById('adicionModal').classList.remove('open')
 })
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

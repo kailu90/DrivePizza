@@ -77,8 +77,3 @@ export function esMigao(nombre) {
     const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     return norm.includes('migao')
 }
-
-export function esAdicion(nombre) {
-    const norm = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    return norm.includes('adicion')
-}
