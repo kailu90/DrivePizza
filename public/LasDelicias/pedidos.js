@@ -878,10 +878,10 @@ function abrirSelectorDesayuno(productos) {
 
     document.getElementById('dsModal-huevos').innerHTML =
         DESAYUNO_HUEVOS.map(h => `
-            <button class="ds-opcion-btn" data-valor="${h.nombre}" data-delta="${h.delta}">
-                <span class="ds-opcion-nombre">${h.nombre}</span>
-                ${h.desc ? `<span class="ds-opcion-desc">${h.desc}</span>` : ''}
-                <span class="ds-opcion-precio">${formatPrecio(_dsPrecioBase + h.delta)}</span>
+            <button class="ld-sel-opcion" data-valor="${h.nombre}" data-delta="${h.delta}">
+                <span class="ld-sel-opcion__nombre">${h.nombre}</span>
+                ${h.desc ? `<span class="ld-sel-opcion__desc">${h.desc}</span>` : ''}
+                <span class="ld-sel-opcion__precio">${formatPrecio(_dsPrecioBase + h.delta)}</span>
             </button>`).join('')
 
     document.getElementById('dsModal-step1').style.display = ''
@@ -895,7 +895,7 @@ function seleccionarHuevo(huevo, delta) {
     document.getElementById('dsModal-huevo-sel').textContent = huevo
 
     document.getElementById('dsModal-bebidas').innerHTML =
-        DESAYUNO_BEBIDAS.map(b => `<button class="ds-opcion-btn" data-valor="${b}">${b}</button>`).join('')
+        DESAYUNO_BEBIDAS.map(b => `<button class="ld-sel-opcion" data-valor="${b}">${b}</button>`).join('')
 
     document.getElementById('dsModal-step1').style.display = 'none'
     document.getElementById('dsModal-step2').style.display = ''
@@ -924,11 +924,11 @@ document.getElementById('dsModal-back').addEventListener('click', () => {
     document.getElementById('dsModal-step2').style.display = 'none'
 })
 document.getElementById('dsModal-huevos').addEventListener('click', e => {
-    const btn = e.target.closest('.ds-opcion-btn')
+    const btn = e.target.closest('.ld-sel-opcion')
     if (btn) seleccionarHuevo(btn.dataset.valor, Number(btn.dataset.delta))
 })
 document.getElementById('dsModal-bebidas').addEventListener('click', e => {
-    const btn = e.target.closest('.ds-opcion-btn')
+    const btn = e.target.closest('.ld-sel-opcion')
     if (btn) seleccionarBebida(btn.dataset.valor)
 })
 

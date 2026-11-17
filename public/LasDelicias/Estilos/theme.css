@@ -34,3 +34,95 @@
 body {
     font-family: 'Montserrat', sans-serif;
 }
+
+/* ── Selector de variantes (reutilizable) ────────────────────────────────────
+   Usar en cualquier modal de selección con opciones en cuadros.
+   Estructura:
+     .ld-sel-label        → título del paso
+     .ld-sel-badge        → resumen de selección previa
+     .ld-sel-opciones     → grid 2 columnas contenedor
+     .ld-sel-opcion       → botón cuadro individual
+       .ld-sel-opcion__nombre  → nombre principal
+       .ld-sel-opcion__desc    → descripción secundaria (opcional)
+       .ld-sel-opcion__precio  → precio (opcional)
+     .ld-sel-volver       → botón "← volver"
+   ─────────────────────────────────────────────────────────────────────────── */
+.ld-sel-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ld-marron, #75473B);
+    margin: 0 0 12px;
+}
+
+.ld-sel-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ld-marron, #75473B);
+    background: var(--ld-beige, #F6EBE0);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 0 0 14px;
+}
+
+.ld-sel-opciones {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.ld-sel-opcion {
+    min-height: 72px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    background: var(--ld-beige, #F6EBE0);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.ld-sel-opcion:hover {
+    border-color: var(--ld-marron, #75473B);
+    background: #edddc8;
+    transform: translateY(-1px);
+}
+
+.ld-sel-opcion:active { transform: translateY(0); }
+
+.ld-sel-opcion__nombre {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ld-marron-oscuro, #4e2e24);
+    line-height: 1.3;
+}
+
+.ld-sel-opcion__desc {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--ld-marron-suave, #a07060);
+}
+
+.ld-sel-opcion__precio {
+    margin-top: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ld-marron, #75473B);
+    align-self: flex-end;
+}
+
+.ld-sel-volver {
+    margin-top: 14px;
+    background: none;
+    border: none;
+    color: var(--ld-marron-suave, #a07060);
+    font-size: 12px;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.ld-sel-volver:hover { color: var(--ld-marron, #75473B); }
