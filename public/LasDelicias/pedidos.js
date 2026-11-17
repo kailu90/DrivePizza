@@ -232,7 +232,8 @@ function renderProductos(busqueda = '') {
                 </div>
             </div>
         `
-        // Si tiene subgrupo → 2 niveles (sabor → tamaño); si no → lista plana
+        // subgrupo → 2 niveles (marca → variedad)
+        // displayNombre → 1 nivel con etiqueta limpia (ej. sabor sin tamaño)
         let items
         if (g.subgrupo) {
             const map = {}
@@ -243,7 +244,9 @@ function renderProductos(busqueda = '') {
             }
             items = Object.values(map)
         } else {
-            items = g.productos
+            items = g.displayNombre
+                ? g.productos.map(p => ({ ...p, displayName: g.displayNombre(p.name) }))
+                : g.productos
         }
         card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
         grid.appendChild(card)
@@ -1143,7 +1146,7 @@ function _renderVariantesPaso() {
             const btn = document.createElement('button')
             btn.className = 'ld-sel-opcion'
             btn.innerHTML = `
-                <span class="ld-sel-opcion__nombre">${prod.name}</span>
+                <span class="ld-sel-opcion__nombre">${prod.displayName ?? prod.name}</span>
                 <span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>
             `
             btn.addEventListener('click', () => {

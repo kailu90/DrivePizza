@@ -79,9 +79,20 @@ export function esMigao(nombre) {
 }
 
 // ── Grupos de Bebidas ──────────────────────────────────────────────────────────
-// detectar(nombre) → true si el producto pertenece al grupo
-// subgrupo(nombre) → clave de agrupación de 2º nivel (sabor, marca…)
-const _nb = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+// detectar(nombre)      → true si el producto pertenece al grupo
+// subgrupo(nombre)      → clave 2º nivel (marca…) — 2 pasos en modal
+// displayNombre(nombre) → etiqueta limpia en modal de 1 paso (ej. sabor sin tamaño)
+const _nb        = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const _esGaseosa = n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETANA)/.test(_nb(n))
+const _saborGas  = n => { const m = n.match(/^(PEPSI CERO|COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETA[NÑ]A)/); return m?.[1] ?? n.split(' ')[0] }
+const _saborHIT  = n => {
+    if (n.includes('LULO'))     return 'Lulo'
+    if (n.includes('MORA'))     return 'Mora'
+    if (n.includes('MANGO'))    return 'Mango'
+    if (n.includes('NARANJA'))  return 'Naranja Piña'
+    if (n.includes('TROPICAL')) return 'Frutas Tropicales'
+    return n.replace(/^HIT\s+[\d.]+\s*(ML|LTS?)\s*/i, '').trim() || n
+}
 
 export const BEBIDAS_GRUPOS = [
     {
@@ -89,24 +100,29 @@ export const BEBIDAS_GRUPOS = [
         detectar: n => /^AGUA (CRISTAL|HATSU)/.test(n),
     },
     {
-        nombre: 'Gaseosas',
-        detectar: n => /^(COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETANA)/.test(_nb(n)),
-        subgrupo: n => {
-            const m = n.match(/^(PEPSI CERO|COLOMBIANA|MANZANA|NARANJA|PEPSI|TAMARINDO|UVA|SEVEN UP|BRETA[NÑ]A)/)
-            return m?.[1] ?? n.split(' ')[0]
-        },
+        nombre: 'HIT 500 ML',
+        detectar: n => /^HIT\b/.test(n) && /500\s*ML/i.test(n),
+        displayNombre: _saborHIT,
     },
     {
-        nombre: 'Jugos HIT',
-        detectar: n => /^HIT\b/.test(n),
-        subgrupo: n => {
-            if (n.includes('LULO'))     return 'Lulo'
-            if (n.includes('MORA'))     return 'Mora'
-            if (n.includes('MANGO'))    return 'Mango'
-            if (n.includes('NARANJA'))  return 'Naranja Piña'
-            if (n.includes('TROPICAL')) return 'Frutas Tropicales'
-            return n.replace(/^HIT\s+[\d.]+\s*(ML|LTS?)\s*/i, '').trim() || n
-        },
+        nombre: 'Gaseosas 400 ML',
+        detectar: n => _esGaseosa(n) && /400\s*ML/i.test(n),
+        displayNombre: _saborGas,
+    },
+    {
+        nombre: 'Gaseosas 1.5 Lts',
+        detectar: n => _esGaseosa(n) && /1[.,]5\s*(LTS?|LT)\b/i.test(n),
+        displayNombre: _saborGas,
+    },
+    {
+        nombre: 'Gaseosas 2.5 Lts',
+        detectar: n => _esGaseosa(n) && /2[.,]5\s*(LTS?|LT)\b/i.test(n),
+        displayNombre: _saborGas,
+    },
+    {
+        nombre: 'Gaseosas 3.125 Lts',
+        detectar: n => _esGaseosa(n) && /3[.,]125/i.test(n),
+        displayNombre: _saborGas,
     },
     {
         nombre: 'Hidratantes',
