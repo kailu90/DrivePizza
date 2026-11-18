@@ -38,6 +38,7 @@ body { display: flex; flex-direction: column; }
     font-weight: 700;
     flex: 1;
     white-space: nowrap;
+    text-align: right;
 }
 
 .ap-search-wrap {
