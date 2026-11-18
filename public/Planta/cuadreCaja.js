@@ -484,6 +484,61 @@ function _abrirDialogLiquidacion() {
     _cargarLiqPreview();
 }
 
+/**
+ * Fuente única de verdad para liquidaciones.
+ * Consulta pedidos_planta + movimientos (Devolución) de un mes completo,
+ * acumula totales por (semanaIdx, sede) y devuelve { semanas, dataPorSemana }.
+ * Usada tanto por el diálogo de importación como por la vista Ventas por Sede.
+ */
+async function _calcularLiquidacionMes(year, month) {
+    const semanas  = _semanasDelMes(year, month);
+    const desdeISO = _toISO(semanas[0].desde);
+    const hastaISO = _toISO(semanas[semanas.length - 1].hasta);
+
+    const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
+        supabase
+            .from('pedidos_planta')
+            .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
+            .gte('delivery_date', desdeISO)
+            .lte('delivery_date', hastaISO),
+        supabase
+            .from('movimientos')
+            .select('sede, valor_total, subtipo, fecha')
+            .eq('tipo', 'Devolución')
+            .gte('fecha', colFechaToUTC(desdeISO, 'inicio'))
+            .lte('fecha', colFechaToUTC(hastaISO, 'fin')),
+    ]);
+
+    if (errP) throw errP;
+    if (errD) throw errD;
+
+    const dataPorSemana = semanas.map(() => ({}));
+
+    pedidosLiquidables(rawPedidos || []).forEach(p => {
+        if (!p.delivery_date) return;
+        const sede = (p.user_sede || 'sin sede').toLowerCase();
+        if (sede === 'planta producción' || sede === 'planta') return;
+        const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
+        if (idx === -1) return;
+        if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+        dataPorSemana[idx][sede].totalPed += (p.total || 0);
+    });
+
+    devolucionesLiquidables(rawDevs || []).forEach(d => {
+        if (!d.fecha) return;
+        const sede = d.sede ? d.sede.toLowerCase() : null;
+        if (!sede) return;
+        const fechaCol = new Date(new Date(d.fecha).getTime() - 5 * 3600 * 1000);
+        const fechaISO = `${fechaCol.getUTCFullYear()}-${String(fechaCol.getUTCMonth() + 1).padStart(2, '0')}-${String(fechaCol.getUTCDate()).padStart(2, '0')}`;
+        const idx = _semanaIdxParaFecha(fechaISO, semanas);
+        if (idx === -1) return;
+        if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+        dataPorSemana[idx][sede].totalDev += (d.valor_total || 0);
+    });
+
+    return { semanas, dataPorSemana };
+}
+
 async function _cargarLiqPreview() {
     const contenido   = document.getElementById('caj-liq-contenido');
     const btnImportar = document.getElementById('caj-liq-importar');
@@ -498,55 +553,10 @@ async function _cargarLiqPreview() {
     document.getElementById('caj-liq-label').textContent =
         `${MESES_N[_liqMonth - 1]} ${_liqYear}`;
 
-    // Calcular todas las semanas del mes
-    const semanas  = _semanasDelMes(_liqYear, _liqMonth);
-    const desdeISO = _toISO(semanas[0].desde);
-    const hastaISO = _toISO(semanas[semanas.length - 1].hasta);
-    const mesNum   = String(_liqMonth).padStart(2, '0');
+    const mesNum = String(_liqMonth).padStart(2, '0');
 
     try {
-        const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
-            supabase
-                .from('pedidos_planta')
-                .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
-                .gte('delivery_date', desdeISO)
-                .lte('delivery_date', hastaISO),
-            supabase
-                .from('movimientos')
-                .select('sede, valor_total, subtipo, fecha')
-                .eq('tipo', 'Devolución')
-                .gte('fecha', colFechaToUTC(desdeISO, 'inicio'))
-                .lte('fecha', colFechaToUTC(hastaISO, 'fin')),
-        ]);
-
-        if (errP) throw errP;
-        if (errD) throw errD;
-
-        // Acumular pedidos y devoluciones por (semanaIdx, sede)
-        const dataPorSemana = semanas.map(() => ({}));
-
-        pedidosLiquidables(rawPedidos || []).forEach(p => {
-            if (!p.delivery_date) return;
-            const sede = (p.user_sede || 'sin sede').toLowerCase();
-            if (sede === 'planta producción' || sede === 'planta') return;
-            const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
-            if (idx === -1) return;
-            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
-            dataPorSemana[idx][sede].totalPed += (p.total || 0);
-        });
-
-        devolucionesLiquidables(rawDevs || []).forEach(d => {
-            if (!d.fecha) return;
-            const sede = d.sede ? d.sede.toLowerCase() : null;
-            if (!sede) return;
-            // Convertir timestamp UTC a fecha Colombia (UTC-5)
-            const fechaCol = new Date(new Date(d.fecha).getTime() - 5 * 3600 * 1000);
-            const fechaISO = `${fechaCol.getUTCFullYear()}-${String(fechaCol.getUTCMonth() + 1).padStart(2, '0')}-${String(fechaCol.getUTCDate()).padStart(2, '0')}`;
-            const idx = _semanaIdxParaFecha(fechaISO, semanas);
-            if (idx === -1) return;
-            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
-            dataPorSemana[idx][sede].totalDev += (d.valor_total || 0);
-        });
+        const { semanas, dataPorSemana } = await _calcularLiquidacionMes(_liqYear, _liqMonth);
 
         // Construir _liqDatos: una fila por (semana, sede) con datos
         _liqDatos = [];
@@ -998,28 +1008,17 @@ async function _cargarVentas() {
     const contenido = document.getElementById('caj-ventas-contenido');
     contenido.innerHTML = '<p class="caj-empty">Cargando...</p>';
 
-    const semanas  = _semanasDelMes(_periodo.year, _periodo.month);
-    const desdeISO = _toISO(semanas[0].desde);
-    const hastaISO = _toISO(semanas[semanas.length - 1].hasta);
+    const _semPrev = _semanasDelMes(_periodo.year, _periodo.month);
+    const desdeISO = _toISO(_semPrev[0].desde);
+    const hastaISO = _toISO(_semPrev[_semPrev.length - 1].hasta);
     const mesNum   = String(_periodo.month).padStart(2, '0');
 
     try {
         const [
-            { data: rawPedidos, error: errP },
-            { data: rawDevs,    error: errD },
-            { data: movReg,     error: errM },
+            { semanas, dataPorSemana },
+            { data: movReg, error: errM },
         ] = await Promise.all([
-            supabase
-                .from('pedidos_planta')
-                .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
-                .gte('delivery_date', desdeISO)
-                .lte('delivery_date', hastaISO),
-            supabase
-                .from('movimientos')
-                .select('sede, valor_total, subtipo, fecha')
-                .eq('tipo', 'Devolución')
-                .gte('fecha', colFechaToUTC(desdeISO, 'inicio'))
-                .lte('fecha', colFechaToUTC(hastaISO, 'fin')),
+            _calcularLiquidacionMes(_periodo.year, _periodo.month),
             supabase
                 .from('caja_movimientos')
                 .select('id, sede, periodo_ref, estado, monto')
@@ -1029,37 +1028,7 @@ async function _cargarVentas() {
                 .lte('fecha', hastaISO),
         ]);
 
-        if (errP) throw errP;
-        if (errD) throw errD;
         if (errM) throw errM;
-
-        // Acumular pedidos y devoluciones por (semanaIdx, sede)
-        // Solo se cuentan pedidos con status 'entregado': parciales en la semana en curso
-        const dataPorSemana = semanas.map(() => ({}));
-
-        pedidosLiquidables(rawPedidos || [])
-            .filter(p => p.status === 'entregado')
-            .forEach(p => {
-                if (!p.delivery_date) return;
-                const sede = (p.user_sede || 'sin sede').toLowerCase();
-                if (sede === 'planta producción' || sede === 'planta') return;
-                const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
-                if (idx === -1) return;
-                if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
-                dataPorSemana[idx][sede].totalPed += (p.total || 0);
-            });
-
-        devolucionesLiquidables(rawDevs || []).forEach(d => {
-            if (!d.fecha) return;
-            const sede = d.sede ? d.sede.toLowerCase() : null;
-            if (!sede) return;
-            const fechaCol = new Date(new Date(d.fecha).getTime() - 5 * 3600 * 1000);
-            const fechaISO = `${fechaCol.getUTCFullYear()}-${String(fechaCol.getUTCMonth() + 1).padStart(2, '0')}-${String(fechaCol.getUTCDate()).padStart(2, '0')}`;
-            const idx = _semanaIdxParaFecha(fechaISO, semanas);
-            if (idx === -1) return;
-            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
-            dataPorSemana[idx][sede].totalDev += (d.valor_total || 0);
-        });
 
         // Mapa de registros ya importados: 'periodoRef|sede' → { id, estado }
         const movMap = {};
