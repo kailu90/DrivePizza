@@ -399,7 +399,7 @@ function renderProducts(categoria) {
             const sedeActiva  = document.querySelector('.sede-toggle .sede-btn.active')?.dataset.sede || '';
             const esSedeValida = SEDES_PROMO_2X1_CTG.has(sedeActiva);
             const esActivo2x1  = (!sedeActiva || esSedeValida) && esMarJue;
-            const esActivoLas  = esSedeValida ? esLunMieVie : false;
+            const esActivoLas  = (!sedeActiva || esSedeValida) && esLunMieVie;
             const msgSede = '⚠️ Solo sede CC Nuestro';
             grid.innerHTML = `
                 <div class="card card-promo ${esActivo2x1 ? '' : 'card-promo--inactiva'}" onclick="${esActivo2x1 ? 'abrirPromo2x1Ctg()' : ''}">
