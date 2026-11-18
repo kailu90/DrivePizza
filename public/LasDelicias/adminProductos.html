@@ -25,6 +25,12 @@
             </svg>
             <input type="search" class="ap-search" id="ap-search" placeholder="Buscar producto..." autocomplete="off">
         </div>
+        <button class="ap-btn-nuevo" id="ap-btn-nuevo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nuevo
+        </button>
         <button class="ap-btn-actualizar" id="ap-btn-actualizar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"/>
@@ -92,6 +98,18 @@
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
             </button>
+        </div>
+
+        <!-- Nombre -->
+        <div class="ap-mod-field">
+            <label class="ap-mod-label" for="ap-mod-name">Nombre</label>
+            <input type="text" id="ap-mod-name" class="ap-mod-input" placeholder="Nombre del producto" autocomplete="off">
+        </div>
+
+        <!-- Subgrupo -->
+        <div class="ap-mod-field">
+            <label class="ap-mod-label" for="ap-mod-subgrupo">Subgrupo <span style="font-weight:500;opacity:.65">(opcional)</span></label>
+            <input type="text" id="ap-mod-subgrupo" class="ap-mod-input" placeholder="Ej: Gaseosa, Pizza personal..." autocomplete="off">
         </div>
 
         <!-- Categoría -->

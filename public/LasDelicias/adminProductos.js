@@ -177,21 +177,44 @@ document.getElementById('ap-tbody').addEventListener('change', async e => {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function _abrirModal(prod) {
     _editando = { ...prod }
-    const cm  = catMap()
 
-    document.getElementById('ap-mod-nombre').textContent = prod.name
+    document.getElementById('ap-mod-nombre').textContent    = 'Editar producto'
+    document.getElementById('ap-mod-name').value            = prod.name
+    document.getElementById('ap-mod-subgrupo').value        = prod.subgrupo || ''
 
     const catSel = document.getElementById('ap-mod-cat')
     catSel.innerHTML = _categorias.map(c =>
         `<option value="${c.id_category}"${c.id_category === prod.id_category ? ' selected' : ''}>${c.name}</option>`
     ).join('')
 
-    document.getElementById('ap-mod-precio').value       = prod.price
-    document.getElementById('ap-mod-activo').checked     = prod.active
-    document.getElementById('ap-mod-error').style.display = 'none'
-    document.getElementById('ap-mod-guardar').disabled   = false
+    document.getElementById('ap-mod-precio').value          = prod.price
+    document.getElementById('ap-mod-activo').checked        = prod.active
+    document.getElementById('ap-mod-agotado').checked       = prod.stock !== null && prod.stock === 0
+    document.getElementById('ap-mod-error').style.display  = 'none'
+    document.getElementById('ap-mod-guardar').disabled      = false
+    document.getElementById('ap-mod-guardar').textContent   = 'Guardar cambios'
 
-    document.getElementById('ap-mod-agotado').checked = prod.stock !== null && prod.stock === 0
+    document.getElementById('apModal').classList.add('open')
+}
+
+function _abrirModalNuevo() {
+    _editando = {}  // sin id = modo creación
+
+    document.getElementById('ap-mod-nombre').textContent    = 'Nuevo producto'
+    document.getElementById('ap-mod-name').value            = ''
+    document.getElementById('ap-mod-subgrupo').value        = ''
+
+    const catSel = document.getElementById('ap-mod-cat')
+    catSel.innerHTML = _categorias.map(c =>
+        `<option value="${c.id_category}">${c.name}</option>`
+    ).join('')
+
+    document.getElementById('ap-mod-precio').value          = ''
+    document.getElementById('ap-mod-activo').checked        = true
+    document.getElementById('ap-mod-agotado').checked       = false
+    document.getElementById('ap-mod-error').style.display  = 'none'
+    document.getElementById('ap-mod-guardar').disabled      = false
+    document.getElementById('ap-mod-guardar').textContent   = 'Crear producto'
 
     document.getElementById('apModal').classList.add('open')
 }
@@ -204,6 +227,8 @@ function _cerrarModal() {
 async function _guardarCambios() {
     if (!_editando) return
 
+    const nombre      = document.getElementById('ap-mod-name').value.trim()
+    const subgrupo    = document.getElementById('ap-mod-subgrupo').value.trim()
     const precio      = Number(document.getElementById('ap-mod-precio').value)
     const idCategoria = Number(document.getElementById('ap-mod-cat').value)
     const activo      = document.getElementById('ap-mod-activo').checked
@@ -212,33 +237,55 @@ async function _guardarCambios() {
     const errorEl = document.getElementById('ap-mod-error')
     errorEl.style.display = 'none'
 
+    if (!nombre) {
+        errorEl.textContent   = 'El nombre es obligatorio.'
+        errorEl.style.display = 'block'
+        return
+    }
     if (!precio || precio <= 0) {
         errorEl.textContent   = 'El precio debe ser mayor a 0.'
         errorEl.style.display = 'block'
         return
     }
 
-    const stock = agotado ? 0 : null
+    const stock   = agotado ? 0 : null
+    const payload = { name: nombre, price: precio, id_category: idCategoria, active: activo, stock, subgrupo: subgrupo || null }
 
     const btnGuardar = document.getElementById('ap-mod-guardar')
     btnGuardar.disabled = true
 
     try {
-        const { data: updated, error } = await supabase
-            .from('productos')
-            .update({ price: precio, id_category: idCategoria, active: activo, stock })
-            .eq('id', _editando.id)
-            .select('id, price, id_category, active, stock')
-        if (error) throw error
-        if (!updated || updated.length === 0) throw new Error('Sin filas actualizadas — revisa RLS o permisos de columna.')
+        if (_editando.id) {
+            // ── Actualizar existente ───────────────────────────
+            const { data: updated, error } = await supabase
+                .from('productos')
+                .update(payload)
+                .eq('id', _editando.id)
+                .select('id, name, price, id_category, active, stock, subgrupo, variante_display')
+            if (error) throw error
+            if (!updated || updated.length === 0) throw new Error('Sin filas actualizadas — revisa RLS o permisos de columna.')
 
-        const idx = _productos.findIndex(p => p.id === _editando.id)
-        if (idx !== -1) _productos[idx] = { ..._productos[idx], price: precio, id_category: idCategoria, active: activo, stock }
+            const idx = _productos.findIndex(p => p.id === _editando.id)
+            if (idx !== -1) _productos[idx] = updated[0]
 
-        _cerrarModal()
-        _renderTabla()
-        _actualizarStats()
-        _mostrarToast('Cambios guardados')
+            _cerrarModal()
+            _renderTabla()
+            _actualizarStats()
+            _mostrarToast('Cambios guardados')
+        } else {
+            // ── Crear nuevo ────────────────────────────────────
+            const { data: nuevo, error } = await supabase
+                .from('productos')
+                .insert(payload)
+                .select('id, name, price, id_category, active, stock, subgrupo, variante_display')
+            if (error) throw error
+
+            _productos.push(nuevo[0])
+            _cerrarModal()
+            _renderTabla()
+            _actualizarStats()
+            _mostrarToast('Producto creado')
+        }
     } catch (err) {
         console.error('[adminProductos] guardar:', err)
         errorEl.textContent   = err.message || 'Error al guardar.'
@@ -261,6 +308,7 @@ function _mostrarToast(msg, esError = false) {
 // ── Listeners ─────────────────────────────────────────────────────────────────
 document.getElementById('ap-search').addEventListener('input', _renderTabla)
 
+document.getElementById('ap-btn-nuevo').addEventListener('click', _abrirModalNuevo)
 document.getElementById('ap-btn-actualizar').addEventListener('click', _recargar)
 
 document.getElementById('ap-mod-cerrar').addEventListener('click', _cerrarModal)

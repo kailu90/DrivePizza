@@ -87,6 +87,26 @@ body { display: flex; flex-direction: column; }
 .ap-btn-actualizar svg { width: 14px; height: 14px; }
 .ap-btn-actualizar:hover { background: rgba(255,255,255,0.24); }
 
+.ap-btn-nuevo {
+    background: var(--ld-beige, #F6EBE0);
+    border: none;
+    color: var(--ld-marron-oscuro, #4e2e24);
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.ap-btn-nuevo svg { width: 14px; height: 14px; }
+.ap-btn-nuevo:hover { background: #eddfc8; }
+
 /* ── Stats ────────────────────────────────────────────── */
 .ap-stats {
     display: flex;
