@@ -418,9 +418,8 @@ function renderProducts(categoria) {
             return;
         }
         // ── BUCARAMANGA ─────────────────────────────────────────────────────
-        const esMartes = true ; // forzado — promo 3×2 activa todos los días mientras esté vigente
-        const _hoyB = new Date();
-        const esFechaBerrionda = _hoyB.getFullYear() === 2026 && _hoyB.getMonth() === 6 && (_hoyB.getDate() === 22 || _hoyB.getDate() === 23);
+        const _hoyB   = new Date();
+        const esMartes = _hoyB.getDay() === 2; // 0=Dom 1=Lun 2=Mar …
         grid.innerHTML = `
             <div class="card card-promo ${esMartes ? '' : 'card-promo--inactiva'}" onclick="${esMartes ? 'abrirPromo3x2()' : ''}">
                 <div class="promo-badge">MARTES</div>
