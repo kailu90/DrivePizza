@@ -87,10 +87,9 @@ async function cargarCategorias() {
 async function cargarProductos() {
     const { data } = await supabase
         .from('productos')
-        .select('id, name, price, id_category, subgrupo, variante_display')
+        .select('id, name, price, id_category, subgrupo, variante_display, stock')
         .eq('active', true)
         .gt('price', 0)
-        .or('stock.is.null,stock.gt.0')
         .order('name')
     if (!data) return
     _productos = data
@@ -242,47 +241,55 @@ function renderProductos(busqueda = '') {
 
     // Cards de LD_BEBIDAS_GRUPOS (Gaseosa 400 ML, HIT 500 ML, etc.)
     ldGruposActivos.forEach(g => {
-        const prods    = Object.values(g.opciones)
-        const precioMin = Math.min(...prods.map(p => p.price))
+        const prods         = Object.values(g.opciones)
+        const precioMin     = Math.min(...prods.map(p => p.price))
+        const todasAgotadas = prods.every(p => p.stock !== null && p.stock === 0)
         const card = document.createElement('div')
-        card.className = 'ld-prod-card'
+        card.className = 'ld-prod-card' + (todasAgotadas ? ' ld-prod-card--agotado' : '')
         card.innerHTML = `
             <div class="ld-prod-card__img"></div>
             <div class="ld-prod-card__body">
                 <span class="ld-prod-card__name">${g.nombre}</span>
                 <span class="ld-prod-card__desc">${Object.keys(g.opciones).length} sabores</span>
                 <div class="ld-prod-card__foot">
-                    <span class="ld-prod-card__precio">Desde ${formatPrecio(precioMin)}</span>
-                    <button class="ld-prod-card__add">+</button>
+                    ${todasAgotadas
+                        ? '<span class="ld-prod-card__agotado">Agotado</span>'
+                        : `<span class="ld-prod-card__precio">Desde ${formatPrecio(precioMin)}</span>
+                           <button class="ld-prod-card__add">+</button>`}
                 </div>
             </div>
         `
-        const items = Object.entries(g.opciones).map(([variante, prod]) => ({
-            ...prod,
-            displayName: variante,
-            cartName: `${g.nombre} - ${variante}`,
-        }))
-        card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
+        if (!todasAgotadas) {
+            const items = Object.entries(g.opciones).map(([variante, prod]) => ({
+                ...prod,
+                displayName: variante,
+                cartName: `${g.nombre} - ${variante}`,
+            }))
+            card.addEventListener('click', () => abrirSelectorVariantes(g.nombre, items))
+        }
         grid.appendChild(card)
     })
 
 
     resto.forEach(prod => {
+        const agotado     = prod.stock !== null && prod.stock === 0
         const displayName = formatNombreBebida(prod.name)
         const cartName    = displayName !== prod.name ? displayName : prod.name
         const card = document.createElement('div')
-        card.className = 'ld-prod-card'
+        card.className = 'ld-prod-card' + (agotado ? ' ld-prod-card--agotado' : '')
         card.innerHTML = `
             <div class="ld-prod-card__img"></div>
             <div class="ld-prod-card__body">
                 <span class="ld-prod-card__name">${displayName}</span>
                 <div class="ld-prod-card__foot">
-                    <span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
-                    <button class="ld-prod-card__add">+</button>
+                    ${agotado
+                        ? '<span class="ld-prod-card__agotado">Agotado</span>'
+                        : `<span class="ld-prod-card__precio">${formatPrecio(prod.price)}</span>
+                           <button class="ld-prod-card__add">+</button>`}
                 </div>
             </div>
         `
-        card.addEventListener('click', () => agregarAlCarrito({ ...prod, name: cartName }))
+        if (!agotado) card.addEventListener('click', () => agregarAlCarrito({ ...prod, name: cartName }))
         grid.appendChild(card)
     })
 }
@@ -1160,16 +1167,22 @@ function _renderVariantesPaso() {
     } else {
         // Nivel de productos — agregar al carrito
         items.forEach(prod => {
+            const agotado = prod.stock !== null && prod.stock === 0
             const btn = document.createElement('button')
-            btn.className = 'ld-sel-opcion'
+            btn.className = 'ld-sel-opcion' + (agotado ? ' ld-sel-opcion--agotado' : '')
+            btn.disabled  = agotado
             btn.innerHTML = `
                 <span class="ld-sel-opcion__nombre">${prod.displayName ?? prod.name}</span>
-                <span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>
+                ${agotado
+                    ? '<span class="ld-sel-opcion__desc">Agotado</span>'
+                    : `<span class="ld-sel-opcion__precio">${formatPrecio(prod.price)}</span>`}
             `
-            btn.addEventListener('click', () => {
-                agregarAlCarrito({ ...prod, name: prod.cartName ?? prod.name })
-                document.getElementById('variantesModal').classList.remove('open')
-            })
+            if (!agotado) {
+                btn.addEventListener('click', () => {
+                    agregarAlCarrito({ ...prod, name: prod.cartName ?? prod.name })
+                    document.getElementById('variantesModal').classList.remove('open')
+                })
+            }
             grid.appendChild(btn)
         })
     }
