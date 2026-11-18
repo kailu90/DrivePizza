@@ -11,10 +11,14 @@
  *   concepto TEXT, monto NUMERIC(12,2), fecha DATE,
  *   sede TEXT, proveedor_id BIGINT, proveedor_nombre TEXT,
  *   metodo_pago TEXT, comprobante TEXT, notas TEXT,
- *   usuario TEXT, created_at TIMESTAMPTZ
+ *   usuario TEXT, estado TEXT (pendiente|pagado), periodo_ref TEXT,
+ *   created_at TIMESTAMPTZ
  *
  * Categorías ingreso : pago_sede | otro_ingreso
  * Categorías egreso  : proveedor | colaborador | nomina | servicios | impuestos | otro
+ *
+ * estado='pendiente' → importado desde liquidación, aún no cobrado
+ * estado='pagado'    → cobrado / registrado manualmente
  *
  * Roles con acceso   : planta, planta-admin, admin
  * Roles que eliminan : planta-admin, admin
@@ -26,17 +30,28 @@ import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, revelarSpla
     from '../DrivePizza/Shared/components.js';
 import { getSedes }     from '../DrivePizza/Shared/sedesService.js';
 import { CAJA_CATEGORIAS } from './planta.config.js';
+import {
+    getPeriodo, getNumeroPeriodo,
+    pedidosLiquidables, devolucionesLiquidables, colFechaToUTC,
+} from '../Shared/semanas.js';
 
 CargarSidebar();
 
 // ── Estado global ─────────────────────────────────────────────────────────────
-let _usuario     = 'Admin';
-let _esAdmin     = false;      // planta-admin | admin — puede eliminar movimientos
-let _periodo     = _periodoActual();   // { year, month }
-let _todos       = [];         // movimientos del período cargados desde BD
-let _sedes       = [];         // lista de sedes para el select del dialog
-let _proveedores = [];         // lista de proveedores activos para el select del dialog
-let _tipoDialog  = 'ingreso';  // tipo seleccionado actualmente en el dialog
+let _usuario       = 'Admin';
+let _esAdmin       = false;      // planta-admin | admin — puede eliminar movimientos
+let _periodo       = _periodoActual();   // { year, month }
+let _todos         = [];         // movimientos del período cargados desde BD
+let _sedes         = [];         // lista de sedes para el select del dialog
+let _proveedores   = [];         // lista de proveedores activos para el select del dialog
+let _tipoDialog    = 'ingreso';  // tipo seleccionado actualmente en el dialog
+
+// Estado del dialog de liquidación
+let _liqOffset   = 0;            // offset de semanas respecto a la semana actual
+let _liqDatos    = [];           // [{ sede, totalNeto, periodoRef, yaImportado }]
+
+// Estado del dialog de confirmación de pago
+let _confirmandoId = null;       // id del movimiento en proceso de confirmación
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, rol }) => {
@@ -62,7 +77,7 @@ async function _init() {
     _sedes       = sedesData || [];
     _proveedores = provData  || [];
 
-    // Poblar select de sedes en el dialog
+    // Poblar select de sedes en el dialog principal
     const selSede = document.getElementById('caj-sede');
     _sedes.forEach(s => {
         const opt = document.createElement('option');
@@ -71,7 +86,7 @@ async function _init() {
         selSede.appendChild(opt);
     });
 
-    // Poblar select de proveedores en el dialog
+    // Poblar select de proveedores en el dialog principal
     const selProv = document.getElementById('caj-proveedor');
     _proveedores.forEach(p => {
         const opt = document.createElement('option');
@@ -84,7 +99,7 @@ async function _init() {
     revelarSplash();
 }
 
-// ── Período ───────────────────────────────────────────────────────────────────
+// ── Período mensual ───────────────────────────────────────────────────────────
 function _periodoActual() {
     const hoy = new Date();
     return { year: hoy.getFullYear(), month: hoy.getMonth() + 1 };
@@ -103,7 +118,7 @@ function _actualizarLabelPeriodo() {
 function _rangoFechas() {
     const { year, month } = _periodo;
     const desde    = `${year}-${String(month).padStart(2, '0')}-01`;
-    const sigMes   = new Date(year, month, 1);   // new Date(year, month) → día 1 del mes siguiente
+    const sigMes   = new Date(year, month, 1);
     const hasta    = `${sigMes.getFullYear()}-${String(sigMes.getMonth() + 1).padStart(2, '0')}-01`;
     return { desde, hasta };
 }
@@ -131,7 +146,7 @@ async function _cargarMovimientos() {
         .select(`
             id, tipo, categoria, concepto, monto, fecha,
             sede, proveedor_nombre, metodo_pago, comprobante,
-            notas, usuario, created_at
+            notas, usuario, estado, periodo_ref, created_at
         `)
         .gte('fecha', desde)
         .lt('fecha', hasta)
@@ -148,20 +163,28 @@ async function _cargarMovimientos() {
     _renderTabla();
 }
 
-// ── Resumen (cards) ───────────────────────────────────────────────────────────
+// ── Resumen (4 cards) ─────────────────────────────────────────────────────────
 function _renderResumen() {
-    const ingresos  = _todos.filter(m => m.tipo === 'ingreso');
-    const egresos   = _todos.filter(m => m.tipo === 'egreso');
-    const totalIng  = ingresos.reduce((s, m) => s + Number(m.monto), 0);
-    const totalEgr  = egresos.reduce((s, m)  => s + Number(m.monto), 0);
-    const balance   = totalIng - totalEgr;
+    const ingresos   = _todos.filter(m => m.tipo === 'ingreso');
+    const egresos    = _todos.filter(m => m.tipo === 'egreso');
 
-    document.getElementById('caj-total-ingresos').textContent = _fmt(totalIng);
-    document.getElementById('caj-total-egresos').textContent  = _fmt(totalEgr);
-    document.getElementById('caj-total-balance').textContent  = _fmt(Math.abs(balance));
-    document.getElementById('caj-count-ingresos').textContent = _plural(ingresos.length);
-    document.getElementById('caj-count-egresos').textContent  = _plural(egresos.length);
-    document.getElementById('caj-count-total').textContent    = _plural(_todos.length);
+    const porCobrar  = ingresos.filter(m => m.estado === 'pendiente');
+    const cobrado    = ingresos.filter(m => m.estado !== 'pendiente');
+
+    const totalPorCobrar = porCobrar.reduce((s, m) => s + Number(m.monto), 0);
+    const totalCobrado   = cobrado.reduce((s, m)   => s + Number(m.monto), 0);
+    const totalEgr       = egresos.reduce((s, m)   => s + Number(m.monto), 0);
+    const balance        = totalCobrado - totalEgr;
+
+    document.getElementById('caj-total-por-cobrar').textContent = _fmt(totalPorCobrar);
+    document.getElementById('caj-total-cobrado').textContent    = _fmt(totalCobrado);
+    document.getElementById('caj-total-egresos').textContent    = _fmt(totalEgr);
+    document.getElementById('caj-total-balance').textContent    = _fmt(Math.abs(balance));
+
+    document.getElementById('caj-count-por-cobrar').textContent = _plural(porCobrar.length);
+    document.getElementById('caj-count-cobrado').textContent    = _plural(cobrado.length);
+    document.getElementById('caj-count-egresos').textContent    = _plural(egresos.length);
+    document.getElementById('caj-count-total').textContent      = _plural(_todos.length);
 
     const cardBalance = document.getElementById('caj-card-balance');
     cardBalance.classList.remove('positivo', 'negativo');
@@ -181,30 +204,43 @@ function _renderTabla() {
     tbody.innerHTML = '';
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin movimientos en este período.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="caj-empty">Sin movimientos en este período.</td></tr>`;
         return;
     }
 
     lista.forEach(m => {
         const fecha    = _formatFecha(m.fecha);
         const catLabel = _labelCategoria(m.categoria);
-
-        // Referencia: proveedor > sede > comprobante > usuario
-        const ref = m.proveedor_nombre
+        const ref      = m.proveedor_nombre
             || (m.sede ? capitalizarSede(m.sede) : '')
             || m.comprobante
             || '';
 
+        const esPendiente  = m.estado === 'pendiente';
+        const estadoBadge  = esPendiente
+            ? '<span class="caj-badge caj-badge--pendiente">Pendiente</span>'
+            : '<span class="caj-badge caj-badge--pagado">Pagado</span>';
+
+        const acciones = [];
+        if (esPendiente && m.tipo === 'ingreso') {
+            acciones.push(`<button class="caj-btn-confirmar" data-id="${m.id}" title="Confirmar pago recibido">✓</button>`);
+        }
+        if (_esAdmin) {
+            acciones.push(`<button class="caj-btn-delete" data-id="${m.id}" title="Eliminar movimiento">✕</button>`);
+        }
+
         const tr = document.createElement('tr');
+        if (esPendiente) tr.classList.add('caj-row--pendiente');
         tr.innerHTML = `
             <td>${fecha}</td>
             <td><span class="caj-badge caj-badge--${m.tipo}">${m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}</span></td>
+            <td>${estadoBadge}</td>
             <td>${catLabel}</td>
             <td>${_esc(m.concepto)}</td>
-            <td style="color:#888; font-size:1.2rem">${_esc(ref)}</td>
+            <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
             <td style="text-transform:capitalize">${m.metodo_pago}</td>
             <td style="text-align:right" class="caj-monto--${m.tipo}">$${Number(m.monto).toLocaleString('es-CO')}</td>
-            <td>${_esAdmin ? `<button class="caj-btn-delete" data-id="${m.id}" title="Eliminar movimiento">✕</button>` : ''}</td>
+            <td class="caj-td-acciones">${acciones.join('')}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -226,15 +262,23 @@ function _poblarFiltroCategoria() {
     });
 }
 
-// ── Eliminar movimiento (solo admin) ─────────────────────────────────────────
+// ── Acciones en tabla (eliminar + confirmar) ──────────────────────────────────
 document.getElementById('caj-tbody').addEventListener('click', async e => {
-    const btn = e.target.closest('.caj-btn-delete');
-    if (!btn || !_esAdmin) return;
+    // Confirmar pago pendiente
+    const confBtn = e.target.closest('.caj-btn-confirmar');
+    if (confBtn) {
+        _abrirDialogConfirmar(parseInt(confBtn.dataset.id));
+        return;
+    }
 
-    const id = parseInt(btn.dataset.id);
+    // Eliminar (solo admin)
+    const delBtn = e.target.closest('.caj-btn-delete');
+    if (!delBtn || !_esAdmin) return;
+
+    const id = parseInt(delBtn.dataset.id);
     if (!confirm('¿Eliminar este movimiento? Esta acción no se puede deshacer.')) return;
 
-    btn.disabled = true;
+    delBtn.disabled = true;
 
     const { error } = await supabase
         .from('caja_movimientos')
@@ -244,7 +288,7 @@ document.getElementById('caj-tbody').addEventListener('click', async e => {
     if (error) {
         console.error('[cuadreCaja] eliminar:', error);
         alert('Error al eliminar: ' + error.message);
-        btn.disabled = false;
+        delBtn.disabled = false;
         return;
     }
 
@@ -253,12 +297,11 @@ document.getElementById('caj-tbody').addEventListener('click', async e => {
     _renderTabla();
 });
 
-// ── Dialog: abrir ─────────────────────────────────────────────────────────────
+// ── Dialog principal: abrir ───────────────────────────────────────────────────
 function _abrirDialog(tipo) {
     _tipoDialog = tipo;
     _actualizarTipoDialog();
 
-    // Limpiar campos
     document.getElementById('caj-concepto').value    = '';
     document.getElementById('caj-monto').value       = '';
     document.getElementById('caj-fecha').value       = _toISO(new Date());
@@ -284,19 +327,16 @@ function _abrirDialog(tipo) {
 function _actualizarTipoDialog() {
     const tipo = _tipoDialog;
 
-    // Resaltar botón activo
     document.getElementById('caj-tipo-ingreso').className =
         'caj-tipo-btn' + (tipo === 'ingreso' ? ' active-ingreso' : '');
     document.getElementById('caj-tipo-egreso').className =
         'caj-tipo-btn' + (tipo === 'egreso' ? ' active-egreso' : '');
 
-    // Título y color del botón guardar
     document.getElementById('caj-dialog-titulo').textContent =
         tipo === 'ingreso' ? 'Registrar ingreso' : 'Registrar egreso';
     document.getElementById('caj-dialog-guardar').className =
         `caj-btn caj-btn--${tipo}`;
 
-    // Reconstruir opciones de categoría según tipo
     const selCat = document.getElementById('caj-categoria');
     selCat.innerHTML = '';
     CAJA_CATEGORIAS[tipo].forEach(c => {
@@ -309,10 +349,6 @@ function _actualizarTipoDialog() {
     _actualizarCamposContextuales();
 }
 
-/**
- * Muestra u oculta los campos opcionales (sede, proveedor)
- * según el tipo y categoría seleccionados.
- */
 function _actualizarCamposContextuales() {
     const tipo = _tipoDialog;
     const cat  = document.getElementById('caj-categoria').value;
@@ -337,26 +373,24 @@ document.getElementById('caj-categoria').addEventListener('change', _actualizarC
 document.getElementById('caj-btn-ingreso').addEventListener('click', () => _abrirDialog('ingreso'));
 document.getElementById('caj-btn-egreso').addEventListener('click',  () => _abrirDialog('egreso'));
 
-// ── Dialog: cerrar ────────────────────────────────────────────────────────────
+// ── Dialog principal: cerrar ──────────────────────────────────────────────────
 document.getElementById('caj-dialog-cerrar').addEventListener('click', () =>
     document.getElementById('caj-dialog').close()
 );
 document.getElementById('caj-dialog-cancelar').addEventListener('click', () =>
     document.getElementById('caj-dialog').close()
 );
-// Cerrar al hacer clic en el backdrop
 document.getElementById('caj-dialog').addEventListener('click', e => {
     if (e.target === e.currentTarget) e.currentTarget.close();
 });
 
-// ── Dialog: guardar ───────────────────────────────────────────────────────────
+// ── Dialog principal: guardar ─────────────────────────────────────────────────
 document.getElementById('caj-dialog-guardar').addEventListener('click', async () => {
     const errorEl    = document.getElementById('caj-error');
     const btnGuardar = document.getElementById('caj-dialog-guardar');
 
     errorEl.style.display = 'none';
 
-    // Leer valores del formulario
     const categoria   = document.getElementById('caj-categoria').value;
     const concepto    = document.getElementById('caj-concepto').value.trim();
     const monto       = parseFloat(document.getElementById('caj-monto').value);
@@ -365,18 +399,14 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
     const comprobante = document.getElementById('caj-comprobante').value.trim();
     const notas       = document.getElementById('caj-notas').value.trim();
 
-    // Campos contextuales (solo si su contenedor es visible)
     const sedeCampoVisible = document.getElementById('caj-field-sede').style.display !== 'none';
     const provCampoVisible = document.getElementById('caj-field-proveedor').style.display !== 'none';
 
-    const sede      = sedeCampoVisible  ? document.getElementById('caj-sede').value      || null : null;
-    const provIdRaw = provCampoVisible  ? document.getElementById('caj-proveedor').value         : '';
-    const provId    = parseInt(provIdRaw) || null;
-    const provNombre = provId
-        ? (_proveedores.find(p => p.id === provId)?.nombre || null)
-        : null;
+    const sede       = sedeCampoVisible ? document.getElementById('caj-sede').value      || null : null;
+    const provIdRaw  = provCampoVisible ? document.getElementById('caj-proveedor').value         : '';
+    const provId     = parseInt(provIdRaw) || null;
+    const provNombre = provId ? (_proveedores.find(p => p.id === provId)?.nombre || null) : null;
 
-    // Validación
     if (!concepto) return _showError('El concepto es obligatorio.');
     if (!monto || monto <= 0) return _showError('El monto debe ser mayor a 0.');
     if (!fecha)   return _showError('La fecha es obligatoria.');
@@ -399,6 +429,7 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
                 metodo_pago:      metodo,
                 comprobante:      comprobante || null,
                 notas:            notas || null,
+                estado:           'pagado',
                 usuario:          _usuario,
             })
             .select()
@@ -408,7 +439,6 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
 
         document.getElementById('caj-dialog').close();
 
-        // Actualizar caché local solo si el nuevo registro pertenece al período visible
         const { desde, hasta } = _rangoFechas();
         if (nuevo.fecha >= desde && nuevo.fecha < hasta) {
             _todos.unshift(nuevo);
@@ -421,6 +451,284 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
         btnGuardar.disabled    = false;
         btnGuardar.textContent = 'Guardar';
     }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Dialog Importar Liquidación
+// ══════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('caj-btn-importar').addEventListener('click', _abrirDialogLiquidacion);
+
+function _abrirDialogLiquidacion() {
+    _liqOffset = 0;
+    _liqDatos  = [];
+    document.getElementById('caj-liq-error').style.display = 'none';
+    document.getElementById('caj-liq-importar').disabled   = true;
+    document.getElementById('caj-dialog-liq').showModal();
+    _cargarLiqPreview();
+}
+
+async function _cargarLiqPreview() {
+    const contenido   = document.getElementById('caj-liq-contenido');
+    const btnImportar = document.getElementById('caj-liq-importar');
+    const errEl       = document.getElementById('caj-liq-error');
+
+    contenido.innerHTML = '<p class="caj-liq-cargando">Cargando...</p>';
+    btnImportar.disabled = true;
+    errEl.style.display  = 'none';
+
+    const { desde: desdeDate, hasta: hastaDate } = getPeriodo(_liqOffset);
+    const desde = _toISO(desdeDate);
+    const hasta  = _toISO(hastaDate);
+
+    const semana    = getNumeroPeriodo(desdeDate);
+    const año       = hastaDate.getFullYear();
+    const mesNum    = String(hastaDate.getMonth() + 1).padStart(2, '0');
+    const periodoRef = `${año}-${mesNum}-S${semana}`;
+
+    const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    document.getElementById('caj-liq-label').textContent =
+        `Semana #${semana} · ${desdeDate.getDate()} ${MESES_C[desdeDate.getMonth()]} – ` +
+        `${hastaDate.getDate()} ${MESES_C[hastaDate.getMonth()]} ${año}`;
+
+    try {
+        const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
+            supabase
+                .from('pedidos_planta')
+                .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
+                .gte('delivery_date', desde)
+                .lte('delivery_date', hasta),
+            supabase
+                .from('movimientos')
+                .select('sede, valor_total, subtipo')
+                .eq('tipo', 'Devolución')
+                .gte('fecha', desdeDate.toISOString())
+                .lte('fecha', colFechaToUTC(hasta, 'fin')),
+        ]);
+
+        if (errP) throw errP;
+        if (errD) throw errD;
+
+        // Agrupar pedidos por sede
+        const pedidosPorSede = {};
+        pedidosLiquidables(rawPedidos || []).forEach(p => {
+            const sede = (p.user_sede || 'sin sede').toLowerCase();
+            if (sede === 'planta producción' || sede === 'planta') return;
+            pedidosPorSede[sede] = (pedidosPorSede[sede] || 0) + (p.total || 0);
+        });
+
+        // Agrupar devoluciones por sede
+        const devPorSede = {};
+        devolucionesLiquidables(rawDevs || []).forEach(d => {
+            const sede = d.sede ? d.sede.toLowerCase() : null;
+            if (!sede) return;
+            devPorSede[sede] = (devPorSede[sede] || 0) + (d.valor_total || 0);
+        });
+
+        const sedes = Object.keys(pedidosPorSede).sort();
+
+        if (!sedes.length) {
+            contenido.innerHTML = '<p class="caj-liq-cargando">Sin pedidos esta semana.</p>';
+            return;
+        }
+
+        _liqDatos = sedes.map(sede => {
+            const totalPed  = pedidosPorSede[sede] || 0;
+            const totalDev  = devPorSede[sede]     || 0;
+            const totalNeto = totalPed - totalDev;
+            const yaImportado = _todos.some(m =>
+                m.periodo_ref === periodoRef && m.sede === sede
+            );
+            return { sede, totalPed, totalDev, totalNeto, periodoRef, yaImportado };
+        });
+
+        const rows = _liqDatos.map((d, i) => `
+            <tr>
+                <td style="width:3.2rem;text-align:center">
+                    ${d.yaImportado
+                        ? '<span class="caj-liq-ya" title="Ya importado">✓</span>'
+                        : `<input type="checkbox" class="caj-liq-check" data-idx="${i}"
+                               ${d.totalNeto > 0 ? 'checked' : ''} style="width:1.5rem;height:1.5rem;cursor:pointer">`
+                    }
+                </td>
+                <td>${capitalizarSede(d.sede)}</td>
+                <td class="caj-liq-num caj-liq-num--ing">$${Math.round(d.totalPed).toLocaleString('es-CO')}</td>
+                <td class="caj-liq-num caj-liq-num--egr">$${Math.round(d.totalDev).toLocaleString('es-CO')}</td>
+                <td class="caj-liq-num caj-liq-num--tot">$${Math.round(d.totalNeto).toLocaleString('es-CO')}</td>
+            </tr>
+        `).join('');
+
+        contenido.innerHTML = `
+            <table class="caj-tabla caj-liq-tabla">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Sede</th>
+                        <th style="text-align:right">Pedidos</th>
+                        <th style="text-align:right">Devoluciones</th>
+                        <th style="text-align:right">Total neto</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+
+        const haySeleccionables = _liqDatos.some(d => !d.yaImportado && d.totalNeto > 0);
+        btnImportar.disabled = !haySeleccionables;
+
+    } catch (err) {
+        console.error('[cuadreCaja] liqPreview:', err);
+        contenido.innerHTML = '';
+        errEl.textContent   = err.message || 'Error al cargar datos de liquidación.';
+        errEl.style.display = 'block';
+    }
+}
+
+async function _importarLiquidacion() {
+    const btn   = document.getElementById('caj-liq-importar');
+    const errEl = document.getElementById('caj-liq-error');
+
+    btn.disabled    = true;
+    btn.textContent = 'Importando...';
+    errEl.style.display = 'none';
+
+    const checks       = document.querySelectorAll('.caj-liq-check:checked');
+    const seleccionados = Array.from(checks).map(c => _liqDatos[parseInt(c.dataset.idx)]);
+
+    if (!seleccionados.length) {
+        btn.disabled    = false;
+        btn.textContent = 'Importar seleccionadas';
+        return;
+    }
+
+    const { hasta: hastaDate } = getPeriodo(_liqOffset);
+
+    const registros = seleccionados.map(d => ({
+        tipo:        'ingreso',
+        categoria:   'pago_sede',
+        concepto:    `Liq. ${d.periodoRef.replace(/-S/, ' Sem ')} — ${capitalizarSede(d.sede)}`,
+        monto:       Math.round(d.totalNeto),
+        fecha:       _toISO(hastaDate),
+        sede:        d.sede,
+        metodo_pago: 'efectivo',
+        estado:      'pendiente',
+        periodo_ref: d.periodoRef,
+        usuario:     _usuario,
+    }));
+
+    const { error } = await supabase.from('caja_movimientos').insert(registros);
+
+    if (error) {
+        console.error('[cuadreCaja] importar:', error);
+        errEl.textContent   = error.message;
+        errEl.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Importar seleccionadas';
+        return;
+    }
+
+    document.getElementById('caj-dialog-liq').close();
+    await _cargarMovimientos();
+}
+
+// Navegación de semanas en el dialog de liquidación
+document.getElementById('caj-liq-prev').addEventListener('click', () => {
+    _liqOffset--;
+    _cargarLiqPreview();
+});
+document.getElementById('caj-liq-next').addEventListener('click', () => {
+    _liqOffset++;
+    _cargarLiqPreview();
+});
+document.getElementById('caj-liq-importar').addEventListener('click', _importarLiquidacion);
+document.getElementById('caj-liq-cerrar').addEventListener('click', () =>
+    document.getElementById('caj-dialog-liq').close()
+);
+document.getElementById('caj-liq-cancelar').addEventListener('click', () =>
+    document.getElementById('caj-dialog-liq').close()
+);
+document.getElementById('caj-dialog-liq').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.close();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Dialog Confirmar Pago
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _abrirDialogConfirmar(id) {
+    const mov = _todos.find(m => m.id === id);
+    if (!mov) return;
+
+    _confirmandoId = id;
+
+    document.getElementById('caj-conf-desc').textContent =
+        `${mov.concepto} — $${Number(mov.monto).toLocaleString('es-CO')}`;
+    document.getElementById('caj-conf-sede').textContent =
+        mov.sede ? capitalizarSede(mov.sede) : '—';
+    document.getElementById('caj-conf-metodo').value      = 'efectivo';
+    document.getElementById('caj-conf-comprobante').value = '';
+
+    const errEl = document.getElementById('caj-conf-error');
+    errEl.style.display = 'none';
+
+    const btn = document.getElementById('caj-conf-guardar');
+    btn.disabled    = false;
+    btn.textContent = 'Confirmar pago';
+
+    document.getElementById('caj-dialog-confirmar').showModal();
+}
+
+async function _confirmarPago() {
+    const btn   = document.getElementById('caj-conf-guardar');
+    const errEl = document.getElementById('caj-conf-error');
+
+    errEl.style.display = 'none';
+    btn.disabled    = true;
+    btn.textContent = 'Confirmando...';
+
+    const metodo      = document.getElementById('caj-conf-metodo').value;
+    const comprobante = document.getElementById('caj-conf-comprobante').value.trim();
+
+    const { data: updated, error } = await supabase
+        .from('caja_movimientos')
+        .update({
+            estado:      'pagado',
+            metodo_pago: metodo,
+            comprobante: comprobante || null,
+        })
+        .eq('id', _confirmandoId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('[cuadreCaja] confirmarPago:', error);
+        errEl.textContent   = error.message;
+        errEl.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar pago';
+        return;
+    }
+
+    document.getElementById('caj-dialog-confirmar').close();
+
+    // Actualizar caché local
+    const idx = _todos.findIndex(m => m.id === _confirmandoId);
+    if (idx !== -1) _todos[idx] = { ..._todos[idx], ...updated };
+    _confirmandoId = null;
+
+    _renderResumen();
+    _renderTabla();
+}
+
+document.getElementById('caj-conf-guardar').addEventListener('click', _confirmarPago);
+document.getElementById('caj-conf-cerrar').addEventListener('click', () =>
+    document.getElementById('caj-dialog-confirmar').close()
+);
+document.getElementById('caj-conf-cancelar').addEventListener('click', () =>
+    document.getElementById('caj-dialog-confirmar').close()
+);
+document.getElementById('caj-dialog-confirmar').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.close();
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -466,7 +774,7 @@ function _esc(str) {
         .replace(/"/g, '&quot;');
 }
 
-/** Muestra un mensaje de error en el dialog. */
+/** Muestra un mensaje de error en el dialog principal. */
 function _showError(msg) {
     const el = document.getElementById('caj-error');
     el.textContent   = msg;

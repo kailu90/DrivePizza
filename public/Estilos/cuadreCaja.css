@@ -63,7 +63,7 @@
 /* ── Cards resumen ──────────────────────────────────────────────────────────── */
 .caj-resumen {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.6rem;
     margin-bottom: 2.4rem;
 }
@@ -78,9 +78,10 @@
     gap: 0.5rem;
     border-left: 4px solid transparent;
 }
-.caj-card--ingreso { border-left-color: var(--color-primario); }
-.caj-card--egreso  { border-left-color: #991b1b; }
-.caj-card--balance { border-left-color: var(--color-primario); }
+.caj-card--pendiente { border-left-color: #d97706; }
+.caj-card--ingreso   { border-left-color: var(--color-primario); }
+.caj-card--egreso    { border-left-color: #991b1b; }
+.caj-card--balance   { border-left-color: var(--color-primario); }
 .caj-card--balance.negativo { border-left-color: #991b1b; }
 
 .caj-card__label {
@@ -96,8 +97,9 @@
     font-weight: 700;
     color: var(--color-terciario);
 }
-.caj-card--ingreso .caj-card__monto          { color: var(--color-primario); }
-.caj-card--egreso  .caj-card__monto          { color: #991b1b; }
+.caj-card--pendiente .caj-card__monto        { color: #d97706; }
+.caj-card--ingreso   .caj-card__monto        { color: var(--color-primario); }
+.caj-card--egreso    .caj-card__monto        { color: #991b1b; }
 .caj-card--balance.positivo .caj-card__monto { color: var(--color-primario); }
 .caj-card--balance.negativo .caj-card__monto { color: #991b1b; }
 
@@ -135,7 +137,18 @@
     color: var(--color-secundario);
 }
 /* Egreso: fondo rojo, letra blanca */
-.caj-btn--egreso   { background: #991b1b; color: #fff; }
+.caj-btn--egreso    { background: #991b1b; color: #fff; }
+/* Importar liquidación: ámbar */
+.caj-btn--importar  {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1.5px solid #d97706;
+}
+.caj-btn--importar:hover:not(:disabled) {
+    background: #d97706;
+    color: #fff;
+    opacity: 1;
+}
 /* Secundario: neutro */
 .caj-btn--secondary {
     background: #f0f0f0;
@@ -213,18 +226,24 @@
     font-weight: 700;
     white-space: nowrap;
 }
-.caj-badge--ingreso {
-    background: var(--color-secundario);
-    color: var(--color-primario);
-}
-.caj-badge--egreso {
-    background: #fee2e2;
-    color: #991b1b;
-}
+.caj-badge--ingreso   { background: var(--color-secundario); color: var(--color-primario); }
+.caj-badge--egreso    { background: #fee2e2;                 color: #991b1b; }
+.caj-badge--pendiente { background: #fef3c7;                 color: #92400e; }
+.caj-badge--pagado    { background: #f0fdf4;                 color: #15803d; }
 
 /* Montos en tabla */
 .caj-monto--ingreso { color: var(--color-primario); font-weight: 700; white-space: nowrap; }
 .caj-monto--egreso  { color: #991b1b;               font-weight: 700; white-space: nowrap; }
+
+/* Fila pendiente: fondo ámbar muy sutil */
+.caj-row--pendiente td { background: #fffbeb; }
+
+/* Celda de acciones */
+.caj-td-acciones {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
 
 .caj-btn-delete {
     background: none;
@@ -240,6 +259,26 @@
 .caj-btn-delete:hover {
     color: #991b1b;
     background: #fee2e2;
+}
+
+/* Botón Confirmar pago */
+.caj-btn-confirmar {
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1.5px solid #d97706;
+    background: #fef3c7;
+    color: #92400e;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+.caj-btn-confirmar:hover {
+    background: #d97706;
+    color: #fff;
 }
 
 .caj-empty {
@@ -390,13 +429,53 @@
     border-top: 1px solid #f0f0f0;
 }
 
+/* ── Dialog liquidación — ancho extendido ────────────────────────────────────── */
+.caj-dialog--wide {
+    width: min(640px, 96vw);
+}
+
+/* Tabla dentro del dialog de liquidación */
+.caj-liq-tabla { margin-top: 0; }
+
+.caj-liq-cargando {
+    text-align: center;
+    color: #aaa;
+    padding: 2rem;
+    font-size: 1.3rem;
+}
+
+.caj-liq-num           { text-align: right; font-size: 1.3rem; white-space: nowrap; }
+.caj-liq-num--ing      { color: var(--color-primario); font-weight: 700; }
+.caj-liq-num--egr      { color: #991b1b; }
+.caj-liq-num--tot      { color: var(--color-terciario); font-weight: 700; }
+
+.caj-liq-ya            { color: #22c55e; font-size: 1.5rem; font-weight: 700; }
+
+/* Dialog confirmar — info del movimiento */
+.caj-conf-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .caj-resumen         { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
-    .caj-resumen         { grid-template-columns: 1fr; }
+    .caj-resumen         { grid-template-columns: 1fr 1fr; }
     .caj-topbar          { flex-direction: column; align-items: flex-start; }
     .caj-actions-bar     { flex-direction: column; align-items: stretch; }
     .caj-filtros         { flex-wrap: wrap; width: 100%; }
     .caj-select-filtro   { flex: 1; }
     .caj-grid-2          { grid-template-columns: 1fr; }
     .caj-tipo-row        { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .caj-resumen         { grid-template-columns: 1fr; }
 }
