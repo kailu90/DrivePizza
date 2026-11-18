@@ -1102,65 +1102,124 @@ function _renderVentas() {
     }
 
     const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    let html = '';
 
-    _ventasDatos.forEach((sem, semIdx) => {
-        const rango    = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
-        const totalSem = sem.sedes.reduce((s, d) => s + d.totalNeto, 0);
+    // Coleccionar todas las sedes únicas del mes
+    const sedesSet = new Set();
+    _ventasDatos.forEach(sem => sem.sedes.forEach(d => sedesSet.add(d.sede)));
+    const todasSedes = [...sedesSet].sort();
 
-        const rows = sem.sedes.map(d => {
-            let badgeHtml, accionHtml;
+    // Cabecera de semanas
+    const thSemanas = _ventasDatos.map(sem => {
+        const rango = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+        return `<th class="caj-pvt-th-sem">Sem #${sem.numSemana}<br><span class="caj-pvt-rango">${rango}</span></th>`;
+    }).join('');
 
-            if (d.estado === 'pagado') {
-                badgeHtml  = '<span class="caj-badge caj-badge--pagado">Pagado</span>';
-                accionHtml = '';
-            } else if (d.estado === 'pendiente') {
-                badgeHtml  = '<span class="caj-badge caj-badge--pendiente">Pendiente</span>';
-                accionHtml = `<button class="caj-btn-confirmar" data-id="${d.movId}" title="Confirmar pago recibido">✓ Confirmar</button>`;
-            } else {
-                badgeHtml  = '<span class="caj-badge caj-vta-badge--noimportado">Sin registrar</span>';
-                accionHtml = `<button class="caj-vta-btn-registrar" data-week-idx="${semIdx}" data-sede="${d.sede}">↓ Registrar</button>`;
-            }
+    // Fila por sede
+    const rows = todasSedes.map(sede => {
+        const nombre = capitalizarSede(sede);
 
-            const devHtml = d.totalDev > 0
-                ? `<span style="color:#991b1b">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</span>`
-                : '<span style="color:#ccc">—</span>';
-
-            return `<tr>
-                <td class="caj-vta-sede">${_esc(d.nombreDisplay)}</td>
-                <td class="caj-vta-num caj-vta-num--ped">$${Math.round(d.totalPed).toLocaleString('es-CO')}</td>
-                <td class="caj-vta-num">${devHtml}</td>
-                <td class="caj-vta-num caj-vta-num--tot">$${Math.round(d.totalNeto).toLocaleString('es-CO')}</td>
-                <td>${badgeHtml}</td>
-                <td class="caj-td-acciones">${accionHtml}</td>
-            </tr>`;
+        const celdas = _ventasDatos.map((sem, semIdx) => {
+            const d = sem.sedes.find(s => s.sede === sede);
+            if (!d) return `<td class="caj-pvt-celda caj-pvt-celda--vacia">—</td>`;
+            const dotClass = d.estado === 'pagado'    ? 'caj-pvt-dot--pagado'
+                           : d.estado === 'pendiente' ? 'caj-pvt-dot--pendiente'
+                           :                            'caj-pvt-dot--noimportado';
+            return `<td class="caj-pvt-celda" data-semidx="${semIdx}" data-sede="${_esc(sede)}" role="button" tabindex="0">
+                <span class="caj-pvt-dot ${dotClass}"></span>$${Math.round(d.totalNeto).toLocaleString('es-CO')}
+            </td>`;
         }).join('');
 
-        html += `
-            <div class="caj-vta-semana">
-                <div class="caj-vta-semana__hdr">
-                    <span class="caj-vta-semana__titulo">Semana #${sem.numSemana} <span class="caj-vta-semana__rango">· ${rango}</span></span>
-                    <span class="caj-vta-semana__total">$${Math.round(totalSem).toLocaleString('es-CO')}</span>
-                </div>
-                <div class="caj-vta-tabla-wrap">
-                    <table class="caj-tabla">
-                        <thead>
-                            <tr>
-                                <th>Sede</th>
-                                <th style="text-align:right">Pedidos</th>
-                                <th style="text-align:right">Devoluciones</th>
-                                <th style="text-align:right">Total neto</th>
-                                <th>Estado</th>
-                                <th style="width:13rem"></th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            </div>`;
+        const totalSede = _ventasDatos.reduce((s, sem) => {
+            const d = sem.sedes.find(s2 => s2.sede === sede);
+            return s + (d?.totalNeto || 0);
+        }, 0);
+
+        return `<tr>
+            <td class="caj-pvt-sede">${_esc(nombre)}</td>
+            ${celdas}
+            <td class="caj-pvt-total">$${Math.round(totalSede).toLocaleString('es-CO')}</td>
+        </tr>`;
+    }).join('');
+
+    // Pie: totales por semana
+    const footCeldas = _ventasDatos.map(sem => {
+        const t = sem.sedes.reduce((s, d) => s + d.totalNeto, 0);
+        return `<td class="caj-pvt-foot-num">$${Math.round(t).toLocaleString('es-CO')}</td>`;
+    }).join('');
+    const grandTotal = _ventasDatos.reduce((s, sem) => s + sem.sedes.reduce((ss, d) => ss + d.totalNeto, 0), 0);
+
+    contenido.innerHTML = `
+        <div class="caj-pvt-wrap">
+            <table class="caj-tabla caj-pvt-tabla">
+                <thead>
+                    <tr>
+                        <th class="caj-pvt-th-sede">Sede</th>
+                        ${thSemanas}
+                        <th class="caj-pvt-th-total">Total mes</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+                <tfoot>
+                    <tr class="caj-pvt-tfoot">
+                        <td class="caj-pvt-foot-label">Total</td>
+                        ${footCeldas}
+                        <td class="caj-pvt-foot-num caj-pvt-grand">$${Math.round(grandTotal).toLocaleString('es-CO')}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div id="caj-pvt-detalle" class="caj-pvt-detalle" style="display:none"></div>`;
+}
+
+function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
+    const panel = document.getElementById('caj-pvt-detalle');
+    const sem   = _ventasDatos[semIdx];
+    if (!sem) return;
+    const d = sem.sedes.find(s => s.sede === sedeName);
+    if (!d) return;
+
+    // Resaltar celda activa
+    document.querySelectorAll('.caj-pvt-celda--activa').forEach(el => el.classList.remove('caj-pvt-celda--activa'));
+    celdaEl?.classList.add('caj-pvt-celda--activa');
+
+    const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const rango = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+
+    let estadoHtml, accionHtml;
+    if (d.estado === 'pagado') {
+        estadoHtml = '<span class="caj-badge caj-badge--pagado">Pagado</span>';
+        accionHtml = '';
+    } else if (d.estado === 'pendiente') {
+        estadoHtml = '<span class="caj-badge caj-badge--pendiente">Pendiente</span>';
+        accionHtml = `<button class="caj-btn caj-btn--ingreso caj-btn-confirmar" data-id="${d.movId}">✓ Confirmar pago</button>`;
+    } else {
+        estadoHtml = '<span class="caj-badge caj-vta-badge--noimportado">Sin registrar</span>';
+        accionHtml = `<button class="caj-btn caj-btn--ingreso caj-vta-btn-registrar" data-week-idx="${semIdx}" data-sede="${_esc(sedeName)}">↓ Registrar como pendiente</button>`;
+    }
+
+    panel.style.display = 'block';
+    panel.innerHTML = `
+        <div class="caj-pvt-det-hdr">
+            <div>
+                <span class="caj-pvt-det-titulo">${_esc(d.nombreDisplay)}</span>
+                <span class="caj-pvt-det-sub">Semana #${sem.numSemana} · ${rango}</span>
+            </div>
+            <button class="caj-dialog-cerrar" id="caj-pvt-det-cerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="caj-pvt-det-body">
+            <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
+            ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#991b1b">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
+            <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total neto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
+            <div class="caj-pvt-det-row"><span>Estado</span>${estadoHtml}</div>
+            ${accionHtml ? `<div class="caj-pvt-det-acciones">${accionHtml}</div>` : ''}
+        </div>`;
+
+    document.getElementById('caj-pvt-det-cerrar').addEventListener('click', () => {
+        panel.style.display = 'none';
+        document.querySelectorAll('.caj-pvt-celda--activa').forEach(el => el.classList.remove('caj-pvt-celda--activa'));
     });
 
-    contenido.innerHTML = html;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Acciones inline en la vista Ventas
@@ -1169,6 +1228,13 @@ document.getElementById('caj-ventas-contenido').addEventListener('click', async 
     const btnConf = e.target.closest('.caj-btn-confirmar');
     if (btnConf) {
         _abrirDialogConfirmar(parseInt(btnConf.dataset.id));
+        return;
+    }
+
+    // Clic en celda de la tabla pivote → panel de detalle
+    const celda = e.target.closest('.caj-pvt-celda[data-semidx]');
+    if (celda) {
+        _mostrarDetalleCelda(parseInt(celda.dataset.semidx), celda.dataset.sede, celda);
         return;
     }
 

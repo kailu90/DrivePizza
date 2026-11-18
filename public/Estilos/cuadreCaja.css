@@ -628,61 +628,87 @@
     padding: 1.2rem 1.4rem;
 }
 
-/* ── Vista Ventas por Sede ───────────────────────────────────────────────────── */
+/* ── Vista Ventas por Sede — Tabla Pivote ────────────────────────────────────── */
 
-/* Bloque de semana */
-.caj-vta-semana {
+.caj-pvt-wrap        { overflow-x: auto; margin-top: 0.8rem; }
+.caj-pvt-tabla       { min-width: 56rem; }
+
+/* Cabecera */
+.caj-pvt-th-sede     { width: 14rem; text-align: left !important; }
+.caj-pvt-th-sem      { text-align: center !important; white-space: nowrap; min-width: 11rem; }
+.caj-pvt-th-total    { text-align: right !important; white-space: nowrap; }
+.caj-pvt-rango       { display: block; font-size: 1.1rem; font-weight: 400; color: #aaa; }
+
+/* Columna sede */
+.caj-pvt-sede        { font-weight: 600; color: var(--color-terciario); white-space: nowrap; }
+
+/* Celdas de datos — clickeables */
+.caj-pvt-celda {
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s;
+    padding: 0.9rem 1.2rem !important;
+}
+.caj-pvt-celda:hover          { background: #f0f9f0; }
+.caj-pvt-celda--activa        { background: #e6f4e7 !important; outline: 2px solid var(--color-primario); outline-offset: -2px; }
+.caj-pvt-celda--vacia         { color: #ccc; text-align: center; cursor: default; }
+
+/* Punto de estado */
+.caj-pvt-dot {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+.caj-pvt-dot--pagado       { background: #16a34a; }
+.caj-pvt-dot--pendiente    { background: #d97706; }
+.caj-pvt-dot--noimportado  { background: #9ca3af; }
+
+/* Total por sede */
+.caj-pvt-total  { text-align: right !important; font-weight: 700; color: var(--color-terciario); white-space: nowrap; }
+
+/* Pie de tabla */
+.caj-pvt-tfoot td         { background: #f4f6f4; font-weight: 700; border-top: 2px solid #d1d5db; }
+.caj-pvt-foot-label       { color: #374151; }
+.caj-pvt-foot-num         { text-align: right !important; color: var(--color-terciario); white-space: nowrap; }
+.caj-pvt-grand            { font-size: 1.5rem; }
+
+/* Panel de detalle (debajo de la tabla) */
+.caj-pvt-detalle {
+    margin-top: 1.2rem;
     background: #fff;
+    border: 1.5px solid var(--color-primario);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
-
-/* Header de semana */
-.caj-vta-semana__hdr {
+.caj-pvt-det-hdr {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.1rem 1.6rem;
+    padding: 1rem 1.6rem;
     background: var(--color-primario);
     color: var(--color-secundario);
 }
-
-.caj-vta-semana__titulo {
-    font-size: 1.4rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.caj-vta-semana__rango {
-    font-weight: 400;
+.caj-pvt-det-titulo { font-size: 1.5rem; font-weight: 700; display: block; }
+.caj-pvt-det-sub    { font-size: 1.2rem; opacity: 0.8; display: block; }
+.caj-pvt-det-body   { padding: 1.4rem 1.6rem; display: flex; flex-direction: column; gap: 0.8rem; }
+.caj-pvt-det-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 1.3rem;
-    opacity: 0.8;
-    text-transform: none;
-    letter-spacing: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #f0f0f0;
 }
+.caj-pvt-det-row:last-child  { border-bottom: none; }
+.caj-pvt-det-row--total      { font-size: 1.5rem; font-weight: 700; }
+.caj-pvt-det-acciones        { padding-top: 0.4rem; display: flex; gap: 1rem; }
 
-.caj-vta-semana__total {
-    font-size: 1.6rem;
-    font-weight: 700;
-}
-
-/* Wrap tabla con scroll horizontal en móvil */
-.caj-vta-tabla-wrap {
-    overflow-x: auto;
-}
-
-/* Celdas numéricas en ventas */
-.caj-vta-num           { text-align: right !important; white-space: nowrap; }
-.caj-vta-num--ped      { color: var(--color-primario); font-weight: 600; }
-.caj-vta-num--tot      { font-weight: 700; color: var(--color-terciario); }
-
-/* Nombre de sede */
-.caj-vta-sede          { font-weight: 600; color: var(--color-terciario); }
-
-/* Badge sin registrar */
+/* Badge sin registrar (reutilizado en panel detalle) */
 .caj-vta-badge--noimportado {
     display: inline-block;
     padding: 0.3rem 0.9rem;
@@ -694,27 +720,22 @@
     color: #888;
 }
 
-/* Botón Registrar (crear pendiente inline) */
+/* Botón Registrar en panel detalle */
 .caj-vta-btn-registrar {
     font-family: inherit;
     font-size: 1.2rem;
     font-weight: 700;
     padding: 0.4rem 1rem;
     border-radius: 6px;
-    border: 1.5px solid #ccc;
-    background: #fafafa;
-    color: #666;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    line-height: 1;
-}
-.caj-vta-btn-registrar:hover:not(:disabled) {
+    border: 1.5px solid var(--color-primario);
     background: var(--color-primario);
     color: var(--color-secundario);
-    border-color: var(--color-primario);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
 }
-.caj-vta-btn-registrar:disabled { opacity: 0.5; cursor: default; }
+.caj-vta-btn-registrar:hover:not(:disabled) { opacity: 0.85; }
+.caj-vta-btn-registrar:disabled             { opacity: 0.5; cursor: default; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
