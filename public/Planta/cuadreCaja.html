@@ -36,6 +36,15 @@
             </div>
         </div>
 
+        <!-- Pestañas de vista -->
+        <div class="caj-tabs">
+            <button class="caj-tab caj-tab--active" id="caj-tab-movimientos">Movimientos</button>
+            <button class="caj-tab" id="caj-tab-informe">Informe Mensual</button>
+        </div>
+
+        <!-- Vista: Movimientos ─────────────────────────────────────────────── -->
+        <div id="caj-view-movimientos">
+
         <!-- Cards resumen del período -->
         <div class="caj-resumen">
             <div class="caj-card caj-card--pendiente">
@@ -96,6 +105,15 @@
                 </thead>
                 <tbody id="caj-tbody"></tbody>
             </table>
+        </div>
+
+        </div><!-- /caj-view-movimientos -->
+
+        <!-- Vista: Informe Mensual ─────────────────────────────────────────── -->
+        <div id="caj-view-informe" style="display:none">
+            <div id="caj-informe-contenido">
+                <p class="caj-empty">Cargando informe...</p>
+            </div>
         </div>
 
     </section>

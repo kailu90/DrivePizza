@@ -429,6 +429,144 @@
     border-top: 1px solid #f0f0f0;
 }
 
+/* ── Pestañas ────────────────────────────────────────────────────────────────── */
+.caj-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 2.4rem;
+}
+
+.caj-tab {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 1rem 2.4rem;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: #aaa;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+.caj-tab:hover      { color: var(--color-terciario); }
+.caj-tab--active    { color: var(--color-primario); border-bottom-color: var(--color-primario); }
+
+/* ── Informe Mensual ──────────────────────────────────────────────────────────── */
+.caj-inf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.caj-inf-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.caj-inf-bloque {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    margin-bottom: 2rem;
+}
+
+.caj-inf-bloque__titulo {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1.1rem 1.4rem;
+    text-align: center;
+}
+
+.caj-inf-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+}
+
+.caj-inf-tabla thead th {
+    background: #f5f5f5;
+    padding: 0.9rem 1.4rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #888;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.caj-inf-tabla thead th:last-child { text-align: right; }
+
+.caj-inf-tabla tbody tr { border-bottom: 1px solid #f5f5f5; }
+.caj-inf-tabla tbody td { padding: 1rem 1.4rem; color: var(--color-terciario); }
+
+/* Fila vacía dentro del informe */
+.inf-empty-row {
+    text-align: center;
+    color: #bbb;
+    padding: 1.4rem !important;
+}
+
+/* Fila de total (tfoot) */
+.inf-row--total td {
+    background: #f0f0f0;
+    font-weight: 700;
+    padding: 1rem 1.4rem;
+    border-top: 2px solid #ddd;
+    color: var(--color-terciario);
+}
+
+/* Fila pendiente */
+.inf-row--pendiente td {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+/* Valores numéricos */
+.inf-val {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.inf-val--ing  { color: var(--color-primario) !important; font-weight: 700; }
+.inf-val--egr  { color: #991b1b !important;               font-weight: 700; }
+.inf-val--pend { color: #d97706 !important;               font-weight: 700; }
+
+/* Caja de utilidad neta (grande) */
+.caj-inf-total {
+    padding: 2.4rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.caj-inf-total--pos { background: #f0fdf4; }
+.caj-inf-total--neg { background: #fff1f2; }
+
+.caj-inf-total__label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #888;
+}
+
+.caj-inf-total__valor {
+    font-size: 3.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.caj-inf-total--pos .caj-inf-total__valor { color: var(--color-primario); }
+.caj-inf-total--neg .caj-inf-total__valor { color: #991b1b; }
+
 /* ── Dialog liquidación — ancho extendido ────────────────────────────────────── */
 .caj-dialog--wide {
     width: min(640px, 96vw);
@@ -464,6 +602,7 @@
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .caj-resumen         { grid-template-columns: repeat(2, 1fr); }
+    .caj-inf-grid        { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {

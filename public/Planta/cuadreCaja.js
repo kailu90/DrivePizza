@@ -31,7 +31,7 @@ import { CargarHeader, CargarSidebar, CargarFooter, capitalizarSede, revelarSpla
 import { getSedes }     from '../DrivePizza/Shared/sedesService.js';
 import { CAJA_CATEGORIAS } from './planta.config.js';
 import {
-    getPeriodo, getNumeroPeriodo,
+    getPeriodo, getNumeroPeriodo, getPeriodoParaFecha,
     pedidosLiquidables, devolucionesLiquidables, colFechaToUTC,
 } from '../Shared/semanas.js';
 
@@ -45,6 +45,9 @@ let _todos         = [];         // movimientos del período cargados desde BD
 let _sedes         = [];         // lista de sedes para el select del dialog
 let _proveedores   = [];         // lista de proveedores activos para el select del dialog
 let _tipoDialog    = 'ingreso';  // tipo seleccionado actualmente en el dialog
+
+// Vista activa
+let _vistaActual = 'movimientos';
 
 // Estado del dialog de liquidación
 let _liqOffset   = 0;            // offset de semanas respecto a la semana actual
@@ -161,6 +164,7 @@ async function _cargarMovimientos() {
     _todos = data || [];
     _renderResumen();
     _renderTabla();
+    if (_vistaActual === 'informe') _renderInforme();
 }
 
 // ── Resumen (4 cards) ─────────────────────────────────────────────────────────
@@ -731,6 +735,183 @@ document.getElementById('caj-dialog-confirmar').addEventListener('click', e => {
     if (e.target === e.currentTarget) e.currentTarget.close();
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Pestañas: Movimientos / Informe Mensual
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _switchVista(vista) {
+    _vistaActual = vista;
+    document.getElementById('caj-tab-movimientos').classList.toggle('caj-tab--active', vista === 'movimientos');
+    document.getElementById('caj-tab-informe').classList.toggle('caj-tab--active',     vista === 'informe');
+    document.getElementById('caj-view-movimientos').style.display = vista === 'movimientos' ? '' : 'none';
+    document.getElementById('caj-view-informe').style.display     = vista === 'informe'     ? '' : 'none';
+    if (vista === 'informe') _renderInforme();
+}
+
+document.getElementById('caj-tab-movimientos').addEventListener('click', () => _switchVista('movimientos'));
+document.getElementById('caj-tab-informe').addEventListener('click',     () => _switchVista('informe'));
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Informe Mensual
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _renderInforme() {
+    const contenido = document.getElementById('caj-informe-contenido');
+
+    // ── Clasificar movimientos ──────────────────────────────────────────────
+    // Ingresos cobrados vs pendientes
+    const ingCobrado   = _todos.filter(m => m.tipo === 'ingreso' && m.estado !== 'pendiente');
+    const ingPendiente = _todos.filter(m => m.tipo === 'ingreso' && m.estado === 'pendiente');
+
+    // Egresos por método: banco (transferencia + tarjeta) vs efectivo
+    const egrBanco    = _todos.filter(m => m.tipo === 'egreso' && m.metodo_pago !== 'efectivo');
+    const egrEfectivo = _todos.filter(m => m.tipo === 'egreso' && m.metodo_pago === 'efectivo');
+
+    // ── Totales ────────────────────────────────────────────────────────────
+    const totalCobrado   = ingCobrado.reduce((s, m)   => s + Number(m.monto), 0);
+    const totalPendiente = ingPendiente.reduce((s, m) => s + Number(m.monto), 0);
+    const totalBanco     = egrBanco.reduce((s, m)     => s + Number(m.monto), 0);
+    const totalEfectivo  = egrEfectivo.reduce((s, m)  => s + Number(m.monto), 0);
+    const utilidad       = totalCobrado - totalBanco - totalEfectivo;
+
+    // ── Agrupaciones ──────────────────────────────────────────────────────
+
+    // Ventas cobradas por periodo_ref (semana de liquidación)
+    const ventasPorRef = {};
+    ingCobrado.forEach(m => {
+        const ref = m.periodo_ref || '__otro__';
+        ventasPorRef[ref] = (ventasPorRef[ref] || 0) + Number(m.monto);
+    });
+
+    // Gastos banco por categoría
+    const bancoPorCat = {};
+    egrBanco.forEach(m => {
+        const cat = _labelCategoria(m.categoria);
+        bancoPorCat[cat] = (bancoPorCat[cat] || 0) + Number(m.monto);
+    });
+
+    // Gastos efectivo por semana del mes
+    const efectivoPorSem = {};
+    egrEfectivo.forEach(m => {
+        if (!m.fecha) return;
+        const n   = _semanaNumero(m.fecha);
+        const key = `Semana #${n}`;
+        efectivoPorSem[key] = (efectivoPorSem[key] || 0) + Number(m.monto);
+    });
+
+    // ── Helpers de render ─────────────────────────────────────────────────
+
+    /** Convierte "2026-11-S2" → "Semana #2 · Nov 2026" */
+    function _labelRef(ref) {
+        if (ref === '__otro__') return 'Otros ingresos';
+        const m = ref.match(/^(\d{4})-(\d{2})-S(\d+)$/);
+        if (m) {
+            const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            return `Semana #${m[3]} · ${MESES[parseInt(m[2]) - 1]} ${m[1]}`;
+        }
+        return ref;
+    }
+
+    function _fila(desc, val, clsVal = '') {
+        return `<tr>
+            <td>${_esc(desc)}</td>
+            <td class="inf-val ${clsVal}">$${Math.round(val).toLocaleString('es-CO')}</td>
+        </tr>`;
+    }
+
+    function _bloque(titulo, rows, totalLabel, totalVal, clsTot = '') {
+        return `
+            <div class="caj-inf-bloque">
+                <div class="caj-inf-bloque__titulo">${titulo}</div>
+                <table class="caj-inf-tabla">
+                    <thead><tr><th>Descripción</th><th>Valor</th></tr></thead>
+                    <tbody>
+                        ${rows || '<tr><td colspan="2" class="inf-empty-row">Sin registros</td></tr>'}
+                    </tbody>
+                    <tfoot>
+                        <tr class="inf-row--total">
+                            <td>${totalLabel}</td>
+                            <td class="inf-val ${clsTot}">$${Math.round(totalVal).toLocaleString('es-CO')}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>`;
+    }
+
+    // ── Construir bloques ─────────────────────────────────────────────────
+
+    // Bloque ventas
+    let ventasRows = Object.entries(ventasPorRef)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([ref, v]) => _fila(_labelRef(ref), v, 'inf-val--ing'))
+        .join('');
+    if (totalPendiente > 0) {
+        ventasRows += `<tr class="inf-row--pendiente">
+            <td>Por cobrar (pendiente)</td>
+            <td class="inf-val inf-val--pend">$${Math.round(totalPendiente).toLocaleString('es-CO')}</td>
+        </tr>`;
+    }
+    const bloqueVentas = _bloque(
+        'Ventas del mes (ingresos cobrados)',
+        ventasRows,
+        'TOTAL COBRADO', totalCobrado, 'inf-val--ing'
+    );
+
+    // Bloque banco
+    const bancoCats = Object.entries(bancoPorCat)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([cat, v]) => _fila(cat, v, 'inf-val--egr'))
+        .join('');
+    const bloqueBanco = _bloque(
+        'Gastos por banco / transferencia',
+        bancoCats,
+        'TOTAL BANCO', totalBanco, 'inf-val--egr'
+    );
+
+    // Bloque efectivo
+    const efectivoSems = Object.entries(efectivoPorSem)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([sem, v]) => _fila(sem, v, 'inf-val--egr'))
+        .join('');
+    const bloqueEfectivo = _bloque(
+        'Gastos en efectivo',
+        efectivoSems,
+        'TOTAL EFECTIVO', totalEfectivo, 'inf-val--egr'
+    );
+
+    // Panel resumen + utilidad
+    const isPos = utilidad >= 0;
+    const bloqueResumen = `
+        <div class="caj-inf-bloque">
+            <div class="caj-inf-bloque__titulo">Resumen del mes</div>
+            <table class="caj-inf-tabla">
+                <thead><tr><th>Descripción</th><th>Valor</th></tr></thead>
+                <tbody>
+                    ${_fila('Venta del mes',         totalCobrado,  'inf-val--ing')}
+                    ${_fila('Gastos por banco',      totalBanco,    'inf-val--egr')}
+                    ${_fila('Gastos en efectivo',    totalEfectivo, 'inf-val--egr')}
+                </tbody>
+            </table>
+            <div class="caj-inf-total ${isPos ? 'caj-inf-total--pos' : 'caj-inf-total--neg'}">
+                <span class="caj-inf-total__label">UTILIDAD NETA</span>
+                <span class="caj-inf-total__valor">${!isPos ? '−' : ''}$${Math.round(Math.abs(utilidad)).toLocaleString('es-CO')}</span>
+            </div>
+        </div>`;
+
+    // ── Layout final ──────────────────────────────────────────────────────
+    contenido.innerHTML = `
+        <div class="caj-inf-grid">
+            <div class="caj-inf-col">
+                ${bloqueVentas}
+                ${bloqueBanco}
+                ${bloqueEfectivo}
+            </div>
+            <div class="caj-inf-col">
+                ${bloqueResumen}
+            </div>
+        </div>`;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Formatea un número como pesos colombianos con signo $. */
@@ -772,6 +953,13 @@ function _esc(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+/** Retorna el número de semana del mes (1-6) para una fecha ISO 'YYYY-MM-DD'. */
+function _semanaNumero(fechaISO) {
+    const date = new Date(fechaISO + 'T12:00:00');
+    const { desde } = getPeriodoParaFecha(date);
+    return getNumeroPeriodo(desde);
 }
 
 /** Muestra un mensaje de error en el dialog principal. */

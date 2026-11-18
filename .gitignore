@@ -77,3 +77,9 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Videos y archivos de gran tamaño
+*.MP4
+*.mp4
+*.mov
+*.MOV
