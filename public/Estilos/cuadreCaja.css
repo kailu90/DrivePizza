@@ -1,6 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Cuadre de Caja — Planta / DrivePizza
    Prefijo de clase: caj-
+
+   Paleta:
+     Ingreso  → fondo crema (#f4ecdf / --color-secundario) + letra verde (#284c22 / --color-primario)
+     Egreso   → fondo rojo claro (#fee2e2) + letra rojo oscuro (#991b1b)
+     Positivo → verde primario
+     Negativo → rojo oscuro
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Topbar ────────────────────────────────────────────────────────────────── */
@@ -72,11 +78,10 @@
     gap: 0.5rem;
     border-left: 4px solid transparent;
 }
-.caj-card--ingreso { border-left-color: #27ae60; }
-.caj-card--egreso  { border-left-color: #e74c3c; }
-.caj-card--balance { border-left-color: #3498db; }
-.caj-card--balance.positivo { border-left-color: #27ae60; }
-.caj-card--balance.negativo { border-left-color: #e74c3c; }
+.caj-card--ingreso { border-left-color: var(--color-primario); }
+.caj-card--egreso  { border-left-color: #991b1b; }
+.caj-card--balance { border-left-color: var(--color-primario); }
+.caj-card--balance.negativo { border-left-color: #991b1b; }
 
 .caj-card__label {
     font-size: 1.1rem;
@@ -91,10 +96,10 @@
     font-weight: 700;
     color: var(--color-terciario);
 }
-.caj-card--ingreso .caj-card__monto                { color: #27ae60; }
-.caj-card--egreso  .caj-card__monto                { color: #e74c3c; }
-.caj-card--balance.positivo .caj-card__monto       { color: #27ae60; }
-.caj-card--balance.negativo .caj-card__monto       { color: #e74c3c; }
+.caj-card--ingreso .caj-card__monto          { color: var(--color-primario); }
+.caj-card--egreso  .caj-card__monto          { color: #991b1b; }
+.caj-card--balance.positivo .caj-card__monto { color: var(--color-primario); }
+.caj-card--balance.negativo .caj-card__monto { color: #991b1b; }
 
 .caj-card__count {
     font-size: 1.1rem;
@@ -121,11 +126,17 @@
     transition: opacity 0.15s;
     white-space: nowrap;
 }
-.caj-btn:disabled          { opacity: 0.45; cursor: not-allowed; }
+.caj-btn:disabled             { opacity: 0.45; cursor: not-allowed; }
 .caj-btn:hover:not(:disabled) { opacity: 0.85; }
 
-.caj-btn--ingreso  { background: #27ae60; color: #fff; }
-.caj-btn--egreso   { background: #e74c3c; color: #fff; }
+/* Ingreso: fondo verde, letra crema */
+.caj-btn--ingreso  {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+}
+/* Egreso: fondo rojo, letra blanca */
+.caj-btn--egreso   { background: #991b1b; color: #fff; }
+/* Secundario: neutro */
 .caj-btn--secondary {
     background: #f0f0f0;
     color: var(--color-terciario);
@@ -193,6 +204,7 @@
     vertical-align: middle;
 }
 
+/* Badge tipo: ingreso = crema + verde / egreso = rojo claro + rojo oscuro */
 .caj-badge {
     display: inline-block;
     padding: 0.3rem 0.9rem;
@@ -201,11 +213,18 @@
     font-weight: 700;
     white-space: nowrap;
 }
-.caj-badge--ingreso { background: #d5f5e3; color: #1a7a42; }
-.caj-badge--egreso  { background: #fce4e4; color: #a93226; }
+.caj-badge--ingreso {
+    background: var(--color-secundario);
+    color: var(--color-primario);
+}
+.caj-badge--egreso {
+    background: #fee2e2;
+    color: #991b1b;
+}
 
-.caj-monto--ingreso { color: #27ae60; font-weight: 700; white-space: nowrap; }
-.caj-monto--egreso  { color: #e74c3c; font-weight: 700; white-space: nowrap; }
+/* Montos en tabla */
+.caj-monto--ingreso { color: var(--color-primario); font-weight: 700; white-space: nowrap; }
+.caj-monto--egreso  { color: #991b1b;               font-weight: 700; white-space: nowrap; }
 
 .caj-btn-delete {
     background: none;
@@ -219,8 +238,8 @@
     line-height: 1;
 }
 .caj-btn-delete:hover {
-    color: #e74c3c;
-    background: #fce4e4;
+    color: #991b1b;
+    background: #fee2e2;
 }
 
 .caj-empty {
@@ -277,7 +296,7 @@
     gap: 1.4rem;
 }
 
-/* Selector de tipo */
+/* Selector de tipo Ingreso / Egreso */
 .caj-tipo-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -295,18 +314,20 @@
     cursor: pointer;
     transition: all 0.15s;
 }
+/* Ingreso activo: crema con borde y letra verde */
 .caj-tipo-btn.active-ingreso {
-    border-color: #27ae60;
-    background: #d5f5e3;
-    color: #1a7a42;
+    border-color: var(--color-primario);
+    background: var(--color-secundario);
+    color: var(--color-primario);
 }
+/* Egreso activo: rojo claro con borde y letra rojo oscuro */
 .caj-tipo-btn.active-egreso {
-    border-color: #e74c3c;
-    background: #fce4e4;
-    color: #a93226;
+    border-color: #991b1b;
+    background: #fee2e2;
+    color: #991b1b;
 }
 
-/* Campos */
+/* Campos del formulario */
 .caj-field {
     display: flex;
     flex-direction: column;
@@ -353,8 +374,8 @@
 /* Error */
 .caj-error {
     display: none;
-    background: #fce4e4;
-    color: #a93226;
+    background: #fee2e2;
+    color: #991b1b;
     border-radius: 6px;
     padding: 1rem 1.4rem;
     font-size: 1.3rem;
