@@ -32,6 +32,7 @@ async function init() {
 
     if (['admin', 'panaderias-admin'].includes(perfil.rol)) {
         document.getElementById('card-barrios').style.display = ''
+        document.getElementById('card-productos').style.display = ''
     }
 
     document.getElementById('contenido-principal').style.display = ''
