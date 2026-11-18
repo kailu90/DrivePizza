@@ -49,6 +49,9 @@ let _tipoDialog    = 'ingreso';  // tipo seleccionado actualmente en el dialog
 // Vista activa
 let _vistaActual = 'movimientos';
 
+// Datos de la vista Ventas (calculados, no persisten en BD solos)
+let _ventasDatos = [];   // [{ numSemana, desde, hasta, periodoRef, sedes:[...] }]
+
 // Estado del dialog de liquidación
 let _liqYear    = new Date().getFullYear();   // año del mes seleccionado
 let _liqMonth   = new Date().getMonth() + 1; // mes seleccionado (1-12)
@@ -132,6 +135,7 @@ document.getElementById('caj-prev').addEventListener('click', () => {
     if (_periodo.month < 1) { _periodo.month = 12; _periodo.year--; }
     _actualizarLabelPeriodo();
     _cargarMovimientos();
+    if (_vistaActual === 'ventas') _cargarVentas();
 });
 
 document.getElementById('caj-next').addEventListener('click', () => {
@@ -139,6 +143,7 @@ document.getElementById('caj-next').addEventListener('click', () => {
     if (_periodo.month > 12) { _periodo.month = 1; _periodo.year++; }
     _actualizarLabelPeriodo();
     _cargarMovimientos();
+    if (_vistaActual === 'ventas') _cargarVentas();
 });
 
 // ── Carga de datos ────────────────────────────────────────────────────────────
@@ -763,6 +768,7 @@ async function _confirmarPago() {
 
     _renderResumen();
     _renderTabla();
+    if (_vistaActual === 'ventas') _cargarVentas();
 }
 
 document.getElementById('caj-conf-guardar').addEventListener('click', _confirmarPago);
@@ -783,13 +789,17 @@ document.getElementById('caj-dialog-confirmar').addEventListener('click', e => {
 function _switchVista(vista) {
     _vistaActual = vista;
     document.getElementById('caj-tab-movimientos').classList.toggle('caj-tab--active', vista === 'movimientos');
+    document.getElementById('caj-tab-ventas').classList.toggle('caj-tab--active',      vista === 'ventas');
     document.getElementById('caj-tab-informe').classList.toggle('caj-tab--active',     vista === 'informe');
     document.getElementById('caj-view-movimientos').style.display = vista === 'movimientos' ? '' : 'none';
+    document.getElementById('caj-view-ventas').style.display      = vista === 'ventas'      ? '' : 'none';
     document.getElementById('caj-view-informe').style.display     = vista === 'informe'     ? '' : 'none';
     if (vista === 'informe') _renderInforme();
+    if (vista === 'ventas')  _cargarVentas();
 }
 
 document.getElementById('caj-tab-movimientos').addEventListener('click', () => _switchVista('movimientos'));
+document.getElementById('caj-tab-ventas').addEventListener('click',      () => _switchVista('ventas'));
 document.getElementById('caj-tab-informe').addEventListener('click',     () => _switchVista('informe'));
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -979,6 +989,237 @@ function _renderInforme() {
             </div>
         </div>`;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Vista Ventas por Sede
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function _cargarVentas() {
+    const contenido = document.getElementById('caj-ventas-contenido');
+    contenido.innerHTML = '<p class="caj-empty">Cargando...</p>';
+
+    const semanas  = _semanasDelMes(_periodo.year, _periodo.month);
+    const desdeISO = _toISO(semanas[0].desde);
+    const hastaISO = _toISO(semanas[semanas.length - 1].hasta);
+    const mesNum   = String(_periodo.month).padStart(2, '0');
+
+    try {
+        const [
+            { data: rawPedidos, error: errP },
+            { data: rawDevs,    error: errD },
+            { data: movReg,     error: errM },
+        ] = await Promise.all([
+            supabase
+                .from('pedidos_planta')
+                .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
+                .gte('delivery_date', desdeISO)
+                .lte('delivery_date', hastaISO),
+            supabase
+                .from('movimientos')
+                .select('sede, valor_total, subtipo, fecha')
+                .eq('tipo', 'Devolución')
+                .gte('fecha', colFechaToUTC(desdeISO, 'inicio'))
+                .lte('fecha', colFechaToUTC(hastaISO, 'fin')),
+            supabase
+                .from('caja_movimientos')
+                .select('id, sede, periodo_ref, estado, monto')
+                .eq('tipo', 'ingreso')
+                .eq('categoria', 'pago_sede')
+                .gte('fecha', desdeISO)
+                .lte('fecha', hastaISO),
+        ]);
+
+        if (errP) throw errP;
+        if (errD) throw errD;
+        if (errM) throw errM;
+
+        // Acumular pedidos y devoluciones por (semanaIdx, sede)
+        const dataPorSemana = semanas.map(() => ({}));
+
+        pedidosLiquidables(rawPedidos || []).forEach(p => {
+            if (!p.delivery_date) return;
+            const sede = (p.user_sede || 'sin sede').toLowerCase();
+            if (sede === 'planta producción' || sede === 'planta') return;
+            const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
+            if (idx === -1) return;
+            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+            dataPorSemana[idx][sede].totalPed += (p.total || 0);
+        });
+
+        devolucionesLiquidables(rawDevs || []).forEach(d => {
+            if (!d.fecha) return;
+            const sede = d.sede ? d.sede.toLowerCase() : null;
+            if (!sede) return;
+            const fechaCol = new Date(new Date(d.fecha).getTime() - 5 * 3600 * 1000);
+            const fechaISO = `${fechaCol.getUTCFullYear()}-${String(fechaCol.getUTCMonth() + 1).padStart(2, '0')}-${String(fechaCol.getUTCDate()).padStart(2, '0')}`;
+            const idx = _semanaIdxParaFecha(fechaISO, semanas);
+            if (idx === -1) return;
+            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+            dataPorSemana[idx][sede].totalDev += (d.valor_total || 0);
+        });
+
+        // Mapa de registros ya importados: 'periodoRef|sede' → { id, estado }
+        const movMap = {};
+        (movReg || []).forEach(m => {
+            if (m.periodo_ref && m.sede) movMap[`${m.periodo_ref}|${m.sede}`] = { id: m.id, estado: m.estado };
+        });
+
+        // Construir _ventasDatos
+        _ventasDatos = semanas.map(({ desde, hasta }, idx) => {
+            const numSemana  = getNumeroPeriodo(desde);
+            const periodoRef = `${_periodo.year}-${mesNum}-S${numSemana}`;
+            const sedes      = Object.keys(dataPorSemana[idx]).sort().map(sede => {
+                const { totalPed, totalDev } = dataPorSemana[idx][sede];
+                const totalNeto = totalPed - totalDev;
+                const mov       = movMap[`${periodoRef}|${sede}`] || null;
+                return {
+                    sede,
+                    nombreDisplay: capitalizarSede(sede),
+                    totalPed,
+                    totalDev,
+                    totalNeto,
+                    movId:  mov?.id    || null,
+                    estado: mov?.estado || null,   // null = sin registrar
+                };
+            });
+            return { numSemana, desde, hasta, periodoRef, sedes };
+        }).filter(s => s.sedes.length > 0);
+
+        _renderVentas();
+
+    } catch (err) {
+        console.error('[cuadreCaja] cargarVentas:', err);
+        contenido.innerHTML = `<p class="caj-empty" style="color:#991b1b">${err.message || 'Error al cargar ventas.'}</p>`;
+    }
+}
+
+function _renderVentas() {
+    const contenido = document.getElementById('caj-ventas-contenido');
+
+    if (!_ventasDatos.length) {
+        contenido.innerHTML = '<p class="caj-empty">Sin ventas este mes.</p>';
+        return;
+    }
+
+    const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    let html = '';
+
+    _ventasDatos.forEach((sem, semIdx) => {
+        const rango    = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+        const totalSem = sem.sedes.reduce((s, d) => s + d.totalNeto, 0);
+
+        const rows = sem.sedes.map(d => {
+            let badgeHtml, accionHtml;
+
+            if (d.estado === 'pagado') {
+                badgeHtml  = '<span class="caj-badge caj-badge--pagado">Pagado</span>';
+                accionHtml = '';
+            } else if (d.estado === 'pendiente') {
+                badgeHtml  = '<span class="caj-badge caj-badge--pendiente">Pendiente</span>';
+                accionHtml = `<button class="caj-btn-confirmar" data-id="${d.movId}" title="Confirmar pago recibido">✓ Confirmar</button>`;
+            } else {
+                badgeHtml  = '<span class="caj-badge caj-vta-badge--noimportado">Sin registrar</span>';
+                accionHtml = `<button class="caj-vta-btn-registrar" data-week-idx="${semIdx}" data-sede="${d.sede}">↓ Registrar</button>`;
+            }
+
+            const devHtml = d.totalDev > 0
+                ? `<span style="color:#991b1b">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</span>`
+                : '<span style="color:#ccc">—</span>';
+
+            return `<tr>
+                <td class="caj-vta-sede">${_esc(d.nombreDisplay)}</td>
+                <td class="caj-vta-num caj-vta-num--ped">$${Math.round(d.totalPed).toLocaleString('es-CO')}</td>
+                <td class="caj-vta-num">${devHtml}</td>
+                <td class="caj-vta-num caj-vta-num--tot">$${Math.round(d.totalNeto).toLocaleString('es-CO')}</td>
+                <td>${badgeHtml}</td>
+                <td class="caj-td-acciones">${accionHtml}</td>
+            </tr>`;
+        }).join('');
+
+        html += `
+            <div class="caj-vta-semana">
+                <div class="caj-vta-semana__hdr">
+                    <span class="caj-vta-semana__titulo">Semana #${sem.numSemana} <span class="caj-vta-semana__rango">· ${rango}</span></span>
+                    <span class="caj-vta-semana__total">$${Math.round(totalSem).toLocaleString('es-CO')}</span>
+                </div>
+                <div class="caj-vta-tabla-wrap">
+                    <table class="caj-tabla">
+                        <thead>
+                            <tr>
+                                <th>Sede</th>
+                                <th style="text-align:right">Pedidos</th>
+                                <th style="text-align:right">Devoluciones</th>
+                                <th style="text-align:right">Total neto</th>
+                                <th>Estado</th>
+                                <th style="width:13rem"></th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>`;
+    });
+
+    contenido.innerHTML = html;
+}
+
+// Acciones inline en la vista Ventas
+document.getElementById('caj-ventas-contenido').addEventListener('click', async e => {
+    // Confirmar pago (reutiliza dialog existente)
+    const btnConf = e.target.closest('.caj-btn-confirmar');
+    if (btnConf) {
+        _abrirDialogConfirmar(parseInt(btnConf.dataset.id));
+        return;
+    }
+
+    // Registrar como pendiente directamente
+    const btnReg = e.target.closest('.caj-vta-btn-registrar');
+    if (!btnReg) return;
+
+    const semIdx   = parseInt(btnReg.dataset.weekIdx);
+    const sedeName = btnReg.dataset.sede;
+    const semData  = _ventasDatos[semIdx];
+    const sedeData = semData?.sedes.find(s => s.sede === sedeName);
+    if (!sedeData) return;
+
+    btnReg.disabled    = true;
+    btnReg.textContent = 'Registrando...';
+
+    const { data: nuevo, error } = await supabase
+        .from('caja_movimientos')
+        .insert({
+            tipo:        'ingreso',
+            categoria:   'pago_sede',
+            concepto:    `Liq. ${semData.periodoRef.replace(/-S/, ' Sem ')} — ${sedeData.nombreDisplay}`,
+            monto:       Math.round(sedeData.totalNeto),
+            fecha:       _toISO(semData.hasta),
+            sede:        sedeData.sede,
+            metodo_pago: 'efectivo',
+            estado:      'pendiente',
+            periodo_ref: semData.periodoRef,
+            usuario:     _usuario,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('[cuadreCaja] registrar venta sede:', error);
+        alert('Error al registrar: ' + error.message);
+        btnReg.disabled    = false;
+        btnReg.textContent = '↓ Registrar';
+        return;
+    }
+
+    // Sincronizar _todos para la pestaña Movimientos
+    const { desde, hasta } = _rangoFechas();
+    if (nuevo.fecha >= desde && nuevo.fecha < hasta) {
+        _todos.unshift(nuevo);
+        _renderResumen();
+    }
+
+    // Recargar vista ventas
+    await _cargarVentas();
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
