@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Las Delicias — Productos</title>
+    <link rel="icon" type="image/png" href="./Imagenes/Favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./Estilos/theme.css">
+    <link rel="stylesheet" href="./Estilos/adminProductos.css">
+</head>
+<body>
+
+<div id="contenido-principal" style="display:none">
+
+    <!-- Topbar -->
+    <div class="ap-topbar">
+        <span class="ap-topbar__title">Productos</span>
+        <div class="ap-search-wrap">
+            <svg class="ap-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="11" cy="11" r="7.5"/>
+                <path stroke-linecap="round" d="m19 19-3.5-3.5"/>
+            </svg>
+            <input type="search" class="ap-search" id="ap-search" placeholder="Buscar producto..." autocomplete="off">
+        </div>
+        <button class="ap-btn-actualizar" id="ap-btn-actualizar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Actualizar
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="ap-stats">
+        <div class="ap-stat">
+            <span class="ap-stat__label">Total</span>
+            <span class="ap-stat__val" id="stat-total">—</span>
+        </div>
+        <div class="ap-stat">
+            <span class="ap-stat__label">Activos</span>
+            <span class="ap-stat__val" id="stat-activos">—</span>
+        </div>
+        <div class="ap-stat">
+            <span class="ap-stat__label">Inactivos</span>
+            <span class="ap-stat__val ap-stat__val--red" id="stat-inactivos">—</span>
+        </div>
+        <div class="ap-stat">
+            <span class="ap-stat__label">Agotados</span>
+            <span class="ap-stat__val ap-stat__val--amber" id="stat-agotados">—</span>
+        </div>
+    </div>
+
+    <!-- Category tabs -->
+    <div class="ap-tabs-wrap">
+        <div class="ap-tabs" id="ap-tabs"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="ap-tabla-wrap">
+        <table class="ap-tabla">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Activo</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="ap-tbody"></tbody>
+        </table>
+    </div>
+
+</div><!-- /contenido-principal -->
+
+<!-- ═══════════════════════════════════════════════════
+     Modal — Editar producto
+     ═══════════════════════════════════════════════════ -->
+<div class="ap-modal-bg" id="apModal">
+    <div class="ap-modal">
+
+        <div class="ap-modal-hdr">
+            <div>
+                <div class="ap-modal-titulo" id="ap-mod-nombre"></div>
+                <div class="ap-modal-cat"   id="ap-mod-cat"></div>
+            </div>
+            <button class="ap-modal-cerrar" id="ap-mod-cerrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Precio -->
+        <div class="ap-mod-field">
+            <label class="ap-mod-label" for="ap-mod-precio">Precio</label>
+            <input type="number" id="ap-mod-precio" class="ap-mod-input" min="1" step="100" placeholder="0">
+        </div>
+
+        <div class="ap-mod-sep"></div>
+
+        <!-- Toggle Activo -->
+        <div class="ap-mod-field">
+            <div class="ap-mod-row">
+                <div class="ap-mod-row-label">
+                    <span class="ap-mod-row-title">Producto activo</span>
+                    <span class="ap-mod-row-hint">Visible en el catálogo</span>
+                </div>
+                <label class="ap-toggle">
+                    <input type="checkbox" id="ap-mod-activo">
+                    <span class="ap-toggle__slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="ap-mod-sep"></div>
+
+        <!-- Toggle Stock -->
+        <div class="ap-mod-field">
+            <div class="ap-mod-row">
+                <div class="ap-mod-row-label">
+                    <span class="ap-mod-row-title">Controlar stock</span>
+                    <span class="ap-mod-row-hint">Limitar unidades disponibles</span>
+                </div>
+                <label class="ap-toggle">
+                    <input type="checkbox" id="ap-mod-stock-toggle">
+                    <span class="ap-toggle__slider"></span>
+                </label>
+            </div>
+
+            <!-- Cantidad (visible solo si stock habilitado) -->
+            <div class="ap-mod-stock-cantidad" id="ap-mod-stock-row" style="display:none">
+                <label class="ap-mod-label" for="ap-mod-stock-val" style="margin-top:14px">
+                    Unidades disponibles
+                </label>
+                <input type="number" id="ap-mod-stock-val" class="ap-mod-input" min="0" step="1" placeholder="0">
+                <p class="ap-mod-stock-hint">Poner 0 marca el producto como <b>Agotado</b></p>
+            </div>
+        </div>
+
+        <p class="ap-mod-error" id="ap-mod-error"></p>
+
+        <button class="ap-mod-guardar" id="ap-mod-guardar">Guardar cambios</button>
+
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="ap-toast" id="ap-toast"></div>
+
+<script type="module" src="./adminProductos.js"></script>
+</body>
+</html>

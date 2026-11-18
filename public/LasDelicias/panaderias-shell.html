@@ -341,8 +341,9 @@
     })
 
     const PAGE_SRC = {
-        home:    './panaderias-home.html',
-        pedidos: './pedidos.html',
+        home:              './panaderias-home.html',
+        pedidos:           './pedidos.html',
+        'admin-productos': './adminProductos.html',
     }
 
     // ── Modal Próximamente ────────────────────────────────────────────────────
@@ -475,6 +476,8 @@
                 return
             }
 
+            const esAdmin = ['panaderias-admin', 'admin'].includes(data.rol)
+
             _currentPage = 'home'
             mountHeader({
                 navLabel: 'Panaderías',
@@ -484,10 +487,11 @@
                     { label: 'Figuettos', description: 'Próximamente', onClick: () => showProximamente('Figuettos') },
                 ],
                 navActions: [
-                    { icon: 'search', label: 'Barrios',      onClick: () => _navTo('barrios')   },
-                    { icon: 'leaf',   label: 'Historial',    onClick: () => _navTo('historial') },
-                    { icon: 'pencil', label: 'Tomar pedido', onClick: () => _navTo('pedidos')   },
-                    { icon: 'users',  label: 'Clientes',     onClick: () => _navTo('clientes')  },
+                    { icon: 'search', label: 'Barrios',      onClick: () => _navTo('barrios')        },
+                    { icon: 'leaf',   label: 'Historial',    onClick: () => _navTo('historial')      },
+                    { icon: 'pencil', label: 'Tomar pedido', onClick: () => _navTo('pedidos')        },
+                    { icon: 'users',  label: 'Clientes',     onClick: () => _navTo('clientes')       },
+                    ...(esAdmin ? [{ icon: 'box', label: 'Productos', onClick: () => _navTo('admin-productos') }] : []),
                 ],
                 onHome: () => _navTo('home'),
                 onLogout: async () => {
