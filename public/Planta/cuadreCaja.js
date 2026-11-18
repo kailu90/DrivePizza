@@ -1034,17 +1034,20 @@ async function _cargarVentas() {
         if (errM) throw errM;
 
         // Acumular pedidos y devoluciones por (semanaIdx, sede)
+        // Solo se cuentan pedidos con status 'entregado': parciales en la semana en curso
         const dataPorSemana = semanas.map(() => ({}));
 
-        pedidosLiquidables(rawPedidos || []).forEach(p => {
-            if (!p.delivery_date) return;
-            const sede = (p.user_sede || 'sin sede').toLowerCase();
-            if (sede === 'planta producción' || sede === 'planta') return;
-            const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
-            if (idx === -1) return;
-            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
-            dataPorSemana[idx][sede].totalPed += (p.total || 0);
-        });
+        pedidosLiquidables(rawPedidos || [])
+            .filter(p => p.status === 'entregado')
+            .forEach(p => {
+                if (!p.delivery_date) return;
+                const sede = (p.user_sede || 'sin sede').toLowerCase();
+                if (sede === 'planta producción' || sede === 'planta') return;
+                const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
+                if (idx === -1) return;
+                if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+                dataPorSemana[idx][sede].totalPed += (p.total || 0);
+            });
 
         devolucionesLiquidables(rawDevs || []).forEach(d => {
             if (!d.fecha) return;
@@ -1064,26 +1067,34 @@ async function _cargarVentas() {
             if (m.periodo_ref && m.sede) movMap[`${m.periodo_ref}|${m.sede}`] = { id: m.id, estado: m.estado };
         });
 
-        // Construir _ventasDatos
-        _ventasDatos = semanas.map(({ desde, hasta }, idx) => {
-            const numSemana  = getNumeroPeriodo(desde);
-            const periodoRef = `${_periodo.year}-${mesNum}-S${numSemana}`;
-            const sedes      = Object.keys(dataPorSemana[idx]).sort().map(sede => {
-                const { totalPed, totalDev } = dataPorSemana[idx][sede];
-                const totalNeto = totalPed - totalDev;
-                const mov       = movMap[`${periodoRef}|${sede}`] || null;
-                return {
-                    sede,
-                    nombreDisplay: capitalizarSede(sede),
-                    totalPed,
-                    totalDev,
-                    totalNeto,
-                    movId:  mov?.id    || null,
-                    estado: mov?.estado || null,   // null = sin registrar
-                };
+        // Fecha de hoy en Colombia (UTC-5) para detectar semana en curso
+        const _hoyCol = new Date(new Date().getTime() - 5 * 3600 * 1000);
+        _hoyCol.setUTCHours(12, 0, 0, 0);
+
+        // Construir _ventasDatos — incluye todas las semanas que ya iniciaron,
+        // aunque no tengan datos aún (semana en curso con 0 entregados esa tarde)
+        _ventasDatos = semanas
+            .filter(({ desde }) => desde <= _hoyCol)   // excluir semanas futuras
+            .map(({ desde, hasta }, idx) => {
+                const numSemana  = getNumeroPeriodo(desde);
+                const periodoRef = `${_periodo.year}-${mesNum}-S${numSemana}`;
+                const enCurso    = hasta > _hoyCol;    // semana no ha cerrado
+                const sedes      = Object.keys(dataPorSemana[idx]).sort().map(sede => {
+                    const { totalPed, totalDev } = dataPorSemana[idx][sede];
+                    const totalNeto = totalPed - totalDev;
+                    const mov       = movMap[`${periodoRef}|${sede}`] || null;
+                    return {
+                        sede,
+                        nombreDisplay: capitalizarSede(sede),
+                        totalPed,
+                        totalDev,
+                        totalNeto,
+                        movId:  mov?.id     || null,
+                        estado: mov?.estado || null,
+                    };
+                });
+                return { numSemana, desde, hasta, periodoRef, enCurso, sedes };
             });
-            return { numSemana, desde, hasta, periodoRef, sedes };
-        }).filter(s => s.sedes.length > 0);
 
         _renderVentas();
 
@@ -1110,8 +1121,9 @@ function _renderVentas() {
 
     // Cabecera de semanas
     const thSemanas = _ventasDatos.map(sem => {
-        const rango = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
-        return `<th class="caj-pvt-th-sem">Sem #${sem.numSemana}<br><span class="caj-pvt-rango">${rango}</span></th>`;
+        const rango    = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+        const cursoTag = sem.enCurso ? ' <span class="caj-pvt-en-curso">En curso</span>' : '';
+        return `<th class="caj-pvt-th-sem${sem.enCurso ? ' caj-pvt-th-sem--curso' : ''}">Sem #${sem.numSemana}${cursoTag}<br><span class="caj-pvt-rango">${rango}</span></th>`;
     }).join('');
 
     // Fila por sede

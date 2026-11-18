@@ -636,8 +636,20 @@
 /* Cabecera */
 .caj-pvt-th-sede     { width: 14rem; text-align: left !important; }
 .caj-pvt-th-sem      { text-align: center !important; white-space: nowrap; min-width: 11rem; }
-.caj-pvt-th-total    { text-align: right !important; white-space: nowrap; }
-.caj-pvt-rango       { display: block; font-size: 1.1rem; font-weight: 400; color: #aaa; }
+.caj-pvt-th-total       { text-align: right !important; white-space: nowrap; }
+.caj-pvt-th-sem--curso  { background: #f0f9f0; }
+.caj-pvt-rango          { display: block; font-size: 1.1rem; font-weight: 400; color: #aaa; }
+.caj-pvt-en-curso {
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.1rem 0.6rem;
+    border-radius: 20px;
+    background: #dcfce7;
+    color: #166534;
+    vertical-align: middle;
+    margin-left: 0.3rem;
+}
 
 /* Columna sede */
 .caj-pvt-sede        { font-weight: 600; color: var(--color-terciario); white-space: nowrap; }
