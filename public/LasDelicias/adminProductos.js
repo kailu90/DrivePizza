@@ -180,7 +180,12 @@ function _abrirModal(prod) {
     const cm  = catMap()
 
     document.getElementById('ap-mod-nombre').textContent = prod.name
-    document.getElementById('ap-mod-cat').textContent    = cm[prod.id_category] || ''
+
+    const catSel = document.getElementById('ap-mod-cat')
+    catSel.innerHTML = _categorias.map(c =>
+        `<option value="${c.id_category}"${c.id_category === prod.id_category ? ' selected' : ''}>${c.name}</option>`
+    ).join('')
+
     document.getElementById('ap-mod-precio').value       = prod.price
     document.getElementById('ap-mod-activo').checked     = prod.active
     document.getElementById('ap-mod-error').style.display = 'none'
@@ -199,9 +204,10 @@ function _cerrarModal() {
 async function _guardarCambios() {
     if (!_editando) return
 
-    const precio  = Number(document.getElementById('ap-mod-precio').value)
-    const activo  = document.getElementById('ap-mod-activo').checked
-    const agotado = document.getElementById('ap-mod-agotado').checked
+    const precio      = Number(document.getElementById('ap-mod-precio').value)
+    const idCategoria = Number(document.getElementById('ap-mod-cat').value)
+    const activo      = document.getElementById('ap-mod-activo').checked
+    const agotado     = document.getElementById('ap-mod-agotado').checked
 
     const errorEl = document.getElementById('ap-mod-error')
     errorEl.style.display = 'none'
@@ -220,14 +226,14 @@ async function _guardarCambios() {
     try {
         const { data: updated, error } = await supabase
             .from('productos')
-            .update({ price: precio, active: activo, stock })
+            .update({ price: precio, id_category: idCategoria, active: activo, stock })
             .eq('id', _editando.id)
-            .select('id, price, active, stock')
+            .select('id, price, id_category, active, stock')
         if (error) throw error
         if (!updated || updated.length === 0) throw new Error('Sin filas actualizadas — revisa RLS o permisos de columna.')
 
         const idx = _productos.findIndex(p => p.id === _editando.id)
-        if (idx !== -1) _productos[idx] = { ..._productos[idx], price: precio, active: activo, stock }
+        if (idx !== -1) _productos[idx] = { ..._productos[idx], price: precio, id_category: idCategoria, active: activo, stock }
 
         _cerrarModal()
         _renderTabla()
