@@ -64,6 +64,25 @@ export const INFORME_PROD_MASAS = {
     '24':  'MASA x 700gr',
 };
 
+// ── Cuadre de Caja ────────────────────────────────────────────────────────────
+// Categorías disponibles por tipo de movimiento.
+// Mantener sincronizado con los CHECK constraints de la tabla `caja_movimientos`
+// si se decide agregarlos en el futuro.
+export const CAJA_CATEGORIAS = {
+    ingreso: [
+        { value: 'pago_sede',    label: 'Pago de Sede'   },
+        { value: 'otro_ingreso', label: 'Otro ingreso'   },
+    ],
+    egreso: [
+        { value: 'proveedor',    label: 'Proveedor'      },
+        { value: 'colaborador',  label: 'Colaborador'    },
+        { value: 'nomina',       label: 'Nómina'         },
+        { value: 'servicios',    label: 'Servicios'      },
+        { value: 'impuestos',    label: 'Impuestos'      },
+        { value: 'otro',         label: 'Otro'           },
+    ],
+};
+
 export const INFORME_PROD_CARNES = [
     { label: 'Carne para moler (Murillo)',   id: '55', thLabel: 'Moler<br><small>(Murillo)</small>'   },
     { label: 'Carne para desmechar (Aleta)', id: '56', thLabel: 'Desmechar<br><small>(Aleta)</small>' },

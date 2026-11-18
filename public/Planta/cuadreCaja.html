@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cuadre de Caja — Planta</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/cuadreCaja.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+
+    <section class="dashboard__section">
+
+        <!-- Topbar: título + navegación de período -->
+        <div class="caj-topbar">
+            <h2 class="caj-titulo">Cuadre de Caja</h2>
+            <div class="caj-period-nav">
+                <button class="caj-btn-nav" id="caj-prev" title="Mes anterior">&#8249;</button>
+                <span class="caj-period-label" id="caj-period-label">—</span>
+                <button class="caj-btn-nav" id="caj-next" title="Mes siguiente">&#8250;</button>
+            </div>
+        </div>
+
+        <!-- Cards resumen del período -->
+        <div class="caj-resumen">
+            <div class="caj-card caj-card--ingreso">
+                <span class="caj-card__label">Ingresos</span>
+                <span class="caj-card__monto" id="caj-total-ingresos">$0</span>
+                <span class="caj-card__count" id="caj-count-ingresos">0 movimientos</span>
+            </div>
+            <div class="caj-card caj-card--egreso">
+                <span class="caj-card__label">Egresos</span>
+                <span class="caj-card__monto" id="caj-total-egresos">$0</span>
+                <span class="caj-card__count" id="caj-count-egresos">0 movimientos</span>
+            </div>
+            <div class="caj-card caj-card--balance" id="caj-card-balance">
+                <span class="caj-card__label">Balance</span>
+                <span class="caj-card__monto" id="caj-total-balance">$0</span>
+                <span class="caj-card__count" id="caj-count-total">0 movimientos</span>
+            </div>
+        </div>
+
+        <!-- Barra de acciones + filtros -->
+        <div class="caj-actions-bar">
+            <button class="caj-btn caj-btn--ingreso" id="caj-btn-ingreso">+ Ingreso</button>
+            <button class="caj-btn caj-btn--egreso"  id="caj-btn-egreso">+ Egreso</button>
+            <span class="caj-spacer"></span>
+            <div class="caj-filtros">
+                <select class="caj-select-filtro" id="caj-filtro-tipo">
+                    <option value="">Todos</option>
+                    <option value="ingreso">Solo ingresos</option>
+                    <option value="egreso">Solo egresos</option>
+                </select>
+                <select class="caj-select-filtro" id="caj-filtro-cat">
+                    <option value="">Todas las categorías</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabla de movimientos -->
+        <div class="caj-tabla-wrap">
+            <table class="caj-tabla">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Categoría</th>
+                        <th>Concepto</th>
+                        <th>Referencia</th>
+                        <th>Método</th>
+                        <th style="text-align:right">Monto</th>
+                        <th style="width:40px"></th>
+                    </tr>
+                </thead>
+                <tbody id="caj-tbody"></tbody>
+            </table>
+        </div>
+
+    </section>
+</main>
+
+<div id="footer-container"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Dialog — Registrar movimiento (ingreso o egreso)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<dialog id="caj-dialog" class="caj-dialog">
+
+    <div class="caj-dialog-header">
+        <h3 class="caj-dialog-titulo" id="caj-dialog-titulo">Nuevo movimiento</h3>
+        <button class="caj-dialog-cerrar" id="caj-dialog-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="caj-dialog-body">
+
+        <!-- Selector de tipo: Ingreso / Egreso -->
+        <div class="caj-tipo-row">
+            <button class="caj-tipo-btn" id="caj-tipo-ingreso" data-tipo="ingreso">↑ Ingreso</button>
+            <button class="caj-tipo-btn" id="caj-tipo-egreso"  data-tipo="egreso">↓ Egreso</button>
+        </div>
+
+        <!-- Categoría (opciones cambian según tipo) -->
+        <div class="caj-field">
+            <label for="caj-categoria">Categoría *</label>
+            <select id="caj-categoria"></select>
+        </div>
+
+        <!-- Concepto -->
+        <div class="caj-field">
+            <label for="caj-concepto">Concepto *</label>
+            <input type="text" id="caj-concepto"
+                placeholder="Descripción del movimiento" autocomplete="off" maxlength="200">
+        </div>
+
+        <!-- Monto + Fecha -->
+        <div class="caj-grid-2">
+            <div class="caj-field">
+                <label for="caj-monto">Monto ($) *</label>
+                <input type="number" id="caj-monto" placeholder="0" min="1" step="1">
+            </div>
+            <div class="caj-field">
+                <label for="caj-fecha">Fecha *</label>
+                <input type="date" id="caj-fecha">
+            </div>
+        </div>
+
+        <!-- Sede (visible solo cuando tipo=ingreso y categoría=pago_sede) -->
+        <div class="caj-field" id="caj-field-sede" style="display:none">
+            <label for="caj-sede">Sede</label>
+            <select id="caj-sede">
+                <option value="">Seleccionar sede...</option>
+            </select>
+        </div>
+
+        <!-- Proveedor (visible solo cuando tipo=egreso y categoría=proveedor) -->
+        <div class="caj-field" id="caj-field-proveedor" style="display:none">
+            <label for="caj-proveedor">Proveedor</label>
+            <select id="caj-proveedor">
+                <option value="">Seleccionar proveedor...</option>
+            </select>
+        </div>
+
+        <!-- Método de pago + Comprobante -->
+        <div class="caj-grid-2">
+            <div class="caj-field">
+                <label for="caj-metodo">Método de pago *</label>
+                <select id="caj-metodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
+                </select>
+            </div>
+            <div class="caj-field">
+                <label for="caj-comprobante">Comprobante</label>
+                <input type="text" id="caj-comprobante"
+                    placeholder="N° factura / recibo (opcional)" maxlength="100">
+            </div>
+        </div>
+
+        <!-- Notas -->
+        <div class="caj-field">
+            <label for="caj-notas">Notas</label>
+            <textarea id="caj-notas" placeholder="Observaciones adicionales (opcional)" maxlength="500"></textarea>
+        </div>
+
+        <!-- Mensaje de error -->
+        <p class="caj-error" id="caj-error"></p>
+
+    </div>
+
+    <div class="caj-dialog-actions">
+        <button class="caj-btn caj-btn--secondary" id="caj-dialog-cancelar">Cancelar</button>
+        <button class="caj-btn caj-btn--ingreso"   id="caj-dialog-guardar">Guardar</button>
+    </div>
+
+</dialog>
+
+<script type="module" src="cuadreCaja.js"></script>
+</body>
+</html>

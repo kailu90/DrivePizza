@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Cuadre de Caja — Planta / DrivePizza
+   Prefijo de clase: caj-
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+.caj-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2.4rem;
+}
+
+.caj-titulo {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    margin: 0;
+}
+
+.caj-period-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.caj-period-label {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    min-width: 15rem;
+    text-align: center;
+}
+
+.caj-btn-nav {
+    background: none;
+    border: 1.5px solid var(--color-primario);
+    color: var(--color-primario);
+    border-radius: 6px;
+    width: 3.4rem;
+    height: 3.4rem;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.caj-btn-nav:hover {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+}
+
+/* ── Cards resumen ──────────────────────────────────────────────────────────── */
+.caj-resumen {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6rem;
+    margin-bottom: 2.4rem;
+}
+
+.caj-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.8rem 2.2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-left: 4px solid transparent;
+}
+.caj-card--ingreso { border-left-color: #27ae60; }
+.caj-card--egreso  { border-left-color: #e74c3c; }
+.caj-card--balance { border-left-color: #3498db; }
+.caj-card--balance.positivo { border-left-color: #27ae60; }
+.caj-card--balance.negativo { border-left-color: #e74c3c; }
+
+.caj-card__label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+}
+
+.caj-card__monto {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+}
+.caj-card--ingreso .caj-card__monto                { color: #27ae60; }
+.caj-card--egreso  .caj-card__monto                { color: #e74c3c; }
+.caj-card--balance.positivo .caj-card__monto       { color: #27ae60; }
+.caj-card--balance.negativo .caj-card__monto       { color: #e74c3c; }
+
+.caj-card__count {
+    font-size: 1.1rem;
+    color: #aaa;
+}
+
+/* ── Barra de acciones ──────────────────────────────────────────────────────── */
+.caj-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+}
+
+.caj-btn {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+.caj-btn:disabled          { opacity: 0.45; cursor: not-allowed; }
+.caj-btn:hover:not(:disabled) { opacity: 0.85; }
+
+.caj-btn--ingreso  { background: #27ae60; color: #fff; }
+.caj-btn--egreso   { background: #e74c3c; color: #fff; }
+.caj-btn--secondary {
+    background: #f0f0f0;
+    color: var(--color-terciario);
+}
+
+.caj-spacer { flex: 1; min-width: 1rem; }
+
+.caj-filtros {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.caj-select-filtro {
+    font-family: inherit;
+    font-size: 1.3rem;
+    padding: 0.7rem 1.1rem;
+    border: 1.5px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--color-terciario);
+    cursor: pointer;
+}
+.caj-select-filtro:focus {
+    outline: none;
+    border-color: var(--color-primario);
+}
+
+/* ── Tabla ──────────────────────────────────────────────────────────────────── */
+.caj-tabla-wrap {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    overflow-x: auto;
+}
+
+.caj-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+}
+
+.caj-tabla thead th {
+    padding: 1.2rem 1.4rem;
+    text-align: left;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #888;
+    border-bottom: 2px solid #f0f0f0;
+    white-space: nowrap;
+}
+
+.caj-tabla tbody tr {
+    border-bottom: 1px solid #f8f8f8;
+    transition: background 0.1s;
+}
+.caj-tabla tbody tr:hover      { background: #fafafa; }
+.caj-tabla tbody tr:last-child { border-bottom: none; }
+
+.caj-tabla td {
+    padding: 1.1rem 1.4rem;
+    vertical-align: middle;
+}
+
+.caj-badge {
+    display: inline-block;
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.caj-badge--ingreso { background: #d5f5e3; color: #1a7a42; }
+.caj-badge--egreso  { background: #fce4e4; color: #a93226; }
+
+.caj-monto--ingreso { color: #27ae60; font-weight: 700; white-space: nowrap; }
+.caj-monto--egreso  { color: #e74c3c; font-weight: 700; white-space: nowrap; }
+
+.caj-btn-delete {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+}
+.caj-btn-delete:hover {
+    color: #e74c3c;
+    background: #fce4e4;
+}
+
+.caj-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #aaa;
+    font-size: 1.4rem;
+}
+
+/* ── Dialog ─────────────────────────────────────────────────────────────────── */
+.caj-dialog {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    padding: 0;
+    width: min(500px, 94vw);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.caj-dialog::backdrop {
+    background: rgba(0,0,0,0.42);
+}
+
+.caj-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 2.4rem 1.4rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+.caj-dialog-titulo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    margin: 0;
+}
+.caj-dialog-cerrar {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+.caj-dialog-cerrar:hover { color: #666; }
+
+.caj-dialog-body {
+    padding: 2rem 2.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+}
+
+/* Selector de tipo */
+.caj-tipo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.caj-tipo-btn {
+    font-family: inherit;
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    background: #fafafa;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.caj-tipo-btn.active-ingreso {
+    border-color: #27ae60;
+    background: #d5f5e3;
+    color: #1a7a42;
+}
+.caj-tipo-btn.active-egreso {
+    border-color: #e74c3c;
+    background: #fce4e4;
+    color: #a93226;
+}
+
+/* Campos */
+.caj-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.caj-field label {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.caj-field input,
+.caj-field select,
+.caj-field textarea {
+    font-family: inherit;
+    font-size: 1.4rem;
+    padding: 1rem 1.2rem;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    color: var(--color-terciario);
+    background: #fff;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+    width: 100%;
+}
+.caj-field input:focus,
+.caj-field select:focus,
+.caj-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primario);
+}
+.caj-field textarea {
+    resize: vertical;
+    min-height: 7rem;
+}
+
+.caj-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+
+/* Error */
+.caj-error {
+    display: none;
+    background: #fce4e4;
+    color: #a93226;
+    border-radius: 6px;
+    padding: 1rem 1.4rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.caj-dialog-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.4rem 2.4rem 2rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .caj-resumen         { grid-template-columns: 1fr; }
+    .caj-topbar          { flex-direction: column; align-items: flex-start; }
+    .caj-actions-bar     { flex-direction: column; align-items: stretch; }
+    .caj-filtros         { flex-wrap: wrap; width: 100%; }
+    .caj-select-filtro   { flex: 1; }
+    .caj-grid-2          { grid-template-columns: 1fr; }
+    .caj-tipo-row        { grid-template-columns: 1fr; }
+}
