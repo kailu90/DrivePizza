@@ -26,15 +26,15 @@ function _renderAcomps(ciudad) {
 
 // ── Filtro de menuData por ciudad ─────────────────────────────────────────────
 // Se ejecuta una sola vez al cargar app.js, antes de cualquier función.
-// Elimina de menuData los productos y categorías excluidos para la ciudad activa,
-// de modo que todo el código posterior (menú, promos, 3x2, etc.) ya recibe el
+// Solo elimina CATEGORÍAS completas (Otros en BGA). El filtro de productos
+// individuales se aplica dinámicamente en renderProducts() para evitar que un
+// timing race con cc_ciudad (que se setea de forma async en la auth) borre
+// permanentemente productos de ciudades específicas (ej: hamburguesas Cartago).
 (function _filtrarMenuPorCiudad() {
-    const ciudad       = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase(); // ciudad activa del agente
-    const excluirProds = new Set(MENU_EXCLUIR?.[ciudad]?.productos  || []); // productos bloqueados en esta ciudad
-    const excluirCats  = new Set(MENU_EXCLUIR?.[ciudad]?.categorias || []); // categorías bloqueadas en esta ciudad
+    const ciudad      = (localStorage.getItem('cc_ciudad') || 'bucaramanga').toLowerCase();
+    const excluirCats = new Set(MENU_EXCLUIR?.[ciudad]?.categorias || []);
     for (const cat of Object.keys(menuData)) {
-        if (excluirCats.has(cat)) { delete menuData[cat]; continue; }           // elimina la categoría completa
-        menuData[cat] = menuData[cat].filter(p => !excluirProds.has(p.nombre)); // filtra productos excluidos
+        if (excluirCats.has(cat)) delete menuData[cat];
     }
 })();
 
