@@ -218,11 +218,13 @@ async function _guardarCambios() {
     btnGuardar.disabled = true
 
     try {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
             .from('productos')
             .update({ price: precio, active: activo, stock })
             .eq('id', _editando.id)
+            .select('id, price, active, stock')
         if (error) throw error
+        if (!updated || updated.length === 0) throw new Error('Sin filas actualizadas — revisa RLS o permisos de columna.')
 
         const idx = _productos.findIndex(p => p.id === _editando.id)
         if (idx !== -1) _productos[idx] = { ..._productos[idx], price: precio, active: activo, stock }
