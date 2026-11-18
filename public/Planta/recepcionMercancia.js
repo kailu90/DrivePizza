@@ -174,6 +174,28 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
             usuario:  _usuario,
         });
 
+        // Registrar egreso automáticamente en Cuadre de Caja
+        if (valorTotal && valorTotal > 0) {
+            const esPagado = metodoPago !== 'pendiente';
+            const { error: errCaja } = await supabase
+                .from('caja_movimientos')
+                .insert({
+                    tipo:             'egreso',
+                    categoria:        'proveedor',
+                    concepto:         `Factura${numeroFactura ? ' #' + numeroFactura : ''} · ${proveedorNombre}`,
+                    monto:            valorTotal,
+                    fecha,
+                    proveedor_id:     proveedorId,
+                    proveedor_nombre: proveedorNombre,
+                    metodo_pago:      esPagado ? metodoPago : null,
+                    comprobante:      numeroFactura || null,
+                    estado:           esPagado ? 'pagado' : 'pendiente',
+                    recepcion_id:     recepcionId,
+                    usuario:          _usuario,
+                });
+            if (errCaja) console.warn('[recepcionMercancia] caja_movimientos:', errCaja);
+        }
+
         ocultarOverlay(true);
         alert(`Factura #${recepcionId} registrada correctamente.\n${productos.length} producto(s) actualizados en inventario.`);
         _resetForm();
@@ -264,6 +286,13 @@ document.getElementById('rc-dialog-confirmar').addEventListener('click', async (
             .update({ metodo_pago: metodoPago })
             .eq('id', _pendienteIdActivo);
         if (error) throw error;
+
+        // Sincronizar con Cuadre de Caja
+        const { error: errCaja } = await supabase
+            .from('caja_movimientos')
+            .update({ estado: 'pagado', metodo_pago: metodoPago })
+            .eq('recepcion_id', _pendienteIdActivo);
+        if (errCaja) console.warn('[recepcionMercancia] sync caja:', errCaja);
 
         document.getElementById('rc-dialog-pago').close();
         await _cargarPendientes();

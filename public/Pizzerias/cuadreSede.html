@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cuadre de Caja — Sede</title>
+    <link rel="stylesheet" href="../Estilos/styles.css">
+    <link rel="stylesheet" href="../Estilos/cuadreSede.css">
+    <link rel="shortcut icon" href="../Imagenes/logo.png" type="image/x-icon">
+</head>
+<body>
+
+<div class="pw-page-transition" id="pw-page-transition">
+    <img class="pw-page-transition-logo" src="../Imagenes/Isotipo.png" alt="Drive Pizza">
+    <span class="pw-page-transition-slogan">
+        <span class="pw-pts-left">HECHA PARA</span>
+        <span class="pw-pts-right">COMPARTIR</span>
+    </span>
+</div>
+
+<div id="header-container"></div>
+<div id="sidebar-container"></div>
+
+<main class="dashboard__main" id="dashboard__main">
+    <button class="toggle-btn" id="toggle-btn"><</button>
+
+    <section class="dashboard__section">
+
+        <!-- Topbar -->
+        <div class="sc-topbar">
+            <h2 class="sc-titulo">Cuadre de Caja</h2>
+            <div class="sc-fecha-nav">
+                <button class="sc-btn-nav" id="sc-prev" title="Día anterior">&#8249;</button>
+                <span class="sc-fecha-label" id="sc-fecha-label">—</span>
+                <button class="sc-btn-nav" id="sc-next" title="Día siguiente">&#8250;</button>
+                <span id="sc-estado-badge"></span>
+            </div>
+            <div class="sc-topbar-right">
+                <button class="sc-btn sc-btn--cerrar" id="sc-btn-cerrar-dia" style="display:none">
+                    Cerrar día
+                </button>
+            </div>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="sc-tabs">
+            <button class="sc-tab sc-tab--active" id="sc-tab-dia">Cierre del Día</button>
+            <button class="sc-tab" id="sc-tab-historial">Historial</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Vista: Cierre del Día
+             ═══════════════════════════════════════════════════════════ -->
+        <div id="sc-view-dia">
+
+            <!-- Cards resumen -->
+            <div class="sc-resumen">
+                <div class="sc-card sc-card--z">
+                    <span class="sc-card__label">Informe Z</span>
+                    <span class="sc-card__monto" id="sc-card-z-monto">$0</span>
+                    <span class="sc-card__sub">Total POS del día</span>
+                </div>
+                <div class="sc-card sc-card--ing">
+                    <span class="sc-card__label">Ingresos reales</span>
+                    <span class="sc-card__monto" id="sc-card-ing-monto">$0</span>
+                    <span class="sc-card__sub">Suma de canales</span>
+                </div>
+                <div class="sc-card sc-card--egr">
+                    <span class="sc-card__label">Egresos</span>
+                    <span class="sc-card__monto" id="sc-card-egr-monto">$0</span>
+                    <span class="sc-card__sub">Gastos del día</span>
+                </div>
+                <div class="sc-card sc-card--bal" id="sc-card-balance">
+                    <span class="sc-card__label">Balance</span>
+                    <span class="sc-card__monto" id="sc-card-bal-monto">$0</span>
+                    <span class="sc-card__sub">Ingresos − Egresos</span>
+                </div>
+            </div>
+
+            <!-- Banner diferencia de caja -->
+            <div class="sc-diferencia-bar" id="sc-diferencia-bar" style="display:none"></div>
+
+            <!-- Grid principal: ingresos + egresos -->
+            <div class="sc-grid-dia">
+
+                <!-- Panel ingresos -->
+                <div class="sc-panel">
+                    <div class="sc-panel__titulo">Ingresos del día</div>
+                    <div class="sc-panel__body">
+
+                        <!-- Informe Z -->
+                        <div class="sc-ing-separador">Informe Z (total POS)</div>
+                        <div class="sc-ing-row sc-ing-row--z">
+                            <label class="sc-ing-label" for="sc-ing-z">Informe Z</label>
+                            <input class="sc-ing-input sc-ing-input--z" type="number"
+                                id="sc-ing-z" placeholder="0" min="0" step="1">
+                        </div>
+
+                        <!-- Desglose real -->
+                        <div class="sc-ing-separador">Desglose real de ingresos</div>
+                        <div class="sc-ing-row">
+                            <label class="sc-ing-label" for="sc-ing-efectivo">Efectivo</label>
+                            <input class="sc-ing-input" type="number"
+                                id="sc-ing-efectivo" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="sc-ing-row">
+                            <label class="sc-ing-label" for="sc-ing-transferencia">Transferencia</label>
+                            <input class="sc-ing-input" type="number"
+                                id="sc-ing-transferencia" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="sc-ing-row">
+                            <label class="sc-ing-label" for="sc-ing-datafono">Datáfono</label>
+                            <input class="sc-ing-input" type="number"
+                                id="sc-ing-datafono" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="sc-ing-row">
+                            <label class="sc-ing-label" for="sc-ing-rappi">Rappi</label>
+                            <input class="sc-ing-input" type="number"
+                                id="sc-ing-rappi" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="sc-ing-row">
+                            <label class="sc-ing-label" for="sc-ing-otros">Otros</label>
+                            <input class="sc-ing-input" type="number"
+                                id="sc-ing-otros" placeholder="0" min="0" step="1">
+                        </div>
+
+                        <!-- Total real -->
+                        <div class="sc-ing-total-row">
+                            <span class="sc-ing-total-label">Total real</span>
+                            <span class="sc-ing-total-valor" id="sc-ing-total">$0</span>
+                        </div>
+
+                        <button class="sc-btn sc-btn--guardar-ing" id="sc-btn-guardar-ing">
+                            Guardar ingresos
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Panel egresos -->
+                <div class="sc-panel">
+                    <div class="sc-panel__titulo">
+                        <span>Egresos del día</span>
+                        <button class="sc-btn sc-btn--add-egreso" id="sc-btn-add-egreso">+ Agregar</button>
+                    </div>
+                    <div class="sc-panel__body sc-panel__body--tabla">
+                        <table class="sc-tabla">
+                            <thead>
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th>Tipo</th>
+                                    <th>Método</th>
+                                    <th style="text-align:right">Monto</th>
+                                    <th style="width:36px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="sc-egresos-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /sc-grid-dia -->
+
+        </div><!-- /sc-view-dia -->
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Vista: Historial
+             ═══════════════════════════════════════════════════════════ -->
+        <div id="sc-view-historial" style="display:none">
+            <div id="sc-hist-contenido">
+                <p class="sc-empty">Cargando historial...</p>
+            </div>
+        </div>
+
+    </section>
+</main>
+
+<div id="footer-container"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Dialog — Registrar egreso
+     ══════════════════════════════════════════════════════════════════════════ -->
+<dialog id="sc-dialog-egreso" class="sc-dialog">
+
+    <div class="sc-dialog-header">
+        <h3 class="sc-dialog-titulo">Registrar egreso</h3>
+        <button class="sc-dialog-cerrar" id="sc-egr-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="sc-dialog-body">
+
+        <!-- Tipo de gasto -->
+        <div class="sc-field">
+            <label for="sc-egr-tipo">Tipo de gasto *</label>
+            <select id="sc-egr-tipo">
+                <option value="variable">Variable</option>
+                <option value="fijo">Fijo</option>
+                <option value="nomina">Nómina</option>
+                <option value="otro">Otro</option>
+            </select>
+        </div>
+
+        <!-- Concepto -->
+        <div class="sc-field">
+            <label for="sc-egr-concepto">Concepto *</label>
+            <input type="text" id="sc-egr-concepto"
+                placeholder="Descripción del gasto" autocomplete="off" maxlength="200">
+        </div>
+
+        <!-- Monto + Método -->
+        <div class="sc-grid-2">
+            <div class="sc-field">
+                <label for="sc-egr-monto">Monto ($) *</label>
+                <input type="number" id="sc-egr-monto" placeholder="0" min="1" step="1">
+            </div>
+            <div class="sc-field">
+                <label for="sc-egr-metodo">Método de pago *</label>
+                <select id="sc-egr-metodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Comprobante -->
+        <div class="sc-field">
+            <label for="sc-egr-comprobante">Comprobante</label>
+            <input type="text" id="sc-egr-comprobante"
+                placeholder="N° factura / recibo (opcional)" maxlength="100">
+        </div>
+
+        <!-- Notas -->
+        <div class="sc-field">
+            <label for="sc-egr-notas">Notas</label>
+            <textarea id="sc-egr-notas" placeholder="Observaciones adicionales (opcional)" maxlength="300"></textarea>
+        </div>
+
+        <p class="sc-error" id="sc-egr-error"></p>
+
+    </div>
+
+    <div class="sc-dialog-actions">
+        <button class="sc-btn sc-btn--secondary" id="sc-egr-cancelar">Cancelar</button>
+        <button class="sc-btn sc-btn--egreso"    id="sc-egr-guardar">Guardar egreso</button>
+    </div>
+
+</dialog>
+
+<script type="module" src="./cuadreSede.js"></script>
+</body>
+</html>

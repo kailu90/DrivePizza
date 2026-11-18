@@ -261,6 +261,18 @@
     background: #fee2e2;
 }
 
+/* Badge "Factura" — indica egreso auto-generado desde Registro de Facturas */
+.caj-badge-factura {
+    font-size: 1rem;
+    font-weight: 600;
+    background: #f0f0f0;
+    color: #888;
+    border-radius: 4px;
+    padding: 0.1rem 0.5rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
 /* Botón Confirmar pago */
 .caj-btn-confirmar {
     font-family: inherit;
@@ -594,6 +606,17 @@
 .caj-liq-num--tot      { color: var(--color-terciario); font-weight: 700; }
 
 .caj-liq-ya            { color: #22c55e; font-size: 1.5rem; font-weight: 700; }
+
+/* Separador de semana dentro de la tabla de liquidación */
+.caj-liq-semana-header {
+    background: #f5f5f5;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #888;
+    padding: 0.6rem 1.2rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
 
 /* Dialog confirmar — info del movimiento */
 .caj-conf-info {

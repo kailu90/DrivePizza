@@ -50,8 +50,9 @@ let _tipoDialog    = 'ingreso';  // tipo seleccionado actualmente en el dialog
 let _vistaActual = 'movimientos';
 
 // Estado del dialog de liquidación
-let _liqOffset   = 0;            // offset de semanas respecto a la semana actual
-let _liqDatos    = [];           // [{ sede, totalNeto, periodoRef, yaImportado }]
+let _liqYear    = new Date().getFullYear();   // año del mes seleccionado
+let _liqMonth   = new Date().getMonth() + 1; // mes seleccionado (1-12)
+let _liqDatos   = [];            // [{ sede, totalPed, totalDev, totalNeto, periodoRef, hastaDate, numSemana, yaImportado }]
 
 // Estado del dialog de confirmación de pago
 let _confirmandoId = null;       // id del movimiento en proceso de confirmación
@@ -149,7 +150,7 @@ async function _cargarMovimientos() {
         .select(`
             id, tipo, categoria, concepto, monto, fecha,
             sede, proveedor_nombre, metodo_pago, comprobante,
-            notas, usuario, estado, periodo_ref, created_at
+            notas, usuario, estado, periodo_ref, recepcion_id, created_at
         `)
         .gte('fecha', desde)
         .lt('fecha', hasta)
@@ -233,6 +234,10 @@ function _renderTabla() {
             acciones.push(`<button class="caj-btn-delete" data-id="${m.id}" title="Eliminar movimiento">✕</button>`);
         }
 
+        const conceptoHtml = `${_esc(m.concepto)}${m.recepcion_id
+            ? ' <span class="caj-badge-factura">Factura</span>'
+            : ''}`;
+
         const tr = document.createElement('tr');
         if (esPendiente) tr.classList.add('caj-row--pendiente');
         tr.innerHTML = `
@@ -240,7 +245,7 @@ function _renderTabla() {
             <td><span class="caj-badge caj-badge--${m.tipo}">${m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}</span></td>
             <td>${estadoBadge}</td>
             <td>${catLabel}</td>
-            <td>${_esc(m.concepto)}</td>
+            <td>${conceptoHtml}</td>
             <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
             <td style="text-transform:capitalize">${m.metodo_pago}</td>
             <td style="text-align:right" class="caj-monto--${m.tipo}">$${Number(m.monto).toLocaleString('es-CO')}</td>
@@ -464,7 +469,9 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
 document.getElementById('caj-btn-importar').addEventListener('click', _abrirDialogLiquidacion);
 
 function _abrirDialogLiquidacion() {
-    _liqOffset = 0;
+    const hoy  = new Date();
+    _liqYear   = hoy.getFullYear();
+    _liqMonth  = hoy.getMonth() + 1;
     _liqDatos  = [];
     document.getElementById('caj-liq-error').style.display = 'none';
     document.getElementById('caj-liq-importar').disabled   = true;
@@ -481,73 +488,98 @@ async function _cargarLiqPreview() {
     btnImportar.disabled = true;
     errEl.style.display  = 'none';
 
-    const { desde: desdeDate, hasta: hastaDate } = getPeriodo(_liqOffset);
-    const desde = _toISO(desdeDate);
-    const hasta  = _toISO(hastaDate);
-
-    const semana    = getNumeroPeriodo(desdeDate);
-    const año       = hastaDate.getFullYear();
-    const mesNum    = String(hastaDate.getMonth() + 1).padStart(2, '0');
-    const periodoRef = `${año}-${mesNum}-S${semana}`;
-
-    const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const MESES_N = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     document.getElementById('caj-liq-label').textContent =
-        `Semana #${semana} · ${desdeDate.getDate()} ${MESES_C[desdeDate.getMonth()]} – ` +
-        `${hastaDate.getDate()} ${MESES_C[hastaDate.getMonth()]} ${año}`;
+        `${MESES_N[_liqMonth - 1]} ${_liqYear}`;
+
+    // Calcular todas las semanas del mes
+    const semanas  = _semanasDelMes(_liqYear, _liqMonth);
+    const desdeISO = _toISO(semanas[0].desde);
+    const hastaISO = _toISO(semanas[semanas.length - 1].hasta);
+    const mesNum   = String(_liqMonth).padStart(2, '0');
 
     try {
         const [{ data: rawPedidos, error: errP }, { data: rawDevs, error: errD }] = await Promise.all([
             supabase
                 .from('pedidos_planta')
                 .select('id_pedido, delivery_date, user_sede, total, status, eliminado')
-                .gte('delivery_date', desde)
-                .lte('delivery_date', hasta),
+                .gte('delivery_date', desdeISO)
+                .lte('delivery_date', hastaISO),
             supabase
                 .from('movimientos')
-                .select('sede, valor_total, subtipo')
+                .select('sede, valor_total, subtipo, fecha')
                 .eq('tipo', 'Devolución')
-                .gte('fecha', desdeDate.toISOString())
-                .lte('fecha', colFechaToUTC(hasta, 'fin')),
+                .gte('fecha', colFechaToUTC(desdeISO, 'inicio'))
+                .lte('fecha', colFechaToUTC(hastaISO, 'fin')),
         ]);
 
         if (errP) throw errP;
         if (errD) throw errD;
 
-        // Agrupar pedidos por sede
-        const pedidosPorSede = {};
+        // Acumular pedidos y devoluciones por (semanaIdx, sede)
+        const dataPorSemana = semanas.map(() => ({}));
+
         pedidosLiquidables(rawPedidos || []).forEach(p => {
+            if (!p.delivery_date) return;
             const sede = (p.user_sede || 'sin sede').toLowerCase();
             if (sede === 'planta producción' || sede === 'planta') return;
-            pedidosPorSede[sede] = (pedidosPorSede[sede] || 0) + (p.total || 0);
+            const idx = _semanaIdxParaFecha(p.delivery_date, semanas);
+            if (idx === -1) return;
+            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+            dataPorSemana[idx][sede].totalPed += (p.total || 0);
         });
 
-        // Agrupar devoluciones por sede
-        const devPorSede = {};
         devolucionesLiquidables(rawDevs || []).forEach(d => {
+            if (!d.fecha) return;
             const sede = d.sede ? d.sede.toLowerCase() : null;
             if (!sede) return;
-            devPorSede[sede] = (devPorSede[sede] || 0) + (d.valor_total || 0);
+            // Convertir timestamp UTC a fecha Colombia (UTC-5)
+            const fechaCol = new Date(new Date(d.fecha).getTime() - 5 * 3600 * 1000);
+            const fechaISO = `${fechaCol.getUTCFullYear()}-${String(fechaCol.getUTCMonth() + 1).padStart(2, '0')}-${String(fechaCol.getUTCDate()).padStart(2, '0')}`;
+            const idx = _semanaIdxParaFecha(fechaISO, semanas);
+            if (idx === -1) return;
+            if (!dataPorSemana[idx][sede]) dataPorSemana[idx][sede] = { totalPed: 0, totalDev: 0 };
+            dataPorSemana[idx][sede].totalDev += (d.valor_total || 0);
         });
 
-        const sedes = Object.keys(pedidosPorSede).sort();
+        // Construir _liqDatos: una fila por (semana, sede) con datos
+        _liqDatos = [];
+        semanas.forEach(({ desde, hasta }, idx) => {
+            const numSemana  = getNumeroPeriodo(desde);
+            const periodoRef = `${_liqYear}-${mesNum}-S${numSemana}`;
+            Object.keys(dataPorSemana[idx]).sort().forEach(sede => {
+                const { totalPed, totalDev } = dataPorSemana[idx][sede];
+                const totalNeto   = totalPed - totalDev;
+                const yaImportado = _todos.some(m =>
+                    m.periodo_ref === periodoRef && m.sede === sede
+                );
+                _liqDatos.push({ sede, totalPed, totalDev, totalNeto, periodoRef, hastaDate: hasta, numSemana, yaImportado });
+            });
+        });
 
-        if (!sedes.length) {
-            contenido.innerHTML = '<p class="caj-liq-cargando">Sin pedidos esta semana.</p>';
+        if (!_liqDatos.length) {
+            contenido.innerHTML = '<p class="caj-liq-cargando">Sin pedidos este mes.</p>';
             return;
         }
 
-        _liqDatos = sedes.map(sede => {
-            const totalPed  = pedidosPorSede[sede] || 0;
-            const totalDev  = devPorSede[sede]     || 0;
-            const totalNeto = totalPed - totalDev;
-            const yaImportado = _todos.some(m =>
-                m.periodo_ref === periodoRef && m.sede === sede
-            );
-            return { sede, totalPed, totalDev, totalNeto, periodoRef, yaImportado };
-        });
+        // Renderizar filas agrupadas por semana
+        const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        let htmlRows = '';
+        let semActual = null;
 
-        const rows = _liqDatos.map((d, i) => `
-            <tr>
+        _liqDatos.forEach((d, i) => {
+            if (d.numSemana !== semActual) {
+                semActual = d.numSemana;
+                const { desde: semDesde, hasta: semHasta } = semanas[semanas.findIndex(s =>
+                    getNumeroPeriodo(s.desde) === semActual
+                )];
+                const rango = `${semDesde.getDate()} ${MESES_C[semDesde.getMonth()]} – ${semHasta.getDate()} ${MESES_C[semHasta.getMonth()]}`;
+                htmlRows += `<tr class="caj-liq-semana-sep">
+                    <td colspan="5" class="caj-liq-semana-header">Semana #${semActual} · ${rango}</td>
+                </tr>`;
+            }
+            htmlRows += `<tr>
                 <td style="width:3.2rem;text-align:center">
                     ${d.yaImportado
                         ? '<span class="caj-liq-ya" title="Ya importado">✓</span>'
@@ -559,8 +591,8 @@ async function _cargarLiqPreview() {
                 <td class="caj-liq-num caj-liq-num--ing">$${Math.round(d.totalPed).toLocaleString('es-CO')}</td>
                 <td class="caj-liq-num caj-liq-num--egr">$${Math.round(d.totalDev).toLocaleString('es-CO')}</td>
                 <td class="caj-liq-num caj-liq-num--tot">$${Math.round(d.totalNeto).toLocaleString('es-CO')}</td>
-            </tr>
-        `).join('');
+            </tr>`;
+        });
 
         contenido.innerHTML = `
             <table class="caj-tabla caj-liq-tabla">
@@ -573,7 +605,7 @@ async function _cargarLiqPreview() {
                         <th style="text-align:right">Total neto</th>
                     </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody>${htmlRows}</tbody>
             </table>
         `;
 
@@ -605,14 +637,12 @@ async function _importarLiquidacion() {
         return;
     }
 
-    const { hasta: hastaDate } = getPeriodo(_liqOffset);
-
     const registros = seleccionados.map(d => ({
         tipo:        'ingreso',
         categoria:   'pago_sede',
         concepto:    `Liq. ${d.periodoRef.replace(/-S/, ' Sem ')} — ${capitalizarSede(d.sede)}`,
         monto:       Math.round(d.totalNeto),
-        fecha:       _toISO(hastaDate),
+        fecha:       _toISO(d.hastaDate),
         sede:        d.sede,
         metodo_pago: 'efectivo',
         estado:      'pendiente',
@@ -635,13 +665,15 @@ async function _importarLiquidacion() {
     await _cargarMovimientos();
 }
 
-// Navegación de semanas en el dialog de liquidación
+// Navegación mensual en el dialog de liquidación
 document.getElementById('caj-liq-prev').addEventListener('click', () => {
-    _liqOffset--;
+    _liqMonth--;
+    if (_liqMonth < 1) { _liqMonth = 12; _liqYear--; }
     _cargarLiqPreview();
 });
 document.getElementById('caj-liq-next').addEventListener('click', () => {
-    _liqOffset++;
+    _liqMonth++;
+    if (_liqMonth > 12) { _liqMonth = 1; _liqYear++; }
     _cargarLiqPreview();
 });
 document.getElementById('caj-liq-importar').addEventListener('click', _importarLiquidacion);
@@ -715,6 +747,15 @@ async function _confirmarPago() {
 
     document.getElementById('caj-dialog-confirmar').close();
 
+    // Si está vinculado a una factura, sincronizar recepciones
+    if (updated.recepcion_id) {
+        const { error: errRec } = await supabase
+            .from('recepciones')
+            .update({ metodo_pago: metodo })
+            .eq('id', updated.recepcion_id);
+        if (errRec) console.warn('[cuadreCaja] sync recepciones:', errRec);
+    }
+
     // Actualizar caché local
     const idx = _todos.findIndex(m => m.id === _confirmandoId);
     if (idx !== -1) _todos[idx] = { ..._todos[idx], ...updated };
@@ -763,15 +804,18 @@ function _renderInforme() {
     const ingCobrado   = _todos.filter(m => m.tipo === 'ingreso' && m.estado !== 'pendiente');
     const ingPendiente = _todos.filter(m => m.tipo === 'ingreso' && m.estado === 'pendiente');
 
-    // Egresos por método: banco (transferencia + tarjeta) vs efectivo
-    const egrBanco    = _todos.filter(m => m.tipo === 'egreso' && m.metodo_pago !== 'efectivo');
-    const egrEfectivo = _todos.filter(m => m.tipo === 'egreso' && m.metodo_pago === 'efectivo');
+    // Egresos pagados por método: banco (transferencia + tarjeta) vs efectivo
+    // Los pendientes (facturas sin pagar) se muestran aparte
+    const egrBanco     = _todos.filter(m => m.tipo === 'egreso' && m.estado !== 'pendiente' && m.metodo_pago && m.metodo_pago !== 'efectivo');
+    const egrEfectivo  = _todos.filter(m => m.tipo === 'egreso' && m.metodo_pago === 'efectivo');
+    const egrPendiente = _todos.filter(m => m.tipo === 'egreso' && m.estado === 'pendiente');
 
     // ── Totales ────────────────────────────────────────────────────────────
     const totalCobrado   = ingCobrado.reduce((s, m)   => s + Number(m.monto), 0);
     const totalPendiente = ingPendiente.reduce((s, m) => s + Number(m.monto), 0);
     const totalBanco     = egrBanco.reduce((s, m)     => s + Number(m.monto), 0);
     const totalEfectivo  = egrEfectivo.reduce((s, m)  => s + Number(m.monto), 0);
+    const totalPorPagar  = egrPendiente.reduce((s, m) => s + Number(m.monto), 0);
     const utilidad       = totalCobrado - totalBanco - totalEfectivo;
 
     // ── Agrupaciones ──────────────────────────────────────────────────────
@@ -788,6 +832,13 @@ function _renderInforme() {
     egrBanco.forEach(m => {
         const cat = _labelCategoria(m.categoria);
         bancoPorCat[cat] = (bancoPorCat[cat] || 0) + Number(m.monto);
+    });
+
+    // Egresos pendientes (facturas sin pagar) por proveedor
+    const pendientePorProv = {};
+    egrPendiente.forEach(m => {
+        const prov = m.proveedor_nombre || 'Sin proveedor';
+        pendientePorProv[prov] = (pendientePorProv[prov] || 0) + Number(m.monto);
     });
 
     // Gastos efectivo por semana del mes
@@ -879,7 +930,18 @@ function _renderInforme() {
         'TOTAL EFECTIVO', totalEfectivo, 'inf-val--egr'
     );
 
-    // Panel resumen + utilidad
+    // Bloque por pagar (facturas pendientes) — solo si hay
+    const porPagarRows = Object.entries(pendientePorProv)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([prov, v]) => _fila(prov, v, 'inf-val--pend'))
+        .join('');
+    const bloquePorPagar = totalPorPagar > 0 ? _bloque(
+        'Por pagar — facturas pendientes',
+        porPagarRows,
+        'TOTAL POR PAGAR', totalPorPagar, 'inf-val--pend'
+    ) : '';
+
+    // Panel resumen + utilidad (solo movimientos confirmados)
     const isPos = utilidad >= 0;
     const bloqueResumen = `
         <div class="caj-inf-bloque">
@@ -887,13 +949,18 @@ function _renderInforme() {
             <table class="caj-inf-tabla">
                 <thead><tr><th>Descripción</th><th>Valor</th></tr></thead>
                 <tbody>
-                    ${_fila('Venta del mes',         totalCobrado,  'inf-val--ing')}
+                    ${_fila('Venta cobrada',         totalCobrado,  'inf-val--ing')}
                     ${_fila('Gastos por banco',      totalBanco,    'inf-val--egr')}
                     ${_fila('Gastos en efectivo',    totalEfectivo, 'inf-val--egr')}
+                    ${totalPorPagar > 0 ? `<tr class="inf-row--pendiente">
+                        <td>Facturas por pagar</td>
+                        <td class="inf-val inf-val--pend">$${Math.round(totalPorPagar).toLocaleString('es-CO')}</td>
+                    </tr>` : ''}
                 </tbody>
             </table>
             <div class="caj-inf-total ${isPos ? 'caj-inf-total--pos' : 'caj-inf-total--neg'}">
                 <span class="caj-inf-total__label">UTILIDAD NETA</span>
+                <span class="caj-inf-total__label" style="font-size:1.1rem;font-weight:400;color:#aaa">(solo movimientos confirmados)</span>
                 <span class="caj-inf-total__valor">${!isPos ? '−' : ''}$${Math.round(Math.abs(utilidad)).toLocaleString('es-CO')}</span>
             </div>
         </div>`;
@@ -905,6 +972,7 @@ function _renderInforme() {
                 ${bloqueVentas}
                 ${bloqueBanco}
                 ${bloqueEfectivo}
+                ${bloquePorPagar}
             </div>
             <div class="caj-inf-col">
                 ${bloqueResumen}
@@ -967,4 +1035,31 @@ function _showError(msg) {
     const el = document.getElementById('caj-error');
     el.textContent   = msg;
     el.style.display = 'block';
+}
+
+/**
+ * Retorna todas las semanas (períodos) de un mes dado.
+ * Cada entrada: { desde: Date, hasta: Date }
+ */
+function _semanasDelMes(year, month) {
+    const semanas = [];
+    let cursor = new Date(year, month - 1, 1, 12, 0, 0);
+    while (cursor.getMonth() === month - 1) {
+        const { desde, hasta } = getPeriodoParaFecha(cursor);
+        semanas.push({ desde, hasta });
+        const siguiente = new Date(hasta);
+        siguiente.setDate(siguiente.getDate() + 1);
+        siguiente.setHours(12, 0, 0, 0);
+        cursor = siguiente;
+    }
+    return semanas;
+}
+
+/**
+ * Retorna el índice en `semanas` al que pertenece una fecha ISO 'YYYY-MM-DD'.
+ * Devuelve -1 si no cae en ninguna semana.
+ */
+function _semanaIdxParaFecha(fechaISO, semanas) {
+    const fecha = new Date(fechaISO + 'T12:00:00');
+    return semanas.findIndex(({ desde, hasta }) => fecha >= desde && fecha <= hasta);
 }
