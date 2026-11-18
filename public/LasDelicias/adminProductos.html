@@ -119,26 +119,17 @@
 
         <div class="ap-mod-sep"></div>
 
-        <!-- Toggle Stock -->
+        <!-- Toggle Agotado -->
         <div class="ap-mod-field">
             <div class="ap-mod-row">
                 <div class="ap-mod-row-label">
-                    <span class="ap-mod-row-title">Stock limitado</span>
-                    <span class="ap-mod-row-hint">Por defecto disponible sin límite</span>
+                    <span class="ap-mod-row-title">Agotado</span>
+                    <span class="ap-mod-row-hint">Aparece desactivado en el catálogo</span>
                 </div>
                 <label class="ap-toggle">
-                    <input type="checkbox" id="ap-mod-stock-toggle">
+                    <input type="checkbox" id="ap-mod-agotado">
                     <span class="ap-toggle__slider"></span>
                 </label>
-            </div>
-
-            <!-- Cantidad (visible solo si stock habilitado) -->
-            <div class="ap-mod-stock-cantidad" id="ap-mod-stock-row" style="display:none">
-                <label class="ap-mod-label" for="ap-mod-stock-val" style="margin-top:14px">
-                    Unidades disponibles
-                </label>
-                <input type="number" id="ap-mod-stock-val" class="ap-mod-input" min="0" step="1" placeholder="0">
-                <p class="ap-mod-stock-hint">Poner 0 marca el producto como <b>Agotado</b> y lo oculta del catálogo</p>
             </div>
         </div>
 

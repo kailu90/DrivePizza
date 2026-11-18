@@ -56,7 +56,7 @@ async function _recargar() {
 function _actualizarStats() {
     const total    = _productos.length
     const activos  = _productos.filter(p => p.active).length
-    const agotados = _productos.filter(p => p.stock !== null && p.stock === 0).length
+    const agotados = _productos.filter(p => p.stock === 0).length
 
     document.getElementById('stat-total').textContent    = total
     document.getElementById('stat-activos').textContent  = activos
@@ -87,13 +87,9 @@ function _renderTabs() {
 
 // ── Tabla ─────────────────────────────────────────────────────────────────────
 function _stockBadge(stock) {
-    if (stock === null || stock === undefined)
-        return '<span class="ap-stock ap-stock--ok">Disponible</span>'
-    if (stock === 0)
+    if (stock !== null && stock === 0)
         return '<span class="ap-stock ap-stock--agotado">Agotado</span>'
-    if (stock <= 5)
-        return `<span class="ap-stock ap-stock--bajo">${stock} ud.</span>`
-    return `<span class="ap-stock ap-stock--ok">${stock} ud.</span>`
+    return '<span class="ap-stock ap-stock--ok">Disponible</span>'
 }
 
 function _renderTabla() {
@@ -190,10 +186,7 @@ function _abrirModal(prod) {
     document.getElementById('ap-mod-error').style.display = 'none'
     document.getElementById('ap-mod-guardar').disabled   = false
 
-    const hasStock = prod.stock !== null && prod.stock !== undefined
-    document.getElementById('ap-mod-stock-toggle').checked = hasStock
-    document.getElementById('ap-mod-stock-row').style.display = hasStock ? '' : 'none'
-    document.getElementById('ap-mod-stock-val').value = hasStock ? prod.stock : '0'
+    document.getElementById('ap-mod-agotado').checked = prod.stock !== null && prod.stock === 0
 
     document.getElementById('apModal').classList.add('open')
 }
@@ -206,9 +199,9 @@ function _cerrarModal() {
 async function _guardarCambios() {
     if (!_editando) return
 
-    const precio = Number(document.getElementById('ap-mod-precio').value)
-    const activo = document.getElementById('ap-mod-activo').checked
-    const hasStock = document.getElementById('ap-mod-stock-toggle').checked
+    const precio  = Number(document.getElementById('ap-mod-precio').value)
+    const activo  = document.getElementById('ap-mod-activo').checked
+    const agotado = document.getElementById('ap-mod-agotado').checked
 
     const errorEl = document.getElementById('ap-mod-error')
     errorEl.style.display = 'none'
@@ -219,15 +212,7 @@ async function _guardarCambios() {
         return
     }
 
-    let stock = null
-    if (hasStock) {
-        stock = parseInt(document.getElementById('ap-mod-stock-val').value, 10)
-        if (isNaN(stock) || stock < 0) {
-            errorEl.textContent   = 'El stock debe ser un número mayor o igual a 0.'
-            errorEl.style.display = 'block'
-            return
-        }
-    }
+    const stock = agotado ? 0 : null
 
     const btnGuardar = document.getElementById('ap-mod-guardar')
     btnGuardar.disabled = true
@@ -276,15 +261,6 @@ document.getElementById('apModal').addEventListener('click', e => {
 })
 document.getElementById('ap-mod-guardar').addEventListener('click', _guardarCambios)
 
-document.getElementById('ap-mod-stock-toggle').addEventListener('change', e => {
-    const row = document.getElementById('ap-mod-stock-row')
-    row.style.display = e.target.checked ? '' : 'none'
-    if (e.target.checked) {
-        const input = document.getElementById('ap-mod-stock-val')
-        if (input.value === '') input.value = '0'
-        input.focus()
-    }
-})
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
 init()
