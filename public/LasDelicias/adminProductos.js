@@ -88,7 +88,7 @@ function _renderTabs() {
 // ── Tabla ─────────────────────────────────────────────────────────────────────
 function _stockBadge(stock) {
     if (stock === null || stock === undefined)
-        return '<span class="ap-stock ap-stock--libre">Sin límite</span>'
+        return '<span class="ap-stock ap-stock--ok">Disponible</span>'
     if (stock === 0)
         return '<span class="ap-stock ap-stock--agotado">Agotado</span>'
     if (stock <= 5)
@@ -193,7 +193,7 @@ function _abrirModal(prod) {
     const hasStock = prod.stock !== null && prod.stock !== undefined
     document.getElementById('ap-mod-stock-toggle').checked = hasStock
     document.getElementById('ap-mod-stock-row').style.display = hasStock ? '' : 'none'
-    document.getElementById('ap-mod-stock-val').value = hasStock ? prod.stock : ''
+    document.getElementById('ap-mod-stock-val').value = hasStock ? prod.stock : '0'
 
     document.getElementById('apModal').classList.add('open')
 }

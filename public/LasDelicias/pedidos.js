@@ -90,6 +90,7 @@ async function cargarProductos() {
         .select('id, name, price, id_category, subgrupo, variante_display')
         .eq('active', true)
         .gt('price', 0)
+        .or('stock.is.null,stock.gt.0')
         .order('name')
     if (!data) return
     _productos = data
