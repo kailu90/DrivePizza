@@ -279,6 +279,34 @@
                                         <th style="text-align:right">Monto</th>
                                         <th style="width:80px"></th>
                                     </tr>
+                                    <tr class="caj-filter-row">
+                                        <td><input type="date" class="caj-filter-input" id="if-fecha"></td>
+                                        <td>
+                                            <select class="caj-filter-select" id="if-estado">
+                                                <option value="">Todos</option>
+                                                <option value="pendiente">Pendiente</option>
+                                                <option value="pagado">Pagado</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="caj-filter-select" id="if-cat">
+                                                <option value="">Todas</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="text" class="caj-filter-input" id="if-concepto" placeholder="Buscar…"></td>
+                                        <td><input type="text" class="caj-filter-input" id="if-ref" placeholder="Buscar…"></td>
+                                        <td>
+                                            <select class="caj-filter-select" id="if-metodo">
+                                                <option value="">Todos</option>
+                                                <option value="efectivo">Efectivo</option>
+                                                <option value="transferencia">Transferencia</option>
+                                                <option value="tarjeta">Tarjeta</option>
+                                                <option value="cheque">Cheque</option>
+                                            </select>
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
                                 </thead>
                                 <tbody id="ing-tbody"></tbody>
                             </table>
@@ -330,17 +358,6 @@
 
                     <div class="caj-actions-bar">
                         <button class="caj-btn caj-btn--egreso" id="caj-btn-egreso">+ Gasto</button>
-                        <span class="caj-spacer"></span>
-                        <div class="caj-filtros">
-                            <select class="caj-select-filtro" id="caj-filtro-tipo">
-                                <option value="">Todos</option>
-                                <option value="ingreso">Solo ingresos</option>
-                                <option value="egreso">Solo egresos</option>
-                            </select>
-                            <select class="caj-select-filtro" id="caj-filtro-cat">
-                                <option value="">Todas las categorías</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="caj-tabla-wrap">
@@ -348,7 +365,6 @@
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
-                                    <th>Tipo</th>
                                     <th>Estado</th>
                                     <th>Categoría</th>
                                     <th>Concepto</th>
@@ -356,6 +372,34 @@
                                     <th>Método</th>
                                     <th style="text-align:right">Monto</th>
                                     <th style="width:60px"></th>
+                                </tr>
+                                <tr class="caj-filter-row">
+                                    <td><input type="date" class="caj-filter-input" id="gf-fecha"></td>
+                                    <td>
+                                        <select class="caj-filter-select" id="gf-estado">
+                                            <option value="">Todos</option>
+                                            <option value="pendiente">Pendiente</option>
+                                            <option value="pagado">Pagado</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="caj-filter-select" id="gf-cat">
+                                            <option value="">Todas</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="caj-filter-input" id="gf-concepto" placeholder="Buscar…"></td>
+                                    <td><input type="text" class="caj-filter-input" id="gf-ref" placeholder="Buscar…"></td>
+                                    <td>
+                                        <select class="caj-filter-select" id="gf-metodo">
+                                            <option value="">Todos</option>
+                                            <option value="efectivo">Efectivo</option>
+                                            <option value="transferencia">Transferencia</option>
+                                            <option value="tarjeta">Tarjeta</option>
+                                            <option value="cheque">Cheque</option>
+                                        </select>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
                                 </tr>
                             </thead>
                             <tbody id="caj-tbody"></tbody>

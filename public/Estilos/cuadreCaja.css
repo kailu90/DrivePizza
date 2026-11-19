@@ -205,6 +205,38 @@
     white-space: nowrap;
 }
 
+/* Fila de filtros por columna */
+.caj-filter-row td {
+    padding: 6px 8px;
+    background: #f9f9fb;
+    border-bottom: 2px solid #e8e8f0;
+}
+
+.caj-filter-input,
+.caj-filter-select {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #d8d8e4;
+    border-radius: 6px;
+    color: #444;
+    font-size: 1.2rem;
+    padding: 5px 8px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.caj-filter-input:focus,
+.caj-filter-select:focus {
+    border-color: var(--color-primario, #48bb78);
+    box-shadow: 0 0 0 2px rgba(72,187,120,0.15);
+}
+
+.caj-filter-input::placeholder {
+    color: #bbb;
+    font-size: 1.1rem;
+}
+
 .caj-tabla tbody tr {
     border-bottom: 1px solid #f8f8f8;
     transition: background 0.1s;

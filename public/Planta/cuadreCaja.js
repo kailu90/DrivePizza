@@ -75,7 +75,7 @@ verificarAccesoPlanta(async ({ username, rol }) => {
 // ── Inicialización ────────────────────────────────────────────────────────────
 async function _init() {
     _actualizarLabelPeriodo();
-    _poblarFiltroCategoria();
+    _poblarFiltrosCat();
 
     // Cargar sedes y proveedores en paralelo
     const [sedesData, { data: provData, error: errProv }] = await Promise.all([
@@ -574,18 +574,31 @@ function _renderPnL() {
 function _renderTabla() {
     _renderKPIsGastos();
 
-    const filtroTipo = document.getElementById('caj-filtro-tipo').value;
-    const filtroCat  = document.getElementById('caj-filtro-cat').value;
+    const fFecha    = document.getElementById('gf-fecha')?.value    || '';
+    const fEstado   = document.getElementById('gf-estado')?.value   || '';
+    const fCat      = document.getElementById('gf-cat')?.value      || '';
+    const fConcepto = (document.getElementById('gf-concepto')?.value || '').toLowerCase().trim();
+    const fRef      = (document.getElementById('gf-ref')?.value      || '').toLowerCase().trim();
+    const fMetodo   = document.getElementById('gf-metodo')?.value   || '';
 
-    let lista = _todos;
-    if (filtroTipo) lista = lista.filter(m => m.tipo === filtroTipo);
-    if (filtroCat)  lista = lista.filter(m => m.categoria === filtroCat);
+    let lista = _todos.filter(m => m.tipo === 'egreso');
+    if (fFecha)    lista = lista.filter(m => m.fecha === fFecha);
+    if (fEstado)   lista = lista.filter(m => m.estado === fEstado);
+    if (fCat)      lista = lista.filter(m => m.categoria === fCat);
+    if (fConcepto) lista = lista.filter(m => (m.concepto || '').toLowerCase().includes(fConcepto));
+    if (fRef) {
+        lista = lista.filter(m => {
+            const h = [(m.proveedor_nombre || ''), (m.sede || ''), (m.comprobante || '')].join(' ').toLowerCase();
+            return h.includes(fRef);
+        });
+    }
+    if (fMetodo)   lista = lista.filter(m => m.metodo_pago === fMetodo);
 
     const tbody = document.getElementById('caj-tbody');
     tbody.innerHTML = '';
 
     if (!lista.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="caj-empty">Sin movimientos en este período.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin gastos en este período.</td></tr>`;
         return;
     }
 
@@ -597,15 +610,12 @@ function _renderTabla() {
             || m.comprobante
             || '';
 
-        const esPendiente  = m.estado === 'pendiente';
-        const estadoBadge  = esPendiente
+        const esPendiente = m.estado === 'pendiente';
+        const estadoBadge = esPendiente
             ? '<span class="caj-badge caj-badge--pendiente">Pendiente</span>'
             : '<span class="caj-badge caj-badge--pagado">Pagado</span>';
 
         const acciones = [];
-        if (esPendiente && m.tipo === 'ingreso') {
-            acciones.push(`<button class="caj-btn-confirmar" data-id="${m.id}" title="Confirmar pago recibido">✓</button>`);
-        }
         if (_esAdmin) {
             acciones.push(`<button class="caj-btn-delete" data-id="${m.id}" title="Eliminar movimiento">✕</button>`);
         }
@@ -618,13 +628,12 @@ function _renderTabla() {
         if (esPendiente) tr.classList.add('caj-row--pendiente');
         tr.innerHTML = `
             <td>${fecha}</td>
-            <td><span class="caj-badge caj-badge--${m.tipo}">${m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}</span></td>
             <td>${estadoBadge}</td>
             <td>${catLabel}</td>
             <td>${conceptoHtml}</td>
             <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
-            <td style="text-transform:capitalize">${m.metodo_pago}</td>
-            <td style="text-align:right" class="caj-monto--${m.tipo}">$${Number(m.monto).toLocaleString('es-CO')}</td>
+            <td style="text-transform:capitalize">${m.metodo_pago || '—'}</td>
+            <td style="text-align:right" class="caj-monto--egreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
             <td class="caj-td-acciones">${acciones.join('')}</td>
         `;
         tbody.appendChild(tr);
@@ -675,17 +684,36 @@ function _renderKPIsGastos() {
 
 // ── Tabla de ingresos (vista Ingresos) ────────────────────────────────────────
 function _renderTablaIngresos() {
-    const tbody = document.getElementById('ing-tbody');
-    const lista = _todos.filter(m => m.tipo === 'ingreso');
-
     _renderKPIsIngresos();
+
+    const fFecha    = document.getElementById('if-fecha')?.value    || '';
+    const fEstado   = document.getElementById('if-estado')?.value   || '';
+    const fCat      = document.getElementById('if-cat')?.value      || '';
+    const fConcepto = (document.getElementById('if-concepto')?.value || '').toLowerCase().trim();
+    const fRef      = (document.getElementById('if-ref')?.value      || '').toLowerCase().trim();
+    const fMetodo   = document.getElementById('if-metodo')?.value   || '';
+
+    let lista = _todos.filter(m => m.tipo === 'ingreso');
+    if (fFecha)    lista = lista.filter(m => m.fecha === fFecha);
+    if (fEstado)   lista = lista.filter(m => m.estado === fEstado);
+    if (fCat)      lista = lista.filter(m => m.categoria === fCat);
+    if (fConcepto) lista = lista.filter(m => (m.concepto || '').toLowerCase().includes(fConcepto));
+    if (fRef) {
+        lista = lista.filter(m => {
+            const h = [(m.proveedor_nombre || ''), (m.sede || ''), (m.comprobante || '')].join(' ').toLowerCase();
+            return h.includes(fRef);
+        });
+    }
+    if (fMetodo)   lista = lista.filter(m => m.metodo_pago === fMetodo);
+
+    const tbody = document.getElementById('ing-tbody');
+    tbody.innerHTML = '';
 
     if (!lista.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin ingresos registrados en este período.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = '';
     lista.forEach(m => {
         const fecha      = _formatFecha(m.fecha);
         const catLabel   = _labelCategoria(m.categoria);
@@ -717,7 +745,7 @@ function _renderTablaIngresos() {
             <td>${catLabel}</td>
             <td>${conceptoHtml}</td>
             <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
-            <td style="text-transform:capitalize">${m.metodo_pago}</td>
+            <td style="text-transform:capitalize">${m.metodo_pago || '—'}</td>
             <td style="text-align:right" class="caj-monto--ingreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
             <td class="caj-td-acciones">${acciones.join('')}</td>
         `;
@@ -725,20 +753,31 @@ function _renderTablaIngresos() {
     });
 }
 
-// ── Filtros ───────────────────────────────────────────────────────────────────
-document.getElementById('caj-filtro-tipo').addEventListener('change', _renderTabla);
-document.getElementById('caj-filtro-cat').addEventListener('change',  _renderTabla);
+// ── Filtros por columna ───────────────────────────────────────────────────────
+['gf-estado','gf-cat','gf-metodo'].forEach(id =>
+    document.getElementById(id)?.addEventListener('change', _renderTabla));
+['gf-fecha','gf-concepto','gf-ref'].forEach(id =>
+    document.getElementById(id)?.addEventListener('input', _renderTabla));
 
-/** Pobla el select de categoría en la barra de filtros con todas las categorías. */
-function _poblarFiltroCategoria() {
-    const sel   = document.getElementById('caj-filtro-cat');
-    const todas = [...CAJA_CATEGORIAS.ingreso, ...CAJA_CATEGORIAS.egreso];
-    todas.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value       = c.value;
-        opt.textContent = c.label;
-        sel.appendChild(opt);
-    });
+['if-estado','if-cat','if-metodo'].forEach(id =>
+    document.getElementById(id)?.addEventListener('change', _renderTablaIngresos));
+['if-fecha','if-concepto','if-ref'].forEach(id =>
+    document.getElementById(id)?.addEventListener('input', _renderTablaIngresos));
+
+/** Pobla los selects de categoría en las filas de filtros. */
+function _poblarFiltrosCat() {
+    const addOpts = (selId, cats) => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        cats.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value       = c.value;
+            opt.textContent = c.label;
+            sel.appendChild(opt);
+        });
+    };
+    addOpts('gf-cat', CAJA_CATEGORIAS.egreso);
+    addOpts('if-cat', CAJA_CATEGORIAS.ingreso);
 }
 
 // ── Acciones en tabla (eliminar + confirmar) ──────────────────────────────────
@@ -963,7 +1002,6 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
 
         if (_enPeriodoActual(nuevo)) {
             _todos.unshift(nuevo);
-            if (_vistaActual === 'gastos') document.getElementById('caj-filtro-cat').value = '';
             _renderVistaActual();
         }
     } catch (err) {
@@ -1328,8 +1366,6 @@ function _switchVista(vista) {
     if (vista === 'conciliacion')  _cargarConciliacion();
     if (vista === 'gerencial')     _cargarGerencial();
     if (vista === 'gastos') {
-        document.getElementById('caj-filtro-tipo').value = 'egreso';
-        document.getElementById('caj-filtro-cat').value  = '';
         _renderTabla();
     }
 }
