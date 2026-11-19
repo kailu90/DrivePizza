@@ -4,7 +4,7 @@
 
    Paleta:
      Ingreso  → fondo crema (#f4ecdf / --color-secundario) + letra verde (#284c22 / --color-primario)
-     Egreso   → fondo rojo claro (#fee2e2) + letra rojo oscuro (#991b1b)
+     Egreso   → fondo naranja claro (#ffedd5) + letra naranja (#c05621)
      Positivo → verde primario
      Negativo → rojo oscuro
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -80,9 +80,9 @@
 }
 .caj-card--pendiente { border-left-color: #d97706; }
 .caj-card--ingreso   { border-left-color: var(--color-primario); }
-.caj-card--egreso    { border-left-color: #991b1b; }
+.caj-card--egreso    { border-left-color: #c05621; }
 .caj-card--balance   { border-left-color: var(--color-primario); }
-.caj-card--balance.negativo { border-left-color: #991b1b; }
+.caj-card--balance.negativo { border-left-color: #c05621; }
 
 .caj-card__label {
     font-size: 1.1rem;
@@ -99,9 +99,9 @@
 }
 .caj-card--pendiente .caj-card__monto        { color: #d97706; }
 .caj-card--ingreso   .caj-card__monto        { color: var(--color-primario); }
-.caj-card--egreso    .caj-card__monto        { color: #991b1b; }
+.caj-card--egreso    .caj-card__monto        { color: #c05621; }
 .caj-card--balance.positivo .caj-card__monto { color: var(--color-primario); }
-.caj-card--balance.negativo .caj-card__monto { color: #991b1b; }
+.caj-card--balance.negativo .caj-card__monto { color: #c05621; }
 
 .caj-card__count {
     font-size: 1.1rem;
@@ -136,8 +136,8 @@
     background: var(--color-primario);
     color: var(--color-secundario);
 }
-/* Egreso: fondo rojo, letra blanca */
-.caj-btn--egreso    { background: #991b1b; color: #fff; }
+/* Egreso: fondo naranja, letra blanca */
+.caj-btn--egreso    { background: #c05621; color: #fff; }
 /* Importar liquidación: ámbar */
 .caj-btn--importar  {
     background: #fef3c7;
@@ -227,13 +227,13 @@
     white-space: nowrap;
 }
 .caj-badge--ingreso   { background: var(--color-secundario); color: var(--color-primario); }
-.caj-badge--egreso    { background: #fee2e2;                 color: #991b1b; }
+.caj-badge--egreso    { background: #ffedd5;                 color: #c05621; }
 .caj-badge--pendiente { background: #fef3c7;                 color: #92400e; }
 .caj-badge--pagado    { background: #f0fdf4;                 color: #15803d; }
 
 /* Montos en tabla */
 .caj-monto--ingreso { color: var(--color-primario); font-weight: 700; white-space: nowrap; }
-.caj-monto--egreso  { color: #991b1b;               font-weight: 700; white-space: nowrap; }
+.caj-monto--egreso  { color: #c05621;               font-weight: 700; white-space: nowrap; }
 
 /* Fila pendiente: fondo ámbar muy sutil */
 .caj-row--pendiente td { background: #fffbeb; }
@@ -377,11 +377,11 @@
     background: var(--color-secundario);
     color: var(--color-primario);
 }
-/* Egreso activo: rojo claro con borde y letra rojo oscuro */
+/* Egreso activo: naranja claro con borde y letra naranja */
 .caj-tipo-btn.active-egreso {
-    border-color: #991b1b;
-    background: #fee2e2;
-    color: #991b1b;
+    border-color: #c05621;
+    background: #ffedd5;
+    color: #c05621;
 }
 
 /* Campos del formulario */
@@ -517,14 +517,14 @@
     text-overflow: ellipsis;
 }
 
-.caj-kpi-valor--red   { color: #991b1b; }
+.caj-kpi-valor--red   { color: #c05621; }
 .caj-kpi-valor--green { color: var(--color-primario); }
 .caj-kpi-valor--amber { color: #d97706; }
 
 /* Balance positivo / negativo */
 #caj-card-balance.positivo .caj-kpi-valor { color: var(--color-primario); }
-#caj-card-balance.negativo .caj-kpi-valor { color: #991b1b; }
-#caj-card-balance.negativo .caj-kpi-icon  { background: #fee2e2; color: #991b1b; }
+#caj-card-balance.negativo .caj-kpi-valor { color: #c05621; }
+#caj-card-balance.negativo .caj-kpi-icon  { background: #ffedd5; color: #c05621; }
 
 .caj-kpi-sub {
     font-size: 1.05rem;
@@ -789,7 +789,7 @@
     white-space: nowrap;
 }
 .inf-val--ing  { color: var(--color-primario) !important; font-weight: 700; }
-.inf-val--egr  { color: #991b1b !important;               font-weight: 700; }
+.inf-val--egr  { color: #c05621 !important;               font-weight: 700; }
 .inf-val--pend { color: #d97706 !important;               font-weight: 700; }
 
 /* Caja de utilidad neta (grande) */
@@ -817,7 +817,7 @@
     line-height: 1;
 }
 .caj-inf-total--pos .caj-inf-total__valor { color: var(--color-primario); }
-.caj-inf-total--neg .caj-inf-total__valor { color: #991b1b; }
+.caj-inf-total--neg .caj-inf-total__valor { color: #c05621; }
 
 /* ── Dialog liquidación — ancho extendido ────────────────────────────────────── */
 .caj-dialog--wide {
@@ -836,7 +836,7 @@
 
 .caj-liq-num           { text-align: right; font-size: 1.3rem; white-space: nowrap; }
 .caj-liq-num--ing      { color: var(--color-primario); font-weight: 700; }
-.caj-liq-num--egr      { color: #991b1b; }
+.caj-liq-num--egr      { color: #c05621; }
 .caj-liq-num--tot      { color: var(--color-terciario); font-weight: 700; }
 
 .caj-liq-ya            { color: #22c55e; font-size: 1.5rem; font-weight: 700; }

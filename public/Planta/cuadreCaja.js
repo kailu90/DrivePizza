@@ -221,7 +221,7 @@ function _renderKPIs() {
     const elUtil = document.getElementById('caj-kpi-utilidad');
     if (elUtil) {
         elUtil.textContent = (ventas || egresos) ? _fmt(Math.abs(utilidad)) : '—';
-        elUtil.style.color = utilidad >= 0 ? 'var(--color-primario)' : '#991b1b';
+        elUtil.style.color = utilidad >= 0 ? 'var(--color-primario)' : '#c05621';
     }
 
     const elMargen = document.getElementById('caj-kpi-utilidad-margen');
@@ -294,7 +294,7 @@ function _renderSidebar() {
     const cobrado  = _todos.filter(m => m.tipo === 'ingreso' && m.estado !== 'pendiente').reduce((s, m) => s + Number(m.monto), 0);
     const utilidad = ventas - egresos;
     const margen   = ventas > 0 ? (utilidad / ventas * 100).toFixed(1) + '%' : '—';
-    const utColor  = utilidad >= 0 ? 'var(--color-primario)' : '#991b1b';
+    const utColor  = utilidad >= 0 ? 'var(--color-primario)' : '#c05621';
 
     const elResumen = document.getElementById('caj-side-resumen');
     if (elResumen) {
@@ -1224,7 +1224,7 @@ async function _cargarVentas() {
 
     } catch (err) {
         console.error('[cuadreCaja] cargarVentas:', err);
-        contenido.innerHTML = `<p class="caj-empty" style="color:#991b1b">${err.message || 'Error al cargar ventas.'}</p>`;
+        contenido.innerHTML = `<p class="caj-empty" style="color:#c05621">${err.message || 'Error al cargar ventas.'}</p>`;
     }
 }
 
@@ -1350,7 +1350,7 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         </div>
         <div class="caj-pvt-det-body">
             <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
-            ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#991b1b">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
+            ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#c05621">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
             <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total neto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
             <div class="caj-pvt-det-row"><span>Estado</span>${estadoHtml}</div>
             ${accionHtml ? `<div class="caj-pvt-det-acciones">${accionHtml}</div>` : ''}
