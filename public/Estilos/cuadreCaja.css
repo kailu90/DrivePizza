@@ -484,12 +484,12 @@
 }
 .caj-kpi-icon svg { width: 1.8rem; height: 1.8rem; }
 
-.caj-kpi-icon--green  { background: #dcfce7; color: #16a34a; }
-.caj-kpi-icon--orange { background: #ffedd5; color: #ea580c; }
-.caj-kpi-icon--blue   { background: #dbeafe; color: #2563eb; }
-.caj-kpi-icon--indigo { background: #e0e7ff; color: #4f46e5; }
-.caj-kpi-icon--gray   { background: #f1f5f9; color: #64748b; }
-.caj-kpi-icon--amber  { background: #fef3c7; color: #d97706; }
+.caj-kpi-icon--green  { background: #d4edda; color: var(--color-primario); }
+.caj-kpi-icon--orange { background: #ffedd5; color: #c05621; }
+.caj-kpi-icon--blue   { background: #e8f4e0; color: var(--color-primario); }
+.caj-kpi-icon--indigo { background: #fef3c7; color: #d97706; }
+.caj-kpi-icon--gray   { background: var(--color-secundario); color: var(--color-primario); }
+.caj-kpi-icon--amber  { background: #ffedd5; color: #c05621; }
 
 .caj-kpi-body {
     display: flex;
@@ -542,8 +542,8 @@
     font-weight: 700;
     width: fit-content;
 }
-.caj-kpi-badge--green { background: #dcfce7; color: #15803d; }
-.caj-kpi-badge--amber { background: #fef3c7; color: #92400e; }
+.caj-kpi-badge--green { background: #d4edda; color: var(--color-primario); }
+.caj-kpi-badge--amber { background: #ffedd5; color: #c05621; }
 
 /* ── Pestañas (estilo pill) ──────────────────────────────────────────────────── */
 .caj-tabs {
@@ -644,8 +644,8 @@
 }
 .caj-side-panel-icon            { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
 .caj-side-panel-icon--gold      { color: #d97706; }
-.caj-side-panel-icon--amber     { color: #f59e0b; }
-.caj-side-panel-icon--blue      { color: #2563eb; }
+.caj-side-panel-icon--amber     { color: #c05621; }
+.caj-side-panel-icon--blue      { color: var(--color-primario); }
 
 .caj-side-panel-body            { padding: 1.2rem 1.4rem; }
 .caj-side-empty                 { font-size: 1.2rem; color: #aaa; text-align: center; padding: 0.4rem 0; margin: 0; }
