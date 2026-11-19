@@ -199,6 +199,161 @@ function _renderResumen() {
     const cardBalance = document.getElementById('caj-card-balance');
     cardBalance.classList.remove('positivo', 'negativo');
     cardBalance.classList.add(balance >= 0 ? 'positivo' : 'negativo');
+
+    _renderKPIs();
+}
+
+// ── KPI Cards globales ────────────────────────────────────────────────────────
+function _renderKPIs() {
+    const ventas   = _ventasDatos.reduce((s, sem) => s + sem.sedes.reduce((ss, d) => ss + d.totalNeto, 0), 0);
+    const egresos  = _todos.filter(m => m.tipo === 'egreso').reduce((s, m) => s + Number(m.monto), 0);
+    const utilidad = ventas - egresos;
+    const margen   = ventas > 0 ? (utilidad / ventas * 100).toFixed(1) : null;
+
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    setEl('caj-kpi-ventas', ventas ? _fmt(ventas) : '—');
+    setEl('caj-kpi-ventas-sub',
+        _ventasDatos.length
+            ? `${_ventasDatos.length} semana${_ventasDatos.length !== 1 ? 's' : ''} del mes`
+            : 'Sin datos aún');
+
+    const elUtil = document.getElementById('caj-kpi-utilidad');
+    if (elUtil) {
+        elUtil.textContent = (ventas || egresos) ? _fmt(Math.abs(utilidad)) : '—';
+        elUtil.style.color = utilidad >= 0 ? 'var(--color-primario)' : '#991b1b';
+    }
+
+    const elMargen = document.getElementById('caj-kpi-utilidad-margen');
+    if (elMargen) {
+        if (margen !== null) {
+            elMargen.textContent = `Margen: ${margen}%`;
+            elMargen.style.display = '';
+        } else {
+            elMargen.style.display = 'none';
+        }
+    }
+}
+
+// ── Sidebar Ventas (top sede, alertas, resumen) ────────────────────────────────
+function _renderSidebar() {
+    // Totales por sede del mes completo
+    const totalesSede = {};
+    _ventasDatos.forEach(sem => {
+        sem.sedes.forEach(d => {
+            totalesSede[d.sede] = (totalesSede[d.sede] || 0) + d.totalNeto;
+        });
+    });
+    const sortedSedes = Object.entries(totalesSede).sort((a, b) => b[1] - a[1]);
+    const grandTotal  = sortedSedes.reduce((s, [, v]) => s + v, 0);
+
+    // ── Top sede ──────────────────────────────────────────────────────────────
+    const elTop = document.getElementById('caj-side-topsede');
+    if (elTop) {
+        if (sortedSedes.length) {
+            const [topSede, topVal] = sortedSedes[0];
+            const pct = grandTotal > 0 ? (topVal / grandTotal * 100).toFixed(1) : 0;
+            elTop.innerHTML = `
+                <div class="caj-side-top-row">
+                    <span class="caj-side-top-name">${_esc(capitalizarSede(topSede))}</span>
+                    <span class="caj-side-top-pct">${pct}%<small class="caj-side-top-pct-label"> del total</small></span>
+                </div>
+                <span class="caj-side-top-val">${_fmt(topVal)}</span>
+                ${sortedSedes.slice(1, 4).map(([s, v]) => `
+                    <div class="caj-side-rank-row">
+                        <span>${_esc(capitalizarSede(s))}</span>
+                        <span>${_fmt(v)}</span>
+                    </div>`).join('')}`;
+        } else {
+            elTop.innerHTML = '<p class="caj-side-empty">Sin datos este mes</p>';
+        }
+    }
+
+    // ── Alertas ───────────────────────────────────────────────────────────────
+    const pendientes = _todos.filter(m =>
+        m.tipo === 'ingreso' && m.categoria === 'pago_sede' && m.estado === 'pendiente'
+    );
+    const elAlertas = document.getElementById('caj-side-alertas');
+    if (elAlertas) {
+        if (pendientes.length) {
+            const uniqSedes = [...new Set(pendientes.map(m => m.sede))];
+            elAlertas.innerHTML = uniqSedes.map(sede =>
+                `<div class="caj-side-alerta">
+                    <span class="caj-side-alerta-dot"></span>
+                    ${_esc(capitalizarSede(sede || '—'))} — cierre pendiente
+                 </div>`
+            ).join('');
+        } else {
+            elAlertas.innerHTML = '<p class="caj-side-empty">Sin alertas pendientes</p>';
+        }
+    }
+
+    // ── Resumen financiero ────────────────────────────────────────────────────
+    const ventas   = grandTotal;
+    const egresos  = _todos.filter(m => m.tipo === 'egreso').reduce((s, m) => s + Number(m.monto), 0);
+    const cobrado  = _todos.filter(m => m.tipo === 'ingreso' && m.estado !== 'pendiente').reduce((s, m) => s + Number(m.monto), 0);
+    const utilidad = ventas - egresos;
+    const margen   = ventas > 0 ? (utilidad / ventas * 100).toFixed(1) + '%' : '—';
+    const utColor  = utilidad >= 0 ? 'var(--color-primario)' : '#991b1b';
+
+    const elResumen = document.getElementById('caj-side-resumen');
+    if (elResumen) {
+        elResumen.innerHTML = `
+            <div class="caj-side-res-row"><span>Ventas del mes</span><strong>${_fmt(ventas)}</strong></div>
+            <div class="caj-side-res-row"><span>Gastos del mes</span><strong>${_fmt(egresos)}</strong></div>
+            <div class="caj-side-res-row"><span>Cobrado</span><strong style="color:var(--color-primario)">${_fmt(cobrado)}</strong></div>
+            <div class="caj-side-res-row caj-side-res-row--sep"></div>
+            <div class="caj-side-res-row caj-side-res-row--total">
+                <span>Utilidad</span>
+                <strong style="color:${utColor}">${_fmt(Math.abs(utilidad))}</strong>
+            </div>
+            <div class="caj-side-res-row"><span>Margen</span><strong>${margen}</strong></div>`;
+    }
+}
+
+// ── Gráfico SVG de evolución semanal ─────────────────────────────────────────
+function _drawChart() {
+    const wrap = document.getElementById('caj-vnt-chart-wrap');
+    const el   = document.getElementById('caj-vnt-chart');
+    if (!el || !wrap) return;
+
+    const totales = _ventasDatos.map(sem => sem.sedes.reduce((s, d) => s + d.totalNeto, 0));
+    if (!totales.length || totales.every(v => v === 0)) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+
+    const labels = _ventasDatos.map(sem => `Sem #${sem.numSemana}`);
+    const max    = Math.max(...totales, 1);
+    const W = 580, H = 150, PL = 6, PR = 6, PT = 28, PB = 24;
+
+    const pts = totales.map((v, i) => ({
+        x: PL + (i / Math.max(totales.length - 1, 1)) * (W - PL - PR),
+        y: PT + (1 - v / max) * (H - PT - PB),
+        v,
+    }));
+
+    const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const areaD = `${lineD} L${pts[pts.length - 1].x.toFixed(1)},${(H - PB).toFixed(1)} L${pts[0].x.toFixed(1)},${(H - PB).toFixed(1)} Z`;
+
+    const dots = pts.map((p, i) => {
+        const lbl = p.v >= 1e6 ? `$${(p.v / 1e6).toFixed(1)}M` : `$${Math.round(p.v / 1e3)}K`;
+        return `
+            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="#284c22" stroke="#fff" stroke-width="2"/>
+            <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#374151" font-family="inherit">${lbl}</text>
+            <text x="${p.x.toFixed(1)}" y="${(H - PB + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="inherit">${labels[i]}</text>`;
+    }).join('');
+
+    el.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible">
+            <defs>
+                <linearGradient id="cajChartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#284c22" stop-opacity="0.18"/>
+                    <stop offset="100%" stop-color="#284c22" stop-opacity="0.02"/>
+                </linearGradient>
+            </defs>
+            <path d="${areaD}" fill="url(#cajChartGrad)"/>
+            <path d="${lineD}" fill="none" stroke="#284c22" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${dots}
+        </svg>`;
 }
 
 // ── Tabla de movimientos ──────────────────────────────────────────────────────
@@ -1078,6 +1233,8 @@ function _renderVentas() {
 
     if (!_ventasDatos.length) {
         contenido.innerHTML = '<p class="caj-empty">Sin ventas este mes.</p>';
+        _renderKPIs();
+        _renderSidebar();
         return;
     }
 
@@ -1150,6 +1307,10 @@ function _renderVentas() {
             </table>
         </div>
         <div id="caj-pvt-detalle" class="caj-pvt-detalle" style="display:none"></div>`;
+
+    _renderKPIs();
+    _renderSidebar();
+    _drawChart();
 }
 
 function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {

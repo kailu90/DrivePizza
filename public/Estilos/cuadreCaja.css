@@ -447,29 +447,263 @@
     border-top: 1px solid #f0f0f0;
 }
 
-/* ── Pestañas ────────────────────────────────────────────────────────────────── */
+/* ── Period nav icono ────────────────────────────────────────────────────────── */
+.caj-period-icon {
+    display: flex;
+    align-items: center;
+    color: #9ca3af;
+}
+
+/* ── KPI Cards ───────────────────────────────────────────────────────────────── */
+.caj-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.caj-kpi-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.4rem 1.6rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    min-width: 0;
+}
+
+.caj-kpi-icon {
+    flex-shrink: 0;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.caj-kpi-icon svg { width: 1.8rem; height: 1.8rem; }
+
+.caj-kpi-icon--green  { background: #dcfce7; color: #16a34a; }
+.caj-kpi-icon--orange { background: #ffedd5; color: #ea580c; }
+.caj-kpi-icon--blue   { background: #dbeafe; color: #2563eb; }
+.caj-kpi-icon--indigo { background: #e0e7ff; color: #4f46e5; }
+.caj-kpi-icon--gray   { background: #f1f5f9; color: #64748b; }
+.caj-kpi-icon--amber  { background: #fef3c7; color: #d97706; }
+
+.caj-kpi-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.caj-kpi-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+.caj-kpi-valor {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.caj-kpi-valor--red   { color: #991b1b; }
+.caj-kpi-valor--green { color: var(--color-primario); }
+.caj-kpi-valor--amber { color: #d97706; }
+
+/* Balance positivo / negativo */
+#caj-card-balance.positivo .caj-kpi-valor { color: var(--color-primario); }
+#caj-card-balance.negativo .caj-kpi-valor { color: #991b1b; }
+#caj-card-balance.negativo .caj-kpi-icon  { background: #fee2e2; color: #991b1b; }
+
+.caj-kpi-sub {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.caj-kpi-badge {
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    width: fit-content;
+}
+.caj-kpi-badge--green { background: #dcfce7; color: #15803d; }
+.caj-kpi-badge--amber { background: #fef3c7; color: #92400e; }
+
+/* ── Pestañas (estilo pill) ──────────────────────────────────────────────────── */
 .caj-tabs {
     display: flex;
-    gap: 0;
-    border-bottom: 2px solid #f0f0f0;
+    gap: 0.5rem;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 0.5rem;
     margin-bottom: 2.4rem;
+    width: fit-content;
 }
 
 .caj-tab {
     font-family: inherit;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 600;
-    padding: 1rem 2.4rem;
+    padding: 0.8rem 1.8rem;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-radius: 7px;
     background: none;
-    color: #aaa;
+    color: #6b7280;
     cursor: pointer;
-    margin-bottom: -2px;
-    transition: color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
 }
-.caj-tab:hover      { color: var(--color-terciario); }
-.caj-tab--active    { color: var(--color-primario); border-bottom-color: var(--color-primario); }
+.caj-tab:hover                  { background: #fff; color: var(--color-terciario); }
+.caj-tab--active                { background: var(--color-primario); color: var(--color-secundario); box-shadow: 0 1px 3px rgba(0,0,0,.14); }
+.caj-tab--active:hover          { background: var(--color-primario); color: var(--color-secundario); }
+.caj-tab-icon                   { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+
+/* ── Layout Ventas por Sede (dos columnas) ───────────────────────────────────── */
+.caj-vnt-layout {
+    display: grid;
+    grid-template-columns: 1fr 28rem;
+    gap: 2rem;
+    align-items: start;
+}
+
+.caj-vnt-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    min-width: 0;
+}
+
+.caj-vnt-block {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.caj-vnt-block-hdr {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1.2rem 1.6rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    border-bottom: 1px solid #f0f0f0;
+}
+.caj-vnt-block-icon { width: 1.8rem; height: 1.8rem; color: var(--color-primario); flex-shrink: 0; }
+
+/* Ajuste de la tabla pivote dentro del bloque */
+.caj-vnt-block .caj-pvt-wrap    { margin-top: 0; padding: 0 0.4rem 0.4rem; }
+.caj-vnt-block .caj-pvt-detalle { margin: 0 1rem 1rem; }
+
+/* Gráfico */
+.caj-chart-container { padding: 1.4rem 1.6rem 1.2rem; }
+
+/* ── Sidebar de Ventas ───────────────────────────────────────────────────────── */
+.caj-vnt-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.caj-side-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+.caj-side-panel-hdr {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 1.1rem 1.4rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-terciario);
+    border-bottom: 1px solid #f0f0f0;
+}
+.caj-side-panel-icon            { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+.caj-side-panel-icon--gold      { color: #d97706; }
+.caj-side-panel-icon--amber     { color: #f59e0b; }
+.caj-side-panel-icon--blue      { color: #2563eb; }
+
+.caj-side-panel-body            { padding: 1.2rem 1.4rem; }
+.caj-side-empty                 { font-size: 1.2rem; color: #aaa; text-align: center; padding: 0.4rem 0; margin: 0; }
+
+/* Top sede */
+.caj-side-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.3rem;
+}
+.caj-side-top-name              { font-size: 1.5rem; font-weight: 700; color: var(--color-terciario); }
+.caj-side-top-pct               { font-size: 1.8rem; font-weight: 700; color: var(--color-primario); }
+.caj-side-top-pct-label         { font-size: 1rem; font-weight: 400; color: #9ca3af; }
+.caj-side-top-val               { font-size: 2rem; font-weight: 700; color: var(--color-primario); display: block; margin-bottom: 0.8rem; }
+.caj-side-rank-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #6b7280;
+    padding: 0.35rem 0;
+    border-top: 1px solid #f5f5f5;
+}
+
+/* Alertas */
+.caj-side-alerta {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1.3rem;
+    color: var(--color-terciario);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.caj-side-alerta:last-child     { border-bottom: none; }
+.caj-side-alerta-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: #d97706;
+    flex-shrink: 0;
+}
+
+/* Resumen financiero */
+.caj-side-res-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.3rem;
+    color: #6b7280;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.caj-side-res-row:last-child    { border-bottom: none; }
+.caj-side-res-row--sep          { border-bottom: 2px solid #e5e7eb; padding: 0; }
+.caj-side-res-row--total        { font-size: 1.4rem; font-weight: 700; color: var(--color-terciario); }
+.caj-side-res-row strong        { color: var(--color-terciario); }
 
 /* ── Informe Mensual ──────────────────────────────────────────────────────────── */
 .caj-inf-grid {
@@ -750,21 +984,31 @@
 .caj-vta-btn-registrar:disabled             { opacity: 0.5; cursor: default; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1400px) {
+    .caj-kpi-row         { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1100px) {
+    .caj-vnt-layout      { grid-template-columns: 1fr 24rem; }
+}
+
 @media (max-width: 1024px) {
-    .caj-resumen         { grid-template-columns: repeat(2, 1fr); }
+    .caj-kpi-row         { grid-template-columns: repeat(3, 1fr); }
+    .caj-vnt-layout      { grid-template-columns: 1fr; }
     .caj-inf-grid        { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
-    .caj-resumen         { grid-template-columns: 1fr 1fr; }
+    .caj-kpi-row         { grid-template-columns: 1fr 1fr; }
     .caj-topbar          { flex-direction: column; align-items: flex-start; }
     .caj-actions-bar     { flex-direction: column; align-items: stretch; }
     .caj-filtros         { flex-wrap: wrap; width: 100%; }
     .caj-select-filtro   { flex: 1; }
     .caj-grid-2          { grid-template-columns: 1fr; }
     .caj-tipo-row        { grid-template-columns: 1fr; }
+    .caj-tabs            { overflow-x: auto; width: 100%; }
 }
 
 @media (max-width: 480px) {
-    .caj-resumen         { grid-template-columns: 1fr; }
+    .caj-kpi-row         { grid-template-columns: 1fr; }
 }

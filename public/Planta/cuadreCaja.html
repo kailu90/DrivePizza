@@ -31,44 +31,109 @@
             <h2 class="caj-titulo">Cuadre de Caja</h2>
             <div class="caj-period-nav">
                 <button class="caj-btn-nav" id="caj-prev" title="Mes anterior">&#8249;</button>
+                <span class="caj-period-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+                </span>
                 <span class="caj-period-label" id="caj-period-label">—</span>
                 <button class="caj-btn-nav" id="caj-next" title="Mes siguiente">&#8250;</button>
             </div>
         </div>
 
+        <!-- KPI Cards — siempre visibles en la parte superior -->
+        <div class="caj-kpi-row">
+
+            <!-- 1. Ventas del mes -->
+            <div class="caj-kpi-card">
+                <div class="caj-kpi-icon caj-kpi-icon--green">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Ventas del mes</span>
+                    <span class="caj-kpi-valor" id="caj-kpi-ventas">—</span>
+                    <span class="caj-kpi-sub" id="caj-kpi-ventas-sub">Calculando...</span>
+                </div>
+            </div>
+
+            <!-- 2. Gastos del mes -->
+            <div class="caj-kpi-card">
+                <div class="caj-kpi-icon caj-kpi-icon--orange">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Gastos del mes</span>
+                    <span class="caj-kpi-valor caj-kpi-valor--red" id="caj-total-egresos">—</span>
+                    <span class="caj-kpi-sub" id="caj-count-egresos">0 movimientos</span>
+                </div>
+            </div>
+
+            <!-- 3. Utilidad -->
+            <div class="caj-kpi-card">
+                <div class="caj-kpi-icon caj-kpi-icon--blue">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Utilidad</span>
+                    <span class="caj-kpi-valor" id="caj-kpi-utilidad">—</span>
+                    <span class="caj-kpi-badge caj-kpi-badge--green" id="caj-kpi-utilidad-margen" style="display:none"></span>
+                </div>
+            </div>
+
+            <!-- 4. Por Cobrar -->
+            <div class="caj-kpi-card">
+                <div class="caj-kpi-icon caj-kpi-icon--indigo">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Por Cobrar</span>
+                    <span class="caj-kpi-valor caj-kpi-valor--amber" id="caj-total-por-cobrar">—</span>
+                    <span class="caj-kpi-sub" id="caj-count-por-cobrar">0 movimientos</span>
+                </div>
+            </div>
+
+            <!-- 5. Cobrado -->
+            <div class="caj-kpi-card">
+                <div class="caj-kpi-icon caj-kpi-icon--gray">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Cobrado</span>
+                    <span class="caj-kpi-valor caj-kpi-valor--green" id="caj-total-cobrado">—</span>
+                    <span class="caj-kpi-sub" id="caj-count-cobrado">0 movimientos</span>
+                </div>
+            </div>
+
+            <!-- 6. Balance -->
+            <div class="caj-kpi-card" id="caj-card-balance">
+                <div class="caj-kpi-icon caj-kpi-icon--amber">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                </div>
+                <div class="caj-kpi-body">
+                    <span class="caj-kpi-label">Balance</span>
+                    <span class="caj-kpi-valor" id="caj-total-balance">—</span>
+                    <span class="caj-kpi-sub" id="caj-count-total">0 movimientos</span>
+                </div>
+            </div>
+
+        </div>
+
         <!-- Pestañas de vista -->
         <div class="caj-tabs">
-            <button class="caj-tab caj-tab--active" id="caj-tab-movimientos">Movimientos</button>
-            <button class="caj-tab" id="caj-tab-ventas">Ventas por Sede</button>
-            <button class="caj-tab" id="caj-tab-informe">Informe Mensual</button>
+            <button class="caj-tab caj-tab--active" id="caj-tab-movimientos">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="caj-tab-icon"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                Movimientos
+            </button>
+            <button class="caj-tab" id="caj-tab-ventas">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="caj-tab-icon"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                Ventas por sede
+            </button>
+            <button class="caj-tab" id="caj-tab-informe">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="caj-tab-icon"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+                Informe mensual
+            </button>
         </div>
 
         <!-- Vista: Movimientos ─────────────────────────────────────────────── -->
         <div id="caj-view-movimientos">
-
-        <!-- Cards resumen del período -->
-        <div class="caj-resumen">
-            <div class="caj-card caj-card--pendiente">
-                <span class="caj-card__label">Por Cobrar</span>
-                <span class="caj-card__monto" id="caj-total-por-cobrar">$0</span>
-                <span class="caj-card__count" id="caj-count-por-cobrar">0 movimientos</span>
-            </div>
-            <div class="caj-card caj-card--ingreso">
-                <span class="caj-card__label">Cobrado</span>
-                <span class="caj-card__monto" id="caj-total-cobrado">$0</span>
-                <span class="caj-card__count" id="caj-count-cobrado">0 movimientos</span>
-            </div>
-            <div class="caj-card caj-card--egreso">
-                <span class="caj-card__label">Egresos</span>
-                <span class="caj-card__monto" id="caj-total-egresos">$0</span>
-                <span class="caj-card__count" id="caj-count-egresos">0 movimientos</span>
-            </div>
-            <div class="caj-card caj-card--balance" id="caj-card-balance">
-                <span class="caj-card__label">Balance Real</span>
-                <span class="caj-card__monto" id="caj-total-balance">$0</span>
-                <span class="caj-card__count" id="caj-count-total">0 movimientos</span>
-            </div>
-        </div>
 
         <!-- Barra de acciones + filtros -->
         <div class="caj-actions-bar">
@@ -112,10 +177,68 @@
 
         <!-- Vista: Ventas por Sede ─────────────────────────────────────────── -->
         <div id="caj-view-ventas" style="display:none">
-            <div id="caj-ventas-contenido">
-                <p class="caj-empty">Cargando ventas...</p>
+            <div class="caj-vnt-layout">
+
+                <!-- Columna principal: tabla pivote + gráfico -->
+                <div class="caj-vnt-main">
+
+                    <div class="caj-vnt-block">
+                        <div class="caj-vnt-block-hdr">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="caj-vnt-block-icon"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                            Ventas por sede – Reporte semanal
+                        </div>
+                        <div id="caj-ventas-contenido">
+                            <p class="caj-empty">Cargando ventas...</p>
+                        </div>
+                    </div>
+
+                    <div class="caj-vnt-block" id="caj-vnt-chart-wrap" style="display:none">
+                        <div class="caj-vnt-block-hdr">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="caj-vnt-block-icon"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd"/></svg>
+                            Evolución de ventas semanales
+                        </div>
+                        <div id="caj-vnt-chart" class="caj-chart-container"></div>
+                    </div>
+
+                </div>
+
+                <!-- Sidebar: métricas destacadas -->
+                <div class="caj-vnt-sidebar">
+
+                    <div class="caj-side-panel">
+                        <div class="caj-side-panel-hdr">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="caj-side-panel-icon caj-side-panel-icon--gold"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            Top sede del mes
+                        </div>
+                        <div id="caj-side-topsede" class="caj-side-panel-body">
+                            <p class="caj-side-empty">Cargando...</p>
+                        </div>
+                    </div>
+
+                    <div class="caj-side-panel">
+                        <div class="caj-side-panel-hdr">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="caj-side-panel-icon caj-side-panel-icon--amber"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            Alertas
+                        </div>
+                        <div id="caj-side-alertas" class="caj-side-panel-body">
+                            <p class="caj-side-empty">Sin alertas</p>
+                        </div>
+                    </div>
+
+                    <div class="caj-side-panel">
+                        <div class="caj-side-panel-hdr">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="caj-side-panel-icon caj-side-panel-icon--blue"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>
+                            Resumen financiero
+                        </div>
+                        <div id="caj-side-resumen" class="caj-side-panel-body">
+                            <p class="caj-side-empty">Cargando...</p>
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
-        </div>
+        </div><!-- /caj-view-ventas -->
 
         <!-- Vista: Informe Mensual ─────────────────────────────────────────── -->
         <div id="caj-view-informe" style="display:none">
@@ -141,26 +264,22 @@
 
     <div class="caj-dialog-body">
 
-        <!-- Selector de tipo: Ingreso / Egreso -->
         <div class="caj-tipo-row">
             <button class="caj-tipo-btn" id="caj-tipo-ingreso" data-tipo="ingreso">↑ Ingreso</button>
             <button class="caj-tipo-btn" id="caj-tipo-egreso"  data-tipo="egreso">↓ Egreso</button>
         </div>
 
-        <!-- Categoría (opciones cambian según tipo) -->
         <div class="caj-field">
             <label for="caj-categoria">Categoría *</label>
             <select id="caj-categoria"></select>
         </div>
 
-        <!-- Concepto -->
         <div class="caj-field">
             <label for="caj-concepto">Concepto *</label>
             <input type="text" id="caj-concepto"
                 placeholder="Descripción del movimiento" autocomplete="off" maxlength="200">
         </div>
 
-        <!-- Monto + Fecha -->
         <div class="caj-grid-2">
             <div class="caj-field">
                 <label for="caj-monto">Monto ($) *</label>
@@ -172,7 +291,6 @@
             </div>
         </div>
 
-        <!-- Sede (visible solo cuando tipo=ingreso y categoría=pago_sede) -->
         <div class="caj-field" id="caj-field-sede" style="display:none">
             <label for="caj-sede">Sede</label>
             <select id="caj-sede">
@@ -180,7 +298,6 @@
             </select>
         </div>
 
-        <!-- Proveedor (visible solo cuando tipo=egreso y categoría=proveedor) -->
         <div class="caj-field" id="caj-field-proveedor" style="display:none">
             <label for="caj-proveedor">Proveedor</label>
             <select id="caj-proveedor">
@@ -188,7 +305,6 @@
             </select>
         </div>
 
-        <!-- Método de pago + Comprobante -->
         <div class="caj-grid-2">
             <div class="caj-field">
                 <label for="caj-metodo">Método de pago *</label>
@@ -205,13 +321,11 @@
             </div>
         </div>
 
-        <!-- Notas -->
         <div class="caj-field">
             <label for="caj-notas">Notas</label>
             <textarea id="caj-notas" placeholder="Observaciones adicionales (opcional)" maxlength="500"></textarea>
         </div>
 
-        <!-- Mensaje de error -->
         <p class="caj-error" id="caj-error"></p>
 
     </div>
@@ -240,14 +354,12 @@
             como ingresos <strong>pendientes</strong> hasta ser confirmados.
         </p>
 
-        <!-- Navegación de semana -->
         <div class="caj-period-nav" style="justify-content:center">
             <button class="caj-btn-nav" id="caj-liq-prev" title="Semana anterior">&#8249;</button>
             <span class="caj-period-label" id="caj-liq-label" style="min-width:26rem">—</span>
             <button class="caj-btn-nav" id="caj-liq-next" title="Semana siguiente">&#8250;</button>
         </div>
 
-        <!-- Tabla de totales por sede -->
         <div id="caj-liq-contenido">
             <p class="caj-liq-cargando">Cargando...</p>
         </div>
@@ -280,7 +392,6 @@
             <span style="font-size:1.2rem;color:#888">Sede: <strong id="caj-conf-sede"></strong></span>
         </div>
 
-        <!-- Método de pago + Comprobante -->
         <div class="caj-grid-2">
             <div class="caj-field">
                 <label for="caj-conf-metodo">Método de pago *</label>
