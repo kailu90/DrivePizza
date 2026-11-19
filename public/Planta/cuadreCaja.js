@@ -92,8 +92,10 @@ async function _init() {
         document.querySelectorAll('.sidebar__item--fin-admin').forEach(el => el.style.display = '');
     }
 
-    // Leer vista inicial desde query param ?v=
+    // Leer vista inicial desde query param ?v= y setearla ANTES de cargar datos
+    // para que _renderVistaActual() en _cargarMovimientos() renderice la vista correcta
     const urlVista = new URL(location.href).searchParams.get('v');
+    _vistaActual = (urlVista && _VISTAS.includes(urlVista)) ? urlVista : 'resumen';
 
     // Interceptar clicks en items financieros del sidebar para navegar sin recargar
     document.getElementById('sidebar-container').addEventListener('click', e => {
@@ -124,11 +126,26 @@ async function _init() {
     });
 
     await _cargarMovimientos();
+
+    // Activar vista ANTES de revelar el splash para evitar el flash de resumen
+    _switchVista(_vistaActual);
     revelarSplash();
 
-    // Activar vista inicial (desde URL o default resumen)
-    _switchVista(urlVista && _VISTAS.includes(urlVista) ? urlVista : 'resumen');
-    _cargarVentas(); // carga background para poblar gráfico y paneles del resumen
+    _iniciarRealtime();
+}
+
+/** Suscripción Realtime a caja_movimientos — recarga al detectar cambios externos. */
+function _iniciarRealtime() {
+    supabase
+        .channel('caja_movimientos_changes')
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'caja_movimientos' },
+            () => {
+                _cargarMovimientos();
+                if (_vistaActual === 'conciliacion') _cargarConciliacion();
+            }
+        )
+        .subscribe();
 }
 
 // ── Período mensual ───────────────────────────────────────────────────────────
@@ -155,6 +172,29 @@ function _rangoFechas() {
     return { desde, hasta };
 }
 
+/** Retorna { periodoRef, periodoNext } como 'YYYY-MM' para filtrar por periodo_ref. */
+function _rangoPeriodo() {
+    const { year, month } = _periodo;
+    const mes        = String(month).padStart(2, '0');
+    const sigMes     = new Date(year, month, 1);
+    const periodoRef  = `${year}-${mes}`;
+    const periodoNext = `${sigMes.getFullYear()}-${String(sigMes.getMonth() + 1).padStart(2, '0')}`;
+    return { periodoRef, periodoNext };
+}
+
+/**
+ * Determina si un movimiento pertenece al período actualmente visualizado.
+ * Egresos con periodo_ref explícito se clasifican por ese campo; el resto por fecha.
+ */
+function _enPeriodoActual(mov) {
+    const { periodoRef, periodoNext } = _rangoPeriodo();
+    if (mov.tipo === 'egreso' && mov.periodo_ref) {
+        return mov.periodo_ref >= periodoRef && mov.periodo_ref < periodoNext;
+    }
+    const { desde, hasta } = _rangoFechas();
+    return mov.fecha >= desde && mov.fecha < hasta;
+}
+
 document.getElementById('caj-prev').addEventListener('click', () => {
     _periodo.month--;
     if (_periodo.month < 1) { _periodo.month = 12; _periodo.year--; }
@@ -177,7 +217,14 @@ document.getElementById('caj-next').addEventListener('click', () => {
 
 // ── Carga de datos ────────────────────────────────────────────────────────────
 async function _cargarMovimientos() {
-    const { desde, hasta } = _rangoFechas();
+    const { desde, hasta }         = _rangoFechas();
+    const { periodoRef, periodoNext } = _rangoPeriodo();
+
+    // Incluye:
+    //  a) egresos con periodo_ref explícito dentro del período contable
+    //  b) cualquier registro sin periodo_ref cuya fecha cae en el mes
+    const filtro = `and(periodo_ref.gte.${periodoRef},periodo_ref.lt.${periodoNext}),` +
+                   `and(periodo_ref.is.null,fecha.gte.${desde},fecha.lt.${hasta})`;
 
     const { data, error } = await supabase
         .from('caja_movimientos')
@@ -186,8 +233,7 @@ async function _cargarMovimientos() {
             sede, proveedor_nombre, metodo_pago, comprobante,
             notas, usuario, estado, periodo_ref, recepcion_id, created_at
         `)
-        .gte('fecha', desde)
-        .lt('fecha', hasta)
+        .or(filtro)
         .order('fecha', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -197,9 +243,14 @@ async function _cargarMovimientos() {
     }
 
     _todos = data || [];
-    _renderResumen();
-    _renderTabla();
-    _renderTablaIngresos();
+    _renderVistaActual();
+}
+
+/** Renderiza solo la vista activa, evitando trabajo innecesario en otras vistas. */
+function _renderVistaActual() {
+    if (_vistaActual === 'resumen')  _renderResumen();
+    if (_vistaActual === 'gastos')   _renderTabla();
+    if (_vistaActual === 'ingresos') _renderTablaIngresos();
     if (_vistaActual === 'informes') _renderInforme();
 }
 
@@ -208,20 +259,18 @@ function _renderResumen() {
     const ingresos   = _todos.filter(m => m.tipo === 'ingreso');
     const egresos    = _todos.filter(m => m.tipo === 'egreso');
 
-    const porCobrar  = ingresos.filter(m => m.estado === 'pendiente');
     const cobrado    = ingresos.filter(m => m.estado !== 'pendiente');
 
-    const totalPorCobrar = porCobrar.reduce((s, m) => s + Number(m.monto), 0);
     const totalCobrado   = cobrado.reduce((s, m)   => s + Number(m.monto), 0);
     const totalEgr       = egresos.reduce((s, m)   => s + Number(m.monto), 0);
     const balance        = totalCobrado - totalEgr;
 
-    document.getElementById('caj-total-por-cobrar').textContent = _fmt(totalPorCobrar);
+    // "Por Cobrar" se calcula en _renderKPIs() (necesita _ventasDatos)
     document.getElementById('caj-total-cobrado').textContent    = _fmt(totalCobrado);
     document.getElementById('caj-total-egresos').textContent    = _fmt(totalEgr);
     document.getElementById('caj-total-balance').textContent    = _fmt(Math.abs(balance));
 
-    document.getElementById('caj-count-por-cobrar').textContent = _plural(porCobrar.length);
+    document.getElementById('caj-count-por-cobrar').textContent = '';
     document.getElementById('caj-count-cobrado').textContent    = _plural(cobrado.length);
     document.getElementById('caj-count-egresos').textContent    = _plural(egresos.length);
     document.getElementById('caj-count-total').textContent      = _plural(_todos.length);
@@ -231,6 +280,88 @@ function _renderResumen() {
     cardBalance.classList.add(balance >= 0 ? 'positivo' : 'negativo');
 
     _renderKPIs();
+    _renderMedioPago();
+}
+
+// ── Resumen por medio de pago ─────────────────────────────────────────────────
+function _renderMedioPago() {
+    const BANCO = new Set(['transferencia', 'tarjeta', 'cheque']);
+    const esBanco   = m => BANCO.has(m.metodo_pago);
+    const esEfectivo = m => m.metodo_pago === 'efectivo';
+    const pagado    = m => m.estado !== 'pendiente';
+
+    // Ingresos: solo los ya cobrados (estado != pendiente)
+    // Egresos: todos los registrados
+    const ingB = _todos.filter(m => m.tipo === 'ingreso' && pagado(m) && esBanco(m))
+                       .reduce((s, m) => s + Number(m.monto), 0);
+    const egrB = _todos.filter(m => m.tipo === 'egreso' && esBanco(m))
+                       .reduce((s, m) => s + Number(m.monto), 0);
+    const sldB = ingB - egrB;
+    const mrgB = ingB > 0 ? (sldB / ingB * 100) : null;
+
+    const ingE = _todos.filter(m => m.tipo === 'ingreso' && pagado(m) && esEfectivo(m))
+                       .reduce((s, m) => s + Number(m.monto), 0);
+    const egrE = _todos.filter(m => m.tipo === 'egreso' && esEfectivo(m))
+                       .reduce((s, m) => s + Number(m.monto), 0);
+    const sldE = ingE - egrE;
+    const mrgE = ingE > 0 ? (sldE / ingE * 100) : null;
+
+    const ingT = ingB + ingE;
+    const egrT = egrB + egrE;
+    const sldT = sldB + sldE;
+    const mrgT = ingT > 0 ? (sldT / ingT * 100) : null;
+
+    const fmtSaldo = (v) => {
+        const cls = v >= 0 ? 'caj-medio-pos' : 'caj-medio-neg';
+        return `<span class="${cls}">${v < 0 ? '-' : ''}$${Math.abs(Math.round(v)).toLocaleString('es-CO')}</span>`;
+    };
+    const fmtMargen = (v) => {
+        if (v === null) return '<span class="caj-medio-badge caj-medio-badge--neu">—</span>';
+        const cls = v >= 0 ? 'caj-medio-badge--pos' : 'caj-medio-badge--neg';
+        return `<span class="caj-medio-badge ${cls}">${v >= 0 ? '' : ''}${v.toFixed(1)}%</span>`;
+    };
+    const fmtVal = (v) => `$${Math.round(v).toLocaleString('es-CO')}`;
+
+    const svgBanco = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>`;
+    const svgEfec  = `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>`;
+
+    document.getElementById('caj-medio-tbody').innerHTML = `
+        <tr>
+            <td><div class="caj-medio-row-label">
+                <div class="caj-medio-row-icon caj-medio-row-icon--banco">${svgBanco}</div>Banco
+            </div></td>
+            <td>${fmtVal(ingB)}</td>
+            <td>${fmtVal(egrB)}</td>
+            <td>${fmtSaldo(sldB)}</td>
+            <td>${fmtMargen(mrgB)}</td>
+        </tr>
+        <tr>
+            <td><div class="caj-medio-row-label">
+                <div class="caj-medio-row-icon caj-medio-row-icon--efectivo">${svgEfec}</div>Efectivo
+            </div></td>
+            <td>${fmtVal(ingE)}</td>
+            <td>${fmtVal(egrE)}</td>
+            <td>${fmtSaldo(sldE)}</td>
+            <td>${fmtMargen(mrgE)}</td>
+        </tr>
+        <tr class="caj-medio-total">
+            <td>Total</td>
+            <td>${fmtVal(ingT)}</td>
+            <td>${fmtVal(egrT)}</td>
+            <td>${fmtSaldo(sldT)}</td>
+            <td>${fmtMargen(mrgT)}</td>
+        </tr>`;
+
+    const saldoBancoHtml    = `<strong class="${sldB >= 0 ? 'caj-medio-pos' : 'caj-medio-neg'}">${sldB < 0 ? '-' : ''}$${Math.abs(Math.round(sldB)).toLocaleString('es-CO')}</strong>`;
+    const saldoEfectivoHtml = `<strong class="${sldE >= 0 ? 'caj-medio-pos' : 'caj-medio-neg'}">${sldE < 0 ? '-' : ''}$${Math.abs(Math.round(sldE)).toLocaleString('es-CO')}</strong>`;
+    const balanceHtml       = `<strong class="${sldT >= 0 ? 'caj-medio-pos' : 'caj-medio-neg'}">${sldT < 0 ? '-' : ''}$${Math.abs(Math.round(sldT)).toLocaleString('es-CO')}</strong>`;
+
+    document.getElementById('caj-medio-quick-list').innerHTML = `
+        <div class="caj-medio-quick-row"><span>Total ingresos</span><strong>$${Math.round(ingT).toLocaleString('es-CO')}</strong></div>
+        <div class="caj-medio-quick-row"><span>Total gastos</span><strong>$${Math.round(egrT).toLocaleString('es-CO')}</strong></div>
+        <div class="caj-medio-quick-row"><span>Saldo en bancos</span>${saldoBancoHtml}</div>
+        <div class="caj-medio-quick-row"><span>Saldo en efectivo</span>${saldoEfectivoHtml}</div>
+        <div class="caj-medio-quick-balance"><span>Balance general</span>${balanceHtml}</div>`;
 }
 
 // ── KPI Cards globales ────────────────────────────────────────────────────────
@@ -240,8 +371,15 @@ function _renderKPIs() {
     const utilidad = ventas - egresos;
     const margen   = ventas > 0 ? (utilidad / ventas * 100).toFixed(1) : null;
 
+    // Por Cobrar = ventas del mes - lo ya cobrado a sedes (pagos registrados manualmente)
+    const cobradoSedes = _todos
+        .filter(m => m.tipo === 'ingreso' && m.categoria === 'pago_sede' && m.estado !== 'pendiente')
+        .reduce((s, m) => s + Number(m.monto), 0);
+    const porCobrar = Math.max(0, ventas - cobradoSedes);
+
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
+    setEl('caj-total-por-cobrar', ventas ? _fmt(porCobrar) : '—');
     setEl('caj-kpi-ventas', ventas ? _fmt(ventas) : '—');
     setEl('caj-kpi-ventas-sub',
         _ventasDatos.length
@@ -277,26 +415,41 @@ function _renderSidebar() {
     const sortedSedes = Object.entries(totalesSede).sort((a, b) => b[1] - a[1]);
     const grandTotal  = sortedSedes.reduce((s, [, v]) => s + v, 0);
 
-    // ── Top sede ──────────────────────────────────────────────────────────────
-    const elTop = document.getElementById('caj-side-topsede');
-    if (elTop) {
-        if (sortedSedes.length) {
-            const [topSede, topVal] = sortedSedes[0];
-            const pct = grandTotal > 0 ? (topVal / grandTotal * 100).toFixed(1) : 0;
-            elTop.innerHTML = `
-                <div class="caj-side-top-row">
-                    <span class="caj-side-top-name">${_esc(capitalizarSede(topSede))}</span>
-                    <span class="caj-side-top-pct">${pct}%<small class="caj-side-top-pct-label"> del total</small></span>
-                </div>
-                <span class="caj-side-top-val">${_fmt(topVal)}</span>
-                ${sortedSedes.slice(1, 4).map(([s, v]) => `
-                    <div class="caj-side-rank-row">
-                        <span>${_esc(capitalizarSede(s))}</span>
-                        <span>${_fmt(v)}</span>
-                    </div>`).join('')}`;
-        } else {
-            elTop.innerHTML = '<p class="caj-side-empty">Sin datos este mes</p>';
-        }
+    // ── Distribución de utilidades ────────────────────────────────────────────
+    const elSocios = document.getElementById('caj-side-socios');
+    if (elSocios) {
+        const egresosTotal = _todos.filter(m => m.tipo === 'egreso').reduce((s, m) => s + Number(m.monto), 0);
+        const utilidad = grandTotal - egresosTotal;
+
+        const SOCIOS = [
+            { nombre: 'Sandro Salazar',  pct: 50 },
+            { nombre: 'Jhonn Andersson', pct: 40 },
+            { nombre: 'Esteban Lopez',   pct: 10 },
+        ];
+
+        const filas = SOCIOS.map(s => {
+            const valor = utilidad * s.pct / 100;
+            const cls   = valor >= 0 ? 'caj-medio-pos' : 'caj-medio-neg';
+            return `<tr>
+                <td class="caj-dist-nombre">${_esc(s.nombre)}</td>
+                <td class="caj-dist-pct">${s.pct}%</td>
+                <td class="caj-dist-valor ${cls}">${valor < 0 ? '-' : ''}$${Math.abs(Math.round(valor)).toLocaleString('es-CO')}</td>
+            </tr>`;
+        }).join('');
+
+        const totCls = utilidad >= 0 ? 'caj-medio-pos' : 'caj-medio-neg';
+        elSocios.innerHTML = `
+            <table class="caj-dist-tabla">
+                <thead><tr>
+                    <th>Socio</th><th>%</th><th>Valor</th>
+                </tr></thead>
+                <tbody>${filas}</tbody>
+                <tfoot><tr>
+                    <td class="caj-dist-nombre" style="font-weight:700">Utilidad total</td>
+                    <td class="caj-dist-pct" style="font-weight:700">100%</td>
+                    <td class="caj-dist-valor ${totCls}" style="font-weight:700">${utilidad < 0 ? '-' : ''}$${Math.abs(Math.round(utilidad)).toLocaleString('es-CO')}</td>
+                </tr></tfoot>
+            </table>`;
     }
 
     // ── Alertas ───────────────────────────────────────────────────────────────
@@ -341,53 +494,86 @@ function _renderSidebar() {
     }
 }
 
-// ── Gráfico SVG de evolución semanal ─────────────────────────────────────────
-function _drawChart() {
-    const wrap = document.getElementById('caj-vnt-chart-wrap');
-    const el   = document.getElementById('caj-vnt-chart');
-    if (!el || !wrap) return;
+// ── Tabla P&L — Balance del período ──────────────────────────────────────────
+function _renderPnL() {
+    const el = document.getElementById('caj-pnl-contenido');
+    if (!el) return;
 
-    const totales = _ventasDatos.map(sem => sem.sedes.reduce((s, d) => s + d.totalNeto, 0));
-    if (!totales.length || totales.every(v => v === 0)) { wrap.style.display = 'none'; return; }
-    wrap.style.display = '';
+    const venta = _ventasDatos.reduce((s, sem) => s + sem.sedes.reduce((ss, d) => ss + d.totalNeto, 0), 0);
 
-    const labels = _ventasDatos.map(sem => `Sem #${sem.numSemana}`);
-    const max    = Math.max(...totales, 1);
-    const W = 580, H = 150, PL = 6, PR = 6, PT = 28, PB = 24;
+    const sumCat = cat => _todos
+        .filter(m => m.tipo === 'egreso' && m.categoria === cat)
+        .reduce((s, m) => s + Number(m.monto), 0);
 
-    const pts = totales.map((v, i) => ({
-        x: PL + (i / Math.max(totales.length - 1, 1)) * (W - PL - PR),
-        y: PT + (1 - v / max) * (H - PT - PB),
-        v,
-    }));
+    const compras   = sumCat('proveedor');
+    const nomina    = sumCat('nomina');
+    const fijos     = sumCat('servicios');
+    const impuestos = sumCat('impuestos');
+    const bancarios = sumCat('gastos_bancarios');
+    const otros     = sumCat('colaborador') + sumCat('otro');
+    const totalEgr  = compras + nomina + fijos + impuestos + bancarios + otros;
+    const utilidad  = venta - totalEgr;
 
-    const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    const areaD = `${lineD} L${pts[pts.length - 1].x.toFixed(1)},${(H - PB).toFixed(1)} L${pts[0].x.toFixed(1)},${(H - PB).toFixed(1)} Z`;
+    const pct = (v) => venta > 0 ? (v / venta * 100).toFixed(1) + '%' : '—';
 
-    const dots = pts.map((p, i) => {
-        const lbl = p.v >= 1e6 ? `$${(p.v / 1e6).toFixed(1)}M` : `$${Math.round(p.v / 1e3)}K`;
+    const fila = (label, valor, esTotal = false, esVenta = false) => {
+        const valFmt = `$${Math.round(valor).toLocaleString('es-CO')}`;
+        const pctFmt = pct(valor);
+        if (esVenta) return `
+            <tr class="caj-pnl-fila-venta">
+                <td>${label}</td>
+                <td>${valFmt}</td>
+                <td>100%</td>
+            </tr>`;
+        if (esTotal) {
+            const cls = valor >= 0 ? 'caj-medio-pos' : 'caj-medio-neg';
+            return `
+            <tr class="caj-pnl-fila-total">
+                <td>${label}</td>
+                <td class="${cls}">${valor < 0 ? '-' : ''}$${Math.abs(Math.round(valor)).toLocaleString('es-CO')}</td>
+                <td class="${cls}">${pct(Math.abs(valor))}</td>
+            </tr>`;
+        }
         return `
-            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="#284c22" stroke="#fff" stroke-width="2"/>
-            <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#374151" font-family="inherit">${lbl}</text>
-            <text x="${p.x.toFixed(1)}" y="${(H - PB + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="inherit">${labels[i]}</text>`;
-    }).join('');
+            <tr class="caj-pnl-fila${valor === 0 ? ' caj-pnl-fila--cero' : ''}">
+                <td>${label}</td>
+                <td>${valFmt}</td>
+                <td>${pctFmt}</td>
+            </tr>`;
+    };
+
+    if (!venta && !totalEgr) {
+        el.innerHTML = '<p class="caj-side-empty" style="padding:2rem 0">Sin datos este período</p>';
+        return;
+    }
 
     el.innerHTML = `
-        <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible">
-            <defs>
-                <linearGradient id="cajChartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#284c22" stop-opacity="0.18"/>
-                    <stop offset="100%" stop-color="#284c22" stop-opacity="0.02"/>
-                </linearGradient>
-            </defs>
-            <path d="${areaD}" fill="url(#cajChartGrad)"/>
-            <path d="${lineD}" fill="none" stroke="#284c22" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-            ${dots}
-        </svg>`;
+        <table class="caj-pnl-tabla">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Valor</th>
+                    <th>% Venta</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${fila('Venta', venta, false, true)}
+                <tr class="caj-pnl-separador"><td colspan="3"></td></tr>
+                ${fila('Compras', compras)}
+                ${fila('Nómina', nomina)}
+                ${fila('Gastos Fijos', fijos)}
+                ${fila('Impuestos', impuestos)}
+                ${fila('Gastos Bancarios', bancarios)}
+                ${fila('Otros', otros)}
+                ${fila('Ingreso Bruto', utilidad, true)}
+            </tbody>
+        </table>`;
 }
 
 // ── Tabla de movimientos ──────────────────────────────────────────────────────
 function _renderTabla() {
+    _renderKPIsGastos();
+
     const filtroTipo = document.getElementById('caj-filtro-tipo').value;
     const filtroCat  = document.getElementById('caj-filtro-cat').value;
 
@@ -445,10 +631,54 @@ function _renderTabla() {
     });
 }
 
+// ── KPI cards vista Ingresos ──────────────────────────────────────────────────
+function _renderKPIsIngresos() {
+    const BANCO = new Set(['transferencia', 'tarjeta', 'cheque']);
+    const cobrados = _todos.filter(m => m.tipo === 'ingreso' && m.estado !== 'pendiente');
+
+    const efectivo = cobrados.filter(m => m.metodo_pago === 'efectivo')
+                             .reduce((s, m) => s + Number(m.monto), 0);
+    const bancos   = cobrados.filter(m => BANCO.has(m.metodo_pago))
+                             .reduce((s, m) => s + Number(m.monto), 0);
+    const total    = efectivo + bancos;
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    set('ing-kpi-efectivo',     efectivo ? _fmt(efectivo) : '—');
+    set('ing-kpi-efectivo-sub', efectivo ? `${cobrados.filter(m => m.metodo_pago === 'efectivo').length} movimientos` : '');
+    set('ing-kpi-bancos',       bancos   ? _fmt(bancos)   : '—');
+    set('ing-kpi-bancos-sub',   bancos   ? `${cobrados.filter(m => BANCO.has(m.metodo_pago)).length} movimientos`    : '');
+    set('ing-kpi-balance',      total    ? _fmt(total)    : '—');
+    set('ing-kpi-balance-sub',  total    ? `${cobrados.length} movimientos en total` : '');
+}
+
+// ── KPI cards vista Gastos ────────────────────────────────────────────────────
+function _renderKPIsGastos() {
+    const BANCO   = new Set(['transferencia', 'tarjeta', 'cheque']);
+    const egresos = _todos.filter(m => m.tipo === 'egreso');
+
+    const efectivo = egresos.filter(m => m.metodo_pago === 'efectivo')
+                            .reduce((s, m) => s + Number(m.monto), 0);
+    const bancos   = egresos.filter(m => BANCO.has(m.metodo_pago))
+                            .reduce((s, m) => s + Number(m.monto), 0);
+    const total    = egresos.reduce((s, m) => s + Number(m.monto), 0);
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    set('gas-kpi-efectivo',     efectivo ? _fmt(efectivo) : '—');
+    set('gas-kpi-efectivo-sub', efectivo ? `${egresos.filter(m => m.metodo_pago === 'efectivo').length} movimientos` : '');
+    set('gas-kpi-bancos',       bancos   ? _fmt(bancos)   : '—');
+    set('gas-kpi-bancos-sub',   bancos   ? `${egresos.filter(m => BANCO.has(m.metodo_pago)).length} movimientos`    : '');
+    set('gas-kpi-total',        total    ? _fmt(total)    : '—');
+    set('gas-kpi-total-sub',    total    ? `${egresos.length} movimientos en total` : '');
+}
+
 // ── Tabla de ingresos (vista Ingresos) ────────────────────────────────────────
 function _renderTablaIngresos() {
     const tbody = document.getElementById('ing-tbody');
     const lista = _todos.filter(m => m.tipo === 'ingreso');
+
+    _renderKPIsIngresos();
 
     if (!lista.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin ingresos registrados en este período.</td></tr>`;
@@ -529,10 +759,11 @@ async function _onMovimientoClick(e) {
 
     delBtn.disabled = true;
 
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
         .from('caja_movimientos')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
 
     if (error) {
         console.error('[cuadreCaja] eliminar:', error);
@@ -541,10 +772,14 @@ async function _onMovimientoClick(e) {
         return;
     }
 
+    if (!deleted || deleted.length === 0) {
+        alert('No se pudo eliminar. Verificá que tenés permisos de admin en la base de datos.');
+        delBtn.disabled = false;
+        return;
+    }
+
     _todos = _todos.filter(m => m.id !== id);
-    _renderResumen();
-    _renderTabla();
-    _renderTablaIngresos();
+    _renderVistaActual();
 }
 
 document.getElementById('caj-tbody').addEventListener('click', _onMovimientoClick);
@@ -563,6 +798,7 @@ function _abrirDialog(tipo) {
     document.getElementById('caj-metodo').value      = 'efectivo';
     document.getElementById('caj-comprobante').value = '';
     document.getElementById('caj-notas').value       = '';
+    if (tipo === 'egreso') _actualizarPeriodoContable();
 
     const errorEl = document.getElementById('caj-error');
     errorEl.style.display  = 'none';
@@ -611,6 +847,32 @@ function _actualizarCamposContextuales() {
 
     document.getElementById('caj-field-proveedor').style.display =
         (tipo === 'egreso' && cat === 'proveedor') ? '' : 'none';
+
+    document.getElementById('caj-field-periodo').style.display =
+        (tipo === 'egreso') ? '' : 'none';
+}
+
+const _MESES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/** Puebla el select de período contable con mes anterior, actual y siguiente
+ *  basado en la fecha ingresada. Selecciona el mes de la fecha por defecto. */
+function _actualizarPeriodoContable() {
+    const fechaVal = document.getElementById('caj-fecha').value;
+    const base = fechaVal ? new Date(fechaVal + 'T00:00:00') : new Date();
+    const sel  = document.getElementById('caj-periodo-contable');
+    sel.innerHTML = '';
+    for (let offset = -1; offset <= 1; offset++) {
+        const d   = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+        const y   = d.getFullYear();
+        const m   = d.getMonth();
+        const val = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const opt = document.createElement('option');
+        opt.value       = val;
+        opt.textContent = `${_MESES_LABEL[m]} ${y}`;
+        if (offset === 0) opt.selected = true;
+        sel.appendChild(opt);
+    }
 }
 
 document.getElementById('caj-tipo-ingreso').addEventListener('click', () => {
@@ -622,6 +884,9 @@ document.getElementById('caj-tipo-egreso').addEventListener('click', () => {
     _actualizarTipoDialog();
 });
 document.getElementById('caj-categoria').addEventListener('change', _actualizarCamposContextuales);
+document.getElementById('caj-fecha').addEventListener('change', () => {
+    if (_tipoDialog === 'egreso') _actualizarPeriodoContable();
+});
 
 document.getElementById('caj-btn-ingreso').addEventListener('click', () => _abrirDialog('ingreso'));
 document.getElementById('caj-btn-egreso').addEventListener('click',  () => _abrirDialog('egreso'));
@@ -655,10 +920,13 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
     const sedeCampoVisible = document.getElementById('caj-field-sede').style.display !== 'none';
     const provCampoVisible = document.getElementById('caj-field-proveedor').style.display !== 'none';
 
-    const sede       = sedeCampoVisible ? document.getElementById('caj-sede').value      || null : null;
-    const provIdRaw  = provCampoVisible ? document.getElementById('caj-proveedor').value         : '';
-    const provId     = parseInt(provIdRaw) || null;
-    const provNombre = provId ? (_proveedores.find(p => p.id === provId)?.nombre || null) : null;
+    const sede           = sedeCampoVisible ? document.getElementById('caj-sede').value      || null : null;
+    const provIdRaw      = provCampoVisible ? document.getElementById('caj-proveedor').value         : '';
+    const provId         = parseInt(provIdRaw) || null;
+    const provNombre     = provId ? (_proveedores.find(p => p.id === provId)?.nombre || null) : null;
+    const periodoContable = _tipoDialog === 'egreso'
+        ? document.getElementById('caj-periodo-contable').value
+        : null;
 
     if (!concepto) return _showError('El concepto es obligatorio.');
     if (!monto || monto <= 0) return _showError('El monto debe ser mayor a 0.');
@@ -683,6 +951,7 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
                 comprobante:      comprobante || null,
                 notas:            notas || null,
                 estado:           'pagado',
+                periodo_ref:      periodoContable,
                 usuario:          _usuario,
             })
             .select()
@@ -692,12 +961,10 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
 
         document.getElementById('caj-dialog').close();
 
-        const { desde, hasta } = _rangoFechas();
-        if (nuevo.fecha >= desde && nuevo.fecha < hasta) {
+        if (_enPeriodoActual(nuevo)) {
             _todos.unshift(nuevo);
-            _renderResumen();
-            _renderTabla();
-            _renderTablaIngresos();
+            if (_vistaActual === 'gastos') document.getElementById('caj-filtro-cat').value = '';
+            _renderVistaActual();
         }
     } catch (err) {
         console.error('[cuadreCaja] guardar:', err);
@@ -1017,9 +1284,7 @@ async function _confirmarPago() {
     if (idx !== -1) _todos[idx] = { ..._todos[idx], ...updated };
     _confirmandoId = null;
 
-    _renderResumen();
-    _renderTabla();
-    _renderTablaIngresos();
+    _renderVistaActual();
     if (_vistaActual === 'ingresos' || _vistaActual === 'resumen') _cargarVentas();
     if (_vistaActual === 'entregas')     _cargarEntregas();
     if (_vistaActual === 'conciliacion') _cargarConciliacion();
@@ -1058,12 +1323,13 @@ function _switchVista(vista) {
     // Cargar datos según vista
     if (vista === 'informes')      _renderInforme();
     if (vista === 'ingresos')      { _cargarVentas(); _renderTablaIngresos(); }
-    if (vista === 'resumen')       _cargarVentas();
+    if (vista === 'resumen')       { _renderResumen(); _cargarVentas(); }
     if (vista === 'entregas')      _cargarEntregas();
     if (vista === 'conciliacion')  _cargarConciliacion();
     if (vista === 'gerencial')     _cargarGerencial();
     if (vista === 'gastos') {
         document.getElementById('caj-filtro-tipo').value = 'egreso';
+        document.getElementById('caj-filtro-cat').value  = '';
         _renderTabla();
     }
 }
@@ -1265,10 +1531,8 @@ async function _cargarVentas() {
     const contenido = document.getElementById('caj-ventas-contenido');
     contenido.innerHTML = '<p class="caj-empty">Cargando...</p>';
 
-    const _semPrev = _semanasDelMes(_periodo.year, _periodo.month);
-    const desdeISO = _toISO(_semPrev[0].desde);
-    const hastaISO = _toISO(_semPrev[_semPrev.length - 1].hasta);
-    const mesNum   = String(_periodo.month).padStart(2, '0');
+    const mesNum              = String(_periodo.month).padStart(2, '0');
+    const { periodoRef, periodoNext } = _rangoPeriodo();
 
     try {
         const [
@@ -1281,8 +1545,8 @@ async function _cargarVentas() {
                 .select('id, sede, periodo_ref, estado, monto')
                 .eq('tipo', 'ingreso')
                 .eq('categoria', 'pago_sede')
-                .gte('fecha', desdeISO)
-                .lte('fecha', hastaISO),
+                .gte('periodo_ref', periodoRef)
+                .lt('periodo_ref', periodoNext),
         ]);
 
         if (errM) throw errM;
@@ -1330,13 +1594,16 @@ async function _cargarVentas() {
     }
 }
 
+
 function _renderVentas() {
     const contenido = document.getElementById('caj-ventas-contenido');
 
     if (!_ventasDatos.length) {
         contenido.innerHTML = '<p class="caj-empty">Sin ventas este mes.</p>';
-        _renderKPIs();
-        _renderSidebar();
+        if (_vistaActual === 'resumen') {
+            _renderKPIs();
+            _renderSidebar();
+        }
         return;
     }
 
@@ -1410,9 +1677,12 @@ function _renderVentas() {
         </div>
         <div id="caj-pvt-detalle" class="caj-pvt-detalle" style="display:none"></div>`;
 
-    _renderKPIs();
-    _renderSidebar();
-    _drawChart();
+    // Solo actualizar el resumen si el usuario está en esa vista
+    if (_vistaActual === 'resumen') {
+        _renderKPIs();
+        _renderSidebar();
+        _renderPnL();
+    }
 }
 
 function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
@@ -1520,11 +1790,11 @@ document.getElementById('caj-ventas-contenido').addEventListener('click', async 
         return;
     }
 
-    // Sincronizar _todos para la pestaña Movimientos
+    // Sincronizar _todos y actualizar vista activa
     const { desde, hasta } = _rangoFechas();
     if (nuevo.fecha >= desde && nuevo.fecha < hasta) {
         _todos.unshift(nuevo);
-        _renderResumen();
+        _renderVistaActual();
     }
 
     // Recargar vista ventas

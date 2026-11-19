@@ -674,6 +674,10 @@ btnAbrirAjuste.addEventListener('click', () => {
 btnAjusteCancel.addEventListener('click', closeModalAjuste);
 modalAjuste.addEventListener('click', (e) => { if (e.target === modalAjuste) closeModalAjuste(); });
 
+ajusteBuscarInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') e.preventDefault();
+});
+
 ajusteBuscarInput.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) { ajusteResultados.innerHTML = ''; return; }
@@ -741,10 +745,9 @@ formAjuste.addEventListener('submit', async (e) => {
     const motivo      = document.getElementById('ajuste-motivo').value.trim();
     const notas       = document.getElementById('ajuste-notas').value.trim();
 
-    if (!productId || isNaN(stockNuevo) || stockNuevo < 0 || !motivo) {
-        alert('Completa todos los campos obligatorios.');
-        return;
-    }
+    if (!productId) { alert('Selecciona un producto del buscador.'); return; }
+    if (isNaN(stockNuevo) || ajusteStockReal.value === '') { alert('Ingresa el stock real contado.'); return; }
+    if (!motivo) { alert('El motivo del ajuste es obligatorio.'); return; }
 
     btnAjusteEnviar.disabled = true;
     btnAjusteEnviar.textContent = 'Procesando...';

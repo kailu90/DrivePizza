@@ -1458,23 +1458,24 @@ li.product.is-selected label {
   padding: 0;
 }
 
-.sidebar .sidebar__nav .sidebar__list .sidebar__item {
+.sidebar__item {
   margin: 1rem 0;
 }
 
-.sidebar .sidebar__nav .sidebar__list .sidebar__item .sidebar__link {
+.sidebar__link {
   color: var(--color-secundario);
   text-align: center;
   text-decoration: none;
   display: block;
   padding: 0.5rem;
   border-radius: 4px;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   transition: background-color 0.3s;
   cursor: pointer;
+  justify-content: center;
 }
 
-.sidebar__list .sidebar__item .sidebar__link:hover {
+.sidebar__link:hover {
   background-color: var(--color-quinto);
 }
 
@@ -1488,16 +1489,6 @@ li.product.is-selected label {
   margin-top: 1.8rem;
   border-top: 1px solid rgba(255,255,255,0.15);
   list-style: none;
-}
-
-/* Sub-items de sección (ej: Financiera) */
-.sidebar__item--sub {
-  margin: 0.4rem 0 !important;
-}
-.sidebar__item--sub .sidebar__link {
-  font-size: 1.3rem !important;
-  padding-left: 2rem !important;
-  opacity: 0.88;
 }
 
 
@@ -1588,11 +1579,6 @@ li.product.is-selected label {
 .sidebar--collapsed { width: 0 !important; overflow: hidden; transform: translateX(-100%); }
 .sidebar--collapsed * { opacity: 0; }
 
-.sidebar .sidebar__nav .sidebar__list .sidebar__item .sidebar__link {
-    font-size: 1.4rem;
-    justify-content: center;
-    text-align: center;
-}
 
 .sidebar .sb-section-header {
     justify-content: center;

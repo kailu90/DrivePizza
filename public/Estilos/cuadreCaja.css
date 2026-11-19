@@ -461,6 +461,9 @@
     gap: 1.2rem;
     margin-bottom: 2rem;
 }
+.caj-kpi-row--3 {
+    grid-template-columns: repeat(3, 1fr);
+}
 
 .caj-kpi-card {
     background: #fff;
@@ -544,6 +547,140 @@
 }
 .caj-kpi-badge--green { background: #d4edda; color: var(--color-primario); }
 .caj-kpi-badge--amber { background: #ffedd5; color: #c05621; }
+
+/* ── Resumen por medio de pago ───────────────────────────────────────────────── */
+.caj-medio-wrap {
+    display: grid;
+    grid-template-columns: 1fr 28rem;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.caj-medio-card,
+.caj-medio-quick {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem 2.2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.caj-medio-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 1.6rem;
+}
+.caj-medio-titulo-icon {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-primario);
+    flex-shrink: 0;
+}
+
+/* Tabla */
+.caj-medio-tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+.caj-medio-tabla thead th {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #9ca3af;
+    padding: 0.6rem 1rem;
+    text-align: right;
+    white-space: nowrap;
+}
+.caj-medio-tabla thead th:first-child { text-align: left; }
+.caj-medio-tabla tbody td {
+    padding: 1rem 1rem;
+    font-size: 1.35rem;
+    color: #374151;
+    text-align: right;
+    border-top: 1px solid #f3f4f6;
+}
+.caj-medio-tabla tbody td:first-child {
+    text-align: left;
+    font-weight: 600;
+}
+.caj-medio-tabla tbody tr:hover td { background: #fafaf9; }
+
+/* Fila icono-etiqueta */
+.caj-medio-row-label {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.caj-medio-row-icon {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.caj-medio-row-icon--banco   { background: #eff6ff; color: #2563eb; }
+.caj-medio-row-icon--efectivo { background: #f0fdf4; color: var(--color-primario); }
+.caj-medio-row-icon svg { width: 1.4rem; height: 1.4rem; }
+
+/* Fila total */
+.caj-medio-tabla tbody tr.caj-medio-total td {
+    background: var(--color-secundario, #f4ecdf);
+    font-weight: 700;
+    color: #1a1a1a;
+    border-top: 2px solid #e5e7eb;
+}
+
+/* Valores positivo / negativo */
+.caj-medio-pos { color: var(--color-primario); font-weight: 700; }
+.caj-medio-neg { color: #dc2626;               font-weight: 700; }
+
+/* Badge margen */
+.caj-medio-badge {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.caj-medio-badge--pos { background: #dcfce7; color: #15803d; }
+.caj-medio-badge--neg { background: #fee2e2; color: #dc2626; }
+.caj-medio-badge--neu { background: #f3f4f6; color: #6b7280; }
+
+/* Estado de carga */
+.caj-medio-cargando {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 1.3rem;
+    padding: 1.6rem;
+}
+
+/* Panel resumen rápido */
+.caj-medio-quick-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 1.35rem;
+    color: #374151;
+}
+.caj-medio-quick-row span   { color: #6b7280; }
+.caj-medio-quick-row strong { font-weight: 700; }
+
+.caj-medio-quick-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
 
 /* ── Pestañas (estilo pill) ──────────────────────────────────────────────────── */
 .caj-tabs {
@@ -644,31 +781,116 @@
 }
 .caj-side-panel-icon            { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
 .caj-side-panel-icon--gold      { color: #d97706; }
+.caj-side-panel-icon--green     { color: var(--color-primario); }
 .caj-side-panel-icon--amber     { color: #c05621; }
 .caj-side-panel-icon--blue      { color: var(--color-primario); }
 
 .caj-side-panel-body            { padding: 1.2rem 1.4rem; }
 .caj-side-empty                 { font-size: 1.2rem; color: #aaa; text-align: center; padding: 0.4rem 0; margin: 0; }
 
-/* Top sede */
-.caj-side-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 0.3rem;
+/* Distribución de utilidades */
+.caj-dist-tabla {
+    width: 100%;
+    border-collapse: collapse;
 }
-.caj-side-top-name              { font-size: 1.5rem; font-weight: 700; color: var(--color-terciario); }
-.caj-side-top-pct               { font-size: 1.8rem; font-weight: 700; color: var(--color-primario); }
-.caj-side-top-pct-label         { font-size: 1rem; font-weight: 400; color: #9ca3af; }
-.caj-side-top-val               { font-size: 2rem; font-weight: 700; color: var(--color-primario); display: block; margin-bottom: 0.8rem; }
-.caj-side-rank-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.caj-dist-tabla thead th {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #9ca3af;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+}
+.caj-dist-tabla thead th:last-child { text-align: right; }
+.caj-dist-tabla thead th:nth-child(2) { text-align: center; }
+.caj-dist-nombre {
+    font-size: 1.25rem;
+    padding: 0.75rem 0.6rem;
+    color: #374151;
+}
+.caj-dist-pct {
     font-size: 1.2rem;
     color: #6b7280;
-    padding: 0.35rem 0;
-    border-top: 1px solid #f5f5f5;
+    text-align: center;
+    padding: 0.75rem 0.6rem;
+    white-space: nowrap;
+}
+.caj-dist-valor {
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: right;
+    padding: 0.75rem 0.6rem;
+    white-space: nowrap;
+}
+.caj-dist-tabla tbody tr { border-top: 1px solid #f3f4f6; }
+.caj-dist-tabla tbody tr:hover td { background: #fafaf9; }
+.caj-dist-tabla tfoot tr td {
+    border-top: 2px solid #e5e7eb;
+    padding: 0.75rem 0.6rem;
+    background: var(--color-secundario, #f4ecdf);
+}
+
+/* ── Tabla P&L Balance del período ───────────────────────────────────────────── */
+.caj-pnl-tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+.caj-pnl-tabla thead th {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #9ca3af;
+    padding: 0.5rem 1.2rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 2px solid #f3f4f6;
+}
+.caj-pnl-tabla thead th:first-child { text-align: left; }
+
+/* Fila base */
+.caj-pnl-tabla .caj-pnl-fila td {
+    padding: 0.85rem 1.2rem;
+    font-size: 1.35rem;
+    color: #374151;
+    text-align: right;
+    border-top: 1px solid #f3f4f6;
+}
+.caj-pnl-tabla .caj-pnl-fila td:first-child { text-align: left; color: #6b7280; }
+.caj-pnl-tabla .caj-pnl-fila:hover td      { background: #fafaf9; }
+
+/* Fila valor cero — atenuada */
+.caj-pnl-tabla .caj-pnl-fila--cero td { color: #c4c9d0; }
+
+/* Fila VENTA */
+.caj-pnl-tabla .caj-pnl-fila-venta td {
+    padding: 0.9rem 1.2rem;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--color-primario);
+    text-align: right;
+    border-top: 1px solid #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
+}
+.caj-pnl-tabla .caj-pnl-fila-venta td:first-child { text-align: left; }
+
+/* Separador visual entre venta y egresos */
+.caj-pnl-tabla .caj-pnl-separador td {
+    padding: 0;
+    height: 0;
+    border: none;
+}
+
+/* Fila INGRESO BRUTO (total) */
+.caj-pnl-tabla .caj-pnl-fila-total td {
+    padding: 1rem 1.2rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: right;
+    background: var(--color-secundario, #f4ecdf);
+    border-top: 2px solid #e5e7eb;
+}
+.caj-pnl-tabla .caj-pnl-fila-total td:first-child {
+    text-align: left;
+    color: #1a1a1a;
 }
 
 /* Alertas */
@@ -1105,16 +1327,19 @@
 
 @media (max-width: 1100px) {
     .caj-vnt-layout      { grid-template-columns: 1fr 24rem; }
+    .caj-medio-wrap      { grid-template-columns: 1fr 24rem; }
 }
 
 @media (max-width: 1024px) {
     .caj-kpi-row         { grid-template-columns: repeat(3, 1fr); }
     .caj-vnt-layout      { grid-template-columns: 1fr; }
     .caj-inf-grid        { grid-template-columns: 1fr; }
+    .caj-medio-wrap      { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
     .caj-kpi-row         { grid-template-columns: 1fr 1fr; }
+    .caj-kpi-row--3      { grid-template-columns: 1fr; }
     .caj-topbar          { flex-direction: column; align-items: flex-start; }
     .caj-actions-bar     { flex-direction: column; align-items: stretch; }
     .caj-filtros         { flex-wrap: wrap; width: 100%; }

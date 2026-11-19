@@ -74,12 +74,13 @@ export const CAJA_CATEGORIAS = {
         { value: 'otro_ingreso', label: 'Otro ingreso'   },
     ],
     egreso: [
-        { value: 'proveedor',    label: 'Proveedor'      },
-        { value: 'colaborador',  label: 'Colaborador'    },
-        { value: 'nomina',       label: 'Nómina'         },
-        { value: 'servicios',    label: 'Servicios'      },
-        { value: 'impuestos',    label: 'Impuestos'      },
-        { value: 'otro',         label: 'Otro'           },
+        { value: 'proveedor',         label: 'Compras / Proveedor' },
+        { value: 'colaborador',       label: 'Colaborador'         },
+        { value: 'nomina',            label: 'Nómina'              },
+        { value: 'servicios',         label: 'Gastos Fijos'        },
+        { value: 'impuestos',         label: 'Impuestos'           },
+        { value: 'gastos_bancarios',  label: 'Gastos Bancarios'    },
+        { value: 'otro',              label: 'Otro'                },
     ],
 };
 
