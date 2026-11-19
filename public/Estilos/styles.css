@@ -1479,6 +1479,20 @@ li.product.is-selected label {
   background-color: var(--color-quinto);
 }
 
+.sidebar__item--sub {
+  margin: 0.4rem 0;
+}
+
+.sidebar__item--sub .sidebar__link {
+  font-size: 1.25rem;
+  padding: 0.4rem 0.5rem 0.4rem 1.6rem;
+  color: rgba(255,255,255,0.75);
+}
+
+.sidebar__item--sub .sidebar__link:hover {
+  color: var(--color-secundario);
+}
+
 .sidebar__section-label {
   font-size: 1rem;
   font-weight: 700;
