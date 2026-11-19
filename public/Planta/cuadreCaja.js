@@ -87,10 +87,21 @@ async function _init() {
     _sedes       = sedesData || [];
     _proveedores = provData  || [];
 
-    // Mostrar ítems de nav exclusivos para admin
+    // Mostrar ítems de sidebar exclusivos para admin
     if (_esAdmin) {
-        document.querySelectorAll('.fin-nav-item--admin').forEach(el => el.style.display = '');
+        document.querySelectorAll('.sidebar__item--fin-admin').forEach(el => el.style.display = '');
     }
+
+    // Leer vista inicial desde query param ?v=
+    const urlVista = new URL(location.href).searchParams.get('v');
+
+    // Interceptar clicks en items financieros del sidebar para navegar sin recargar
+    document.getElementById('sidebar-container').addEventListener('click', e => {
+        const link = e.target.closest('[data-fin-vista]');
+        if (!link) return;
+        e.preventDefault();
+        _switchVista(link.dataset.finVista);
+    });
 
     // Poblar select de sedes en dialogs (movimiento y entrega)
     ['caj-sede', 'ent-sede'].forEach(id => {
@@ -114,6 +125,9 @@ async function _init() {
 
     await _cargarMovimientos();
     revelarSplash();
+
+    // Activar vista inicial (desde URL o default resumen)
+    _switchVista(urlVista && _VISTAS.includes(urlVista) ? urlVista : 'resumen');
     _cargarVentas(); // carga background para poblar gráfico y paneles del resumen
 }
 
@@ -1030,10 +1044,12 @@ const _VISTAS = ['resumen', 'ingresos', 'gastos', 'entregas', 'conciliacion', 'i
 
 function _switchVista(vista) {
     _vistaActual = vista;
-    // Actualizar estado activo en el nav
-    document.querySelectorAll('.fin-nav-item').forEach(btn => {
-        btn.classList.toggle('fin-nav-item--active', btn.dataset.vista === vista);
+    // Actualizar estado activo en el sidebar principal
+    document.querySelectorAll('[data-fin-vista]').forEach(a => {
+        a.classList.toggle('sidebar__link--active', a.dataset.finVista === vista);
     });
+    // Actualizar URL sin recargar
+    history.replaceState(null, '', `?v=${vista}`);
     // Mostrar/ocultar vistas
     _VISTAS.forEach(v => {
         const el = document.getElementById(`fin-view-${v}`);
@@ -1052,11 +1068,6 @@ function _switchVista(vista) {
     }
 }
 
-document.getElementById('fin-nav').addEventListener('click', e => {
-    const btn = e.target.closest('.fin-nav-item');
-    if (!btn) return;
-    _switchVista(btn.dataset.vista);
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Informe Mensual

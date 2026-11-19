@@ -1490,6 +1490,16 @@ li.product.is-selected label {
   list-style: none;
 }
 
+/* Sub-items de sección (ej: Financiera) */
+.sidebar__item--sub {
+  margin: 0.4rem 0 !important;
+}
+.sidebar__item--sub .sidebar__link {
+  font-size: 1.3rem !important;
+  padding-left: 2rem !important;
+  opacity: 0.88;
+}
+
 
 .toggle-btn , .inventory-toggle {
   width: 50px;
