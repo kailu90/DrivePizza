@@ -383,6 +383,23 @@
 }
 
 /* ── Historial ──────────────────────────────────────────────────────────────── */
+.sc-hist-topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.2rem;
+}
+
+.sc-btn--export {
+    background: #f0fdf4;
+    color: var(--color-primario);
+    border: 1.5px solid var(--color-primario);
+}
+.sc-btn--export:hover:not(:disabled) {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    opacity: 1;
+}
+
 .sc-hist-wrap {
     background: #fff;
     border-radius: 10px;

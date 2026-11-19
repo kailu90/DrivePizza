@@ -47,7 +47,10 @@ let _proveedores   = [];         // lista de proveedores activos para el select 
 let _tipoDialog    = 'ingreso';  // tipo seleccionado actualmente en el dialog
 
 // Vista activa
-let _vistaActual = 'movimientos';
+let _vistaActual = 'resumen';
+
+// Estado del dashboard gerencial
+let _gerFecha = _toISO(new Date());   // fecha seleccionada (YYYY-MM-DD)
 
 // Datos de la vista Ventas (calculados, no persisten en BD solos)
 let _ventasDatos = [];   // [{ numSemana, desde, hasta, periodoRef, sedes:[...] }]
@@ -84,13 +87,20 @@ async function _init() {
     _sedes       = sedesData || [];
     _proveedores = provData  || [];
 
-    // Poblar select de sedes en el dialog principal
-    const selSede = document.getElementById('caj-sede');
-    _sedes.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value       = s.name.toLowerCase();
-        opt.textContent = s.name;
-        selSede.appendChild(opt);
+    // Mostrar ítems de nav exclusivos para admin
+    if (_esAdmin) {
+        document.querySelectorAll('.fin-nav-item--admin').forEach(el => el.style.display = '');
+    }
+
+    // Poblar select de sedes en dialogs (movimiento y entrega)
+    ['caj-sede', 'ent-sede'].forEach(id => {
+        const sel = document.getElementById(id);
+        _sedes.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value       = s.name.toLowerCase();
+            opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
     });
 
     // Poblar select de proveedores en el dialog principal
@@ -104,6 +114,7 @@ async function _init() {
 
     await _cargarMovimientos();
     revelarSplash();
+    _cargarVentas(); // carga background para poblar gráfico y paneles del resumen
 }
 
 // ── Período mensual ───────────────────────────────────────────────────────────
@@ -135,7 +146,9 @@ document.getElementById('caj-prev').addEventListener('click', () => {
     if (_periodo.month < 1) { _periodo.month = 12; _periodo.year--; }
     _actualizarLabelPeriodo();
     _cargarMovimientos();
-    if (_vistaActual === 'ventas') _cargarVentas();
+    if (_vistaActual === 'ingresos' || _vistaActual === 'resumen') _cargarVentas();
+    if (_vistaActual === 'entregas')     _cargarEntregas();
+    if (_vistaActual === 'conciliacion') _cargarConciliacion();
 });
 
 document.getElementById('caj-next').addEventListener('click', () => {
@@ -143,7 +156,9 @@ document.getElementById('caj-next').addEventListener('click', () => {
     if (_periodo.month > 12) { _periodo.month = 1; _periodo.year++; }
     _actualizarLabelPeriodo();
     _cargarMovimientos();
-    if (_vistaActual === 'ventas') _cargarVentas();
+    if (_vistaActual === 'ingresos' || _vistaActual === 'resumen') _cargarVentas();
+    if (_vistaActual === 'entregas')     _cargarEntregas();
+    if (_vistaActual === 'conciliacion') _cargarConciliacion();
 });
 
 // ── Carga de datos ────────────────────────────────────────────────────────────
@@ -170,7 +185,8 @@ async function _cargarMovimientos() {
     _todos = data || [];
     _renderResumen();
     _renderTabla();
-    if (_vistaActual === 'informe') _renderInforme();
+    _renderTablaIngresos();
+    if (_vistaActual === 'informes') _renderInforme();
 }
 
 // ── Resumen (4 cards) ─────────────────────────────────────────────────────────
@@ -415,6 +431,56 @@ function _renderTabla() {
     });
 }
 
+// ── Tabla de ingresos (vista Ingresos) ────────────────────────────────────────
+function _renderTablaIngresos() {
+    const tbody = document.getElementById('ing-tbody');
+    const lista = _todos.filter(m => m.tipo === 'ingreso');
+
+    if (!lista.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin ingresos registrados en este período.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = '';
+    lista.forEach(m => {
+        const fecha      = _formatFecha(m.fecha);
+        const catLabel   = _labelCategoria(m.categoria);
+        const ref        = m.proveedor_nombre
+            || (m.sede ? capitalizarSede(m.sede) : '')
+            || m.comprobante || '';
+        const esPendiente = m.estado === 'pendiente';
+
+        const estadoBadge = esPendiente
+            ? '<span class="caj-badge caj-badge--pendiente">Pendiente</span>'
+            : '<span class="caj-badge caj-badge--pagado">Pagado</span>';
+
+        const acciones = [];
+        if (esPendiente) {
+            acciones.push(`<button class="caj-btn-confirmar" data-id="${m.id}" title="Confirmar pago recibido">✓ Confirmar</button>`);
+        }
+        if (_esAdmin) {
+            acciones.push(`<button class="caj-btn-delete" data-id="${m.id}" title="Eliminar">✕</button>`);
+        }
+
+        const conceptoHtml = `${_esc(m.concepto)}${m.recepcion_id
+            ? ' <span class="caj-badge-factura">Factura</span>' : ''}`;
+
+        const tr = document.createElement('tr');
+        if (esPendiente) tr.classList.add('caj-row--pendiente');
+        tr.innerHTML = `
+            <td>${fecha}</td>
+            <td>${estadoBadge}</td>
+            <td>${catLabel}</td>
+            <td>${conceptoHtml}</td>
+            <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
+            <td style="text-transform:capitalize">${m.metodo_pago}</td>
+            <td style="text-align:right" class="caj-monto--ingreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
+            <td class="caj-td-acciones">${acciones.join('')}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 // ── Filtros ───────────────────────────────────────────────────────────────────
 document.getElementById('caj-filtro-tipo').addEventListener('change', _renderTabla);
 document.getElementById('caj-filtro-cat').addEventListener('change',  _renderTabla);
@@ -432,7 +498,7 @@ function _poblarFiltroCategoria() {
 }
 
 // ── Acciones en tabla (eliminar + confirmar) ──────────────────────────────────
-document.getElementById('caj-tbody').addEventListener('click', async e => {
+async function _onMovimientoClick(e) {
     // Confirmar pago pendiente
     const confBtn = e.target.closest('.caj-btn-confirmar');
     if (confBtn) {
@@ -464,7 +530,11 @@ document.getElementById('caj-tbody').addEventListener('click', async e => {
     _todos = _todos.filter(m => m.id !== id);
     _renderResumen();
     _renderTabla();
-});
+    _renderTablaIngresos();
+}
+
+document.getElementById('caj-tbody').addEventListener('click', _onMovimientoClick);
+document.getElementById('ing-tbody').addEventListener('click', _onMovimientoClick);
 
 // ── Dialog principal: abrir ───────────────────────────────────────────────────
 function _abrirDialog(tipo) {
@@ -613,6 +683,7 @@ document.getElementById('caj-dialog-guardar').addEventListener('click', async ()
             _todos.unshift(nuevo);
             _renderResumen();
             _renderTabla();
+            _renderTablaIngresos();
         }
     } catch (err) {
         console.error('[cuadreCaja] guardar:', err);
@@ -833,6 +904,7 @@ async function _importarLiquidacion() {
 
     document.getElementById('caj-dialog-liq').close();
     await _cargarMovimientos();
+    _cargarVentas(); // refresca pivot y checkmarks de ya-importado
 }
 
 // Navegación mensual en el dialog de liquidación
@@ -933,7 +1005,10 @@ async function _confirmarPago() {
 
     _renderResumen();
     _renderTabla();
-    if (_vistaActual === 'ventas') _cargarVentas();
+    _renderTablaIngresos();
+    if (_vistaActual === 'ingresos' || _vistaActual === 'resumen') _cargarVentas();
+    if (_vistaActual === 'entregas')     _cargarEntregas();
+    if (_vistaActual === 'conciliacion') _cargarConciliacion();
 }
 
 document.getElementById('caj-conf-guardar').addEventListener('click', _confirmarPago);
@@ -951,21 +1026,37 @@ document.getElementById('caj-dialog-confirmar').addEventListener('click', e => {
 // Pestañas: Movimientos / Informe Mensual
 // ══════════════════════════════════════════════════════════════════════════════
 
+const _VISTAS = ['resumen', 'ingresos', 'gastos', 'entregas', 'conciliacion', 'informes', 'gerencial'];
+
 function _switchVista(vista) {
     _vistaActual = vista;
-    document.getElementById('caj-tab-movimientos').classList.toggle('caj-tab--active', vista === 'movimientos');
-    document.getElementById('caj-tab-ventas').classList.toggle('caj-tab--active',      vista === 'ventas');
-    document.getElementById('caj-tab-informe').classList.toggle('caj-tab--active',     vista === 'informe');
-    document.getElementById('caj-view-movimientos').style.display = vista === 'movimientos' ? '' : 'none';
-    document.getElementById('caj-view-ventas').style.display      = vista === 'ventas'      ? '' : 'none';
-    document.getElementById('caj-view-informe').style.display     = vista === 'informe'     ? '' : 'none';
-    if (vista === 'informe') _renderInforme();
-    if (vista === 'ventas')  _cargarVentas();
+    // Actualizar estado activo en el nav
+    document.querySelectorAll('.fin-nav-item').forEach(btn => {
+        btn.classList.toggle('fin-nav-item--active', btn.dataset.vista === vista);
+    });
+    // Mostrar/ocultar vistas
+    _VISTAS.forEach(v => {
+        const el = document.getElementById(`fin-view-${v}`);
+        if (el) el.style.display = v === vista ? '' : 'none';
+    });
+    // Cargar datos según vista
+    if (vista === 'informes')      _renderInforme();
+    if (vista === 'ingresos')      { _cargarVentas(); _renderTablaIngresos(); }
+    if (vista === 'resumen')       _cargarVentas();
+    if (vista === 'entregas')      _cargarEntregas();
+    if (vista === 'conciliacion')  _cargarConciliacion();
+    if (vista === 'gerencial')     _cargarGerencial();
+    if (vista === 'gastos') {
+        document.getElementById('caj-filtro-tipo').value = 'egreso';
+        _renderTabla();
+    }
 }
 
-document.getElementById('caj-tab-movimientos').addEventListener('click', () => _switchVista('movimientos'));
-document.getElementById('caj-tab-ventas').addEventListener('click',      () => _switchVista('ventas'));
-document.getElementById('caj-tab-informe').addEventListener('click',     () => _switchVista('informe'));
+document.getElementById('fin-nav').addEventListener('click', e => {
+    const btn = e.target.closest('.fin-nav-item');
+    if (!btn) return;
+    _switchVista(btn.dataset.vista);
+});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Informe Mensual
@@ -1429,6 +1520,323 @@ document.getElementById('caj-ventas-contenido').addEventListener('click', async 
     await _cargarVentas();
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Conciliación
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Carga ventas y entregas si no están en caché, luego renderiza la vista.
+ * Se llama al activar la vista y al cambiar de período.
+ */
+async function _cargarConciliacion() {
+    document.getElementById('con-contenido').innerHTML =
+        '<p class="caj-empty">Cargando conciliación...</p>';
+
+    const loads = [];
+    if (!_ventasDatos.length) loads.push(_cargarVentas());
+    if (!_entregas.length)    loads.push(_cargarEntregas());
+    if (loads.length) await Promise.all(loads);
+
+    _renderConciliacion();
+}
+
+function _renderConciliacion() {
+    const contenido = document.getElementById('con-contenido');
+
+    // ── 1. Esperado por sede: sum(totalNeto) de todas las semanas ──────────────
+    const esperado  = {};   // sede → number
+    for (const sem of _ventasDatos) {
+        for (const s of sem.sedes) {
+            esperado[s.sede] = (esperado[s.sede] || 0) + s.totalNeto;
+        }
+    }
+
+    // ── 2. Registrado en caja_movimientos (pago_sede) por sede ─────────────────
+    const cobrado  = {};   // sede → number (estado=pagado)
+    const pendiente = {};  // sede → number (estado=pendiente)
+    for (const m of _todos) {
+        if (m.tipo !== 'ingreso' || m.categoria !== 'pago_sede' || !m.sede) continue;
+        if (m.estado === 'pendiente') {
+            pendiente[m.sede] = (pendiente[m.sede] || 0) + Number(m.monto);
+        } else {
+            cobrado[m.sede] = (cobrado[m.sede] || 0) + Number(m.monto);
+        }
+    }
+
+    // ── 3. Entregado físicamente por sede (caja_entregas_efectivo) ─────────────
+    const entregado = {};  // sede → number
+    for (const e of _entregas) {
+        entregado[e.sede] = (entregado[e.sede] || 0) + Number(e.monto);
+    }
+
+    // ── 4. Unir todas las sedes conocidas ──────────────────────────────────────
+    const sedes = [...new Set([
+        ...Object.keys(esperado),
+        ...Object.keys(cobrado),
+        ...Object.keys(pendiente),
+        ...Object.keys(entregado),
+    ])].sort();
+
+    if (!sedes.length) {
+        contenido.innerHTML = '<p class="caj-empty">Sin datos para conciliar en este período.</p>';
+        return;
+    }
+
+    // ── 5. Totales globales ────────────────────────────────────────────────────
+    let totEsp = 0, totCob = 0, totPend = 0, totEnt = 0;
+
+    const filas = sedes.map(sede => {
+        const esp  = esperado[sede]   || 0;
+        const cob  = cobrado[sede]    || 0;
+        const pend = pendiente[sede]  || 0;
+        const ent  = entregado[sede]  || 0;
+        const dif  = cob - ent;   // >0 registrado sin entregar, <0 entregado sin registrar
+
+        totEsp  += esp;
+        totCob  += cob;
+        totPend += pend;
+        totEnt  += ent;
+
+        // Dot de estado: OK si dif===0 y pend===0, PEND si hay pendiente, DIF si hay diferencia
+        let dotClass = 'con-dot--ok';
+        if (pend > 0)       dotClass = 'con-dot--pend';
+        if (dif !== 0)      dotClass = 'con-dot--dif';
+
+        const difHtml = dif === 0
+            ? `<span class="con-val--zero">$0</span>`
+            : dif > 0
+                ? `<span class="con-val--pend">+${_fmt(dif)}</span>`
+                : `<span class="con-val--neg">${_fmt(dif)}</span>`;
+
+        return `
+            <tr>
+                <td>
+                    <span class="con-estado-dot ${dotClass}"></span>
+                    ${_esc(capitalizarSede(sede))}
+                </td>
+                <td>${esp   ? _fmt(esp)  : '<span class="con-val--zero">—</span>'}</td>
+                <td class="${cob  ? 'con-val--ok'  : ''}">${cob  ? _fmt(cob)  : '<span class="con-val--zero">—</span>'}</td>
+                <td class="${pend ? 'con-val--pend' : ''}">${pend ? _fmt(pend) : '<span class="con-val--zero">—</span>'}</td>
+                <td class="${ent  ? 'con-val--ok'  : ''}">${ent  ? _fmt(ent)  : '<span class="con-val--zero">—</span>'}</td>
+                <td>${difHtml}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const totDif  = totCob - totEnt;
+    const totDifHtml = totDif === 0
+        ? `<span class="con-val--zero">$0</span>`
+        : totDif > 0
+            ? `<span class="con-val--pend">+${_fmt(totDif)}</span>`
+            : `<span class="con-val--neg">${_fmt(totDif)}</span>`;
+
+    contenido.innerHTML = `
+        <div class="con-tabla-wrap">
+            <div class="con-tabla-titulo">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                </svg>
+                Conciliación por sede — resumen del mes
+            </div>
+            <table class="con-tabla">
+                <thead>
+                    <tr>
+                        <th>Sede</th>
+                        <th>Esperado (ventas)</th>
+                        <th>Registrado cobrado</th>
+                        <th>Pendiente de cobro</th>
+                        <th>Entregado (efectivo)</th>
+                        <th>Dif. registro vs entrega</th>
+                    </tr>
+                </thead>
+                <tbody>${filas}</tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td>${_fmt(totEsp)}</td>
+                        <td>${_fmt(totCob)}</td>
+                        <td>${totPend ? `<span class="con-val--pend">${_fmt(totPend)}</span>` : _fmt(0)}</td>
+                        <td>${_fmt(totEnt)}</td>
+                        <td>${totDifHtml}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Entregas de efectivo
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _entregas = [];   // cache del período actual
+
+// ── Carga y renderizado ────────────────────────────────────────────────────────
+async function _cargarEntregas() {
+    const tbody = document.getElementById('ent-tbody');
+    tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Cargando...</td></tr>`;
+
+    const { desde, hasta } = _rangoFechas();
+    const { data, error } = await supabase
+        .from('caja_entregas_efectivo')
+        .select('id, sede, fecha, monto, metodo, concepto, comprobante, notas, conciliado, usuario, created_at')
+        .gte('fecha', desde)
+        .lt('fecha', hasta)
+        .order('fecha', { ascending: false })
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[entregas] cargar:', error);
+        tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Error al cargar entregas</td></tr>`;
+        return;
+    }
+    _entregas = data || [];
+    _renderTablaEntregas();
+}
+
+function _renderTablaEntregas() {
+    const tbody = document.getElementById('ent-tbody');
+    if (!_entregas.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="caj-empty">Sin entregas registradas este mes</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = _entregas.map(e => `
+        <tr>
+            <td>${_formatFecha(e.fecha)}</td>
+            <td>${_esc(capitalizarSede(e.sede))}</td>
+            <td>${_esc(e.concepto)}</td>
+            <td>${e.metodo === 'transferencia' ? 'Transferencia' : 'Efectivo'}</td>
+            <td style="color:${e.comprobante ? 'inherit' : '#ccc'}">${_esc(e.comprobante) !== '—' ? _esc(e.comprobante) : '—'}</td>
+            <td>${e.conciliado
+                ? '<span class="caj-badge caj-badge--pagado">Conciliado</span>'
+                : '<span class="caj-badge caj-badge--pendiente">Pendiente</span>'}</td>
+            <td style="text-align:right" class="caj-monto--ingreso">${_fmt(e.monto)}</td>
+            <td>
+                ${!e.conciliado && _esAdmin
+                    ? `<div class="caj-td-acciones"><button class="caj-btn-delete" data-ent-id="${e.id}" title="Eliminar">🗑</button></div>`
+                    : ''}
+            </td>
+        </tr>
+    `).join('');
+
+    // Fila total
+    const total = _entregas.reduce((s, e) => s + Number(e.monto), 0);
+    tbody.insertAdjacentHTML('beforeend', `
+        <tr class="inf-row--total">
+            <td colspan="6" style="text-align:right;font-size:1.2rem">Total del mes</td>
+            <td class="inf-val inf-val--ing">${_fmt(total)}</td>
+            <td></td>
+        </tr>
+    `);
+}
+
+// ── Dialog nueva entrega ───────────────────────────────────────────────────────
+const _entDialog  = document.getElementById('ent-dialog');
+const _entError   = document.getElementById('ent-error');
+
+function _abrirDialogEntrega() {
+    _entError.style.display = 'none';
+    document.getElementById('ent-sede').value       = '';
+    document.getElementById('ent-fecha').value       = _toISO(new Date());
+    document.getElementById('ent-monto').value       = '';
+    document.getElementById('ent-metodo').value      = 'efectivo';
+    document.getElementById('ent-concepto').value    = 'Entrega de efectivo';
+    document.getElementById('ent-comprobante').value = '';
+    document.getElementById('ent-notas').value       = '';
+    _entDialog.showModal();
+}
+
+function _cerrarDialogEntrega() {
+    _entDialog.close();
+}
+
+document.getElementById('ent-btn-nueva').addEventListener('click',       _abrirDialogEntrega);
+document.getElementById('ent-dialog-cerrar').addEventListener('click',   _cerrarDialogEntrega);
+document.getElementById('ent-dialog-cancelar').addEventListener('click', _cerrarDialogEntrega);
+_entDialog.addEventListener('click', e => { if (e.target === _entDialog) _entDialog.close(); });
+
+document.getElementById('ent-dialog-guardar').addEventListener('click', async () => {
+    _entError.style.display = 'none';
+
+    const sede       = document.getElementById('ent-sede').value.trim();
+    const fecha      = document.getElementById('ent-fecha').value;
+    const monto      = parseInt(document.getElementById('ent-monto').value, 10);
+    const metodo     = document.getElementById('ent-metodo').value;
+    const concepto   = document.getElementById('ent-concepto').value.trim();
+    const comprobante = document.getElementById('ent-comprobante').value.trim();
+    const notas      = document.getElementById('ent-notas').value.trim();
+
+    if (!sede)              return _mostrarErrorEnt('Selecciona una sede.');
+    if (!fecha)             return _mostrarErrorEnt('La fecha es obligatoria.');
+    if (!monto || monto < 1) return _mostrarErrorEnt('El monto debe ser mayor a cero.');
+    if (!concepto)          return _mostrarErrorEnt('El concepto es obligatorio.');
+
+    const btn = document.getElementById('ent-dialog-guardar');
+    btn.disabled = true;
+
+    const { data, error } = await supabase
+        .from('caja_entregas_efectivo')
+        .insert([{
+            sede,
+            fecha,
+            monto,
+            metodo,
+            concepto,
+            comprobante : comprobante || null,
+            notas       : notas       || null,
+            usuario     : _usuario,
+        }])
+        .select()
+        .single();
+
+    btn.disabled = false;
+
+    if (error) {
+        console.error('[entregas] guardar:', error);
+        return _mostrarErrorEnt('Error al guardar. Intenta de nuevo.');
+    }
+
+    _cerrarDialogEntrega();
+
+    // Actualizar caché local si la fecha cae en el período actual
+    const { desde, hasta } = _rangoFechas();
+    if (data.fecha >= desde && data.fecha < hasta) {
+        _entregas.unshift(data);
+        _renderTablaEntregas();
+    }
+});
+
+function _mostrarErrorEnt(msg) {
+    _entError.textContent    = msg;
+    _entError.style.display  = 'block';
+}
+
+// ── Eliminar entrega ───────────────────────────────────────────────────────────
+document.getElementById('ent-tbody').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-ent-id]');
+    if (!btn) return;
+    if (!_esAdmin) return;
+
+    const id = btn.dataset.entId;
+    if (!confirm('¿Eliminar esta entrega? Esta acción no se puede deshacer.')) return;
+
+    const { error } = await supabase
+        .from('caja_entregas_efectivo')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('[entregas] eliminar:', error);
+        alert('Error al eliminar la entrega.');
+        return;
+    }
+
+    _entregas = _entregas.filter(e => e.id !== id);
+    _renderTablaEntregas();
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Formatea un número como pesos colombianos con signo $. */
@@ -1512,3 +1920,182 @@ function _semanaIdxParaFecha(fechaISO, semanas) {
     const fecha = new Date(fechaISO + 'T12:00:00');
     return semanas.findIndex(({ desde, hasta }) => fecha >= desde && fecha <= hasta);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Dashboard Gerencial — resumen diario cross-sede (admin)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Carga cierres y egresos de todas las sedes para la fecha seleccionada.
+ * Solo accesible para planta-admin / admin.
+ */
+async function _cargarGerencial() {
+    const contenido = document.getElementById('ger-contenido');
+    const kpiRow    = document.getElementById('ger-kpi-row');
+
+    contenido.innerHTML  = '<p class="caj-empty">Cargando datos...</p>';
+    kpiRow.style.display = 'none';
+
+    // Sincronizar input con estado
+    document.getElementById('ger-fecha').value = _gerFecha;
+
+    const [
+        { data: cierres, error: errC },
+        { data: egresos, error: errE },
+    ] = await Promise.all([
+        supabase
+            .from('sede_caja_cierres')
+            .select('id, sede, fecha, informe_z, ing_efectivo, ing_transferencia, ing_datafono, ing_rappi, ing_otros, estado')
+            .eq('fecha', _gerFecha),
+        supabase
+            .from('sede_caja_egresos')
+            .select('id, sede, fecha, monto')
+            .eq('fecha', _gerFecha),
+    ]);
+
+    if (errC || errE) {
+        console.error('[gerencial] cargar:', errC || errE);
+        contenido.innerHTML = '<p class="caj-empty">Error al cargar datos.</p>';
+        return;
+    }
+
+    _renderGerencial(cierres || [], egresos || []);
+}
+
+function _renderGerencial(cierres, egresos) {
+    const contenido = document.getElementById('ger-contenido');
+    const kpiRow    = document.getElementById('ger-kpi-row');
+
+    // Agrupar egresos por sede
+    const egrPorSede = {};
+    egresos.forEach(e => {
+        egrPorSede[e.sede] = (egrPorSede[e.sede] || 0) + Number(e.monto);
+    });
+
+    // Mapa de cierres por sede
+    const cierrePorSede = {};
+    cierres.forEach(c => { cierrePorSede[c.sede] = c; });
+
+    if (!_sedes.length) {
+        contenido.innerHTML = '<p class="caj-empty">Sin sedes disponibles.</p>';
+        return;
+    }
+
+    let totalIngresos = 0, totalEgresos = 0, sedesConReporte = 0;
+
+    const filas = _sedes.map(s => {
+        const sedeName = s.name.toLowerCase();
+        const c        = cierrePorSede[sedeName];
+        const egrSede  = egrPorSede[sedeName] || 0;
+
+        if (!c) {
+            return `
+                <tr class="ger-row--sin-reporte">
+                    <td class="ger-sede-nombre">${_esc(s.name)}</td>
+                    <td colspan="11"><span class="ger-sin-reporte">Sin reporte</span></td>
+                </tr>`;
+        }
+
+        sedesConReporte++;
+
+        const informeZ  = Number(c.informe_z)        || 0;
+        const efectivo  = Number(c.ing_efectivo)      || 0;
+        const transf    = Number(c.ing_transferencia) || 0;
+        const datafono  = Number(c.ing_datafono)      || 0;
+        const rappi     = Number(c.ing_rappi)         || 0;
+        const otros     = Number(c.ing_otros)         || 0;
+        const totalReal = efectivo + transf + datafono + rappi + otros;
+        const dif       = informeZ - totalReal;
+        const balance   = totalReal - egrSede;
+
+        totalIngresos += totalReal;
+        totalEgresos  += egrSede;
+
+        const estadoBadge = c.estado === 'cerrado'
+            ? '<span class="caj-badge caj-badge--pagado">Cerrado</span>'
+            : '<span class="caj-badge caj-badge--pendiente">Borrador</span>';
+
+        const difClass = dif === 0 ? 'con-val--ok' : (dif > 0 ? 'con-val--pend' : 'con-val--neg');
+
+        return `
+            <tr>
+                <td class="ger-sede-nombre">${_esc(s.name)}</td>
+                <td>${estadoBadge}</td>
+                <td style="text-align:right">${informeZ ? _fmt(informeZ) : '—'}</td>
+                <td style="text-align:right">${efectivo  ? _fmt(efectivo)  : '—'}</td>
+                <td style="text-align:right">${transf    ? _fmt(transf)    : '—'}</td>
+                <td style="text-align:right">${datafono  ? _fmt(datafono)  : '—'}</td>
+                <td style="text-align:right">${rappi     ? _fmt(rappi)     : '—'}</td>
+                <td style="text-align:right">${otros     ? _fmt(otros)     : '—'}</td>
+                <td style="text-align:right" class="caj-monto--ingreso">${_fmt(totalReal)}</td>
+                <td style="text-align:right" class="caj-monto--egreso">${egrSede ? _fmt(egrSede) : '—'}</td>
+                <td style="text-align:right" class="${balance >= 0 ? 'caj-monto--ingreso' : 'caj-monto--egreso'}">${_fmt(balance)}</td>
+                <td style="text-align:right" class="${difClass}">${dif !== 0 ? _fmt(dif) : '✓'}</td>
+            </tr>`;
+    }).join('');
+
+    const totalBalance = totalIngresos - totalEgresos;
+
+    contenido.innerHTML = `
+        <div class="ger-tabla-wrap">
+            <table class="ger-tabla">
+                <thead>
+                    <tr>
+                        <th>Sede</th>
+                        <th>Estado</th>
+                        <th style="text-align:right">Informe Z</th>
+                        <th style="text-align:right">Efectivo</th>
+                        <th style="text-align:right">Transf.</th>
+                        <th style="text-align:right">Datáfono</th>
+                        <th style="text-align:right">Rappi</th>
+                        <th style="text-align:right">Otros</th>
+                        <th style="text-align:right">Total real</th>
+                        <th style="text-align:right">Egresos</th>
+                        <th style="text-align:right">Balance</th>
+                        <th style="text-align:right">Dif. caja</th>
+                    </tr>
+                </thead>
+                <tbody>${filas}</tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="8" style="text-align:right;font-weight:600">Totales</td>
+                        <td style="text-align:right;font-weight:600" class="caj-monto--ingreso">${_fmt(totalIngresos)}</td>
+                        <td style="text-align:right;font-weight:600" class="caj-monto--egreso">${_fmt(totalEgresos)}</td>
+                        <td style="text-align:right;font-weight:600" class="${totalBalance >= 0 ? 'caj-monto--ingreso' : 'caj-monto--egreso'}">${_fmt(totalBalance)}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>`;
+
+    // KPI cards
+    kpiRow.style.display = '';
+    document.getElementById('ger-kpi-sedes').textContent     = `${sedesConReporte} / ${_sedes.length}`;
+    document.getElementById('ger-kpi-sedes-sub').textContent = 'con reporte';
+    document.getElementById('ger-kpi-ingresos').textContent  = sedesConReporte ? _fmt(totalIngresos) : '—';
+    document.getElementById('ger-kpi-egresos').textContent   = sedesConReporte ? _fmt(totalEgresos)  : '—';
+
+    const elBalance = document.getElementById('ger-kpi-balance');
+    const elBCard   = document.getElementById('ger-kpi-card-balance');
+    elBalance.textContent = sedesConReporte ? _fmt(Math.abs(totalBalance)) : '—';
+    if (sedesConReporte) {
+        elBCard.classList.toggle('positivo', totalBalance >= 0);
+        elBCard.classList.toggle('negativo', totalBalance <  0);
+    }
+}
+
+// ── Navegación fecha gerencial ─────────────────────────────────────────────────
+function _gerNavDia(delta) {
+    const d = new Date(_gerFecha + 'T12:00:00');
+    d.setDate(d.getDate() + delta);
+    _gerFecha = _toISO(d);
+    _cargarGerencial();
+}
+
+document.getElementById('ger-prev').addEventListener('click',   () => _gerNavDia(-1));
+document.getElementById('ger-next').addEventListener('click',   () => _gerNavDia(+1));
+document.getElementById('ger-fecha').addEventListener('change', e => {
+    if (!e.target.value) return;
+    _gerFecha = e.target.value;
+    _cargarGerencial();
+});

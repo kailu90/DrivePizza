@@ -36,7 +36,9 @@ let _esAdmin     = false;
 let _fecha       = _toISO(new Date());
 let _cierre      = null;   // registro sede_caja_cierres del día
 let _egresos     = [];     // registros sede_caja_egresos del día
-let _vistaActual = 'dia';
+let _vistaActual    = 'dia';
+let _histCierres    = [];   // caché historial para export CSV
+let _histEgrPorFecha = {};  // caché egresos por fecha para export CSV
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, sede, rol }) => {
@@ -535,6 +537,11 @@ async function _cargarHistorial() {
         egrPorFecha[e.fecha] = (egrPorFecha[e.fecha] || 0) + Number(e.monto);
     });
 
+    // Cachear para export CSV
+    _histCierres     = cierres;
+    _histEgrPorFecha = egrPorFecha;
+    document.getElementById('sc-btn-export-csv').style.display = '';
+
     const rows = cierres.map(c => {
         const totalIng = (Number(c.ing_efectivo) + Number(c.ing_transferencia) +
                           Number(c.ing_datafono)  + Number(c.ing_rappi) + Number(c.ing_otros));
@@ -592,6 +599,56 @@ async function _cargarHistorial() {
             _switchVista('dia');
         });
     });
+}
+
+// ── Exportar CSV del historial ─────────────────────────────────────────────────
+document.getElementById('sc-btn-export-csv').addEventListener('click', _exportarHistorialCSV);
+
+function _exportarHistorialCSV() {
+    if (!_histCierres.length) return;
+
+    const headers = [
+        'Fecha', 'Informe Z',
+        'Efectivo', 'Transferencia', 'Datáfono', 'Rappi', 'Otros',
+        'Total Ingresos', 'Total Egresos', 'Balance', 'Dif. Caja', 'Estado',
+    ];
+
+    const filas = _histCierres.map(c => {
+        const totalIng = Number(c.ing_efectivo || 0) + Number(c.ing_transferencia || 0) +
+                         Number(c.ing_datafono  || 0) + Number(c.ing_rappi  || 0) + Number(c.ing_otros || 0);
+        const totalEgr = _histEgrPorFecha[c.fecha] || 0;
+        const balance  = totalIng - totalEgr;
+        const dif      = (Number(c.informe_z) || 0) - totalIng;
+
+        return [
+            c.fecha,
+            Number(c.informe_z)        || 0,
+            Number(c.ing_efectivo)     || 0,
+            Number(c.ing_transferencia)|| 0,
+            Number(c.ing_datafono)     || 0,
+            Number(c.ing_rappi)        || 0,
+            Number(c.ing_otros)        || 0,
+            totalIng,
+            totalEgr,
+            balance,
+            dif,
+            c.estado,
+        ];
+    });
+
+    const csv = [headers, ...filas]
+        .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cuadre-caja-${_sede}-${_toISO(new Date())}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
