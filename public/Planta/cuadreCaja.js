@@ -580,6 +580,7 @@ function _renderTabla() {
     const fConcepto = (document.getElementById('gf-concepto')?.value || '').toLowerCase().trim();
     const fRef      = (document.getElementById('gf-ref')?.value      || '').toLowerCase().trim();
     const fMetodo   = document.getElementById('gf-metodo')?.value   || '';
+    const fMonto    = (document.getElementById('gf-monto')?.value    || '').trim();
 
     let lista = _todos.filter(m => m.tipo === 'egreso');
     if (fFecha)    lista = lista.filter(m => m.fecha === fFecha);
@@ -593,6 +594,7 @@ function _renderTabla() {
         });
     }
     if (fMetodo)   lista = lista.filter(m => m.metodo_pago === fMetodo);
+    if (fMonto)    lista = lista.filter(m => Number(m.monto).toLocaleString('es-CO').includes(fMonto) || String(m.monto).includes(fMonto));
 
     const tbody = document.getElementById('caj-tbody');
     tbody.innerHTML = '';
@@ -633,7 +635,7 @@ function _renderTabla() {
             <td>${conceptoHtml}</td>
             <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
             <td style="text-transform:capitalize">${m.metodo_pago || '—'}</td>
-            <td style="text-align:right" class="caj-monto--egreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
+            <td class="caj-monto--egreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
             <td class="caj-td-acciones">${acciones.join('')}</td>
         `;
         tbody.appendChild(tr);
@@ -692,6 +694,7 @@ function _renderTablaIngresos() {
     const fConcepto = (document.getElementById('if-concepto')?.value || '').toLowerCase().trim();
     const fRef      = (document.getElementById('if-ref')?.value      || '').toLowerCase().trim();
     const fMetodo   = document.getElementById('if-metodo')?.value   || '';
+    const fMonto    = (document.getElementById('if-monto')?.value    || '').trim();
 
     let lista = _todos.filter(m => m.tipo === 'ingreso');
     if (fFecha)    lista = lista.filter(m => m.fecha === fFecha);
@@ -705,6 +708,7 @@ function _renderTablaIngresos() {
         });
     }
     if (fMetodo)   lista = lista.filter(m => m.metodo_pago === fMetodo);
+    if (fMonto)    lista = lista.filter(m => Number(m.monto).toLocaleString('es-CO').includes(fMonto) || String(m.monto).includes(fMonto));
 
     const tbody = document.getElementById('ing-tbody');
     tbody.innerHTML = '';
@@ -746,7 +750,7 @@ function _renderTablaIngresos() {
             <td>${conceptoHtml}</td>
             <td style="color:#888;font-size:1.2rem">${_esc(ref)}</td>
             <td style="text-transform:capitalize">${m.metodo_pago || '—'}</td>
-            <td style="text-align:right" class="caj-monto--ingreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
+            <td class="caj-monto--ingreso">$${Number(m.monto).toLocaleString('es-CO')}</td>
             <td class="caj-td-acciones">${acciones.join('')}</td>
         `;
         tbody.appendChild(tr);
@@ -756,12 +760,12 @@ function _renderTablaIngresos() {
 // ── Filtros por columna ───────────────────────────────────────────────────────
 ['gf-estado','gf-cat','gf-metodo'].forEach(id =>
     document.getElementById(id)?.addEventListener('change', _renderTabla));
-['gf-fecha','gf-concepto','gf-ref'].forEach(id =>
+['gf-fecha','gf-concepto','gf-ref','gf-monto'].forEach(id =>
     document.getElementById(id)?.addEventListener('input', _renderTabla));
 
 ['if-estado','if-cat','if-metodo'].forEach(id =>
     document.getElementById(id)?.addEventListener('change', _renderTablaIngresos));
-['if-fecha','if-concepto','if-ref'].forEach(id =>
+['if-fecha','if-concepto','if-ref','if-monto'].forEach(id =>
     document.getElementById(id)?.addEventListener('input', _renderTablaIngresos));
 
 /** Pobla los selects de categoría en las filas de filtros. */
