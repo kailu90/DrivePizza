@@ -1124,7 +1124,7 @@
 /* Cabecera */
 .caj-pvt-th-sede     { width: 14rem; text-align: left !important; }
 .caj-pvt-th-sem      { text-align: center !important; white-space: nowrap; min-width: 11rem; }
-.caj-pvt-th-total       { text-align: right !important; white-space: nowrap; }
+.caj-pvt-th-total       { text-align: center !important; white-space: nowrap; }
 .caj-pvt-th-sem--curso  { background: #f0f9f0; }
 .caj-pvt-rango          { display: block; font-size: 1.1rem; font-weight: 400; color: #aaa; }
 .caj-pvt-en-curso {
@@ -1168,12 +1168,12 @@
 .caj-pvt-dot--noimportado  { background: #9ca3af; }
 
 /* Total por sede */
-.caj-pvt-total  { text-align: right !important; font-weight: 700; color: var(--color-terciario); white-space: nowrap; }
+.caj-pvt-total  { text-align: center !important; font-weight: 700; color: var(--color-terciario); white-space: nowrap; }
 
 /* Pie de tabla */
 .caj-pvt-tfoot td         { background: #f4f6f4; font-weight: 700; border-top: 2px solid #d1d5db; }
-.caj-pvt-foot-label       { color: #374151; }
-.caj-pvt-foot-num         { text-align: right !important; color: var(--color-terciario); white-space: nowrap; }
+.caj-pvt-foot-label       { color: #374151; text-align: center; }
+.caj-pvt-foot-num         { text-align: center !important; color: var(--color-terciario); white-space: nowrap; }
 .caj-pvt-grand            { font-size: 1.5rem; }
 
 /* Panel de detalle (debajo de la tabla) */
