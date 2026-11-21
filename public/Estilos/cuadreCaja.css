@@ -183,7 +183,7 @@
 .caj-tabla-wrap {
     background: #fff;
     border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     overflow-x: auto;
 }
 
@@ -197,19 +197,20 @@
     padding: 1.2rem 1.4rem;
     text-align: center;
     font-size: 1.1rem;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #888;
-    border-bottom: 2px solid #f0f0f0;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    border-bottom: none;
     white-space: nowrap;
 }
 
 /* Fila de filtros por columna */
 .caj-filter-row td {
     padding: 6px 8px;
-    background: #f9f9fb;
-    border-bottom: 2px solid #e8e8f0;
+    background: #faf7f2;
+    border-bottom: 1px solid #e3ddd2;
 }
 
 .caj-filter-input,
@@ -228,8 +229,8 @@
 
 .caj-filter-input:focus,
 .caj-filter-select:focus {
-    border-color: var(--color-primario, #48bb78);
-    box-shadow: 0 0 0 2px rgba(72,187,120,0.15);
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 2px rgba(40,76,34,0.12);
 }
 
 .caj-filter-input::placeholder {
@@ -238,10 +239,10 @@
 }
 
 .caj-tabla tbody tr {
-    border-bottom: 1px solid #f8f8f8;
+    border-bottom: 1px solid #f0ece5;
     transition: background 0.1s;
 }
-.caj-tabla tbody tr:hover      { background: #fafafa; }
+.caj-tabla tbody tr:hover      { background: #faf7f2; }
 .caj-tabla tbody tr:last-child { border-bottom: none; }
 
 .caj-tabla td {
@@ -594,7 +595,7 @@
     background: #fff;
     border-radius: 12px;
     padding: 2rem 2.2rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    border: 1px solid #e3ddd2;
 }
 
 .caj-medio-titulo {
@@ -619,25 +620,29 @@
     border-collapse: collapse;
 }
 .caj-medio-tabla thead th {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: #9ca3af;
-    padding: 0.6rem 1rem;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    padding: 0.8rem 1rem;
     text-align: center;
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: none;
 }
 .caj-medio-tabla tbody td {
     padding: 1rem 1rem;
     font-size: 1.35rem;
     color: #374151;
     text-align: center;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid #f0ece5;
 }
 .caj-medio-tabla tbody td:first-child {
     text-align: center;
     font-weight: 600;
 }
-.caj-medio-tabla tbody tr:hover td { background: #fafaf9; }
+.caj-medio-tabla tbody tr:hover td { background: #faf7f2; }
 
 /* Fila icono-etiqueta */
 .caj-medio-row-label {
@@ -660,10 +665,10 @@
 
 /* Fila total */
 .caj-medio-tabla tbody tr.caj-medio-total td {
-    background: var(--color-secundario, #f4ecdf);
+    background: var(--color-primario);
+    color: var(--color-secundario);
     font-weight: 700;
-    color: #1a1a1a;
-    border-top: 2px solid #e5e7eb;
+    border-top: none;
 }
 
 /* Valores positivo / negativo */
@@ -764,7 +769,7 @@
 .caj-vnt-block {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     overflow: hidden;
 }
 
@@ -797,7 +802,7 @@
 .caj-side-panel {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     overflow: hidden;
 }
 
@@ -826,12 +831,15 @@
     border-collapse: collapse;
 }
 .caj-dist-tabla thead th {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: #9ca3af;
-    padding: 0.4rem 0.6rem;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    padding: 0.6rem 0.6rem;
     text-align: center;
-    border-bottom: 1px solid #f3f4f6;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: none;
 }
 .caj-dist-nombre {
     font-size: 1.25rem;
@@ -852,12 +860,14 @@
     padding: 0.75rem 0.6rem;
     white-space: nowrap;
 }
-.caj-dist-tabla tbody tr { border-top: 1px solid #f3f4f6; }
-.caj-dist-tabla tbody tr:hover td { background: #fafaf9; }
+.caj-dist-tabla tbody tr { border-top: 1px solid #f0ece5; }
+.caj-dist-tabla tbody tr:hover td { background: #faf7f2; }
 .caj-dist-tabla tfoot tr td {
-    border-top: 2px solid #e5e7eb;
+    border-top: none;
     padding: 0.75rem 0.6rem;
-    background: var(--color-secundario, #f4ecdf);
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    font-weight: 700;
 }
 
 /* ── Tabla P&L Balance del período ───────────────────────────────────────────── */
@@ -866,13 +876,16 @@
     border-collapse: collapse;
 }
 .caj-pnl-tabla thead th {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: #9ca3af;
-    padding: 0.5rem 1.2rem;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    padding: 0.8rem 1.2rem;
     text-align: center;
     white-space: nowrap;
-    border-bottom: 2px solid #f3f4f6;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: none;
 }
 
 /* Fila base */
@@ -881,10 +894,10 @@
     font-size: 1.35rem;
     color: #374151;
     text-align: center;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid #f0ece5;
 }
 .caj-pnl-tabla .caj-pnl-fila td:first-child { color: #6b7280; }
-.caj-pnl-tabla .caj-pnl-fila:hover td      { background: #fafaf9; }
+.caj-pnl-tabla .caj-pnl-fila:hover td      { background: #faf7f2; }
 
 /* Fila valor cero — atenuada */
 .caj-pnl-tabla .caj-pnl-fila--cero td { color: #c4c9d0; }
@@ -913,11 +926,12 @@
     font-size: 1.5rem;
     font-weight: 700;
     text-align: center;
-    background: var(--color-secundario, #f4ecdf);
-    border-top: 2px solid #e5e7eb;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border-top: none;
 }
 .caj-pnl-tabla .caj-pnl-fila-total td:first-child {
-    color: #1a1a1a;
+    color: var(--color-secundario);
 }
 
 /* Alertas */
@@ -972,7 +986,7 @@
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     margin-bottom: 2rem;
 }
 
@@ -994,18 +1008,18 @@
 }
 
 .caj-inf-tabla thead th {
-    background: #f5f5f5;
+    background: var(--color-primario);
     padding: 0.9rem 1.4rem;
     font-size: 1.1rem;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    color: #888;
+    color: var(--color-secundario);
     text-align: center;
-    border-bottom: 1px solid #eee;
+    border-bottom: none;
 }
 
-.caj-inf-tabla tbody tr { border-bottom: 1px solid #f5f5f5; }
+.caj-inf-tabla tbody tr { border-bottom: 1px solid #f0ece5; }
 .caj-inf-tabla tbody td { padding: 1rem 1.4rem; color: var(--color-terciario); text-align: center; }
 
 /* Fila vacía dentro del informe */
@@ -1017,11 +1031,11 @@
 
 /* Fila de total (tfoot) */
 .inf-row--total td {
-    background: #f0f0f0;
+    background: var(--color-primario);
+    color: var(--color-secundario);
     font-weight: 700;
     padding: 1rem 1.4rem;
-    border-top: 2px solid #ddd;
-    color: var(--color-terciario);
+    border-top: none;
 }
 
 /* Fila pendiente */
@@ -1165,9 +1179,9 @@
 .caj-pvt-total  { text-align: center !important; font-weight: 700; color: var(--color-terciario); white-space: nowrap; }
 
 /* Pie de tabla */
-.caj-pvt-tfoot td         { background: #f4f6f4; font-weight: 700; border-top: 2px solid #d1d5db; }
-.caj-pvt-foot-label       { color: #374151; text-align: center; }
-.caj-pvt-foot-num         { text-align: center !important; color: var(--color-terciario); white-space: nowrap; }
+.caj-pvt-tfoot td         { background: var(--color-primario); color: var(--color-secundario); font-weight: 700; border-top: none; }
+.caj-pvt-foot-label       { color: var(--color-secundario); text-align: center; }
+.caj-pvt-foot-num         { text-align: center !important; color: var(--color-secundario); white-space: nowrap; }
 .caj-pvt-grand            { font-size: 1.5rem; }
 
 /* Panel de detalle (debajo de la tabla) */
@@ -1346,6 +1360,93 @@
     line-height: 1.6;
 }
 
+/* ── Abonos: título de sección dentro del panel detalle ──────────────────────── */
+.caj-pvt-abonos-titulo {
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+}
+
+/* ── Tabla de abonos ─────────────────────────────────────────────────────────── */
+.caj-pvt-abonos-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.25rem;
+    margin-bottom: 0.8rem;
+}
+.caj-pvt-abonos-tabla thead th {
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 0.55rem 0.8rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: none;
+}
+.caj-pvt-abonos-tabla tbody tr { border-bottom: 1px solid #f0ece5; }
+.caj-pvt-abonos-tabla tbody td { padding: 0.65rem 0.8rem; text-align: center; color: #374151; }
+
+/* ── Balance cobrado / pendiente ─────────────────────────────────────────────── */
+.caj-pvt-balance {
+    background: #f8f7f4;
+    border: 1px solid #e3ddd2;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+.caj-pvt-balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.3rem;
+    color: #6b7280;
+}
+.caj-pvt-balance-cobrado  { color: var(--color-primario); font-weight: 700; }
+.caj-pvt-balance-pendiente { color: #d97706; font-weight: 700; }
+.caj-pvt-balance-ok       { color: #16a34a; font-weight: 700; }
+
+/* ── Info line en dialog de abono ────────────────────────────────────────────── */
+.caj-abono-info-txt {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--color-terciario);
+    background: #f4ecdf;
+    border-radius: 7px;
+    padding: 0.9rem 1.2rem;
+    margin: 0 0 1.4rem;
+}
+
+/* ── Paso 2: caja de confirmación ────────────────────────────────────────────── */
+.caj-abono-confirm-box {
+    background: #f8f7f4;
+    border: 1.5px solid #e3ddd2;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+}
+.caj-abono-confirm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.4rem;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #ede9e3;
+}
+.caj-abono-confirm-row:last-child { border-bottom: none; }
+.caj-abono-confirm-row span { color: #6b7280; white-space: nowrap; }
+.caj-abono-confirm-row strong { color: var(--color-terciario); text-align: right; }
+.caj-abono-conf-monto { font-size: 1.7rem; color: var(--color-primario) !important; }
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1400px) {
     .caj-kpi-row         { grid-template-columns: repeat(3, 1fr); }
@@ -1408,7 +1509,7 @@
 .con-tabla-wrap {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     overflow: hidden;
 }
 .con-tabla-titulo {
@@ -1432,21 +1533,23 @@
     padding: 1rem 1.4rem;
     text-align: center;
     font-size: 1.05rem;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #888;
-    border-bottom: 2px solid #f0f0f0;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    border-bottom: none;
     white-space: nowrap;
 }
-.con-tabla tbody tr { border-bottom: 1px solid #f8f8f8; transition: background 0.1s; }
-.con-tabla tbody tr:hover { background: #fafafa; }
+.con-tabla tbody tr { border-bottom: 1px solid #f0ece5; transition: background 0.1s; }
+.con-tabla tbody tr:hover { background: #faf7f2; }
 .con-tabla tbody td { padding: 1.1rem 1.4rem; text-align: center; white-space: nowrap; }
 .con-tabla tfoot td {
     padding: 1rem 1.4rem;
     font-weight: 700;
-    background: #f4f6f4;
-    border-top: 2px solid #d1d5db;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border-top: none;
     white-space: nowrap;
     text-align: center;
 }
@@ -1506,7 +1609,7 @@
 .ger-tabla-wrap {
     background: #fff;
     border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    border: 1px solid #e3ddd2;
     overflow-x: auto;
 }
 .ger-tabla {
@@ -1518,21 +1621,23 @@
     padding: 1rem 1.4rem;
     text-align: center;
     font-size: 1.05rem;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #888;
-    border-bottom: 2px solid #f0f0f0;
+    color: var(--color-secundario);
+    background: var(--color-primario);
+    border-bottom: none;
     white-space: nowrap;
 }
-.ger-tabla tbody tr { border-bottom: 1px solid #f8f8f8; transition: background 0.1s; }
-.ger-tabla tbody tr:hover { background: #fafafa; }
+.ger-tabla tbody tr { border-bottom: 1px solid #f0ece5; transition: background 0.1s; }
+.ger-tabla tbody tr:hover { background: #faf7f2; }
 .ger-tabla tbody td { padding: 1.1rem 1.4rem; text-align: center; white-space: nowrap; }
 .ger-tabla tfoot td {
     padding: 1rem 1.4rem;
     font-weight: 700;
-    background: #f4f6f4;
-    border-top: 2px solid #d1d5db;
+    background: var(--color-primario);
+    color: var(--color-secundario);
+    border-top: none;
     white-space: nowrap;
     text-align: center;
 }

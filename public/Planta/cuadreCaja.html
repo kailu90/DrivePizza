@@ -190,7 +190,7 @@
                             <div class="caj-side-panel">
                                 <div class="caj-side-panel-hdr">
                                     <svg viewBox="0 0 20 20" fill="currentColor" class="caj-side-panel-icon caj-side-panel-icon--blue"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>
-                                    Resumen financiero
+                                    Resumen mes
                                 </div>
                                 <div id="caj-side-resumen" class="caj-side-panel-body">
                                     <p class="caj-side-empty">Cargando...</p>
@@ -759,6 +759,99 @@
     <div class="caj-dialog-actions">
         <button class="caj-btn caj-btn--secondary" id="ent-dialog-cancelar">Cancelar</button>
         <button class="caj-btn caj-btn--ingreso"   id="ent-dialog-guardar">Guardar entrega</button>
+    </div>
+
+</dialog>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Dialog — Registrar abono de pago sede
+     ══════════════════════════════════════════════════════════════════════════ -->
+<dialog id="caj-dialog-abono" class="caj-dialog">
+
+    <div class="caj-dialog-header">
+        <h3 class="caj-dialog-titulo" id="caj-abono-titulo">Registrar abono</h3>
+        <button class="caj-dialog-cerrar" id="caj-abono-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- ── Paso 1: Formulario ─────────────────────────────────────────── -->
+    <div id="caj-abono-step-form">
+
+        <div class="caj-dialog-body">
+
+            <p class="caj-abono-info-txt" id="caj-abono-info">—</p>
+
+            <div class="caj-grid-2">
+                <div class="caj-field">
+                    <label for="caj-abono-monto">Monto ($) *</label>
+                    <input type="number" id="caj-abono-monto" placeholder="0" min="1" step="1">
+                </div>
+                <div class="caj-field">
+                    <label for="caj-abono-fecha">Fecha *</label>
+                    <input type="date" id="caj-abono-fecha">
+                </div>
+            </div>
+
+            <div class="caj-field">
+                <label for="caj-abono-metodo">Método de pago *</label>
+                <select id="caj-abono-metodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Banco</option>
+                </select>
+            </div>
+
+            <div class="caj-field">
+                <label for="caj-abono-notas">Observación</label>
+                <textarea id="caj-abono-notas" placeholder="Observaciones del abono (opcional)" maxlength="300"></textarea>
+            </div>
+
+            <p class="caj-error" id="caj-abono-error" style="display:none"></p>
+
+        </div>
+
+        <div class="caj-dialog-actions">
+            <button class="caj-btn caj-btn--secondary" id="caj-abono-cancelar">Cancelar</button>
+            <button class="caj-btn caj-btn--ingreso"   id="caj-abono-revisar">Revisar →</button>
+        </div>
+
+    </div>
+
+    <!-- ── Paso 2: Confirmación ───────────────────────────────────────── -->
+    <div id="caj-abono-step-confirm" style="display:none">
+
+        <div class="caj-dialog-body">
+
+            <div class="caj-abono-confirm-box">
+                <div class="caj-abono-confirm-row">
+                    <span>Sede / Semana</span>
+                    <strong id="caj-abono-conf-sede">—</strong>
+                </div>
+                <div class="caj-abono-confirm-row">
+                    <span>Monto</span>
+                    <strong class="caj-abono-conf-monto" id="caj-abono-conf-monto">—</strong>
+                </div>
+                <div class="caj-abono-confirm-row">
+                    <span>Método</span>
+                    <strong id="caj-abono-conf-metodo">—</strong>
+                </div>
+                <div class="caj-abono-confirm-row">
+                    <span>Fecha</span>
+                    <strong id="caj-abono-conf-fecha">—</strong>
+                </div>
+                <div class="caj-abono-confirm-row" id="caj-abono-conf-row-notas" style="display:none">
+                    <span>Observación</span>
+                    <strong id="caj-abono-conf-notas">—</strong>
+                </div>
+            </div>
+
+            <p class="caj-error" id="caj-abono-error-conf" style="display:none"></p>
+
+        </div>
+
+        <div class="caj-dialog-actions">
+            <button class="caj-btn caj-btn--secondary" id="caj-abono-volver">← Volver</button>
+            <button class="caj-btn caj-btn--ingreso"   id="caj-abono-guardar">Confirmar abono</button>
+        </div>
+
     </div>
 
 </dialog>

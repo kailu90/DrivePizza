@@ -175,8 +175,10 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
         });
 
         // Registrar egreso automáticamente en Cuadre de Caja
+        let egresoCreado = false;
         if (valorTotal && valorTotal > 0) {
-            const esPagado = metodoPago !== 'pendiente';
+            const esPagado  = metodoPago !== 'pendiente';
+            const periodoRef = fecha.substring(0, 7); // 'YYYY-MM'
             const { error: errCaja } = await supabase
                 .from('caja_movimientos')
                 .insert({
@@ -190,14 +192,21 @@ document.getElementById('rc-btn-registrar').addEventListener('click', async () =
                     metodo_pago:      esPagado ? metodoPago : null,
                     comprobante:      numeroFactura || null,
                     estado:           esPagado ? 'pagado' : 'pendiente',
+                    periodo_ref:      periodoRef,
                     recepcion_id:     recepcionId,
                     usuario:          _usuario,
                 });
-            if (errCaja) console.warn('[recepcionMercancia] caja_movimientos:', errCaja);
+            if (errCaja) throw new Error(`Stock actualizado pero falló el registro en Cuadre de Caja: ${errCaja.message}`);
+            egresoCreado = true;
         }
 
         ocultarOverlay(true);
-        alert(`Factura #${recepcionId} registrada correctamente.\n${productos.length} producto(s) actualizados en inventario.`);
+        const linea2 = egresoCreado
+            ? (metodoPago !== 'pendiente'
+                ? `Gasto de $${Number(valorTotal).toLocaleString('es-CO')} registrado en Cuadre de Caja.`
+                : `Pago pendiente registrado en Cuadre de Caja.`)
+            : `Sin valor total — no se creó egreso en Cuadre de Caja.`;
+        alert(`Factura #${recepcionId} registrada.\n${productos.length} producto(s) actualizados en inventario.\n${linea2}`);
         _resetForm();
         _cargarPendientes();
     } catch (err) {

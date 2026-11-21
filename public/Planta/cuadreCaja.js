@@ -63,6 +63,9 @@ let _liqDatos   = [];            // [{ sede, totalPed, totalDev, totalNeto, peri
 // Estado del dialog de confirmación de pago
 let _confirmandoId = null;       // id del movimiento en proceso de confirmación
 
+// Estado del dialog de abono
+let _abonoCtx = null;  // { semIdx, sedeName, periodoRef, totalNeto, refId }
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, rol }) => {
     _usuario = username || 'Admin';
@@ -1582,19 +1585,34 @@ async function _cargarVentas() {
             _calcularLiquidacionMes(_periodo.year, _periodo.month),
             supabase
                 .from('caja_movimientos')
-                .select('id, sede, periodo_ref, estado, monto')
+                .select('id, sede, periodo_ref, estado, monto, metodo_pago, fecha')
                 .eq('tipo', 'ingreso')
                 .eq('categoria', 'pago_sede')
                 .gte('periodo_ref', periodoRef)
-                .lt('periodo_ref', periodoNext),
+                .lt('periodo_ref', periodoNext)
+                .order('created_at', { ascending: true }),
         ]);
 
         if (errM) throw errM;
 
-        // Mapa de registros ya importados: 'periodoRef|sede' → { id, estado }
+        // Agrupar por 'periodoRef|sede':
+        //   estado='pendiente' → fila de referencia (monto total a cobrar)
+        //   estado='pagado'    → abono individual
         const movMap = {};
         (movReg || []).forEach(m => {
-            if (m.periodo_ref && m.sede) movMap[`${m.periodo_ref}|${m.sede}`] = { id: m.id, estado: m.estado };
+            if (!m.periodo_ref || !m.sede) return;
+            const key = `${m.periodo_ref}|${m.sede}`;
+            if (!movMap[key]) movMap[key] = { refId: null, abonos: [] };
+            if (m.estado === 'pendiente') {
+                movMap[key].refId = m.id;
+            } else {
+                movMap[key].abonos.push({
+                    id:          m.id,
+                    monto:       Number(m.monto),
+                    metodo_pago: m.metodo_pago,
+                    fecha:       m.fecha,
+                });
+            }
         });
 
         // Fecha de hoy en Colombia (UTC-5) para detectar semana en curso
@@ -1611,16 +1629,24 @@ async function _cargarVentas() {
                 const enCurso    = hasta > _hoyCol;    // semana no ha cerrado
                 const sedes      = Object.keys(dataPorSemana[idx]).sort().map(sede => {
                     const { totalPed, totalDev } = dataPorSemana[idx][sede];
-                    const totalNeto = totalPed - totalDev;
-                    const mov       = movMap[`${periodoRef}|${sede}`] || null;
+                    const totalNeto    = totalPed - totalDev;
+                    const entry        = movMap[`${periodoRef}|${sede}`] || null;
+                    const abonos       = entry?.abonos || [];
+                    const totalAbonado = abonos.reduce((s, a) => s + a.monto, 0);
+                    const estado       = !entry ? null
+                        : totalAbonado >= totalNeto && totalNeto > 0 ? 'pagado'
+                        : abonos.length > 0 ? 'parcial'
+                        : 'pendiente';
                     return {
                         sede,
                         nombreDisplay: capitalizarSede(sede),
                         totalPed,
                         totalDev,
                         totalNeto,
-                        movId:  mov?.id     || null,
-                        estado: mov?.estado || null,
+                        movId: entry?.refId || null,
+                        estado,
+                        abonos,
+                        totalAbonado,
                     };
                 });
                 return { numSemana, desde, hasta, periodoRef, enCurso, sedes };
@@ -1668,9 +1694,9 @@ function _renderVentas() {
         const celdas = _ventasDatos.map((sem, semIdx) => {
             const d = sem.sedes.find(s => s.sede === sede);
             if (!d) return `<td class="caj-pvt-celda caj-pvt-celda--vacia">—</td>`;
-            const dotClass = d.estado === 'pagado'    ? 'caj-pvt-dot--pagado'
-                           : d.estado === 'pendiente' ? 'caj-pvt-dot--pendiente'
-                           :                            'caj-pvt-dot--noimportado';
+            const dotClass = d.estado === 'pagado'                       ? 'caj-pvt-dot--pagado'
+                           : (d.estado === 'pendiente' || d.estado === 'parcial') ? 'caj-pvt-dot--pendiente'
+                           :                                                         'caj-pvt-dot--noimportado';
             return `<td class="caj-pvt-celda" data-semidx="${semIdx}" data-sede="${_esc(sede)}" role="button" tabindex="0">
                 <span class="caj-pvt-dot ${dotClass}"></span>$${Math.round(d.totalNeto).toLocaleString('es-CO')}
             </td>`;
@@ -1737,19 +1763,53 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
     celdaEl?.classList.add('caj-pvt-celda--activa');
 
     const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    const rango = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+    const rango   = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
+    const completo = d.totalAbonado >= d.totalNeto && d.totalNeto > 0;
+    const pendiente = Math.max(0, d.totalNeto - d.totalAbonado);
 
-    let estadoHtml, accionHtml;
-    if (d.estado === 'pagado') {
-        estadoHtml = '<span class="caj-badge caj-badge--pagado">Pagado</span>';
-        accionHtml = '';
-    } else if (d.estado === 'pendiente') {
-        estadoHtml = '<span class="caj-badge caj-badge--pendiente">Pendiente</span>';
-        accionHtml = `<button class="caj-btn caj-btn--ingreso caj-btn-confirmar" data-id="${d.movId}">✓ Confirmar pago</button>`;
-    } else {
-        estadoHtml = '<span class="caj-badge caj-vta-badge--noimportado">Sin registrar</span>';
-        accionHtml = `<button class="caj-btn caj-btn--ingreso caj-vta-btn-registrar" data-week-idx="${semIdx}" data-sede="${_esc(sedeName)}">↓ Registrar como pendiente</button>`;
+    // ── Tabla de abonos ───────────────────────────────────────────────────────
+    let abonosHtml = '';
+    if (d.abonos.length > 0) {
+        const rows = d.abonos.map(a => {
+            const fechaFmt = a.fecha
+                ? new Date(a.fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+                : '—';
+            const metodoLabel = a.metodo_pago === 'efectivo' ? 'Efectivo'
+                              : a.metodo_pago === 'transferencia' ? 'Transf.'
+                              : a.metodo_pago || '—';
+            return `<tr>
+                <td>${fechaFmt}</td>
+                <td>${metodoLabel}</td>
+                <td><strong>$${Math.round(a.monto).toLocaleString('es-CO')}</strong></td>
+            </tr>`;
+        }).join('');
+        abonosHtml = `
+            <div class="caj-pvt-abonos-titulo">Cobros registrados</div>
+            <table class="caj-pvt-abonos-tabla">
+                <thead><tr><th>Fecha</th><th>Método</th><th>Monto</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
     }
+
+    // ── Balance cobrado / pendiente ───────────────────────────────────────────
+    const balanceHtml = (d.movId || d.abonos.length > 0) ? `
+        <div class="caj-pvt-balance">
+            <div class="caj-pvt-balance-row">
+                <span>Cobrado</span>
+                <strong class="caj-pvt-balance-cobrado">$${Math.round(d.totalAbonado).toLocaleString('es-CO')}</strong>
+            </div>
+            <div class="caj-pvt-balance-row">
+                <span>Pendiente</span>
+                <strong class="${completo ? 'caj-pvt-balance-ok' : 'caj-pvt-balance-pendiente'}">
+                    ${completo ? '✓ Cobro completo' : '$' + Math.round(pendiente).toLocaleString('es-CO')}
+                </strong>
+            </div>
+        </div>` : '';
+
+    // ── Acciones ─────────────────────────────────────────────────────────────
+    const accionHtml = !completo
+        ? `<button class="caj-btn caj-btn--ingreso" id="caj-pvt-btn-abono" data-semidx="${semIdx}" data-sede="${_esc(sedeName)}">+ Abono</button>`
+        : '';
 
     panel.style.display = 'block';
     panel.innerHTML = `
@@ -1763,8 +1823,9 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         <div class="caj-pvt-det-body">
             <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
             ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#c05621">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
-            <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total neto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
-            <div class="caj-pvt-det-row"><span>Estado</span>${estadoHtml}</div>
+            <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total a cobrar</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
+            ${abonosHtml}
+            ${balanceHtml}
             ${accionHtml ? `<div class="caj-pvt-det-acciones">${accionHtml}</div>` : ''}
         </div>`;
 
@@ -1773,8 +1834,161 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         document.querySelectorAll('.caj-pvt-celda--activa').forEach(el => el.classList.remove('caj-pvt-celda--activa'));
     });
 
+    const btnAbono = document.getElementById('caj-pvt-btn-abono');
+    if (btnAbono) btnAbono.addEventListener('click', () => _abrirDialogAbono(semIdx, sedeName));
+
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+function _abrirDialogAbono(semIdx, sedeName) {
+    const sem = _ventasDatos[semIdx];
+    const d   = sem?.sedes.find(s => s.sede === sedeName);
+    if (!d) return;
+
+    _abonoCtx = { semIdx, sedeName, periodoRef: sem.periodoRef, totalNeto: d.totalNeto, refId: d.movId, hasta: sem.hasta };
+
+    document.getElementById('caj-abono-info').textContent    = `${d.nombreDisplay} · Semana #${sem.numSemana}`;
+    document.getElementById('caj-abono-monto').value         = '';
+    document.getElementById('caj-abono-metodo').value        = 'efectivo';
+    document.getElementById('caj-abono-fecha').value         = _toISO(new Date());
+    document.getElementById('caj-abono-notas').value         = '';
+    document.getElementById('caj-abono-error').style.display = 'none';
+    document.getElementById('caj-abono-titulo').textContent  = 'Registrar abono';
+
+    // Mostrar paso 1
+    document.getElementById('caj-abono-step-form').style.display    = '';
+    document.getElementById('caj-abono-step-confirm').style.display = 'none';
+
+    document.getElementById('caj-dialog-abono').showModal();
+}
+
+// ── Dialog abono: cerrar / cancelar ───────────────────────────────────────────
+document.getElementById('caj-abono-cerrar').addEventListener('click',   () => document.getElementById('caj-dialog-abono').close());
+document.getElementById('caj-abono-cancelar').addEventListener('click', () => document.getElementById('caj-dialog-abono').close());
+document.getElementById('caj-dialog-abono').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.close();
+});
+
+// ── Dialog abono: revisar (paso 1 → paso 2) ───────────────────────────────────
+document.getElementById('caj-abono-revisar').addEventListener('click', () => {
+    const errorEl = document.getElementById('caj-abono-error');
+    errorEl.style.display = 'none';
+
+    const monto  = parseFloat(document.getElementById('caj-abono-monto').value);
+    const metodo = document.getElementById('caj-abono-metodo').value;
+    const fecha  = document.getElementById('caj-abono-fecha').value;
+    const notas  = document.getElementById('caj-abono-notas').value.trim();
+
+    if (!monto || monto <= 0) { errorEl.textContent = 'El monto debe ser mayor a 0.'; errorEl.style.display = ''; return; }
+    if (!fecha)               { errorEl.textContent = 'La fecha es obligatoria.';      errorEl.style.display = ''; return; }
+
+    const metodoLabel = metodo === 'efectivo' ? 'Efectivo' : 'Banco';
+    const fechaFmt    = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    document.getElementById('caj-abono-conf-sede').textContent   = document.getElementById('caj-abono-info').textContent;
+    document.getElementById('caj-abono-conf-monto').textContent  = `$${Math.round(monto).toLocaleString('es-CO')}`;
+    document.getElementById('caj-abono-conf-metodo').textContent = metodoLabel;
+    document.getElementById('caj-abono-conf-fecha').textContent  = fechaFmt;
+
+    const rowNotas = document.getElementById('caj-abono-conf-row-notas');
+    if (notas) {
+        document.getElementById('caj-abono-conf-notas').textContent = notas;
+        rowNotas.style.display = '';
+    } else {
+        rowNotas.style.display = 'none';
+    }
+
+    document.getElementById('caj-abono-error-conf').style.display  = 'none';
+    document.getElementById('caj-abono-guardar').disabled           = false;
+    document.getElementById('caj-abono-guardar').textContent        = 'Confirmar abono';
+    document.getElementById('caj-abono-titulo').textContent         = 'Confirmar abono';
+
+    document.getElementById('caj-abono-step-form').style.display    = 'none';
+    document.getElementById('caj-abono-step-confirm').style.display = '';
+});
+
+// ── Dialog abono: volver (paso 2 → paso 1) ────────────────────────────────────
+document.getElementById('caj-abono-volver').addEventListener('click', () => {
+    document.getElementById('caj-abono-titulo').textContent          = 'Registrar abono';
+    document.getElementById('caj-abono-step-form').style.display    = '';
+    document.getElementById('caj-abono-step-confirm').style.display = 'none';
+});
+
+// ── Dialog abono: confirmar (guardar en BD) ────────────────────────────────────
+document.getElementById('caj-abono-guardar').addEventListener('click', async () => {
+    const errorEl = document.getElementById('caj-abono-error-conf');
+    const btn     = document.getElementById('caj-abono-guardar');
+    errorEl.style.display = 'none';
+
+    const monto  = parseFloat(document.getElementById('caj-abono-monto').value);
+    const metodo = document.getElementById('caj-abono-metodo').value;
+    const fecha  = document.getElementById('caj-abono-fecha').value;
+    const notas  = document.getElementById('caj-abono-notas').value.trim();
+
+    btn.disabled    = true;
+    btn.textContent = 'Guardando...';
+
+    const ctx = _abonoCtx;
+    const sem = _ventasDatos[ctx.semIdx];
+    const d   = sem?.sedes.find(s => s.sede === ctx.sedeName);
+
+    try {
+        // Si no existe fila de referencia (pendiente), crearla automáticamente
+        if (!ctx.refId) {
+            const { data: ref, error: errRef } = await supabase
+                .from('caja_movimientos')
+                .insert({
+                    tipo:        'ingreso',
+                    categoria:   'pago_sede',
+                    concepto:    `Liq. ${ctx.periodoRef.replace(/-S/, ' Sem ')} — ${d?.nombreDisplay || ctx.sedeName}`,
+                    monto:       Math.round(ctx.totalNeto),
+                    fecha:       _toISO(ctx.hasta),
+                    sede:        ctx.sedeName,
+                    metodo_pago: null,
+                    estado:      'pendiente',
+                    periodo_ref: ctx.periodoRef,
+                    usuario:     _usuario,
+                })
+                .select('id').single();
+            if (errRef) throw errRef;
+            ctx.refId = ref.id;
+        }
+
+        // Insertar abono
+        const numAbono = (d?.abonos?.length || 0) + 1;
+        const { data: nuevo, error } = await supabase
+            .from('caja_movimientos')
+            .insert({
+                tipo:        'ingreso',
+                categoria:   'pago_sede',
+                concepto:    `Abono ${numAbono} · ${d?.nombreDisplay || ctx.sedeName} Sem ${sem.numSemana}`,
+                monto:       Math.round(monto),
+                fecha,
+                sede:        ctx.sedeName,
+                metodo_pago: metodo,
+                estado:      'pagado',
+                periodo_ref: ctx.periodoRef,
+                notas:       notas || null,
+                usuario:     _usuario,
+            })
+            .select().single();
+        if (error) throw error;
+
+        document.getElementById('caj-dialog-abono').close();
+
+        if (_enPeriodoActual(nuevo)) _todos.unshift(nuevo);
+        await _cargarVentas();
+        // Reabrir panel con datos frescos
+        _mostrarDetalleCelda(ctx.semIdx, ctx.sedeName, null);
+
+    } catch (err) {
+        console.error('[cuadreCaja] guardar abono:', err);
+        errorEl.textContent   = err.message || 'Error al guardar.';
+        errorEl.style.display = '';
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar abono';
+    }
+});
 
 // Acciones inline en la vista Ventas
 document.getElementById('caj-ventas-contenido').addEventListener('click', async e => {
@@ -1792,53 +2006,6 @@ document.getElementById('caj-ventas-contenido').addEventListener('click', async 
         return;
     }
 
-    // Registrar como pendiente directamente
-    const btnReg = e.target.closest('.caj-vta-btn-registrar');
-    if (!btnReg) return;
-
-    const semIdx   = parseInt(btnReg.dataset.weekIdx);
-    const sedeName = btnReg.dataset.sede;
-    const semData  = _ventasDatos[semIdx];
-    const sedeData = semData?.sedes.find(s => s.sede === sedeName);
-    if (!sedeData) return;
-
-    btnReg.disabled    = true;
-    btnReg.textContent = 'Registrando...';
-
-    const { data: nuevo, error } = await supabase
-        .from('caja_movimientos')
-        .insert({
-            tipo:        'ingreso',
-            categoria:   'pago_sede',
-            concepto:    `Liq. ${semData.periodoRef.replace(/-S/, ' Sem ')} — ${sedeData.nombreDisplay}`,
-            monto:       Math.round(sedeData.totalNeto),
-            fecha:       _toISO(semData.hasta),
-            sede:        sedeData.sede,
-            metodo_pago: 'efectivo',
-            estado:      'pendiente',
-            periodo_ref: semData.periodoRef,
-            usuario:     _usuario,
-        })
-        .select()
-        .single();
-
-    if (error) {
-        console.error('[cuadreCaja] registrar venta sede:', error);
-        alert('Error al registrar: ' + error.message);
-        btnReg.disabled    = false;
-        btnReg.textContent = '↓ Registrar';
-        return;
-    }
-
-    // Sincronizar _todos y actualizar vista activa
-    const { desde, hasta } = _rangoFechas();
-    if (nuevo.fecha >= desde && nuevo.fecha < hasta) {
-        _todos.unshift(nuevo);
-        _renderVistaActual();
-    }
-
-    // Recargar vista ventas
-    await _cargarVentas();
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
