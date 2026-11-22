@@ -50,7 +50,7 @@ const preciosHamburguesas = {
     hamburguesaDobleCarne: { "Unidad": 35000 },
     hamburguesaEstofada: { "Res": 28000, "Pollo": 28000, "Mixta": 35000, },
     hamburguesaCartago:  { "Unidad": 30000 },
-    hamburguesaLaPropia: { "Unidad": 29000 }
+    hamburguesaLaPropia: { "Unidad": 30000 }
 };
 const preciosEnsaladas = {
     ensaladaDrive:      { "Unidad": 28000 },
