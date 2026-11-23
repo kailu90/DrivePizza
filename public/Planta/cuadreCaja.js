@@ -1585,7 +1585,7 @@ async function _cargarVentas() {
             _calcularLiquidacionMes(_periodo.year, _periodo.month),
             supabase
                 .from('caja_movimientos')
-                .select('id, sede, periodo_ref, estado, monto, metodo_pago, fecha')
+                .select('id, sede, periodo_ref, estado, monto, metodo_pago, fecha, notas')
                 .eq('tipo', 'ingreso')
                 .eq('categoria', 'pago_sede')
                 .gte('periodo_ref', periodoRef)
@@ -1611,6 +1611,7 @@ async function _cargarVentas() {
                     monto:       Number(m.monto),
                     metodo_pago: m.metodo_pago,
                     fecha:       m.fecha,
+                    notas:       m.notas || null,
                 });
             }
         });
@@ -1781,25 +1782,26 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
                 <td>${fechaFmt}</td>
                 <td>${metodoLabel}</td>
                 <td><strong>$${Math.round(a.monto).toLocaleString('es-CO')}</strong></td>
+                <td class="caj-pvt-abonos-obs">${a.notas ? _esc(a.notas) : '<span style="color:#ccc">—</span>'}</td>
             </tr>`;
         }).join('');
         abonosHtml = `
             <div class="caj-pvt-abonos-titulo">Cobros registrados</div>
             <table class="caj-pvt-abonos-tabla">
-                <thead><tr><th>Fecha</th><th>Método</th><th>Monto</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Obs.</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
     }
 
     // ── Balance cobrado / pendiente ───────────────────────────────────────────
-    const balanceHtml = (d.movId || d.abonos.length > 0) ? `
+    const balanceHtml = d.totalNeto > 0 ? `
         <div class="caj-pvt-balance">
             <div class="caj-pvt-balance-row">
                 <span>Cobrado</span>
                 <strong class="caj-pvt-balance-cobrado">$${Math.round(d.totalAbonado).toLocaleString('es-CO')}</strong>
             </div>
             <div class="caj-pvt-balance-row">
-                <span>Pendiente</span>
+                <span>${completo ? 'Estado' : 'Pendiente'}</span>
                 <strong class="${completo ? 'caj-pvt-balance-ok' : 'caj-pvt-balance-pendiente'}">
                     ${completo ? '✓ Cobro completo' : '$' + Math.round(pendiente).toLocaleString('es-CO')}
                 </strong>
@@ -1933,27 +1935,6 @@ document.getElementById('caj-abono-guardar').addEventListener('click', async () 
     const d   = sem?.sedes.find(s => s.sede === ctx.sedeName);
 
     try {
-        // Si no existe fila de referencia (pendiente), crearla automáticamente
-        if (!ctx.refId) {
-            const { data: ref, error: errRef } = await supabase
-                .from('caja_movimientos')
-                .insert({
-                    tipo:        'ingreso',
-                    categoria:   'pago_sede',
-                    concepto:    `Liq. ${ctx.periodoRef.replace(/-S/, ' Sem ')} — ${d?.nombreDisplay || ctx.sedeName}`,
-                    monto:       Math.round(ctx.totalNeto),
-                    fecha:       _toISO(ctx.hasta),
-                    sede:        ctx.sedeName,
-                    metodo_pago: null,
-                    estado:      'pendiente',
-                    periodo_ref: ctx.periodoRef,
-                    usuario:     _usuario,
-                })
-                .select('id').single();
-            if (errRef) throw errRef;
-            ctx.refId = ref.id;
-        }
-
         // Insertar abono
         const numAbono = (d?.abonos?.length || 0) + 1;
         const { data: nuevo, error } = await supabase

@@ -1391,6 +1391,7 @@
 }
 .caj-pvt-abonos-tabla tbody tr { border-bottom: 1px solid #f0ece5; }
 .caj-pvt-abonos-tabla tbody td { padding: 0.65rem 0.8rem; text-align: center; color: #374151; }
+.caj-pvt-abonos-obs { text-align: left !important; font-size: 1.2rem; color: #6b7280 !important; max-width: 16rem; white-space: normal; }
 
 /* ── Balance cobrado / pendiente ─────────────────────────────────────────────── */
 .caj-pvt-balance {
