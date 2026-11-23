@@ -246,7 +246,7 @@ async function _cargarMovimientos() {
         return;
     }
 
-    _todos = data || [];
+    _todos = (data || []).filter(m => m.categoria !== 'ajuste_redondeo');
     _renderVistaActual();
 }
 
@@ -2064,14 +2064,14 @@ document.getElementById('caj-ajuste-guardar').addEventListener('click', async ()
         const { error } = await supabase
             .from('caja_movimientos')
             .insert({
-                tipo:        'ajuste',
+                tipo:        'ingreso',
                 categoria:   'ajuste_redondeo',
                 concepto:    `Ajuste · ${d?.nombreDisplay || ctx.sedeName} Sem ${sem.numSemana}`,
                 monto:       Math.round(monto),
                 fecha,
                 sede:        ctx.sedeName,
                 metodo_pago: null,
-                estado:      'ajuste',
+                estado:      'pagado',
                 periodo_ref: ctx.periodoRef,
                 notas:       notas || null,
                 usuario:     _usuario,
