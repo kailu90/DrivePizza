@@ -1118,7 +1118,7 @@ async function _cargarLiqPreview() {
             const periodoRef = `${_liqYear}-${mesNum}-S${numSemana}`;
             Object.keys(dataPorSemana[idx]).sort().forEach(sede => {
                 const { totalPed, totalDev } = dataPorSemana[idx][sede];
-                const totalNeto   = totalPed - totalDev;
+                const totalNeto   = Math.round(totalPed - totalDev);
                 const yaImportado = _todos.some(m =>
                     m.periodo_ref === periodoRef && m.sede === sede
                 );
@@ -1637,7 +1637,7 @@ async function _cargarVentas() {
                 const enCurso    = hasta > _hoyCol;    // semana no ha cerrado
                 const sedes      = Object.keys(dataPorSemana[idx]).sort().map(sede => {
                     const { totalPed, totalDev } = dataPorSemana[idx][sede];
-                    const totalNeto    = totalPed - totalDev;
+                    const totalNeto    = Math.round(totalPed - totalDev);
                     const entry        = movMap[`${periodoRef}|${sede}`] || null;
                     const abonos       = entry?.abonos  || [];
                     const ajustes      = entry?.ajustes || [];
