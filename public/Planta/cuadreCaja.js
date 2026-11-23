@@ -825,7 +825,10 @@ async function _onMovimientoClick(e) {
         return;
     }
 
+    const movEliminado = _todos.find(m => m.id === id);
     _todos = _todos.filter(m => m.id !== id);
+    // Si era un abono de sede, recargar _ventasDatos para actualizar badges y carry-forward
+    if (movEliminado?.categoria === 'pago_sede') await _cargarVentas();
     _renderVistaActual();
 }
 
