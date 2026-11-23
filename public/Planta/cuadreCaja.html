@@ -856,6 +856,47 @@
 
 </dialog>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Dialog — Registrar ajuste de redondeo
+     ══════════════════════════════════════════════════════════════════════════ -->
+<dialog id="caj-dialog-ajuste" class="caj-dialog">
+
+    <div class="caj-dialog-header">
+        <h3 class="caj-dialog-titulo">Registrar ajuste</h3>
+        <button class="caj-dialog-cerrar" id="caj-ajuste-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="caj-dialog-body">
+
+        <p class="caj-abono-info-txt" id="caj-ajuste-info">—</p>
+
+        <div class="caj-grid-2">
+            <div class="caj-field">
+                <label for="caj-ajuste-monto">Monto a descontar ($) *</label>
+                <input type="number" id="caj-ajuste-monto" placeholder="0" min="1" step="1">
+            </div>
+            <div class="caj-field">
+                <label for="caj-ajuste-fecha">Fecha *</label>
+                <input type="date" id="caj-ajuste-fecha">
+            </div>
+        </div>
+
+        <div class="caj-field">
+            <label for="caj-ajuste-notas">Motivo (opcional)</label>
+            <textarea id="caj-ajuste-notas" placeholder="Ej: ajuste de monedas, redondeo acordado…" maxlength="300"></textarea>
+        </div>
+
+        <p class="caj-error" id="caj-ajuste-error" style="display:none"></p>
+
+    </div>
+
+    <div class="caj-dialog-actions">
+        <button class="caj-btn caj-btn--secondary" id="caj-ajuste-cancelar">Cancelar</button>
+        <button class="caj-btn caj-btn--egreso"    id="caj-ajuste-guardar">Guardar ajuste</button>
+    </div>
+
+</dialog>
+
 <script type="module" src="cuadreCaja.js"></script>
 </body>
 </html>

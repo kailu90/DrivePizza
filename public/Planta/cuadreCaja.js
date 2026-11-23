@@ -64,7 +64,8 @@ let _liqDatos   = [];            // [{ sede, totalPed, totalDev, totalNeto, peri
 let _confirmandoId = null;       // id del movimiento en proceso de confirmación
 
 // Estado del dialog de abono
-let _abonoCtx = null;  // { semIdx, sedeName, periodoRef, totalNeto, refId }
+let _abonoCtx  = null;  // { semIdx, sedeName, periodoRef, totalNeto, refId }
+let _ajusteCtx = null;  // { semIdx, sedeName, periodoRef }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 verificarAccesoPlanta(async ({ username, rol }) => {
@@ -1585,9 +1586,8 @@ async function _cargarVentas() {
             _calcularLiquidacionMes(_periodo.year, _periodo.month),
             supabase
                 .from('caja_movimientos')
-                .select('id, sede, periodo_ref, estado, monto, metodo_pago, fecha, notas')
-                .eq('tipo', 'ingreso')
-                .eq('categoria', 'pago_sede')
+                .select('id, sede, periodo_ref, estado, monto, metodo_pago, fecha, notas, categoria')
+                .in('categoria', ['pago_sede', 'ajuste_redondeo'])
                 .gte('periodo_ref', periodoRef)
                 .lt('periodo_ref', periodoNext)
                 .order('created_at', { ascending: true }),
@@ -1596,16 +1596,21 @@ async function _cargarVentas() {
         if (errM) throw errM;
 
         // Agrupar por 'periodoRef|sede':
-        //   estado='pendiente' → fila de referencia (monto total a cobrar)
-        //   estado='pagado'    → abono individual
+        //   categoria='pago_sede'       → abono individual
+        //   categoria='ajuste_redondeo' → ajuste de redondeo (resta del total)
         const movMap = {};
         (movReg || []).forEach(m => {
             if (!m.periodo_ref || !m.sede) return;
             const key = `${m.periodo_ref}|${m.sede}`;
-            if (!movMap[key]) movMap[key] = { refId: null, abonos: [] };
-            if (m.estado === 'pendiente') {
-                movMap[key].refId = m.id;
-            } else {
+            if (!movMap[key]) movMap[key] = { refId: null, abonos: [], ajustes: [] };
+            if (m.categoria === 'ajuste_redondeo') {
+                movMap[key].ajustes.push({
+                    id:    m.id,
+                    monto: Number(m.monto),
+                    notas: m.notas || null,
+                    fecha: m.fecha,
+                });
+            } else if (m.estado !== 'pendiente') {
                 movMap[key].abonos.push({
                     id:          m.id,
                     monto:       Number(m.monto),
@@ -1613,6 +1618,8 @@ async function _cargarVentas() {
                     fecha:       m.fecha,
                     notas:       m.notas || null,
                 });
+            } else {
+                movMap[key].refId = m.id;
             }
         });
 
@@ -1632,10 +1639,13 @@ async function _cargarVentas() {
                     const { totalPed, totalDev } = dataPorSemana[idx][sede];
                     const totalNeto    = totalPed - totalDev;
                     const entry        = movMap[`${periodoRef}|${sede}`] || null;
-                    const abonos       = entry?.abonos || [];
+                    const abonos       = entry?.abonos  || [];
+                    const ajustes      = entry?.ajustes || [];
                     const totalAbonado = abonos.reduce((s, a) => s + a.monto, 0);
+                    const totalAjuste  = ajustes.reduce((s, a) => s + a.monto, 0);
+                    const totalAcobrar = Math.max(0, totalNeto - totalAjuste);
                     const estado       = !entry ? null
-                        : totalAbonado >= totalNeto && totalNeto > 0 ? 'pagado'
+                        : totalAbonado >= totalAcobrar && totalAcobrar >= 0 ? 'pagado'
                         : abonos.length > 0 ? 'parcial'
                         : 'pendiente';
                     return {
@@ -1647,7 +1657,10 @@ async function _cargarVentas() {
                         movId: entry?.refId || null,
                         estado,
                         abonos,
+                        ajustes,
                         totalAbonado,
+                        totalAjuste,
+                        totalAcobrar,
                     };
                 });
                 return { numSemana, desde, hasta, periodoRef, enCurso, sedes };
@@ -1765,8 +1778,8 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
 
     const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
     const rango   = `${sem.desde.getDate()} ${MESES_C[sem.desde.getMonth()]} – ${sem.hasta.getDate()} ${MESES_C[sem.hasta.getMonth()]}`;
-    const completo = d.totalAbonado >= d.totalNeto && d.totalNeto > 0;
-    const pendiente = Math.max(0, d.totalNeto - d.totalAbonado);
+    const completo  = d.totalAbonado >= d.totalAcobrar && d.totalAcobrar >= 0 && d.totalNeto > 0;
+    const pendiente = Math.max(0, d.totalAcobrar - d.totalAbonado);
 
     // ── Tabla de abonos ───────────────────────────────────────────────────────
     let abonosHtml = '';
@@ -1808,10 +1821,32 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
             </div>
         </div>` : '';
 
+    // ── Sección ajustes ───────────────────────────────────────────────────────
+    let ajustesHtml = '';
+    if (d.ajustes.length > 0) {
+        const rows = d.ajustes.map(a => {
+            const fechaFmt = a.fecha
+                ? new Date(a.fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+                : '—';
+            return `<tr>
+                <td>${fechaFmt}</td>
+                <td><strong style="color:#c05621">−$${Math.round(a.monto).toLocaleString('es-CO')}</strong></td>
+                <td class="caj-pvt-abonos-obs">${a.notas ? _esc(a.notas) : '<span style="color:#ccc">—</span>'}</td>
+            </tr>`;
+        }).join('');
+        ajustesHtml = `
+            <div class="caj-pvt-abonos-titulo">Ajustes de redondeo</div>
+            <table class="caj-pvt-abonos-tabla">
+                <thead><tr><th>Fecha</th><th>Monto</th><th>Motivo</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
     // ── Acciones ─────────────────────────────────────────────────────────────
-    const accionHtml = !completo
-        ? `<button class="caj-btn caj-btn--ingreso" id="caj-pvt-btn-abono" data-semidx="${semIdx}" data-sede="${_esc(sedeName)}">+ Abono</button>`
-        : '';
+    const accionHtml = !completo ? `
+        <button class="caj-btn caj-btn--ingreso" id="caj-pvt-btn-abono" data-semidx="${semIdx}" data-sede="${_esc(sedeName)}">+ Abono</button>
+        <button class="caj-btn caj-btn--egreso"  id="caj-pvt-btn-ajuste" data-semidx="${semIdx}" data-sede="${_esc(sedeName)}">− Ajuste</button>
+    ` : '';
 
     panel.style.display = 'block';
     panel.innerHTML = `
@@ -1825,8 +1860,14 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         <div class="caj-pvt-det-body">
             <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
             ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#c05621">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
-            <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total a cobrar</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
+            ${d.totalAjuste > 0
+                ? `<div class="caj-pvt-det-row"><span>Total bruto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
+                   <div class="caj-pvt-det-row"><span>Ajuste</span><strong style="color:#c05621">−$${Math.round(d.totalAjuste).toLocaleString('es-CO')}</strong></div>
+                   <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Neto a cobrar</span><strong>$${Math.round(d.totalAcobrar).toLocaleString('es-CO')}</strong></div>`
+                : `<div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total a cobrar</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>`
+            }
             ${abonosHtml}
+            ${ajustesHtml}
             ${balanceHtml}
             ${accionHtml ? `<div class="caj-pvt-det-acciones">${accionHtml}</div>` : ''}
         </div>`;
@@ -1836,8 +1877,10 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         document.querySelectorAll('.caj-pvt-celda--activa').forEach(el => el.classList.remove('caj-pvt-celda--activa'));
     });
 
-    const btnAbono = document.getElementById('caj-pvt-btn-abono');
-    if (btnAbono) btnAbono.addEventListener('click', () => _abrirDialogAbono(semIdx, sedeName));
+    const btnAbono  = document.getElementById('caj-pvt-btn-abono');
+    if (btnAbono)  btnAbono.addEventListener('click',  () => _abrirDialogAbono(semIdx, sedeName));
+    const btnAjuste = document.getElementById('caj-pvt-btn-ajuste');
+    if (btnAjuste) btnAjuste.addEventListener('click', () => _abrirDialogAjuste(semIdx, sedeName));
 
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -1968,6 +2011,83 @@ document.getElementById('caj-abono-guardar').addEventListener('click', async () 
         errorEl.style.display = '';
         btn.disabled    = false;
         btn.textContent = 'Confirmar abono';
+    }
+});
+
+// ── Dialog ajuste: abrir ──────────────────────────────────────────────────────
+function _abrirDialogAjuste(semIdx, sedeName) {
+    const sem = _ventasDatos[semIdx];
+    const d   = sem?.sedes.find(s => s.sede === sedeName);
+    if (!d) return;
+
+    const pendiente = Math.max(0, d.totalAcobrar - d.totalAbonado);
+
+    _ajusteCtx = { semIdx, sedeName, periodoRef: sem.periodoRef };
+
+    document.getElementById('caj-ajuste-info').textContent   = `${d.nombreDisplay} · Semana #${sem.numSemana}`;
+    document.getElementById('caj-ajuste-monto').value        = pendiente > 0 ? Math.round(pendiente) : '';
+    document.getElementById('caj-ajuste-fecha').value        = _toISO(new Date());
+    document.getElementById('caj-ajuste-notas').value        = '';
+    document.getElementById('caj-ajuste-error').style.display = 'none';
+
+    document.getElementById('caj-dialog-ajuste').showModal();
+}
+
+// ── Dialog ajuste: cerrar ─────────────────────────────────────────────────────
+document.getElementById('caj-ajuste-cerrar').addEventListener('click',   () => document.getElementById('caj-dialog-ajuste').close());
+document.getElementById('caj-ajuste-cancelar').addEventListener('click', () => document.getElementById('caj-dialog-ajuste').close());
+document.getElementById('caj-dialog-ajuste').addEventListener('click', e => {
+    if (e.target === document.getElementById('caj-dialog-ajuste')) document.getElementById('caj-dialog-ajuste').close();
+});
+
+// ── Dialog ajuste: guardar ────────────────────────────────────────────────────
+document.getElementById('caj-ajuste-guardar').addEventListener('click', async () => {
+    const errorEl = document.getElementById('caj-ajuste-error');
+    const btn     = document.getElementById('caj-ajuste-guardar');
+    errorEl.style.display = 'none';
+
+    const monto = parseFloat(document.getElementById('caj-ajuste-monto').value);
+    const fecha = document.getElementById('caj-ajuste-fecha').value;
+    const notas = document.getElementById('caj-ajuste-notas').value.trim();
+
+    if (!monto || monto <= 0) { errorEl.textContent = 'Ingresa un monto válido.'; errorEl.style.display = ''; return; }
+    if (!fecha)               { errorEl.textContent = 'Selecciona una fecha.';    errorEl.style.display = ''; return; }
+
+    btn.disabled    = true;
+    btn.textContent = 'Guardando...';
+
+    const ctx = _ajusteCtx;
+    const sem = _ventasDatos[ctx.semIdx];
+    const d   = sem?.sedes.find(s => s.sede === ctx.sedeName);
+
+    try {
+        const { error } = await supabase
+            .from('caja_movimientos')
+            .insert({
+                tipo:        'ajuste',
+                categoria:   'ajuste_redondeo',
+                concepto:    `Ajuste · ${d?.nombreDisplay || ctx.sedeName} Sem ${sem.numSemana}`,
+                monto:       Math.round(monto),
+                fecha,
+                sede:        ctx.sedeName,
+                metodo_pago: null,
+                estado:      'ajuste',
+                periodo_ref: ctx.periodoRef,
+                notas:       notas || null,
+                usuario:     _usuario,
+            });
+        if (error) throw error;
+
+        document.getElementById('caj-dialog-ajuste').close();
+        await _cargarVentas();
+        _mostrarDetalleCelda(ctx.semIdx, ctx.sedeName, null);
+
+    } catch (err) {
+        console.error('[cuadreCaja] guardar ajuste:', err);
+        errorEl.textContent   = err.message || 'Error al guardar.';
+        errorEl.style.display = '';
+        btn.disabled    = false;
+        btn.textContent = 'Guardar ajuste';
     }
 });
 
