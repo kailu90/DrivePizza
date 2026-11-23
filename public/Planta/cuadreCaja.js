@@ -1666,6 +1666,24 @@ async function _cargarVentas() {
                 return { numSemana, desde, hasta, periodoRef, enCurso, sedes };
             });
 
+        // ── Carry-forward de sobrantes ────────────────────────────────────────
+        // Si una sede pagó de más en semana N, el exceso se acredita en semana N+1
+        const _credSede = {};
+        _ventasDatos.forEach(sem => {
+            sem.sedes.forEach(d => {
+                const credito      = _credSede[d.sede] || 0;
+                d.creditoAnterior  = credito;
+                d.totalAcobrar     = Math.max(0, d.totalNeto - d.totalAjuste - credito);
+                _credSede[d.sede]  = Math.max(0, d.totalAbonado - d.totalAcobrar);
+                // Recalcular estado con totalAcobrar actualizado
+                const hasData = !!(d.movId || d.abonos.length || d.ajustes.length || credito > 0);
+                d.estado = !hasData ? null
+                    : d.totalAbonado >= d.totalAcobrar ? 'pagado'
+                    : d.abonos.length > 0 ? 'parcial'
+                    : 'pendiente';
+            });
+        });
+
         _renderVentas();
 
     } catch (err) {
@@ -1807,6 +1825,7 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
     }
 
     // ── Balance cobrado / pendiente ───────────────────────────────────────────
+    const sobrante    = Math.max(0, Math.round(d.totalAbonado) - Math.round(d.totalAcobrar));
     const balanceHtml = d.totalNeto > 0 ? `
         <div class="caj-pvt-balance">
             <div class="caj-pvt-balance-row">
@@ -1819,6 +1838,11 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
                     ${completo ? '✓ Cobro completo' : '$' + Math.round(pendiente).toLocaleString('es-CO')}
                 </strong>
             </div>
+            ${sobrante > 0 ? `
+            <div class="caj-pvt-balance-row">
+                <span>Saldo a favor</span>
+                <strong class="caj-pvt-balance-ok">$${Math.round(sobrante).toLocaleString('es-CO')} → próx. semana</strong>
+            </div>` : ''}
         </div>` : '';
 
     // ── Sección ajustes ───────────────────────────────────────────────────────
@@ -1860,9 +1884,10 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
         <div class="caj-pvt-det-body">
             <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
             ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#c05621">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
-            ${d.totalAjuste > 0
+            ${(d.totalAjuste > 0 || d.creditoAnterior > 0)
                 ? `<div class="caj-pvt-det-row"><span>Total bruto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
-                   <div class="caj-pvt-det-row"><span>Ajuste</span><strong style="color:#c05621">−$${Math.round(d.totalAjuste).toLocaleString('es-CO')}</strong></div>
+                   ${d.totalAjuste > 0     ? `<div class="caj-pvt-det-row"><span>Ajuste</span><strong style="color:#c05621">−$${Math.round(d.totalAjuste).toLocaleString('es-CO')}</strong></div>` : ''}
+                   ${d.creditoAnterior > 0 ? `<div class="caj-pvt-det-row"><span>Crédito anterior</span><strong style="color:#16a34a">−$${Math.round(d.creditoAnterior).toLocaleString('es-CO')}</strong></div>` : ''}
                    <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Neto a cobrar</span><strong>$${Math.round(d.totalAcobrar).toLocaleString('es-CO')}</strong></div>`
                 : `<div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total a cobrar</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>`
             }
