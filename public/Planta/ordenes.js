@@ -3,6 +3,7 @@ import { getProductos } from '../DrivePizza/Shared/productosService.js';
 import { CargarHeader, CargarSidebar, capitalizarSede, mostrarBannerRecarga } from '../DrivePizza/Shared/components.js';
 import { verificarAccesoPlanta } from '../Auth/plantaAuth.js';
 import { ejecutarOrdenProduccion, ejecutarOrdenProduccionMulti } from './inventoryService.js';
+import { mostrarOverlay, ocultarOverlay } from '../Shared/overlay.js';
 import { initColumnFilters } from '../Shared/tableFilters.js';
 CargarSidebar();
 
@@ -388,6 +389,7 @@ async function guardarProduccionRapida() {
 
     const btn = document.getElementById('prd-btn-guardar');
     btn.disabled = true;
+    mostrarOverlay('Registrando producción...');
 
     try {
         if (tipo.multi) {
@@ -469,10 +471,12 @@ async function guardarProduccionRapida() {
         }
 
         document.getElementById('prod-modal-rapido').close();
+        ocultarOverlay(true);
         allOrdenes = await loadOrdenes();
         renderTable();
     } catch (e) {
         console.error(e);
+        ocultarOverlay(false);
         errEl.textContent = 'Error: ' + (e.message || e);
     } finally {
         btn.disabled = false;
