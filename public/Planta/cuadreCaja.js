@@ -1885,15 +1885,6 @@ function _mostrarDetalleCelda(semIdx, sedeName, celdaEl) {
             <button class="caj-dialog-cerrar" id="caj-pvt-det-cerrar" aria-label="Cerrar">✕</button>
         </div>
         <div class="caj-pvt-det-body">
-            <div class="caj-pvt-det-row"><span>Pedidos</span><strong>$${Math.round(d.totalPed).toLocaleString('es-CO')}</strong></div>
-            ${d.totalDev > 0 ? `<div class="caj-pvt-det-row"><span>Devoluciones</span><strong style="color:#c05621">−$${Math.round(d.totalDev).toLocaleString('es-CO')}</strong></div>` : ''}
-            ${(d.totalAjuste > 0 || d.creditoAnterior > 0)
-                ? `<div class="caj-pvt-det-row"><span>Total bruto</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>
-                   ${d.totalAjuste > 0     ? `<div class="caj-pvt-det-row"><span>Ajuste</span><strong style="color:#c05621">−$${Math.round(d.totalAjuste).toLocaleString('es-CO')}</strong></div>` : ''}
-                   ${d.creditoAnterior > 0 ? `<div class="caj-pvt-det-row"><span>Crédito anterior</span><strong style="color:#16a34a">−$${Math.round(d.creditoAnterior).toLocaleString('es-CO')}</strong></div>` : ''}
-                   <div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Neto a cobrar</span><strong>$${Math.round(d.totalAcobrar).toLocaleString('es-CO')}</strong></div>`
-                : `<div class="caj-pvt-det-row caj-pvt-det-row--total"><span>Total a cobrar</span><strong>$${Math.round(d.totalNeto).toLocaleString('es-CO')}</strong></div>`
-            }
             ${abonosHtml}
             ${ajustesHtml}
             ${balanceHtml}
