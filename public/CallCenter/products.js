@@ -68,10 +68,11 @@ const preciosMaicitos = {
     maicitosGratinados: { "Unidad": 20000 },
 };
 const preciosAdiciones = {
-    basicas:    { "Porción": 3000, "Pequeña": 8000, "Mediana": 10000, "Grande": 12000, "Jumbo": 14000, "Unidad": 3000, "Pizzeta": 3000, "Hamburguesa": 3000 },
-    intermedia: { "Porción": 4000, "Pequeña": 11000, "Mediana": 13000, "Grande": 16000, "Jumbo": 18000, "Unidad": 4000, "Pizzeta": 4000, "Hamburguesa": 4000 },
-    superior:   { "Porción": 5000, "Pequeña": 13000, "Mediana": 15000, "Grande": 18000, "Jumbo": 20000, "Unidad": 5000, "Pizzeta": 5000, "Hamburguesa": 5000 },
-    gourmet:    { "Porción": 6000, "Pequeña": 16000, "Mediana": 20000, "Grande": 28000, "Jumbo": 34000, "Unidad": 6000, "Pizzeta": 6000, "Hamburguesa": 6000 },
+    // "Plato" = tamanoRaw para Pastas, Lasañas y Ensaladas (separado de "Porción" de pizzas)
+    basicas:    { "Porción": 3000, "Plato": 3000, "Pequeña": 8000, "Mediana": 10000, "Grande": 12000, "Jumbo": 14000, "Unidad": 3000, "Pizzeta": 3000, "Hamburguesa": 3000 },
+    intermedia: { "Porción": 4000, "Plato": 4000, "Pequeña": 11000, "Mediana": 13000, "Grande": 16000, "Jumbo": 18000, "Unidad": 4000, "Pizzeta": 4000, "Hamburguesa": 4000 },
+    superior:   { "Porción": 5000, "Plato": 5000, "Pequeña": 13000, "Mediana": 15000, "Grande": 18000, "Jumbo": 20000, "Unidad": 5000, "Pizzeta": 5000, "Hamburguesa": 5000 },
+    gourmet:    { "Porción": 6000, "Plato": 6000, "Pequeña": 16000, "Mediana": 20000, "Grande": 28000, "Jumbo": 34000, "Unidad": 6000, "Pizzeta": 6000, "Hamburguesa": 6000 },
     salsas:     { "Salsa Drive": 4000, "Salsa Cuate": 4000, "Salsa Napolitana": 4000, "Salsa de la casa": 4000 },
     hamburguesa: { "Hamburguesa": 8000 },
     salsaPiña:  { "unidad": 2000 }
@@ -120,10 +121,11 @@ const preciosEntradas = {
     salsaNapolitana:{ "Unidad": 4000 }
 };
 const preciosAdicionesCartago = {
-    basicas:    { ...preciosAdiciones.basicas,    "Pizzeta": 4000 },
-    intermedia: { ...preciosAdiciones.intermedia, "Pizzeta": 5000 },
-    superior:   { ...preciosAdiciones.superior,   "Pizzeta": 6000 },
-    gourmet:    { ...preciosAdiciones.gourmet,    "Pizzeta": 7000 },
+    basicas:          { ...preciosAdiciones.basicas,    "Pizzeta": 4000 },
+    intermedia:       { ...preciosAdiciones.intermedia, "Pizzeta": 5000 },
+    superior:         { ...preciosAdiciones.superior,   "Pizzeta": 6000, "Plato": 8000 },
+    superiorTocineta: { ...preciosAdiciones.superior,   "Pizzeta": 6000, "Plato": 9000 },
+    gourmet:          { ...preciosAdiciones.gourmet,    "Pizzeta": 7000 },
 };
 const preciosBordes= {
     "Pequeña": 14000, 
@@ -252,7 +254,7 @@ const menuData = {
         { nombre: "Adición Piña", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
         { nombre: "Adición Champiñon", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
         { nombre: "Adición Salami", opciones: preciosAdiciones.intermedia, opcionesCiudad: { cartago: preciosAdicionesCartago.intermedia } },
-        { nombre: "Adición Tocineta", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
+        { nombre: "Adición Tocineta", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superiorTocineta } },
         { nombre: "Adición Queso", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
         { nombre: "Adición Pollo", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },
         { nombre: "Adición Pepperoni", opciones: preciosAdiciones.superior, opcionesCiudad: { cartago: preciosAdicionesCartago.superior } },

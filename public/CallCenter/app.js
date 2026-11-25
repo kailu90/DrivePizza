@@ -250,9 +250,9 @@ const TAMANOS_MIXABLES = new Set(["Pequeña", "Mediana", "Grande", "Jumbo"]);
 
 // Categorías que pueden llevar adiciones → valor es el tamanoRaw para buscar en preciosAdiciones
 const CATEGORIAS_ADICIONABLES = {
-    "Pastas":        "Porción",
-    "Lasañas":       "Porción",
-    "Ensaladas":     "Porción",
+    "Pastas":        "Plato",
+    "Lasañas":       "Plato",
+    "Ensaladas":     "Plato",
     "Sandwiches":    "Unidad",
     "Hamburguesas":  "Hamburguesa",
     "Maicitos":      "Unidad",
