@@ -624,7 +624,7 @@ export async function instagramRoutes(fastify, options) {
     // Obtener mensajes ordenados
     const { data: msgs, error: mErr } = await supabase
       .from('ig_messages')
-      .select('id, ig_message_id, direction, tipo, texto, timestamp, asesor')
+      .select('id, ig_message_id, direction, tipo, texto, media_url, timestamp, asesor')
       .eq('ig_conversation_id', conv.id)
       .order('timestamp', { ascending: false })
       .limit(limit)
@@ -736,6 +736,107 @@ export async function instagramRoutes(fastify, options) {
     })
 
     fastify.log.info({ accountId, igsid, igMsgId }, 'ig/mensajes POST: mensaje enviado')
+    return reply.send({ ok: true, igMsgId })
+  })
+
+  // ── POST /ig/mensajes/media — enviar imagen/video por URL ────────────────
+  // body: { accountId, igsid, mediaUrl, mediaType ('image'|'video'), asesor? }
+  fastify.post('/ig/mensajes/media', async (request, reply) => {
+    if (!supabase) return reply.code(503).send({ ok: false, error: 'BD no disponible' })
+    const { accountId, igsid, mediaUrl, mediaType, asesor } = request.body || {}
+    if (!accountId || !igsid || !mediaUrl || !mediaType)
+      return reply.code(400).send({ ok: false, error: 'accountId, igsid, mediaUrl y mediaType requeridos' })
+    if (!['image', 'video'].includes(mediaType))
+      return reply.code(400).send({ ok: false, error: 'mediaType debe ser image o video' })
+
+    const { data: account, error: accErr } = await supabase
+      .from('channel_accounts')
+      .select('id, external_account_id, access_token_enc')
+      .eq('id', accountId)
+      .eq('channel', 'instagram')
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (accErr || !account)
+      return reply.code(404).send({ ok: false, error: 'Cuenta no encontrada o inactiva' })
+
+    let accessToken
+    try {
+      accessToken = decryptToken(account.access_token_enc)
+    } catch (ex) {
+      fastify.log.error({ ex: ex.message }, 'ig/mensajes/media POST: error descifrando token')
+      return reply.code(500).send({ ok: false, error: 'Error interno de autenticación' })
+    }
+
+    const igUserId = account.external_account_id
+    let sendData
+    try {
+      const sendRes = await fetch(`${IG_GRAPH_URL}/${igUserId}/messages?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient: { id: igsid },
+          message: {
+            attachment: {
+              type: mediaType,
+              payload: { url: mediaUrl, is_reusable: true },
+            },
+          },
+        }),
+      })
+      sendData = await sendRes.json()
+    } catch (ex) {
+      fastify.log.error({ ex: ex.message }, 'ig/mensajes/media POST: error de red')
+      return reply.code(502).send({ ok: false, error: 'Error de conexión con la API de Instagram' })
+    }
+
+    if (sendData.error || !sendData.message_id) {
+      fastify.log.error({ sendData }, 'ig/mensajes/media POST: error enviando a Instagram API')
+      return reply.code(502).send({ ok: false, error: 'Error enviando media a Instagram', detail: sendData.error })
+    }
+
+    const igMsgId = sendData.message_id
+    const ts      = Math.floor(Date.now() / 1000)
+    const tipoIG  = mediaType === 'image' ? 'imagen' : 'video'
+
+    const { contact, conv, err: ucErr } = await _upsertContactAndConv(accountId, igsid)
+    if (ucErr) fastify.log.error({ ucErr }, 'ig/mensajes/media POST: error upsert contacto/conv')
+
+    if (conv) {
+      const { error: mErr } = await supabase
+        .from('ig_messages')
+        .insert({
+          ig_conversation_id: conv.id,
+          ig_message_id:      igMsgId,
+          direction:          'outbound',
+          tipo:               tipoIG,
+          texto:              null,
+          media_url:          mediaUrl,
+          timestamp:          ts,
+          asesor:             asesor || null,
+        })
+      if (mErr) fastify.log.error({ mErr }, 'ig/mensajes/media POST: error guardando mensaje')
+
+      await supabase
+        .from('ig_conversations')
+        .update({ ultimo_mensaje: `[${tipoIG}]`, last_message_at: new Date().toISOString() })
+        .eq('id', conv.id)
+    }
+
+    _broadcast(wsClients, {
+      tipo:        'ig:mensaje',
+      accountId:   Number(accountId),
+      igsid,
+      texto:       null,
+      timestamp:   ts,
+      igMsgId,
+      fromMe:      true,
+      asesor:      asesor || null,
+      tipoMensaje: tipoIG,
+      mediaUrl,
+    })
+
+    fastify.log.info({ accountId, igsid, igMsgId, tipoIG }, 'ig/mensajes/media POST: media enviado')
     return reply.send({ ok: true, igMsgId })
   })
 }

@@ -4923,7 +4923,7 @@ function _onEstado({ numero, contacto, estado, asesor }) {
 }
 
 // ── WS handlers Instagram ──────────────────────────────────────────────────
-function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor, convStatus, tipoMensaje }) {
+function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, asesor, convStatus, tipoMensaje, mediaUrl }) {
     const num   = 'ig:' + Number(accountId);
     const phone = String(igsid);
 
@@ -4973,8 +4973,8 @@ function _onIgMensaje({ accountId, igsid, texto, timestamp, igMsgId, fromMe, ase
         if (c.msgs.some(m => m.tipo === tipoMensaje && m.text === texto)) return;
     }
 
-    c.msgs.push({ text: texto, ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, tipo: tipoMensaje || 'mensaje', msgId: igMsgId || null });
-    c.lastMsg = texto || '';
+    c.msgs.push({ text: texto || '', ts: timestamp || Math.floor(Date.now() / 1000), out, asesor: asesor || null, tipo: tipoMensaje || 'mensaje', msgId: igMsgId || null, mediaUrl: mediaUrl || null });
+    c.lastMsg = texto || (mediaUrl ? `[${tipoMensaje || 'media'}]` : '');
     c.lastTs  = timestamp || Math.floor(Date.now() / 1000);
 
     const isActive = _state.activeContact === phone && _state.activeNum === num;
@@ -6406,18 +6406,19 @@ async function _loadIgMsgsSupabase(accountId, igsid) {
 
         const c = _state.conv[scopeKey][igsid];
         c.msgs = msgs.map(m => ({
-            msgId:  m.ig_message_id || String(m.id),
-            text:   m.texto || '',
-            ts:     m.timestamp,
-            out:    m.direction === 'outbound',
-            asesor: m.asesor || null,
-            tipo:   m.tipo || 'mensaje',
+            msgId:    m.ig_message_id || String(m.id),
+            text:     m.texto || '',
+            ts:       m.timestamp,
+            out:      m.direction === 'outbound',
+            asesor:   m.asesor || null,
+            tipo:     m.tipo || 'mensaje',
+            mediaUrl: m.media_url || null,
         })).reverse();
         c.allLoaded = msgs.length < 50;
 
         if (c.msgs.length) {
             const ultimo = c.msgs[c.msgs.length - 1];
-            c.lastMsg = ultimo.text;
+            c.lastMsg = ultimo.text || (ultimo.mediaUrl ? `[${ultimo.tipo}]` : '');
             c.lastTs  = ultimo.ts;
         }
 
@@ -7357,11 +7358,13 @@ function _updateOfflineBar() {
 
     // Offline sin bloqueo: controles habilitados (outbox encola el mensaje para cuando reconecte)
     // Los controles solo se deshabilitan cuando el chat está bloqueado (resuelto/en espera)
+    const isIg = String(_state.activeNum || '').startsWith('ig:');
     if (!bloqueado) {
         if (input)     input.disabled     = false;
         if (sendBtn)   sendBtn.disabled   = false;
-        if (attachBtn) attachBtn.disabled = false;
-        if (voiceBtn)  voiceBtn.disabled  = false;
+        // IG no soporta adjuntar archivos directamente desde el panel
+        if (attachBtn) { attachBtn.disabled = isIg; attachBtn.style.opacity = isIg ? '0.3' : ''; attachBtn.title = isIg ? 'No disponible para Instagram' : 'Adjuntar archivo'; }
+        if (voiceBtn)  { voiceBtn.disabled = isIg; voiceBtn.style.opacity = isIg ? '0.3' : ''; }
     }
 }
 
@@ -7383,7 +7386,16 @@ async function _sendMessage() {
         _showToast('Cargando adjunto...', 1500);
         await _pendingMediaFetch;
     }
-    if (_pendingFile) { await _sendMedia(); return; }
+    if (_pendingFile) {
+        // IG no soporta upload binario directo — necesita URL pública
+        if (String(_state.activeNum).startsWith('ig:')) {
+            _showToast('El envío de archivos desde el panel no está disponible para Instagram. Usa la app de Instagram.', 4000);
+            _clearPendingFile();
+            return;
+        }
+        await _sendMedia();
+        return;
+    }
     const input = document.getElementById('wap-input');
     const texto = input?.value.trim();
     if (!texto || !_state.activeNum || !_state.activeContact) return;

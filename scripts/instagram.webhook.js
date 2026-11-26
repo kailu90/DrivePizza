@@ -85,6 +85,20 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
   // Meta envía timestamp en milisegundos
   const ts      = Math.floor((timestamp || Date.now()) / 1000)
 
+  // Adjuntos multimedia
+  const attachment = message.attachments?.[0]
+  const mediaUrl   = attachment?.payload?.url || null
+  const mediaTipo  = (() => {
+    if (!attachment) return 'mensaje'
+    switch (attachment.type) {
+      case 'image':  return 'imagen'
+      case 'audio':  return 'audio'
+      case 'video':  return 'video'
+      case 'file':   return 'documento'
+      default:       return 'mensaje'
+    }
+  })()
+
   if (!igsid) {
     fastify.log.warn({ messaging }, 'ig/webhook: messaging sin igsid')
     return
@@ -122,8 +136,9 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
       ig_conversation_id: conv.id,
       ig_message_id:      igMsgId,
       direction:          isEcho ? 'outbound' : 'inbound',
-      tipo:               'mensaje',
+      tipo:               mediaTipo,
       texto,
+      media_url:          mediaUrl,
       timestamp:          ts,
       raw_payload:        isEcho ? null : messaging,
     })
@@ -161,14 +176,16 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
 
   // Broadcast ig:mensaje a todos los clientes WS conectados
   _broadcast(wsClients, {
-    tipo:       'ig:mensaje',
-    accountId:  account.id,
+    tipo:        'ig:mensaje',
+    accountId:   account.id,
     igsid,
     texto,
-    timestamp:  ts,
+    timestamp:   ts,
     igMsgId,
-    fromMe:     isEcho,
-    convStatus: isEcho ? conv.status : conv.status,
+    fromMe:      isEcho,
+    convStatus:  conv.status,
+    tipoMensaje: mediaTipo,
+    mediaUrl:    mediaUrl,
   })
 
   fastify.log.info({ accountId: account.id, igsid, igMsgId, isEcho }, 'ig/webhook: mensaje procesado')
