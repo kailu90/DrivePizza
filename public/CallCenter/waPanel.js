@@ -4493,6 +4493,7 @@ function _connectWs() {
             if (msg.tipo === 'wa:status')     _onStatus(msg);
             if (msg.tipo === 'wa:qr')         _onQr(msg);
             if (msg.tipo === 'wa:contacto')   _onContacto(msg);
+            if (msg.tipo === 'ig:contacto')   _onIgContacto(msg);
             if (msg.tipo === 'wa:asignacion')   _onAsignacion(msg);
             if (msg.tipo === 'wa:liberacion')   _onLiberacion(msg);
             if (msg.tipo === 'wa:estado')       _onEstado(msg);
@@ -4790,6 +4791,17 @@ function _onContacto({ numero, phone, name, display_name, display_phone, custome
     _renderList();
     // Actualizar header si es la conversacion abierta
     if (_state.activeContact === phoneKey && _state.activeNum === numero) _updateChatHeader(phoneKey);
+}
+
+function _onIgContacto({ accountId, igsid, nombre, username }) {
+    const scopeKey = `ig:${Number(accountId)}`;
+    if (!igsid || !_state.conv[scopeKey]?.[igsid]) return;
+    const c = _state.conv[scopeKey][igsid];
+    if (nombre)   c.nombre = nombre;
+    if (username) c.username = username;
+    _saveConv();
+    _renderList();
+    if (_state.activeContact === igsid && _state.activeNum === scopeKey) _updateChatHeader(igsid);
 }
 
 function _closeActionsMenu() {

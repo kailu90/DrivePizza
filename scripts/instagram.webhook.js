@@ -18,7 +18,7 @@ function _broadcast(wsClients, data) {
 }
 
 // ── Fetch perfil IG del contacto (background, no bloquea) ──────────────────
-async function _fetchContactProfile(account, igsid, contactId, log) {
+async function _fetchContactProfile(account, igsid, contactId, wsClients, log) {
   try {
     const accessToken = decryptToken(account.access_token_enc)
     const params = new URLSearchParams({ fields: 'name,username', access_token: accessToken })
@@ -29,6 +29,14 @@ async function _fetchContactProfile(account, igsid, contactId, log) {
       .from('ig_contacts')
       .update({ nombre: data.name || null, username: data.username || null })
       .eq('id', contactId)
+    // Notificar frontend para actualización inmediata
+    _broadcast(wsClients, {
+      tipo:      'ig:contacto',
+      accountId: account.id,
+      igsid,
+      nombre:    data.name    || null,
+      username:  data.username || null,
+    })
     log.info({ igsid, name: data.name, username: data.username }, '[ig:webhook] perfil contacto actualizado')
   } catch { /* background — no bloquea la respuesta a Meta */ }
 }
@@ -104,7 +112,7 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
 
   // Fetch perfil en background si el contacto aún no tiene nombre
   if (!contact.nombre && !contact.username) {
-    _fetchContactProfile(account, igsid, contact.id, fastify.log).catch(() => {})
+    _fetchContactProfile(account, igsid, contact.id, wsClients, fastify.log).catch(() => {})
   }
 
   // Insertar mensaje (idempotente por ig_message_id — ignorar duplicado 23505)
