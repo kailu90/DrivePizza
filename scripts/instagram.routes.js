@@ -509,14 +509,14 @@ export async function instagramRoutes(fastify, options) {
     if (!asesorNuevo)
       return reply.code(400).send({ ok: false, error: 'asesor requerido' })
 
-    const update = { asesor: asesorNuevo, estado: 'asignado' }
-    if (nota !== undefined) update.nota = nota
+    const upsertPayload = { account_id: Number(accountId), igsid, asesor: asesorNuevo, estado: 'asignado' }
+    if (nota !== undefined) upsertPayload.nota = nota
 
+    // upsert en lugar de update — garantiza que la fila existe aunque
+    // la asignación previa no estuviera en ig_assignments
     const { error: aErr } = await supabase
       .from('ig_assignments')
-      .update(update)
-      .eq('account_id', accountId)
-      .eq('igsid', igsid)
+      .upsert(upsertPayload, { onConflict: 'account_id,igsid' })
     if (aErr) {
       fastify.log.error({ aErr }, 'ig/asignaciones PATCH: error')
       return reply.code(500).send({ ok: false, error: 'Error al transferir chat' })
