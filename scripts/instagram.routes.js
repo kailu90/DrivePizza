@@ -260,11 +260,21 @@ export async function instagramRoutes(fastify, options) {
       const tokenEnc  = encryptToken(llData.access_token)
       const expiresAt = new Date(Date.now() + (llData.expires_in ?? 5_184_000) * 1000)
 
-      // 5. Actualizar channel_accounts
+      // 5. Preservar external_account_id si ya existe — Meta puede devolver un ID
+      // diferente en /me al re-autenticar, lo que rompe la búsqueda en el webhook handler
+      // (entry.id siempre contiene el ID original con el que se suscribió el webhook).
+      const { data: currentAccount } = await supabase
+        .from('channel_accounts')
+        .select('external_account_id')
+        .eq('id', channel_account_id)
+        .single()
+      const finalIgId = currentAccount?.external_account_id || meData.id
+
+      // 6. Actualizar channel_accounts
       const { error: updateErr } = await supabase
         .from('channel_accounts')
         .update({
-          external_account_id: meData.id,
+          external_account_id: finalIgId,
           username:            meData.username || null,
           access_token_enc:    tokenEnc,
           token_expires_at:    expiresAt.toISOString(),
@@ -278,7 +288,7 @@ export async function instagramRoutes(fastify, options) {
         return reply.type('text/html').send(_htmlError('Error guardando la cuenta. Intenta de nuevo.'))
       }
 
-      fastify.log.info({ channel_account_id, igid: meData.id }, 'ig/oauth/callback: cuenta conectada')
+      fastify.log.info({ channel_account_id, igid: finalIgId }, 'ig/oauth/callback: cuenta conectada')
       return reply.type('text/html').send(_htmlOk())
 
     } catch (ex) {

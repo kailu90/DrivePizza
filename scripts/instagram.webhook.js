@@ -6,7 +6,10 @@
 // Verificar siempre — nunca procesar sin firma válida.
 
 import { createHmac } from 'node:crypto'
-import { supabase }   from '../../config/supabase.js'
+import { supabase }      from '../../config/supabase.js'
+import { decryptToken }  from './ig-crypto.js'
+
+const IG_GRAPH_URL = 'https://graph.instagram.com/v21.0'
 
 // ── Broadcast a todos los clientes WS ─────────────────────────────────────
 function _broadcast(wsClients, data) {
@@ -14,13 +17,29 @@ function _broadcast(wsClients, data) {
   wsClients.forEach(client => { if (client.readyState === 1) client.send(msg) })
 }
 
+// ── Fetch perfil IG del contacto (background, no bloquea) ──────────────────
+async function _fetchContactProfile(account, igsid, contactId, log) {
+  try {
+    const accessToken = decryptToken(account.access_token_enc)
+    const params = new URLSearchParams({ fields: 'name,username', access_token: accessToken })
+    const res  = await fetch(`${IG_GRAPH_URL}/${igsid}?${params}`)
+    const data = await res.json()
+    if (data.error || (!data.name && !data.username)) return
+    await supabase
+      .from('ig_contacts')
+      .update({ nombre: data.name || null, username: data.username || null })
+      .eq('id', contactId)
+    log.info({ igsid, name: data.name, username: data.username }, '[ig:webhook] perfil contacto actualizado')
+  } catch { /* background — no bloquea la respuesta a Meta */ }
+}
+
 // ── Upsert contacto + conversación ─────────────────────────────────────────
 async function _upsertContactAndConv(accountId, igsid, texto, ts) {
-  // ig_contacts
+  // ig_contacts — seleccionar nombre/username para saber si hay que fetchear el perfil
   const { data: contact, error: cErr } = await supabase
     .from('ig_contacts')
     .upsert({ account_id: accountId, igsid }, { onConflict: 'account_id,igsid' })
-    .select('id')
+    .select('id, nombre, username')
     .single()
   if (cErr || !contact) return { err: cErr?.message || 'error en ig_contacts' }
 
@@ -47,26 +66,45 @@ async function _upsertContactAndConv(accountId, igsid, texto, ts) {
 async function _processMessaging(fastify, wsClients, account, messaging) {
   const { sender, timestamp, message } = messaging
 
-  // Ignorar echoes (mensajes enviados por la propia cuenta)
-  if (!message || message.is_echo) return
+  if (!message) return
 
-  const igsid   = sender?.id
+  const isEcho  = !!message.is_echo
+  // Echo: el negocio escribió desde la app — el cliente está en recipient.id
+  // Inbound: el cliente escribió — está en sender.id
+  const igsid   = isEcho ? messaging.recipient?.id : sender?.id
   const texto   = message.text || null
   const igMsgId = message.mid
   // Meta envía timestamp en milisegundos
   const ts      = Math.floor((timestamp || Date.now()) / 1000)
 
   if (!igsid) {
-    fastify.log.warn({ messaging }, 'ig/webhook: messaging sin sender.id')
+    fastify.log.warn({ messaging }, 'ig/webhook: messaging sin igsid')
     return
   }
 
+  // Ignorar echoes que el propio backend ya envió (evita duplicar mensajes outbound)
+  if (isEcho && igMsgId) {
+    const { count } = await supabase
+      .from('ig_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('ig_message_id', igMsgId)
+    if (count > 0) {
+      fastify.log.info({ igMsgId }, 'ig/webhook: echo ya guardado por outbound — ignorado')
+      return
+    }
+  }
+
   const { contact, conv, err: ucErr } =
-    await _upsertContactAndConv(account.id, igsid, texto, ts)
+    await _upsertContactAndConv(account.id, igsid, isEcho ? null : texto, ts)
 
   if (ucErr) {
     fastify.log.error({ ucErr, accountId: account.id, igsid }, 'ig/webhook: error upsert contacto/conv')
     return
+  }
+
+  // Fetch perfil en background si el contacto aún no tiene nombre
+  if (!contact.nombre && !contact.username) {
+    _fetchContactProfile(account, igsid, contact.id, fastify.log).catch(() => {})
   }
 
   // Insertar mensaje (idempotente por ig_message_id — ignorar duplicado 23505)
@@ -75,11 +113,11 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
     .insert({
       ig_conversation_id: conv.id,
       ig_message_id:      igMsgId,
-      direction:          'inbound',
+      direction:          isEcho ? 'outbound' : 'inbound',
       tipo:               'mensaje',
       texto,
       timestamp:          ts,
-      raw_payload:        messaging,
+      raw_payload:        isEcho ? null : messaging,
     })
 
   if (mErr && mErr.code !== '23505') {
@@ -88,14 +126,12 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
   }
 
   if (mErr?.code === '23505') {
-    // Mensaje duplicado — ya procesado, ignorar sin error
     fastify.log.info({ igMsgId }, 'ig/webhook: mensaje duplicado ignorado')
     return
   }
 
-  // Mensaje persistido — intentar reapertura atómica si conv estaba resuelta.
-  // Un fallo aquí no provoca pérdida del mensaje (ya guardado arriba).
-  if (conv.status === 'resolved') {
+  // Solo para inbound: intentar reapertura si conv estaba resuelta
+  if (!isEcho && conv.status === 'resolved') {
     const { data: reopened, error: rErr } = await supabase
       .rpc('ig_reopen_if_resolved', {
         p_account_id:    account.id,
@@ -106,7 +142,6 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
     if (rErr) {
       fastify.log.error({ rErr, accountId: account.id, igsid },
         'ig/webhook: RPC ig_reopen_if_resolved falló — broadcast con estado original')
-      // conv.status no se muta — broadcast saldrá con 'resolved', sin estado falso
     } else {
       conv.status         = reopened.status
       conv.assigned_agent = reopened.assigned_agent ?? null
@@ -118,17 +153,17 @@ async function _processMessaging(fastify, wsClients, account, messaging) {
 
   // Broadcast ig:mensaje a todos los clientes WS conectados
   _broadcast(wsClients, {
-    tipo:      'ig:mensaje',
-    accountId: account.id,
+    tipo:       'ig:mensaje',
+    accountId:  account.id,
     igsid,
     texto,
-    timestamp: ts,
+    timestamp:  ts,
     igMsgId,
-    fromMe:    false,
-    convStatus: conv.status,
+    fromMe:     isEcho,
+    convStatus: isEcho ? conv.status : conv.status,
   })
 
-  fastify.log.info({ accountId: account.id, igsid, igMsgId }, 'ig/webhook: mensaje procesado')
+  fastify.log.info({ accountId: account.id, igsid, igMsgId, isEcho }, 'ig/webhook: mensaje procesado')
 }
 
 export async function igWebhookRoutes(fastify, options) {
